@@ -41,6 +41,10 @@
     "  background:linear-gradient(135deg,var(--accent2,#6e56cf),var(--accent,#0071e3))}",
     ".lr-brand b{font-size:14px;color:var(--ink,#1d1d1f);line-height:1.15}",
     ".lr-brand span{display:block;font-size:11px;color:var(--muted,#6e6e73);font-weight:400}",
+    ".lr-home{display:flex;align-items:center;gap:8px;margin:12px 16px 2px;padding:8px 12px;",
+    "  border:1px solid var(--border,#e3e3e8);border-radius:9px;background:#fff;color:var(--ink,#1d1d1f);",
+    "  font-size:13px;font-weight:600;text-decoration:none}",
+    ".lr-home:hover{border-color:var(--accent,#0071e3);color:var(--accent-ink,#0066cc);text-decoration:none}",
     ".lr-glabel{font-size:11px;letter-spacing:.07em;text-transform:uppercase;color:var(--muted,#6e6e73);",
     "  font-weight:700;padding:18px 20px 6px}",
     ".lr-link{display:flex;gap:10px;align-items:center;padding:8px 20px;color:var(--ink-2,#424245);",
@@ -90,6 +94,7 @@
     side.className = "lr-sidebar";
     var html = '<a class="lr-brand" href="index.html"><span class="mk">R</span>' +
       '<span><b>RAG · MCP · Agents · LLMs</b><span>Hands-on guide</span></span></a>' +
+      '<a class="lr-home" data-hubhome href="#"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg> Hub home</a>' +
       '<div class="lr-glabel">Your learning path</div>';
     PAGES.forEach(function (p) {
       var active = p.href === here ? " active" : "";
@@ -98,6 +103,15 @@
     });
     side.innerHTML = html;
     document.body.appendChild(side);
+
+    var homeLink = side.querySelector("[data-hubhome]");
+    if (homeLink) homeLink.addEventListener("click", function (e) {
+      e.preventDefault();
+      if (window.parent !== window.self) {
+        try { window.parent.postMessage({ type: "genai-hub-home" }, "*"); return; } catch (err) {}
+      }
+      location.href = "../genai-portal/index.html";
+    });
 
     var menu = document.createElement("button");
     menu.className = "lr-menu"; menu.setAttribute("aria-label", "Menu"); menu.textContent = "☰";
