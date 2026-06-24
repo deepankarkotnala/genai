@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAG, End-to-End — The Complete Pipeline · GenAI Mastery</title>
+<meta name="description" content="A thorough, first-principles walk through every stage of a production Retrieval-Augmented Generation pipeline: data sources, ingestion, cleaning, chunking strategies, embeddings, indexing, query processing, retrieval, scoring, reranking, context selection, prompting, generation, evaluation, architectures and guardrails.">
+<link rel="stylesheet" href="assets/styles.css">
+<style>
+  /* This standalone page builds its own section sidebar; keep the same look. */
+  .nav .sec-num { font-family: var(--font-mono); }
+  .pipeline { counter-reset: none; }
+  /* compact pipeline rail */
+  .ragflow { display:flex; flex-direction:column; align-items:stretch; gap:0; margin:24px 0; }
+  .ragflow .rf { background:var(--bg-elevated); border:1.5px solid var(--border-strong); border-radius:10px;
+    padding:11px 16px; font-weight:600; font-size:14px; box-shadow:var(--shadow-sm); display:flex; align-items:center; gap:12px; }
+  .ragflow .rf .s { font-family:var(--font-mono); font-size:11px; color:var(--text-muted); background:var(--surface);
+    border:1px solid var(--border); border-radius:5px; padding:1px 6px; flex:none; }
+  .ragflow .rf small { display:block; font-weight:400; color:var(--text-muted); font-size:12px; }
+  .ragflow .rf.accent { border-color:var(--accent); background:var(--accent-soft); }
+  .ragflow .arr { width:2px; height:18px; background:var(--border-strong); align-self:center; }
+  .legend { display:flex; gap:14px; flex-wrap:wrap; font-size:12.5px; color:var(--text-muted); margin:8px 0 0; }
+  .legend span { display:inline-flex; align-items:center; gap:6px; }
+  .legend i { width:11px; height:11px; border-radius:3px; display:inline-block; }
+</style>
+</head>
+<body data-page="rag">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <div class="brand-mark">G</div>
+        <div class="brand-text"><strong>GenAI Mastery</strong><span>RAG, end-to-end</span></div>
+      </a>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-secsearch placeholder="Jump to a section…  ( / )">
+      </div>
+      <div class="search-results" data-secresults></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Retrieval / <b>RAG, end-to-end</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> The complete pipeline · every stage explained</div>
+        <h1>RAG, End-to-End</h1>
+        <p class="lead"><strong>RAG (Retrieval-Augmented Generation)</strong> means: instead of asking an LLM to answer purely from its internal memory, we first <em>retrieve</em> relevant knowledge from external sources, then hand that context to the LLM so it can generate a <em>grounded</em>, accurate answer. This page walks every stage of a real production pipeline — from raw files to a cited final response.</p>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~40 min read</span>
+          <span class="pill">Reference · breadth-first</span>
+          <span class="pill purple">Enterprise / plant &amp; process examples</span>
+        </div>
+
+        <div class="callout note">
+          <div class="c-ico">🔗</div>
+          <div class="c-body">
+            <div class="c-title">How this page relates to the rest of the course</div>
+            <p>This is the <em>panoramic</em> view of RAG. Several stages have their own dedicated, deeper module — wherever that's the case you'll see a <strong>“Goes deeper →”</strong> link rather than repeated material. The core conceptual modules are
+            <a href="modules/04_embeddings.html">04 · Embeddings</a>,
+            <a href="modules/05_vector_databases.html">05 · Vector Databases</a>,
+            <a href="modules/06_rag_basics.html">06 · RAG Basics</a> and
+            <a href="modules/07_advanced_rag.html">07 · Advanced RAG</a>.</p>
+          </div>
+        </div>
+
+        <!-- ============ 0. THE PIPELINE ============ -->
+        <h2 id="pipeline">1 · The full pipeline at a glance</h2>
+        <p>A complete RAG system is a chain of stages. Data flows down the left; a user query enters in the middle and flows through retrieval and generation. Everything below is just a detailed look at each box.</p>
+        <div class="diagram">
+          <div class="ragflow">
+            <div class="rf"><span class="s">01</span><div>Raw data <small>PDFs, Excel, DB, web, code, images</small></div></div>
+            <div class="arr"></div>
+            <div class="rf"><span class="s">02</span><div>Data ingestion <small>read, extract text/tables/metadata</small></div></div>
+            <div class="arr"></div>
+            <div class="rf"><span class="s">03</span><div>Cleaning &amp; preprocessing <small>de-noise, normalize, preserve structure</small></div></div>
+            <div class="arr"></div>
+            <div class="rf"><span class="s">04</span><div>Chunking <small>split into retrievable units</small></div></div>
+            <div class="arr"></div>
+            <div class="rf"><span class="s">05</span><div>Embedding generation <small>text → vectors</small></div></div>
+            <div class="arr"></div>
+            <div class="rf"><span class="s">06</span><div>Index storage <small>vector + keyword (hybrid) index</small></div></div>
+            <div class="arr"></div>
+            <div class="rf accent"><span class="s">07</span><div>User query <small>+ query understanding / rewriting</small></div></div>
+            <div class="arr"></div>
+            <div class="rf"><span class="s">08</span><div>Retrieval <small>dense · sparse · hybrid · graph · SQL</small></div></div>
+            <div class="arr"></div>
+            <div class="rf"><span class="s">09</span><div>Scoring &amp; ranking <small>cosine, BM25, fusion</small></div></div>
+            <div class="arr"></div>
+            <div class="rf"><span class="s">10</span><div>Reranking <small>cross-encoder picks the best few</small></div></div>
+            <div class="arr"></div>
+            <div class="rf"><span class="s">11</span><div>Context selection / compression <small>fit the budget</small></div></div>
+            <div class="arr"></div>
+            <div class="rf"><span class="s">12</span><div>Prompt construction <small>system + context + rules</small></div></div>
+            <div class="arr"></div>
+            <div class="rf accent"><span class="s">13</span><div>LLM answer generation</div></div>
+            <div class="arr"></div>
+            <div class="rf"><span class="s">14</span><div>Output scoring / eval / guardrails</div></div>
+            <div class="arr"></div>
+            <div class="rf accent"><span class="s">✓</span><div>Final response <small>grounded &amp; cited</small></div></div>
+          </div>
+          <div class="diagram-caption">The end-to-end RAG pipeline. Stages 1–6 happen offline at ingestion; 7–15 happen per query.</div>
+        </div>
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The one idea to hold onto</div>
+          <p>RAG quality is bounded by your <strong>weakest stage</strong>. A great LLM cannot rescue bad chunks; perfect retrieval cannot rescue a sloppy prompt. Optimize the chain, not one link.</p></div>
+        </div>
+
+        <!-- ============ 1. DATA SOURCES ============ -->
+        <h2 id="sources">2 · Data sources</h2>
+        <p>These are the knowledge bases RAG retrieves from. The quality of RAG depends <em>heavily</em> on the quality of the source.</p>
+        <div class="grid grid-2">
+          <div class="card"><h4>Common sources</h4><p>PDFs · Word · Excel/CSV · database tables · web pages · SharePoint/Confluence · emails · logs · API docs · source code · images (via OCR) · knowledge graphs.</p></div>
+          <div class="card"><h4>Typical enterprise sources</h4><p>SOP documents · plant manuals · historical tickets · maintenance reports · QC templates · procurement RFQs · database metadata · API documentation · training logs.</p></div>
+        </div>
+        <div class="callout tip">
+          <div class="c-ico">💡</div>
+          <div class="c-body"><div class="c-title">Match the source to the retrieval method</div>
+          <p>Structured tables (limits, KPIs, master data) are best answered with <strong>SQL retrieval</strong>; narrative documents with <strong>vector search</strong>; relationships with a <strong>knowledge graph</strong>. See <a href="#retrieval">§9 Retrieval</a>.</p></div>
+        </div>
+
+        <!-- ============ 2. INGESTION ============ -->
+        <h2 id="ingestion">3 · Data ingestion</h2>
+        <p>Ingestion brings raw documents into the pipeline: read files, extract text and tables, parse structure, detect headings, split sections, and keep a reference back to the original source.</p>
+        <p>From a single PDF you might capture: document name, page number, section title, paragraph text, table text, image captions, created date, author, department.</p>
+        <h3 id="metadata">Metadata is the secret weapon</h3>
+        <p>Rich metadata makes <strong>filtering</strong> possible, which is often the single biggest precision win in enterprise RAG.</p>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Field</th><th>Example</th><th>Why it matters</th></tr>
+            <tr><td><code>source_file</code></td><td>PDI1043_model.pdf</td><td>Citations &amp; traceability</td></tr>
+            <tr><td><code>page_number</code> / <code>section_heading</code></td><td>p7 · "Input Tags"</td><td>Precise citations</td></tr>
+            <tr><td><code>document_type</code></td><td>limits · SOP · RFQ</td><td>Route &amp; filter by intent</td></tr>
+            <tr><td><code>plant · loop · equipment · tag_name</code></td><td>Ammonia · Loop10 · Pump A · PDI1043.PV</td><td>Industrial scoping</td></tr>
+            <tr><td><code>created_date · modified_date · version</code></td><td>2024-03-01 · v3</td><td>Resolve conflicts (see <a href="#conflicts">§18</a>)</td></tr>
+            <tr><td><code>confidentiality_level · business_unit</code></td><td>Internal · EnM</td><td>Access control (see <a href="#guardrails">§17</a>)</td></tr>
+          </table>
+        </div>
+        <div class="callout note">
+          <div class="c-ico">🧭</div>
+          <div class="c-body"><div class="c-title">Filtering in action</div>
+          <p>User asks: <em>“What are the limits for Loop10 subloop2?”</em> Instead of searching every document, first filter <code>plant=Ammonia</code>, <code>loop=Loop10</code>, <code>subloop=2</code>, <code>document_type=limits</code> — then retrieve only inside that slice.</p></div>
+        </div>
+
+        <!-- ============ 3. CLEANING ============ -->
+        <h2 id="cleaning">4 · Cleaning &amp; preprocessing</h2>
+        <p>Before chunking, clean the data: remove headers/footers and duplicate pages, fix broken lines, normalize spaces, convert tables to text, strip boilerplate and OCR noise, standardize units, normalize tag names — while <strong>preserving section hierarchy</strong>.</p>
+        <div class="grid grid-2">
+          <div class="code-block">
+            <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> bad extraction</span></div>
+            <pre><code>PDI1043.
+PV is used for
+forecasting
+as per
+the model input</code></pre>
+          </div>
+          <div class="code-block">
+            <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> cleaned</span></div>
+            <pre><code>PDI1043.PV is used as one of the
+forecasting model inputs.</code></pre>
+          </div>
+        </div>
+        <p>For technical documents this matters enormously — tags, formulas and tables are exactly what gets distorted by naïve extraction.</p>
+
+        <!-- ============ 4. CHUNKING ============ -->
+        <h2 id="chunking">5 · Chunking — the unit of retrieval</h2>
+        <p>Chunking splits documents into smaller pieces that can be embedded and retrieved. The chunk is the atomic unit of retrieval, so its design dominates retrieval quality. A good chunk is <strong>small enough</strong> to fit the context, <strong>large enough</strong> to preserve meaning, <strong>traceable</strong> to its source, and <strong>metadata-rich</strong>.</p>
+
+        <details class="collapse" open><summary>5.1 · Fixed-size chunking <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
+          <div class="collapse-body">
+            <p>Split by a fixed number of tokens/characters, usually with overlap (e.g. size 500, overlap 50 → chunks 1–500, 451–950, 901–1400).</p>
+            <div class="grid grid-2">
+              <div class="card"><h4 style="color:var(--green)">Pros</h4><p>Simple, fast, easy to implement; fine for generic text.</p></div>
+              <div class="card"><h4 style="color:var(--red)">Cons</h4><p>Cuts sentences/tables mid-stream; separates headings from content; loses meaning.</p></div>
+            </div>
+            <p><strong>Best for:</strong> large plain-text docs, logs, generic reports, quick prototypes.</p>
+          </div>
+        </details>
+
+        <details class="collapse"><summary>5.2 · Recursive character chunking <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
+          <div class="collapse-body">
+            <p>Splits using a hierarchy of separators — try paragraphs (<code>\n\n</code>), then lines (<code>\n</code>), then sentences (<code>.</code>), then words (<code> </code>), then characters. Falls back only when a piece is still too large.</p>
+            <p><strong>Pros:</strong> preserves readability, better than pure fixed-size. <strong>Cons:</strong> still no real understanding of meaning; struggles with complex technical sections.</p>
+            <p><strong>Best for:</strong> general RAG, documentation, policy docs, manuals, FAQs.</p>
+          </div>
+        </details>
+
+        <details class="collapse"><summary>5.3 · Sentence-based chunking <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
+          <div class="collapse-body">
+            <p>Chunks are made of complete sentences, so embeddings get clean semantic units. <strong>Pros:</strong> never cuts a sentence, good embedding quality. <strong>Cons:</strong> inconsistent chunk sizes; may lose section-level context.</p>
+            <p><strong>Best for:</strong> natural-language docs, policies, SOPs, knowledge articles.</p>
+          </div>
+        </details>
+
+        <details class="collapse"><summary>5.4 · Paragraph-based chunking <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
+          <div class="collapse-body">
+            <p>Each paragraph (or small group) becomes a chunk. <strong>Pros:</strong> preserves human-written structure, interpretable. <strong>Cons:</strong> paragraphs vary wildly in length; tables/bullets get awkward.</p>
+            <p><strong>Best for:</strong> reports, business &amp; legal documents, technical descriptions.</p>
+          </div>
+        </details>
+
+        <details class="collapse"><summary>5.5 · Heading / section-based chunking <span class="pill green" style="margin-left:8px">practical favorite</span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
+          <div class="collapse-body">
+            <p>Split on document headings (1. Introduction, 2. Scope, 3. Input Tags…). Each section becomes one or more chunks. <strong>Pros:</strong> preserves hierarchy, great traceability, ideal for enterprise docs. <strong>Cons:</strong> depends on reliable heading detection; long sections still need sub-splitting.</p>
+            <p><strong>Best for:</strong> SOPs, technical manuals, API docs, project &amp; procurement &amp; regulatory documents. One of the most practical strategies for enterprise RAG.</p>
+          </div>
+        </details>
+
+        <details class="collapse"><summary>5.6 · Semantic chunking <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
+          <div class="collapse-body">
+            <p>Splits on <em>meaning</em>, not length. Embed each sentence, compare adjacent similarity, and start a new chunk when the topic shifts (similarity drops below a threshold). Sentences about model inputs land in one chunk; API endpoint details in another.</p>
+            <p><strong>Pros:</strong> meaning-preserving, higher retrieval accuracy, avoids mixing topics. <strong>Cons:</strong> more expensive/complex, needs embeddings <em>during</em> ingestion, threshold tuning, slower.</p>
+            <p><strong>Best for:</strong> knowledge-heavy docs, research papers, technical manuals, mixed-topic content.</p>
+          </div>
+        </details>
+
+        <details class="collapse"><summary>5.7 · Sliding-window (overlapping) chunking <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
+          <div class="collapse-body">
+            <p>Overlapping windows (e.g. size 800, overlap 200) so information spanning a boundary isn't lost. <strong>Pros:</strong> reduces boundary context loss. <strong>Cons:</strong> more storage, duplicate context, can add retrieval noise (pair with <a href="#mmr">MMR</a>).</p>
+            <p><strong>Best for:</strong> long technical docs, manuals, legal contracts, large reports.</p>
+          </div>
+        </details>
+
+        <details class="collapse"><summary>5.8 · Table-aware chunking <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
+          <div class="collapse-body">
+            <p>Tables must not be blindly split row-by-row or page-by-page. Convert them to a form the LLM reads well:</p>
+            <div class="code-block"><div class="code-head"><span class="lang">table → text</span></div><pre><code>The following table defines tag limits:
+- PDI1043 has LSL 0 and USL 10 kg/cm2.
+- TI1354  has LSL 20 and USL 200 °C.</code></pre></div>
+            <p><strong>Methods:</strong> Markdown conversion · row-wise text · a table-summary chunk · parent-child table chunking. <strong>Best for:</strong> Excel, procurement CBAs, QC templates, tag-limit tables, financial/KPI tables.</p>
+          </div>
+        </details>
+
+        <details class="collapse"><summary>5.9 · Code-aware chunking <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
+          <div class="collapse-body">
+            <p>Chunk by code structure — function, class, method, API endpoint, module, config block — so a whole <code>def predict(): …</code> stays together. <strong>Best for:</strong> Python APIs, FastAPI code, SQL scripts, config-driven frameworks.</p>
+          </div>
+        </details>
+
+        <details class="collapse"><summary>5.10 · Parent-child chunking <span class="pill purple" style="margin-left:8px">advanced</span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
+          <div class="collapse-body">
+            <p>Store small, precise <strong>child</strong> chunks for <em>retrieval</em>, but return the larger <strong>parent</strong> section for <em>generation</em>. Search hits the precise child; the LLM receives the richer surrounding context.</p>
+            <p><strong>Pros:</strong> high retrieval precision + good answer context. <strong>Cons:</strong> more complex indexing, needs a child→parent map. <strong>Best for:</strong> enterprise RAG, long manuals, regulatory &amp; project documentation.</p>
+          </div>
+        </details>
+
+        <!-- ============ 5. EMBEDDINGS ============ -->
+        <h2 id="embeddings">6 · Embeddings</h2>
+        <div class="callout note">
+          <div class="c-ico">📎</div>
+          <div class="c-body"><div class="c-title">This has a dedicated module</div>
+          <p>Embeddings (what a vector is, cosine similarity, choosing a model) are covered in depth in <a href="modules/04_embeddings.html"><strong>04 · Embeddings →</strong></a>. Summary below; the cosine/distance math used to <em>score</em> them lives in <a href="#scoring">§10 Retrieval scoring</a>.</p></div>
+        </div>
+        <p>An embedding converts text into a numeric vector that captures meaning: <code>"Pump A leakage prediction model" → [0.12, -0.45, 0.88, …]</code>. Similar concepts get similar vectors, so <em>“pump leakage”</em>, <em>“tube leakage”</em> and <em>“seal failure”</em> sit close together.</p>
+        <p><strong>Model families:</strong> OpenAI, Sentence-Transformers, BGE, E5, Cohere, Instructor, multilingual and code embeddings. Choose based on language, domain vocabulary, latency, cost, accuracy, deployment and security constraints.</p>
+        <div class="callout warn">
+          <div class="c-ico">⚠️</div>
+          <div class="c-body"><div class="c-title">Domain vocabulary breaks generic models</div>
+          <p>Tokens like <code>PDI1043.PV</code>, <code>FIC1002.PV</code>, <code>LSL</code>, <code>USL</code>, “trip tag”, “loop/subloop”, “factor/KPI mapping” may not be understood by a generic embedding model. Design your chunk text + metadata to spell these out, and lean on <a href="#sparse">keyword retrieval</a> for exact identifiers.</p></div>
+        </div>
+
+        <!-- ============ 6. INDEXING ============ -->
+        <h2 id="indexing">7 · Indexing &amp; storage</h2>
+        <div class="callout note">
+          <div class="c-ico">🗄️</div>
+          <div class="c-body"><div class="c-title">Goes deeper</div>
+          <p>Vector index internals (FAISS, HNSW, ANN recall/latency trade-offs) are the subject of <a href="modules/05_vector_databases.html"><strong>05 · Vector Databases →</strong></a>.</p></div>
+        </div>
+        <p>Embeddings are stored in a vector database. Common choices: <strong>FAISS, Chroma, Pinecone, Weaviate, Milvus, Qdrant, Elasticsearch / OpenSearch, PostgreSQL + pgvector, Azure AI Search, Databricks Vector Search</strong>. Each stored chunk typically carries its id, text, vector, source, page, section, metadata, timestamps and access permissions.</p>
+        <div class="code-block"><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> a stored chunk</span><button class="copy-btn">Copy</button></div>
+<pre><code>{
+  "chunk_id": "doc_001_chunk_004",
+  "text": "PDI1043.PV is used as an input for forecasting...",
+  "source": "PDI1043_model_document.pdf",
+  "page": 7,
+  "section": "Input Tags",
+  "plant": "Ammonia",
+  "loop": "Loop10",
+  "embedding": [0.12, -0.45, 0.88]
+}</code></pre></div>
+
+        <!-- ============ 7. QUERY PROCESSING ============ -->
+        <h2 id="query">8 · Query processing</h2>
+        <p>We don't always send the raw query to retrieval. A vague question like <em>“what are the inputs for this model?”</em> can first be turned into <em>“List the input tags used for the PDI1043 forecasting model.”</em></p>
+        <div class="grid grid-2">
+          <div class="card"><h4>8.1 Query rewriting</h4><p>The LLM rewrites a short/vague query into a clear search query. <em>“what all tags are used?”</em> → <em>“input tags used in PDI1043 forecasting model”.</em></p></div>
+          <div class="card"><h4>8.2 Query expansion</h4><p>Add related terms for recall: <em>“tube leakage”</em> → <em>tube leakage OR exchanger leakage OR heat-exchanger tube failure.</em> Great when teams use different vocabulary.</p></div>
+          <div class="card"><h4 id="hyde">8.3 HyDE</h4><p><strong>Hypothetical Document Embeddings:</strong> the LLM drafts a hypothetical <em>answer</em>, then embeds <em>that</em> instead of the short query. Helps vague queries; costs an extra LLM call and can inject assumptions.</p></div>
+          <div class="card"><h4>8.4 Multi-query retrieval</h4><p>Generate several phrasings of the query, retrieve for each, then merge → dedupe → rerank. Better recall, handles vocabulary mismatch, more retrieval calls.</p></div>
+        </div>
+        <h3 id="decomp">8.5 Query decomposition</h3>
+        <p>Break a complex question into sub-questions. <em>“Explain the API, model inputs, training logic, database tables, and deployment”</em> becomes five focused retrievals — ideal for complex enterprise questions, and a natural fit for <a href="#agentic">agentic RAG</a>.</p>
+
+        <!-- ============ 8. RETRIEVAL ============ -->
+        <h2 id="retrieval">9 · Retrieval methodologies</h2>
+        <div class="callout note">
+          <div class="c-ico">📎</div>
+          <div class="c-body"><div class="c-title">Builds on Module 06 &amp; 07</div>
+          <p>The retrieve-then-generate loop is introduced in <a href="modules/06_rag_basics.html#deep-dive">06 · RAG Basics →</a>; hybrid search, reranking and Graph/Agentic RAG are expanded in <a href="modules/07_advanced_rag.html"><strong>07 · Advanced RAG →</strong></a>. This section is the compact field guide.</p></div>
+        </div>
+
+        <h3 id="dense">9.1 Dense (vector) retrieval</h3>
+        <p>Embed the query, compare against chunk vectors, return nearest neighbours. Understands meaning and synonyms — <em>“pump failure reason”</em> can surface “seal damage”, “bearing issue”, “cavitation”. <strong>Weakness:</strong> exact IDs, tag names, codes and numbers (e.g. <code>PDI1043.PV</code>) may slip through.</p>
+
+        <h3 id="sparse">9.2 Sparse / keyword retrieval</h3>
+        <p>Exact or near-exact word matching: <strong>BM25, TF-IDF, Elasticsearch/OpenSearch lexical, SQL LIKE.</strong> Excellent for exact tag names, part/document IDs, error codes, invoice/KPI ids, API endpoint names. Fast and explainable; poor at synonyms/meaning.</p>
+
+        <h3 id="hybrid">9.3 Hybrid retrieval <span class="pill green">recommended default</span></h3>
+        <p>Combine dense + sparse. For <em>“PDI1043 pressure forecasting input tags”</em>, BM25 nails <code>PDI1043</code> and "input tags" while vector search captures "forecasting model features / pressure prediction variables". Best for technical enterprise data; needs score normalization (see <a href="#fusion">fusion</a>).</p>
+
+        <h3 id="metafilter">9.4 Metadata filtering</h3>
+        <p>Filter the candidate set before/with retrieval (<code>plant=Ammonia · loop=Loop10 · equipment=Pump A</code>). Improves precision, shrinks the search space and <strong>enforces access control</strong>.</p>
+
+        <h3 id="graph">9.5 Knowledge-graph retrieval</h3>
+        <p>Store relationships — <code>PDI1043.PV is_input_to ForecastingModel</code>, <code>Pump A belongs_to Subloop2</code>, <code>KPI_X depends_on PDI1043.PV</code>. Excellent for relationship questions, asset hierarchy and root-cause/dependency tracing. Requires building &amp; maintaining the graph. (See <a href="#graphrag">Graph RAG, §16.7</a>.)</p>
+
+        <h3 id="sqlretr">9.6 SQL / structured retrieval</h3>
+        <p>If the answer lives in a database, query it directly rather than vectorizing it.</p>
+        <div class="code-block"><div class="code-head"><span class="lang">sql</span><button class="copy-btn">Copy</button></div><pre><code>SELECT * FROM tag_master WHERE TAG_NAME = 'PDI1043.PV';</code></pre></div>
+        <p>Best for live values, master data, KPI mappings, config tables, inventory, transactions, procurement. A strong enterprise design blends <strong>vector (docs) + SQL (structured) + graph (relationships)</strong>.</p>
+
+        <h3 id="agenticretr">9.7 Agentic retrieval</h3>
+        <p>The LLM acts as a <em>router</em>, choosing the tool per question: tag limits → SQL; “explain the methodology” → vector search; “which equipment connects to this KPI?” → graph; “summarize the latest RFQ” → document retrieval.</p>
+
+        <!-- ============ 9. SCORING ============ -->
+        <h2 id="scoring">10 · Retrieval scoring methods</h2>
+        <p>Once candidates are retrieved we score relevance. Different similarity/distance measures suit different cases.</p>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Method</th><th>Idea</th><th>Direction</th><th>Best for</th></tr>
+            <tr><td><strong>Cosine similarity</strong></td><td>Angle between vectors, <code>A·B / (‖A‖‖B‖)</code>, range −1…1</td><td>higher = closer</td><td>Text embeddings; ignores magnitude — the common default</td></tr>
+            <tr><td><strong>Euclidean (L2)</strong></td><td>Straight-line distance <code>√Σ(Aᵢ−Bᵢ)²</code></td><td><em>lower</em> = closer</td><td>Spaces where actual distance matters; clustering</td></tr>
+            <tr><td><strong>Dot product</strong></td><td><code>Σ AᵢBᵢ</code></td><td>higher = closer</td><td>Normalized embeddings (≈ cosine); high-perf search</td></tr>
+            <tr><td><strong>Manhattan (L1)</strong></td><td><code>Σ|Aᵢ−Bᵢ|</code></td><td>lower = closer</td><td>Sparse/grid-like spaces; less common for text</td></tr>
+            <tr><td><strong>BM25</strong></td><td>Term freq × inverse doc freq, length-normalized</td><td>higher = closer</td><td>Exact words &amp; technical identifiers</td></tr>
+            <tr><td><strong>TF-IDF</strong></td><td>Frequent-here-but-rare-overall words</td><td>higher = closer</td><td>Simpler keyword scoring</td></tr>
+          </table>
+        </div>
+        <div class="callout warn">
+          <div class="c-ico">↕️</div>
+          <div class="c-body"><div class="c-title">Mind the direction</div>
+          <p>For <strong>cosine / dot / BM25</strong>, <em>higher is better</em>. For <strong>Euclidean / Manhattan</strong>, <em>lower is better</em>. Mixing them up silently inverts your ranking.</p></div>
+        </div>
+
+        <h3 id="mmr">10.7 Maximal Marginal Relevance (MMR)</h3>
+        <p>Balances <em>relevance to the query</em> against <em>diversity vs. already-selected chunks</em> — conceptually <code>MMR = relevance − similarity_to_selected</code>. Stops the top-5 from being five near-duplicates. Pairs naturally with <a href="#chunking">overlapping chunks</a>.</p>
+
+        <h3 id="fusion">10.8 Combining rankings — RRF &amp; weighted fusion</h3>
+        <div class="grid grid-2">
+          <div class="card"><h4>Reciprocal Rank Fusion (RRF)</h4><p>Merge rankings from multiple retrievers by rank position. BM25 → A,B,C and vectors → B,D,A fuse to B,A,D,C. Simple, robust, needs no score calibration — great for hybrid search.</p></div>
+          <div class="card"><h4>Weighted score fusion</h4><p><code>final = α·vector + β·keyword + γ·metadata</code>, e.g. <code>0.6·cosine + 0.3·bm25 + 0.1·meta</code>. Tune by query type: exact tag → BM25 high; conceptual → vector high; scoped → metadata high.</p></div>
+        </div>
+
+        <!-- ============ 10. RERANKING ============ -->
+        <h2 id="reranking">11 · Reranking</h2>
+        <p>Initial retrieval may return 20–100 chunks; reranking picks the best 5–10. The pattern: <strong>retrieve top 50 (fast, approximate) → rerank with a stronger model → keep top 5–10 (slow, accurate)</strong>.</p>
+        <p><strong>Rerankers:</strong> cross-encoder, LLM-based, Cohere Rerank, BGE reranker, ColBERT, domain-specific. Where embedding retrieval is a quick approximate filter, a reranker deeply compares the query against each chunk.</p>
+        <div class="callout tip">
+          <div class="c-ico">🎯</div>
+          <div class="c-body"><div class="c-title">Why it helps</div>
+          <p>For <em>“input tags for PDI1043 forecasting?”</em>, retrieval might return a general description, the input-tag list, an output explanation and alarm logic. A good reranker pushes the <strong>input-tag list</strong> to the top.</p></div>
+        </div>
+
+        <!-- ============ 11. CONTEXT SELECTION ============ -->
+        <h2 id="context">12 · Context selection &amp; compression</h2>
+        <p>The LLM can't take unlimited chunks, so we decide what to pass.</p>
+        <ul>
+          <li><strong>Top-K</strong> — pass the best K (e.g. 5). Simple but may admit weak chunks.</li>
+          <li><strong>Score threshold</strong> — only pass chunks above a relevance score (e.g. cosine &gt; 0.75) to avoid weak context.</li>
+          <li><strong>Diversity / metadata-prioritized</strong> — favour varied or high-priority sources (see <a href="#mmr">MMR</a>).</li>
+          <li><strong>Parent-child expansion</strong> — retrieve precise children, send their parents (see <a href="#chunking">§5.10</a>).</li>
+          <li><strong>Context compression</strong> — summarize/extract only the query-relevant parts before sending.</li>
+        </ul>
+        <div class="callout warn">
+          <div class="c-ico">⚠️</div>
+          <div class="c-body"><div class="c-title">Compression is a double-edged sword</div>
+          <p>It cuts tokens and sharpens focus and lets you fit more sources — but it can drop an important detail or even hallucinate during the summarization step. Validate compressed context against the originals for high-stakes answers.</p></div>
+        </div>
+
+        <!-- ============ 12. PROMPT ============ -->
+        <h2 id="prompt">13 · Prompt construction</h2>
+        <p>The final LLM input typically stitches together a system instruction, the user question, the retrieved context, and explicit answer/citation/format rules.</p>
+        <div class="code-block"><div class="code-head"><span class="lang">prompt template</span><button class="copy-btn">Copy</button></div>
+<pre><code>You are an assistant answering using ONLY the provided context.
+
+Context:
+[Chunk 1] ...
+[Chunk 2] ...
+
+Question:
+What are the input tags for PDI1043 forecasting?
+
+Instructions:
+- Answer only from the context.
+- If context is insufficient, say so.
+- Cite source file and page number.</code></pre></div>
+        <p>Good prompt design tells the model to: don't hallucinate · use only retrieved context · cite sources · admit missing information · keep answers structured · resolve conflicts carefully (see <a href="#conflicts">§18</a>).</p>
+
+        <!-- ============ 13. GENERATION ============ -->
+        <h2 id="generation">14 · LLM generation</h2>
+        <div class="callout note">
+          <div class="c-ico">📎</div>
+          <div class="c-body"><div class="c-title">Generation controls in depth</div>
+          <p>How decoding, temperature and the context window actually work is covered in <a href="modules/01_foundations.html"><strong>01 · Foundations of LLMs →</strong></a>.</p></div>
+        </div>
+        <p>The model receives <em>question + context + instructions</em> and generates the answer. Key controls: temperature, max tokens, system prompt, context window, citation format, tool access, response schema.</p>
+        <div class="callout tip">
+          <div class="c-ico">🌡️</div>
+          <div class="c-body"><div class="c-title">Temperature rule of thumb</div>
+          <p>Factual RAG → <code>temperature 0–0.3</code>. Creative summarization → slightly higher is acceptable.</p></div>
+        </div>
+
+        <!-- ============ 14. OUTPUT EVAL ============ -->
+        <h2 id="output-eval">15 · Output scoring &amp; evaluation</h2>
+        <p>After generation, score the answer — essential in production. The main dimensions:</p>
+        <div class="grid grid-2">
+          <div class="card"><h4>Faithfulness / groundedness</h4><p>Is every claim supported by the retrieved context? If context says “PDI1043.PV is an input” but the answer calls it the “final output KPI”, faithfulness is low. Methods: LLM-as-judge, NLI, claim verification, citation matching.</p></div>
+          <div class="card"><h4>Answer relevance</h4><p>Does the answer actually address the question? “The model is deployed using FastAPI” may be true but irrelevant to “what are the input tags?”.</p></div>
+          <div class="card"><h4>Context precision</h4><p><code>relevant retrieved / total retrieved</code>. 3 useful of 10 retrieved → low precision.</p></div>
+          <div class="card"><h4>Context recall</h4><p>Did retrieval find everything needed? Answer needs 9 tags but context has 5 → low recall.</p></div>
+          <div class="card"><h4>Citation accuracy</h4><p>Does the cited source actually support the sentence? Cites p3 but the fact is on p8 → fail.</p></div>
+          <div class="card"><h4>Completeness</h4><p>Covers all required parts? Asked for inputs, outputs, error handling &amp; deployment but only answered the first two → low.</p></div>
+          <div class="card"><h4>Conciseness</h4><p>Is it needlessly long? Matters for chatbot UX.</p></div>
+          <div class="card"><h4>Safety / compliance</h4><p>Exposes confidential data, credentials, PII, or violates access permissions? (see <a href="#guardrails">§17</a>).</p></div>
+        </div>
+        <div class="callout key">
+          <div class="c-ico">⚖️</div>
+          <div class="c-body"><div class="c-title">LLM-as-judge</div>
+          <p>An LLM scores the answer against a rubric (1 = unsupported … 5 = fully correct, complete, well-cited) across faithfulness, relevance, completeness, citation quality, clarity and safety. Powerful, but the judge can also err — calibrate it against human labels.</p></div>
+        </div>
+
+        <!-- ============ 15. RETRIEVAL METRICS ============ -->
+        <h2 id="metrics">16 · Retrieval evaluation metrics</h2>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Metric</th><th>What it measures</th><th>Quick example</th></tr>
+            <tr><td><strong>Hit rate</strong></td><td>≥1 relevant chunk in top-K?</td><td>Relevant chunk in top 5 → success</td></tr>
+            <tr><td><strong>Precision@K</strong></td><td><code>relevant in top-K / K</code></td><td>3 of 5 relevant → 0.6</td></tr>
+            <tr><td><strong>Recall@K</strong></td><td><code>relevant retrieved / total relevant</code></td><td>4 of 10 found in top 5 → 0.4</td></tr>
+            <tr><td><strong>MRR</strong></td><td>Rank of the <em>first</em> relevant result</td><td>rank 1→1.0 · rank 2→0.5 · rank 5→0.2</td></tr>
+            <tr><td><strong>NDCG</strong></td><td>Rewards relevant docs ranked higher (graded relevance)</td><td>Highly/partially/weakly/irrelevant</td></tr>
+            <tr><td><strong>MAP</strong></td><td>Mean average precision across queries</td><td>Aggregate ranking quality</td></tr>
+          </table>
+        </div>
+        <p>Also track the operational metrics that decide whether RAG is shippable: <strong>latency, cost per query, token usage, user satisfaction</strong> — alongside the answer-quality scores from <a href="#output-eval">§15</a>.</p>
+
+        <!-- ============ 16. ARCHITECTURES ============ -->
+        <h2 id="architectures">17 · RAG architectures</h2>
+        <div class="grid grid-2">
+          <div class="card"><h4>17.1 Naive RAG</h4><p>Chunk → embed → top-K → LLM. Simple, fast to build, good for a PoC. No reranking, no eval; weak on complex queries and prone to hallucination.</p></div>
+          <div class="card"><h4>17.2 Advanced RAG <span class="pill green">production</span></h4><p>Adds better chunking, hybrid retrieval, metadata filters, reranking, query rewriting, context compression, citations and evaluation.</p></div>
+          <div class="card"><h4>17.3 Modular RAG</h4><p>Every component (chunker, embedder, retriever, reranker, generator, evaluator, guardrail) is swappable — tune each independently. Great for enterprise.</p></div>
+          <div class="card"><h4 id="agentic">17.4 Agentic RAG</h4><p>The LLM dynamically chooses tools — vector search, SQL, graph, web search, calculator, code interpreter, API call. See <a href="modules/08_agents.html">08 · Agentic AI →</a>.</p></div>
+          <div class="card"><h4>17.5 Corrective RAG</h4><p>Checks whether retrieval is good enough; if not, rewrites the query, retries, uses an alternate retriever, asks for clarification, or returns “insufficient context”. Cuts wrong answers.</p></div>
+          <div class="card"><h4>17.6 Self-RAG</h4><p>The model reflects mid-generation — “need more retrieval”, “context insufficient”, “claim unsupported”, “weak citation”. Useful but more expensive.</p></div>
+          <div class="card"><h4 id="graphrag">17.7 Graph RAG</h4><p>Knowledge graph + documents. Traces <em>“which KPIs break if PDI1043.PV is faulty?”</em> via PDI1043.PV → model input → KPI → loop → equipment. See <a href="#graph">§9.5</a>.</p></div>
+          <div class="card"><h4>17.8 Multi-modal RAG</h4><p>Text + tables + images + charts + scans, via OCR, table extraction, image captioning, chart understanding, multi-modal embeddings. Best for engineering drawings, P&amp;IDs, scanned PDFs, dashboards, QC templates.</p></div>
+        </div>
+        <div class="callout note">
+          <div class="c-ico">🔀</div>
+          <div class="c-body"><div class="c-title">Agentic-RAG worked example</div>
+          <p><em>“Compare this month's production KPI with the documented target and explain the deviation.”</em> → (1) SQL for current KPI, (2) retrieve the target definition from docs, (3) retrieve the deviation SOP, (4) compute the difference, (5) generate the explanation.</p></div>
+        </div>
+
+        <!-- ============ 17. GUARDRAILS ============ -->
+        <h2 id="guardrails">18 · Guardrails</h2>
+        <div class="callout note">
+          <div class="c-ico">📎</div>
+          <div class="c-body"><div class="c-title">Production concern</div>
+          <p>Observability, cost controls, rate limiting and security/testing sit in <a href="modules/14_production_genai.html"><strong>14 · Production GenAI →</strong></a>. Here we focus on RAG-specific guardrails.</p></div>
+        </div>
+        <p>Guardrails run <em>before</em> and <em>after</em> generation: access control · PII masking · confidential-data filtering · prompt-injection detection · source-trust filtering · toxicity filtering · hallucination detection · citation enforcement · SQL-safety checks · output-schema validation.</p>
+        <div class="callout danger">
+          <div class="c-ico">🔒</div>
+          <div class="c-body"><div class="c-title">Access control is non-negotiable</div>
+          <p>A user in Department A must not retrieve Department B's confidential documents. Enforce permissions during <a href="#metafilter">metadata filtering</a>, not just at the UI.</p></div>
+        </div>
+
+        <!-- ============ 18. CONFLICTS ============ -->
+        <h2 id="conflicts">19 · Handling conflicting sources</h2>
+        <p>Documents disagree — old SOP says limit = 10, new SOP says 12. A good RAG system should <strong>prefer the latest approved source, surface both when they conflict, cite dates, flag uncertainty</strong>, and never silently pick one. The metadata that makes this possible: <code>approved_status · effective_date · version · owner · modified_date · document_type</code>.</p>
+
+        <!-- ============ 19. HALLUCINATION ============ -->
+        <h2 id="hallucination">20 · Hallucination control</h2>
+        <div class="grid grid-2">
+          <div class="card"><h4 style="color:var(--red)">Bad RAG behaviour</h4><p>No relevant context retrieved, yet the LLM answers confidently anyway.</p></div>
+          <div class="card"><h4 style="color:var(--green)">Good RAG behaviour</h4><p>“The retrieved context does not contain this information.”</p></div>
+        </div>
+        <p><strong>Levers:</strong> high-quality retrieval · reranking · strict prompts · citations · low temperature · answer validation · an explicit “I don't know from the provided context” path · source-grounded claim checking.</p>
+
+        <!-- ============ 20. PRODUCTION PIPELINE ============ -->
+        <h2 id="production">21 · A production pipeline, end-to-end</h2>
+        <ol>
+          <li>Ingest from SharePoint, PDFs, Excel, DB, APIs.</li>
+          <li>Extract text, tables, metadata and permissions.</li>
+          <li>Clean and normalize content.</li>
+          <li>Chunk using <strong>section-aware + semantic</strong> strategies.</li>
+          <li>Generate embeddings.</li>
+          <li>Store in a vector DB with metadata.</li>
+          <li>Store a keyword index (BM25) too.</li>
+          <li>User asks a question.</li>
+          <li>Rewrite &amp; expand the query.</li>
+          <li>Apply metadata &amp; permission filters.</li>
+          <li>Run hybrid retrieval.</li>
+          <li>Rerank the top ~50.</li>
+          <li>Select the top ~8 chunks.</li>
+          <li>Compress context if needed.</li>
+          <li>Generate the answer with citations.</li>
+          <li>Score faithfulness &amp; relevance.</li>
+          <li>Return the answer — or say context is insufficient.</li>
+          <li>Log feedback and improve retrieval.</li>
+        </ol>
+
+        <!-- ============ 21. BY USE CASE ============ -->
+        <h2 id="by-use-case">22 · Recommended methodology by use case</h2>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Use case</th><th>Recommended method</th></tr>
+            <tr><td>General document Q&amp;A</td><td>Recursive chunking + vector search + reranking</td></tr>
+            <tr><td>Technical documents</td><td>Section-aware chunking + hybrid retrieval</td></tr>
+            <tr><td>Tag / code lookup</td><td>BM25 + metadata filtering</td></tr>
+            <tr><td>SOP search</td><td>Heading chunking + dense retrieval</td></tr>
+            <tr><td>Tables / Excel</td><td>Table-aware chunking + structured extraction</td></tr>
+            <tr><td>Database Q&amp;A</td><td>SQL retrieval + LLM explanation</td></tr>
+            <tr><td>Equipment hierarchy</td><td>Graph RAG</td></tr>
+            <tr><td>Complex multi-step question</td><td>Agentic RAG</td></tr>
+            <tr><td>Long documents</td><td>Parent-child chunking + reranking</td></tr>
+            <tr><td>High-accuracy enterprise RAG</td><td>Hybrid retrieval + reranker + evaluator</td></tr>
+            <tr><td>Scanned documents</td><td>OCR + layout-aware parsing + multi-modal RAG</td></tr>
+            <tr><td>Codebase Q&amp;A</td><td>Code-aware chunking + keyword/vector hybrid</td></tr>
+          </table>
+        </div>
+
+        <!-- ============ 22. RECOMMENDED DESIGN ============ -->
+        <h2 id="recommended">23 · A strong default enterprise design</h2>
+        <div class="callout key">
+          <div class="c-ico">🏗️</div>
+          <div class="c-body"><div class="c-title">Put together, a robust stack looks like this</div>
+          <ul style="margin:8px 0 0">
+            <li><strong>Chunking:</strong> section-aware + recursive + semantic refinement</li>
+            <li><strong>Retrieval:</strong> hybrid = vector + BM25</li>
+            <li><strong>Scoring:</strong> cosine (dense) + BM25 (keyword), combined with RRF or weighted fusion</li>
+            <li><strong>Reranking:</strong> cross-encoder or LLM reranker</li>
+            <li><strong>Context:</strong> top-K + threshold + parent-child expansion</li>
+            <li><strong>Generation:</strong> low-temperature LLM with a strict source-grounded prompt</li>
+            <li><strong>Evaluation:</strong> faithfulness + answer relevance + context precision + recall</li>
+            <li><strong>Guardrails:</strong> access control + citation check + hallucination check</li>
+          </ul>
+          <p style="margin-top:10px">Far better than basic vector search alone.</p></div>
+        </div>
+
+        <!-- ============ 23. END-TO-END EXAMPLE ============ -->
+        <h2 id="example">24 · A simple end-to-end example</h2>
+        <p>User asks: <em>“What are the input tags used for PDI1043 forecasting?”</em></p>
+        <div class="timeline">
+          <div class="step"><h4>1 · Query preprocessing</h4><p>Detect entity = <code>PDI1043</code>; intent = input-tag lookup.</p></div>
+          <div class="step"><h4>2 · Retrieval</h4><p>BM25 matches exact “PDI1043”; vectors match “forecasting model input tags”; metadata filter <code>plant=Ammonia, model=PDI1043</code>.</p></div>
+          <div class="step"><h4>3 · Scoring</h4><p>Cosine scores semantic matches, BM25 scores exact matches, hybrid fusion combines them.</p></div>
+          <div class="step"><h4>4 · Reranking</h4><p>Reranker selects the chunks that actually list input tags.</p></div>
+          <div class="step"><h4>5 · Context selection</h4><p>Top 3 chunks go to the LLM.</p></div>
+          <div class="step"><h4>6 · Generation</h4><p>Answer lists: <code>FI1023.PV, FIC1002.PV, TI1354.PV, PDI1012.PV, FFI1001.CPV, TI1081.PV, TI1407.PV, PDI1163.PV, PDI1043.PV</code>.</p></div>
+          <div class="step"><h4>7 · Output evaluation</h4><p>Check the answer is supported by the chunks, all tags are included, and no extra tags were hallucinated.</p></div>
+        </div>
+
+        <!-- ============ 24. BEST PRACTICES ============ -->
+        <h2 id="best-practices">25 · Best practices</h2>
+        <ul>
+          <li>Don't rely only on vector search — use <strong>hybrid retrieval</strong> for technical enterprise data.</li>
+          <li>Keep chunks meaningful, not just fixed-size.</li>
+          <li>Preserve metadata aggressively.</li>
+          <li>Treat tables separately.</li>
+          <li>Use reranking for precision.</li>
+          <li>Always cite sources.</li>
+          <li>Evaluate retrieval and the final answer <em>separately</em>.</li>
+          <li>Use guardrails for security.</li>
+          <li>Log failed queries and improve chunking/retrieval over time.</li>
+        </ul>
+        <div class="callout tip">
+          <div class="c-ico">🏭</div>
+          <div class="c-body"><div class="c-title">For plant APIs, tag mappings, QC &amp; procurement, database automation</div>
+          <p>The best-fit design is usually: <strong>section-aware + table-aware chunking · hybrid retrieval · metadata filtering · SQL retrieval for structured tables · reranking · faithfulness evaluation · citation-based final answers.</strong></p></div>
+        </div>
+
+        <div class="page-nav">
+          <a href="modules/06_rag_basics.html"><div class="dir">← Foundations</div><div class="ttl">06 · RAG Basics</div></a>
+          <a class="next" href="modules/07_advanced_rag.html"><div class="dir">Go deeper →</div><div class="ttl">07 · Advanced RAG</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/app.js"></script>
+<script>
+/* This standalone page supplies its own section sidebar + section search,
+   then lets app.js build the right-rail TOC + scroll-spy + theme + copy. */
+(function () {
+  function build() {
+    var content = document.querySelector(".content");
+    var nav = document.querySelector(".nav");
+    if (!content || !nav) return;
+    var heads = [].slice.call(content.querySelectorAll("h2[id]"));
+
+    // sidebar: one entry per top-level section
+    var html = '<a href="index.html"><span class="num">＊</span> Hub home</a>' +
+               '<div class="nav-group-label">RAG, end-to-end</div>';
+    heads.forEach(function (h) {
+      var txt = h.textContent.trim();
+      var m = txt.match(/^(\d+)\s*·\s*(.*)$/);
+      var num = m ? m[1] : "•";
+      var label = m ? m[2] : txt;
+      html += '<a href="#' + h.id + '" data-sec="' + h.id + '">' +
+              '<span class="num sec-num">' + num + '</span> ' + label + '</a>';
+    });
+    nav.innerHTML = html;
+
+    // scroll-spy highlight on the sidebar (mirrors the TOC rail behaviour)
+    var links = [].slice.call(nav.querySelectorAll("[data-sec]"));
+    if (window.IntersectionObserver) {
+      var obs = new IntersectionObserver(function (entries) {
+        entries.forEach(function (en) {
+          if (en.isIntersecting) {
+            links.forEach(function (l) { l.classList.toggle("active", l.getAttribute("data-sec") === en.target.id); });
+          }
+        });
+      }, { rootMargin: "-80px 0px -70% 0px" });
+      heads.forEach(function (h) { obs.observe(h); });
+    }
+
+    // close mobile drawer on click
+    var app = document.querySelector(".app");
+    links.forEach(function (a) { a.addEventListener("click", function () { if (app) app.classList.remove("nav-open"); }); });
+
+    // section search in the sidebar
+    var input = document.querySelector("[data-secsearch]");
+    var out = document.querySelector("[data-secresults]");
+    if (input && out) {
+      input.addEventListener("input", function () {
+        var q = input.value.trim().toLowerCase();
+        if (!q) { out.innerHTML = ""; return; }
+        var hits = heads.filter(function (h) { return h.textContent.toLowerCase().indexOf(q) > -1; }).slice(0, 8);
+        out.innerHTML = hits.length
+          ? hits.map(function (h) {
+              return '<a class="search-result" href="#' + h.id + '">' + h.textContent.trim() + '</a>';
+            }).join("")
+          : '<div class="search-empty">No section matches "' + q + '"</div>';
+      });
+      document.addEventListener("keydown", function (e) {
+        if (e.key === "/" && document.activeElement !== input && !/input|textarea/i.test(document.activeElement.tagName)) {
+          e.preventDefault(); input.focus();
+        }
+        if (e.key === "Escape") { input.blur(); out.innerHTML = ""; }
+      });
+    }
+  }
+  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", build);
+  else build();
+})();
+</script>
+</body>
+</html>
