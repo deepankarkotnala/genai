@@ -1,0 +1,254 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>GenAI Learning Hub — Mastery · Agents · RAG/MCP</title>
+<meta name="description" content="A unified portal bringing together the GenAI Mastery curriculum, the AI Agents course, and the hands-on RAG/MCP/LLM guide.">
+<link rel="stylesheet" href="assets/styles.css">
+<style>
+  /* ---- Top-level tab bar (shared chrome above all three portals) ---- */
+  .hub-tabs{
+    position:sticky; top:0; z-index:50;
+    display:flex; gap:4px; align-items:center;
+    padding:8px 16px;
+    background:var(--bg, #fff);
+    border-bottom:1px solid var(--border, #e3e3e8);
+    backdrop-filter:saturate(1.4) blur(8px);
+    -webkit-backdrop-filter:saturate(1.4) blur(8px);
+    overflow-x:auto;
+  }
+  .hub-brand{
+    display:flex; align-items:center; gap:10px;
+    font-weight:700; font-size:14px; letter-spacing:-.01em;
+    padding-right:14px; margin-right:6px;
+    border-right:1px solid var(--border, #e3e3e8);
+    white-space:nowrap; color:var(--text, #1d1d1f);
+  }
+  .hub-brand .mk{
+    width:26px; height:26px; border-radius:8px;
+    display:grid; place-items:center; color:#fff; font-weight:800; font-size:14px;
+    background:linear-gradient(135deg,#6e56cf,#0071e3);
+  }
+  .hub-tab{
+    appearance:none; border:1px solid transparent; cursor:pointer;
+    background:transparent; color:var(--text-muted, #6e6e73);
+    font:600 14px/1 inherit; letter-spacing:-.01em;
+    padding:9px 16px; border-radius:999px; white-space:nowrap;
+    transition:background .15s ease, color .15s ease, border-color .15s ease;
+  }
+  .hub-tab:hover{ color:var(--text, #1d1d1f); background:rgba(110,86,207,.08); }
+  .hub-tab[aria-selected="true"]{
+    color:#fff;
+    background:linear-gradient(135deg,#6e56cf,#0071e3);
+    border-color:transparent;
+    box-shadow:0 4px 14px -6px rgba(110,86,207,.6);
+  }
+  .hub-tab .em{ margin-right:7px; }
+
+  /* ---- Panels ---- */
+  .hub-panel{ display:none; }
+  .hub-panel[data-active="true"]{ display:block; }
+
+  /* iframe panels fill the viewport beneath the tab bar.
+     dvh = dynamic viewport height: on mobile this excludes the address bar,
+     preventing the iframe from being cut off / double-scrolling. Falls back
+     to vh on desktop where the two are identical. */
+  .hub-frame-wrap{ height:calc(100vh - 47px); height:calc(100dvh - 47px); width:100%; }
+  .hub-frame-wrap iframe{
+    display:block; width:100%; height:100%; border:0; background:var(--bg,#fff);
+  }
+
+  /* ---- Mobile (phones / small tablets) ---- */
+  @media (max-width:860px){
+    /* hide the brand wordmark so the 4 tab pills get priority; keep the logo mark.
+       the bar already scrolls horizontally (overflow-x:auto) if still tight. */
+    .hub-brand span{ display:none; }
+    .hub-brand{ padding-right:10px; margin-right:4px; }
+    .hub-tab{ padding:9px 13px; }
+    /* the inline GenAI-Mastery sidebar (tab 1) is position:fixed at top:0 and would
+       slide in *under* the sticky tab bar; nudge it below the bar and shorten it so
+       its own header isn't hidden. Scoped to the hub only — module pages are untouched. */
+    #panel-mastery .sidebar{ top:47px; height:calc(100dvh - 47px); }
+  }
+</style>
+</head>
+<body data-page="00">
+
+<!-- ===================== TOP-LEVEL TAB BAR ===================== -->
+<div class="hub-tabs" role="tablist" aria-label="Learning portals">
+  <div class="hub-brand"><span class="mk">G</span><span>GenAI Learning Hub</span></div>
+  <button class="hub-tab" role="tab" id="tab-mastery"  aria-controls="panel-mastery"  aria-selected="true"><span class="em">🎓</span>GenAI Mastery</button>
+  <button class="hub-tab" role="tab" id="tab-agents"   aria-controls="panel-agents"   aria-selected="false"><span class="em">🤖</span>Understanding AI Agents</button>
+  <button class="hub-tab" role="tab" id="tab-ragmcp"   aria-controls="panel-ragmcp"   aria-selected="false"><span class="em">🔌</span>RAG · MCP · Agents · LLMs</button>
+  <button class="hub-tab" role="tab" id="tab-ragdeep"  aria-controls="panel-ragdeep"  aria-selected="false"><span class="em">📚</span>RAG, End-to-End</button>
+</div>
+
+<!-- ===================== TAB 1 — GenAI Mastery (original content, inline) ===================== -->
+<div class="hub-panel" id="panel-mastery" role="tabpanel" aria-labelledby="tab-mastery" data-active="true">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">G</div>
+      <div class="brand-text"><strong>GenAI Mastery</strong><span>DS → Senior GenAI Engineer</span></div>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search modules…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs"><b>Overview</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="hero">
+          <div class="eyebrow"><span class="dot"></span> The complete curriculum</div>
+          <h1>From Data Scientist to <span class="grad">Senior GenAI Engineer</span></h1>
+          <p class="lead">A first-principles, hands-on path through LLMs, Transformers, Embeddings, Vector DBs, RAG, Agents, MCP, LangGraph, CrewAI and Production GenAI — designed for engineers who already know Python, ML, FastAPI and Docker.</p>
+          <div class="meta-row" style="justify-content:center">
+            <span class="pill">15 modules</span>
+            <span class="pill">10 capstone projects</span>
+            <span class="pill purple">Offline · no dependencies</span>
+            <span class="pill blue">Code · diagrams · quizzes</span>
+          </div>
+        </div>
+
+        <div class="progress-card">
+          <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:8px">
+            <strong style="font-size:15px">Your progress</strong>
+            <span class="pill green"><span data-progress-pct>0%</span> complete</span>
+          </div>
+          <div class="progress-track"><div class="progress-fill" data-progress-fill></div></div>
+          <p style="margin:0;font-size:13px;color:var(--text-muted)"><span data-progress-count>0 / 15 modules</span> finished — progress is saved in your browser.</p>
+        </div>
+
+        <h2 id="how">How to use this portal</h2>
+        <div class="grid grid-3">
+          <div class="card" data-reveal><span class="ico">🎯</span><h4>Read top-to-bottom</h4><p>Each module follows the same 15-part structure: summary → first principles → diagrams → deep dive → practice.</p></div>
+          <div class="card" data-reveal><span class="ico">⚡</span><h4>Run the code</h4><p>Every snippet is complete and copy-pasteable. Minimal → intermediate → production for each concept.</p></div>
+          <div class="card" data-reveal><span class="ico">🧠</span><h4>Test yourself</h4><p>Quizzes, active recall and interview questions reinforce retention with spaced repetition.</p></div>
+        </div>
+
+        <h2 id="curriculum">The curriculum</h2>
+        <p>Five tracks build on each other. Foundations make the rest make sense; Production turns it into a real system.</p>
+        <div data-module-grid></div>
+
+        <h2 id="profile">Who this is for</h2>
+        <div class="callout key">
+          <div class="c-ico">🎓</div>
+          <div class="c-body">
+            <div class="c-title">Designed for the Senior Data Science Consultant</div>
+            <p>You have strong Python and ML, and you're comfortable with FastAPI, Docker and ElasticSearch. What you <em>don't</em> have yet is hands-on experience with Agents, MCP, LangGraph or production RAG. This curriculum meets you exactly there — we skip the "what is a function" basics and go straight to the mental models, internals and architectures that matter.</p>
+          </div>
+        </div>
+
+        <div class="page-nav">
+          <span></span>
+          <a class="next" href="modules/01_foundations.html"><div class="dir">Start here →</div><div class="ttl">01 · Foundations of LLMs</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ===================== TAB 2 — Understanding AI Agents (teach-agents) ===================== -->
+<div class="hub-panel" id="panel-agents" role="tabpanel" aria-labelledby="tab-agents" data-active="false">
+  <div class="hub-frame-wrap">
+    <iframe data-src="../teach-agents/index.html" title="Understanding AI Agents" loading="lazy"></iframe>
+  </div>
+</div>
+
+<!-- ===================== TAB 3 — RAG · MCP · Agents · LLMs (learn-rag-mcp) ===================== -->
+<div class="hub-panel" id="panel-ragmcp" role="tabpanel" aria-labelledby="tab-ragmcp" data-active="false">
+  <div class="hub-frame-wrap">
+    <iframe data-src="../learn-rag-mcp/index.html" title="RAG · MCP · Agents · LLMs guide" loading="lazy"></iframe>
+  </div>
+</div>
+
+<!-- ===================== TAB 4 — RAG, End-to-End (rag-deep-dive.html) ===================== -->
+<div class="hub-panel" id="panel-ragdeep" role="tabpanel" aria-labelledby="tab-ragdeep" data-active="false">
+  <div class="hub-frame-wrap">
+    <iframe data-src="rag-deep-dive.html" title="RAG, End-to-End — the complete pipeline" loading="lazy"></iframe>
+  </div>
+</div>
+
+<!-- ===================== TAB CONTROLLER ===================== -->
+<script>
+(function(){
+  var tabs   = Array.prototype.slice.call(document.querySelectorAll('.hub-tab'));
+  var panels = {
+    'tab-mastery':'panel-mastery',
+    'tab-agents' :'panel-agents',
+    'tab-ragmcp' :'panel-ragmcp',
+    'tab-ragdeep':'panel-ragdeep'
+  };
+
+  function activate(tabId, push){
+    tabs.forEach(function(t){ t.setAttribute('aria-selected', t.id === tabId ? 'true':'false'); });
+    Object.keys(panels).forEach(function(tid){
+      var panel = document.getElementById(panels[tid]);
+      var on = (tid === tabId);
+      panel.setAttribute('data-active', on ? 'true':'false');
+      if(on){
+        // Lazily load iframe content the first time its tab is opened.
+        var fr = panel.querySelector('iframe[data-src]');
+        if(fr && !fr.getAttribute('src')) fr.setAttribute('src', fr.getAttribute('data-src'));
+      }
+    });
+    if(push){
+      try{ history.replaceState(null, '', '#' + tabId.replace('tab-','')); }catch(e){}
+    }
+  }
+
+  tabs.forEach(function(t){
+    t.addEventListener('click', function(){ activate(t.id, true); });
+  });
+
+  // Honor deep-link hash (#agents / #ragmcp / #mastery) on load.
+  var initial = (location.hash || '').replace('#','');
+  var initId = 'tab-' + initial;
+  activate(panels[initId] ? initId : 'tab-mastery', false);
+})();
+</script>
+
+<!-- ===================== TAB 1 app logic (unchanged) ===================== -->
+<script src="assets/app.js"></script>
+<script>
+  // The app.js registry uses bare filenames; on the index (root) prepend modules/ for navigation.
+  (function(){
+    function fix(){
+      document.querySelectorAll('#panel-mastery .nav a').forEach(a=>{
+        const h=a.getAttribute('href');
+        if(h && h!=='index.html' && !h.startsWith('modules/')) a.setAttribute('href','modules/'+h);
+      });
+      document.querySelectorAll('#panel-mastery .search-results a').forEach(a=>{
+        const h=a.getAttribute('href');
+        if(h && !h.startsWith('modules/') && h!=='index.html') a.setAttribute('href','modules/'+h);
+      });
+      document.querySelectorAll('#panel-mastery [data-module-grid] a').forEach(a=>{
+        const h=a.getAttribute('href');
+        if(h && !h.startsWith('modules/')) a.setAttribute('href','modules/'+h);
+      });
+    }
+    document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(fix,0);
+      const inp=document.querySelector('#panel-mastery [data-search]'); if(inp) inp.addEventListener('input',()=>setTimeout(fix,0));
+    });
+  })();
+</script>
+</body>
+</html>
