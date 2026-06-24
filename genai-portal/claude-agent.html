@@ -1,0 +1,374 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>How a Claude Agent Works — The Agent SDK &amp; Loop · GenAI Mastery</title>
+<meta name="description" content="How a Claude agent actually works: the agent loop (gather context → take action → verify → repeat), tools and the tool runner, the Claude Agent SDK, sessions and context management, MCP, memory, and a worked example — basics to intermediate.">
+<link rel="stylesheet" href="assets/styles.css">
+<style>
+  .nav .sec-num { font-family: var(--font-mono); }
+  .loop-fig { font-family:var(--font-mono); font-size:13px; line-height:1.7; background:var(--bg-subtle);
+              border:1px solid var(--border); border-radius:10px; padding:16px 18px; overflow-x:auto; }
+  .loop-fig .s { color:var(--accent); font-weight:700; }
+  .loop-fig .muted { color:var(--text-muted); }
+  .pill.anthropic { color:#fff; background:linear-gradient(135deg,var(--accent),#e9a07f); border-color:transparent; }
+</style>
+</head>
+<body data-page="claude-agent">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <div class="brand-mark">G</div>
+        <div class="brand-text"><strong>GenAI Mastery</strong><span>How a Claude agent works</span></div>
+      </a>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-secsearch placeholder="Jump to a section…  ( / )">
+      </div>
+      <div class="search-results" data-secresults></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Agents / <b>How a Claude agent works</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> The Claude Agent SDK · how the loop actually runs</div>
+        <h1>How a Claude Agent Works</h1>
+        <p class="lead">A <strong>Claude agent</strong> isn't one big prompt — it's a <em>loop</em>. Claude is given a goal and a set of tools, then it repeatedly decides what to do next, your code runs the tool it asked for, the result goes back to Claude, and it decides again — until the task is done. This page walks through how that loop runs, the tools that power it, and how the <strong>Claude Agent SDK</strong> manages it for you.</p>
+        <div class="meta-row">
+          <span class="pill anthropic">Anthropic · Claude</span>
+          <span class="pill blue">⏱ ~30 min read</span>
+          <span class="pill">Basics → intermediate</span>
+          <span class="pill purple">Python · Claude API / Agent SDK</span>
+        </div>
+
+        <div class="callout note">
+          <div class="c-ico">🔗</div>
+          <div class="c-body"><div class="c-title">Where this fits</div>
+          <p>This is the Claude-specific view of what a general <a href="modules/08_agents.html">agent</a> is — the broader concept is the focus of the <strong>Understanding AI Agents</strong> tab. The structured-graph way to orchestrate a loop is the <a href="langgraph.html">LangGraph tab</a>; safety gating is the <a href="guardrails.html">Guardrails tab</a>; persistent state is the <a href="memory.html">Memory tab</a>. Code targets the Claude API / Agent SDK with model <code>claude-opus-4-8</code>.</p></div>
+        </div>
+
+        <!-- 1 -->
+        <h2 id="what">1 · What "a Claude agent" means</h2>
+        <p>A plain Claude API call is one-shot: you send messages, you get one reply. An <strong>agent</strong> adds three things on top:</p>
+        <div class="grid grid-3">
+          <div class="card"><span class="ico">🎯</span><h4>A goal</h4><p>A task to accomplish, not just a question to answer — "fix this failing test," "research X and write a summary."</p></div>
+          <div class="card"><span class="ico">🛠️</span><h4>Tools</h4><p>Actions Claude can take in the real world — read a file, run a command, search the web, call your API.</p></div>
+          <div class="card"><span class="ico">🔁</span><h4>A loop</h4><p>Claude runs many turns, choosing tools and reacting to results, until the goal is met — not a single response.</p></div>
+        </div>
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The one-sentence model</div>
+          <p>A Claude agent = <strong>Claude in a loop with tools</strong>. The model decides <em>what to do</em>; your code (or the SDK) executes the tool and feeds the result back; repeat until Claude stops asking for tools.</p></div>
+        </div>
+
+        <!-- 2 -->
+        <h2 id="loop">2 · The agent loop — step by step</h2>
+        <p>This loop is the heart of every Claude agent. Anthropic frames it as three repeating phases: <strong>gather context → take action → verify work</strong>.</p>
+        <div class="diagram">
+          <div class="cssflow">
+            <div class="fnode accent">1 · Gather context<small>read files · search · recall memory</small></div>
+            <div class="farrow"></div>
+            <div class="fnode">2 · Claude decides<small>think → emit a tool call (or finish)</small></div>
+            <div class="farrow"></div>
+            <div class="fnode">3 · Take action<small>your code runs the requested tool</small></div>
+            <div class="farrow"></div>
+            <div class="fnode">4 · Observe / verify<small>tool result returns to Claude</small></div>
+            <div class="farrow"></div>
+            <div class="fnode accent">stop_reason?<small>tool_use → loop back · end_turn → done</small></div>
+          </div>
+          <div class="diagram-caption">The agent loop. While Claude keeps asking for tools (<code>stop_reason == "tool_use"</code>) it loops back to step&nbsp;1; when it answers (<code>end_turn</code>) the loop ends. (Text version below.)</div>
+        </div>
+        <div class="diagram">
+          <div class="loop-fig">
+   ┌───────────────────────────────────────────────┐
+   │                                               │
+   ▼                                               │
+<span class="s">1. GATHER CONTEXT</span>   <span class="muted">read files, search, recall memory</span>   │
+   │                                               │
+   ▼                                               │
+<span class="s">2. CLAUDE DECIDES</span>   <span class="muted">think → emit a tool call (or finish)</span>  │
+   │                                               │
+   ▼                                               │
+<span class="s">3. TAKE ACTION</span>      <span class="muted">your code runs the tool</span>             │
+   │                                               │
+   ▼                                               │
+<span class="s">4. OBSERVE / VERIFY</span> <span class="muted">tool result returns to Claude</span>      │
+   │                                               │
+   └────────── stop_reason == "tool_use"? ─────────┘
+                       │ no (end_turn)
+                       ▼
+                  <span class="s">DONE</span> — final answer
+          </div>
+          <div class="diagram-caption">Each turn, Claude either asks for a tool (loop continues) or finishes (loop ends). The <code>stop_reason</code> field tells you which.</div>
+        </div>
+        <p>Concretely, in one turn:</p>
+        <ol>
+          <li>You send the conversation (system prompt + history + tool definitions) to Claude.</li>
+          <li>Claude responds. If it wants to act, the response contains a <strong><code>tool_use</code></strong> block and <code>stop_reason == "tool_use"</code>.</li>
+          <li>Your code executes that tool and sends the result back as a <strong><code>tool_result</code></strong>.</li>
+          <li>Claude sees the result and either calls another tool or answers (<code>stop_reason == "end_turn"</code>), ending the loop.</li>
+        </ol>
+
+        <!-- 3 -->
+        <h2 id="tools">3 · Tools — how Claude takes action</h2>
+        <p>Tools are the agent's hands. You describe each tool (name, what it does, its input schema); Claude reads those descriptions to decide when to call one. There are two kinds:</p>
+        <div class="grid grid-2">
+          <div class="card"><h4>Your tools (client-side)</h4><p>Functions <em>you</em> implement — query a DB, hit your API, edit a file. Claude emits a <code>tool_use</code>; your code runs it and returns the result.</p></div>
+          <div class="card"><h4>Anthropic tools (server-side)</h4><p>Built-in tools Claude runs on Anthropic's side — <strong>web search</strong>, <strong>code execution</strong>. You just declare them; no execution loop on your end.</p></div>
+        </div>
+        <div class="code-block"><div class="code-head"><span class="lang">python · defining a tool</span><button class="copy-btn">Copy</button></div>
+<pre><code>tools = [{
+    "name": "get_weather",
+    "description": "Get the current weather for a location.",
+    "input_schema": {
+        "type": "object",
+        "properties": {"location": {"type": "string", "description": "City name"}},
+        "required": ["location"],
+    },
+}]</code></pre></div>
+        <div class="callout tip">
+          <div class="c-ico">✍️</div>
+          <div class="c-body"><div class="c-title">Good tool descriptions are most of the work</div>
+          <p>Claude decides when to call a tool from its <em>description</em> — be prescriptive about <em>when</em> to use it, not just what it does ("Call this when the user asks about current prices or recent events"). On recent Claude models, which reach for tools deliberately, a clear trigger condition in the description noticeably improves how reliably the tool gets used.</p></div>
+        </div>
+
+        <!-- 4 -->
+        <h2 id="manual-loop">4 · The loop in raw code (Claude API)</h2>
+        <p>Before reaching for the SDK, it's worth seeing the loop by hand — it's only a few lines, and it makes clear what the SDK automates. You keep calling the Messages API, executing any tool Claude asks for, until <code>stop_reason</code> is no longer <code>tool_use</code>.</p>
+        <div class="code-block"><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> manual_agent.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>import anthropic
+
+client = anthropic.Anthropic()                 # reads ANTHROPIC_API_KEY from env
+messages = [{"role": "user", "content": "What's the weather in Paris?"}]
+
+def run_tool(name, args):                       # your real implementations
+    if name == "get_weather":
+        return f"18°C and clear in {args['location']}"
+    return "unknown tool"
+
+while True:
+    resp = client.messages.create(
+        model="claude-opus-4-8",
+        max_tokens=1024,
+        thinking={"type": "adaptive"},          # let Claude decide how much to reason
+        tools=tools,
+        messages=messages,
+    )
+
+    if resp.stop_reason != "tool_use":          # Claude is done
+        break
+
+    messages.append({"role": "assistant", "content": resp.content})  # keep the turn
+
+    tool_results = []
+    for block in resp.content:
+        if block.type == "tool_use":
+            result = run_tool(block.name, block.input)
+            tool_results.append({
+                "type": "tool_result",
+                "tool_use_id": block.id,        # must match the tool_use id
+                "content": result,
+            })
+    messages.append({"role": "user", "content": tool_results})        # feed results back
+
+print(next(b.text for b in resp.content if b.type == "text"))</code></pre></div>
+        <div class="callout note">
+          <div class="c-ico">🧠</div>
+          <div class="c-body"><div class="c-title">Two details that matter</div>
+          <p><strong>(1)</strong> Always append the <em>full</em> <code>resp.content</code> back as the assistant turn — it carries the <code>tool_use</code> blocks Claude needs to see. <strong>(2)</strong> Each <code>tool_result</code> must carry the matching <code>tool_use_id</code>, and all results for one turn go back in a <em>single</em> user message.</p></div>
+        </div>
+
+        <!-- 5 -->
+        <h2 id="tool-runner">5 · The tool runner — let the SDK drive the loop</h2>
+        <p>Writing that loop by hand gets repetitive. The SDK's <strong>tool runner</strong> automates it: you define tools as typed functions and the SDK calls the API, runs your tools, feeds results back, and repeats until Claude is done.</p>
+        <div class="code-block"><div class="code-head"><span class="lang">python · @beta_tool + tool_runner</span><button class="copy-btn">Copy</button></div>
+<pre><code>import anthropic
+from anthropic import beta_tool
+
+client = anthropic.Anthropic()
+
+@beta_tool
+def get_weather(location: str) -> str:
+    """Get the current weather for a location.
+
+    Args:
+        location: City name, e.g. "Paris".
+    """
+    return f"18°C and clear in {location}"
+
+runner = client.beta.messages.tool_runner(
+    model="claude-opus-4-8",
+    max_tokens=1024,
+    tools=[get_weather],
+    messages=[{"role": "user", "content": "What's the weather in Paris?"}],
+)
+
+for message in runner:        # the SDK runs the whole loop; each step yields a message
+    print(message)</code></pre></div>
+        <div class="callout tip">
+          <div class="c-ico">⚖️</div>
+          <div class="c-body"><div class="c-title">Tool runner vs manual loop</div>
+          <p>Use the <strong>tool runner</strong> for the common case — it handles the loop, schema generation and result-feeding. Drop to the <strong>manual loop</strong> when you need fine-grained control: custom logging, conditional execution, or a <em>human approval gate</em> before each tool runs (the human-in-the-loop pattern from <a href="guardrails.html#failure">Guardrails</a> and <a href="langgraph.html#hitl">LangGraph</a>).</p></div>
+        </div>
+
+        <!-- 6 -->
+        <h2 id="thinking">6 · Thinking — how Claude plans inside the loop</h2>
+        <p>Modern Claude models can <strong>think</strong> before acting — an internal reasoning step where the model plans its next move. For agents, you enable <strong>adaptive thinking</strong> and let Claude decide how much to reason per step.</p>
+        <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
+<pre><code>resp = client.messages.create(
+    model="claude-opus-4-8",
+    max_tokens=4096,
+    thinking={"type": "adaptive"},          # Claude decides when/how much to think
+    output_config={"effort": "high"},       # how hard to work: low | medium | high | xhigh | max
+    tools=tools,
+    messages=messages,
+)</code></pre></div>
+        <div class="callout note">
+          <div class="c-ico">🎚️</div>
+          <div class="c-body"><div class="c-title">effort is the main dial for agents</div>
+          <p><code>effort</code> controls how thoroughly Claude reasons and acts. For agentic/coding work, <code>high</code> (or <code>xhigh</code>) is the sweet spot; drop to <code>medium</code>/<code>low</code> for routine, latency-sensitive steps. Higher effort up front often <em>reduces</em> total turns on hard tasks. Pair adaptive thinking with a generous <code>max_tokens</code> so the model has room to plan and act.</p></div>
+        </div>
+
+        <!-- 7 -->
+        <h2 id="context">7 · Context &amp; sessions — staying coherent over a long run</h2>
+        <p>The Messages API is <strong>stateless</strong>: you resend the full conversation each turn (see the <a href="memory.html#stateless">Memory tab</a>). Over a long agent run the history can outgrow the context window, so Claude agents manage context with a few built-in mechanisms:</p>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Mechanism</th><th>What it does</th><th>When</th></tr>
+            <tr><td><strong>Prompt caching</strong></td><td>Caches a stable prefix (system prompt + tools) so repeated turns are cheap and fast</td><td>Always — big win for agents that resend a large fixed prefix</td></tr>
+            <tr><td><strong>Context editing</strong></td><td>Automatically <em>clears</em> stale old tool results from the history</td><td>Long tool-heavy runs where old results are no longer needed</td></tr>
+            <tr><td><strong>Compaction</strong></td><td>Automatically <em>summarizes</em> earlier context as you near the window limit</td><td>Very long conversations that would otherwise overflow</td></tr>
+            <tr><td><strong>Memory tool</strong></td><td>Lets Claude write notes to a file store it reads back in later sessions</td><td>Cross-session memory / learning over time</td></tr>
+          </table>
+        </div>
+        <div class="callout key">
+          <div class="c-ico">🧩</div>
+          <div class="c-body"><div class="c-title">This is the Memory tab, applied</div>
+          <p>Prompt caching + context editing + compaction are how a Claude agent keeps its <em>working memory</em> within budget; the memory tool is its <em>long-term memory</em>. The concepts and trade-offs are in the <a href="memory.html">Memory tab</a> — here they're the specific levers a Claude agent uses.</p></div>
+        </div>
+
+        <!-- 8 -->
+        <h2 id="mcp">8 · Connecting tools at scale — MCP</h2>
+        <p>Defining every tool inline doesn't scale. <strong>MCP (Model Context Protocol)</strong> is the standard way to plug a whole catalog of external tools and data sources into a Claude agent — GitHub, Slack, a database, your internal services — without hand-writing each schema. The agent connects to an MCP <em>server</em>, which advertises its tools, and Claude can call them like any other tool.</p>
+        <div class="callout note">
+          <div class="c-ico">🔌</div>
+          <div class="c-body"><div class="c-title">Goes deeper</div>
+          <p>MCP has its own treatment in <a href="modules/09_mcp.html"><strong>09 · Model Context Protocol →</strong></a> and the <strong>RAG · MCP · Agents · LLMs</strong> tab. For a Claude agent, the takeaway is: MCP is how you give it tools you didn't write yourself, in a standard, swappable way.</p></div>
+        </div>
+
+        <!-- 9 -->
+        <h2 id="sdk">9 · The Claude Agent SDK — what it gives you</h2>
+        <p>You can build an agent on the raw API (you saw the loop in §4). The <strong>Claude Agent SDK</strong> packages the patterns this page describes so you don't reassemble them every time:</p>
+        <ul>
+          <li><strong>The loop, managed</strong> — the tool runner drives gather → act → verify for you.</li>
+          <li><strong>Tools made easy</strong> — typed functions become tool schemas automatically; built-in Anthropic tools (web search, code execution, file/bash, memory) are one declaration.</li>
+          <li><strong>Context management</strong> — prompt caching, context editing and compaction wired in.</li>
+          <li><strong>MCP support</strong> — connect external tool servers.</li>
+          <li><strong>Subagents</strong> — spin off a focused sub-agent (often a cheaper/faster model) for a sub-task without losing the main thread.</li>
+        </ul>
+        <div class="callout tip">
+          <div class="c-ico">🏗️</div>
+          <div class="c-body"><div class="c-title">When to use what</div>
+          <p><strong>Raw API + manual loop</strong> → maximum control, custom harness. <strong>Agent SDK / tool runner</strong> → build a custom agent fast on your own infrastructure. <strong>Managed Agents</strong> (Anthropic-hosted) → when you want Anthropic to run the loop <em>and</em> host the sandbox where tools execute. Start simple; reach for more structure only when the task needs it.</p></div>
+        </div>
+
+        <!-- 10 -->
+        <h2 id="example">10 · A worked example — a two-tool agent</h2>
+        <p>An agent with two tools that loops until the task is done: look up a value, then do arithmetic on it. Uses the manual loop so every step is visible.</p>
+        <div class="code-block"><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> two_tool_agent.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>import anthropic
+client = anthropic.Anthropic()
+
+tools = [
+    {"name": "get_price", "description": "Get the unit price of a product in USD.",
+     "input_schema": {"type": "object",
+        "properties": {"sku": {"type": "string"}}, "required": ["sku"]}},
+    {"name": "multiply", "description": "Multiply two numbers.",
+     "input_schema": {"type": "object",
+        "properties": {"a": {"type": "number"}, "b": {"type": "number"}},
+        "required": ["a", "b"]}},
+]
+
+PRICES = {"PUMP-A": 1250.0}
+def run_tool(name, args):
+    if name == "get_price":  return str(PRICES.get(args["sku"], 0))
+    if name == "multiply":   return str(args["a"] * args["b"])
+    return "unknown tool"
+
+messages = [{"role": "user",
+             "content": "What's the total cost of 8 units of PUMP-A?"}]
+
+while True:
+    resp = client.messages.create(
+        model="claude-opus-4-8", max_tokens=1024,
+        thinking={"type": "adaptive"}, tools=tools, messages=messages)
+    if resp.stop_reason != "tool_use":
+        break
+    messages.append({"role": "assistant", "content": resp.content})
+    results = [{"type": "tool_result", "tool_use_id": b.id,
+                "content": run_tool(b.name, b.input)}
+               for b in resp.content if b.type == "tool_use"]
+    messages.append({"role": "user", "content": results})
+
+print(next(b.text for b in resp.content if b.type == "text"))
+# → "8 units of PUMP-A at $1,250 each is $10,000."</code></pre></div>
+        <div class="callout tip">
+          <div class="c-ico">▶️</div>
+          <div class="c-body"><div class="c-title">The trajectory</div>
+          <p>Claude calls <code>get_price("PUMP-A")</code> → gets 1250 → calls <code>multiply(8, 1250)</code> → gets 10000 → answers, no more tool calls (<code>end_turn</code>), loop ends. Two tools, two turns of the loop, automatic — that's an agent.</p></div>
+        </div>
+
+        <!-- 11 -->
+        <h2 id="safety">11 · Safety &amp; control</h2>
+        <p>An agent that can act needs guardrails on those actions — this is not optional once tools can change real state.</p>
+        <ul>
+          <li><strong>Gate risky tools</strong> — require human approval before a tool that deletes, sends, or pays. In the manual loop you simply pause before <code>run_tool</code> and ask; with Managed Agents this is the <code>always_ask</code> permission policy.</li>
+          <li><strong>Refusals</strong> — Claude may decline an unsafe request (<code>stop_reason == "refusal"</code>). Check for it before reading the answer, and handle it gracefully.</li>
+          <li><strong>Cap the loop</strong> — set a max-iterations limit so a confused agent can't loop forever.</li>
+          <li><strong>Don't leak secrets / enforce scope</strong> — the full rulebook is the <a href="guardrails.html">Guardrails tab</a>; it applies directly to agent tools and outputs.</li>
+          <li><strong>Trace it</strong> — log every step, tool call and cost with <a href="langfuse.html">Langfuse</a> so you can see <em>why</em> the agent did what it did.</li>
+        </ul>
+
+        <!-- 12 -->
+        <h2 id="best-practices">12 · Best practices &amp; pitfalls</h2>
+        <ul>
+          <li><strong>Start simple</strong> — a single API call or a short workflow beats an agent when the task is well-defined. Reach for the loop only when steps can't be specified up front.</li>
+          <li><strong>Write trigger-condition tool descriptions</strong> — tell Claude <em>when</em> to call each tool, not just what it does.</li>
+          <li><strong>Keep the tool set focused</strong> — too many tools dilutes tool selection; use MCP + tool search if you have a large catalog.</li>
+          <li><strong>Append the full assistant turn</strong> and match every <code>tool_use_id</code> — the two most common manual-loop bugs.</li>
+          <li><strong>Use adaptive thinking + <code>high</code> effort</strong> for hard agentic work; give it room with a generous <code>max_tokens</code>.</li>
+          <li><strong>Cache the stable prefix</strong> (system prompt + tools) — agents resend it every turn, so caching is a big cost/latency win.</li>
+          <li><strong>Always cap iterations and gate destructive actions</strong> — an autonomous loop with real tools must fail safe.</li>
+          <li><strong>Give a clear goal up front</strong> — well-specified tasks in the first turn let Claude work more autonomously and efficiently than dribbling context across many turns.</li>
+        </ul>
+
+        <div class="page-nav">
+          <a href="modules/08_agents.html"><div class="dir">← Concept</div><div class="ttl">08 · Agentic AI</div></a>
+          <a class="next" href="langgraph.html"><div class="dir">Orchestrate it →</div><div class="ttl">LangGraph &amp; its components</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/app.js"></script>
+<script src="assets/enhance.js"></script>
+<script src="assets/section-nav.js"></script>
+</body>
+</html>

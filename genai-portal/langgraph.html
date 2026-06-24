@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>LangGraph &amp; Its Components — Stateful Agent Graphs · GenAI Mastery</title>
+<meta name="description" content="Learn LangGraph component by component: state, nodes, edges (normal & conditional), the StateGraph, reducers, the checkpointer/persistence, tools (ToolNode), and human-in-the-loop — basics to intermediate, with runnable code.">
+<link rel="stylesheet" href="assets/styles.css">
+<style>
+  .nav .sec-num { font-family: var(--font-mono); }
+  .comp-grid { display:grid; gap:14px; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); margin:20px 0; }
+  .comp { border:1px solid var(--border); border-left:4px solid var(--accent); border-radius:var(--radius);
+          padding:14px 16px; background:var(--bg-elevated); }
+  .comp h4 { margin:0 0 4px; } .comp .role { font-size:12.5px; color:var(--text-secondary); }
+  .lg-graph { font-family:var(--font-mono); font-size:13px; line-height:1.7; background:var(--bg-subtle);
+              border:1px solid var(--border); border-radius:10px; padding:16px 18px; overflow-x:auto; }
+  .lg-graph .n { color:var(--accent); font-weight:700; }
+  .lg-graph .e { color:var(--blue); }
+  .lg-graph .c { color:var(--purple); }
+  .lg-graph .muted { color:var(--text-muted); }
+</style>
+</head>
+<body data-page="langgraph">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <div class="brand-mark">G</div>
+        <div class="brand-text"><strong>GenAI Mastery</strong><span>LangGraph · components</span></div>
+      </a>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-secsearch placeholder="Jump to a section…  ( / )">
+      </div>
+      <div class="search-results" data-secresults></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Frameworks / <b>LangGraph &amp; its components</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Stateful agent graphs · component by component</div>
+        <h1>LangGraph &amp; Its Components</h1>
+        <p class="lead"><strong>LangGraph</strong> is a library for building <em>stateful, multi-step</em> LLM applications as a <strong>graph</strong>: you define the steps (nodes), how control flows between them (edges), and a shared state object that every step reads and writes. Where a plain chain runs start-to-finish once, a LangGraph app can loop, branch, pause for a human, and resume — which is exactly what agents need. This page takes it apart one component at a time.</p>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~30 min read</span>
+          <span class="pill">Basics → intermediate</span>
+          <span class="pill purple">Python · LangGraph · OpenAI</span>
+        </div>
+
+        <div class="callout note">
+          <div class="c-ico">🔗</div>
+          <div class="c-body"><div class="c-title">Where this fits</div>
+          <p>This is the <em>component reference</em>. The fuller treatment — deep dive, interactive walk-through, a capstone "approval-gated SQL agent" — is <a href="modules/12_langgraph.html"><strong>Module 12 · LangGraph →</strong></a>. LangGraph builds on agents (<a href="modules/08_agents.html">08 · Agentic AI →</a>) and uses the memory ideas from the <a href="memory.html">Memory tab</a> for its persistence. Code uses OpenAI + LangChain; Ollama/Claude swaps are noted where relevant.</p></div>
+        </div>
+
+        <!-- 1 -->
+        <h2 id="why">1 · Why a graph — chains vs graphs</h2>
+        <p>A LangChain <em>chain</em> is a straight line: A → B → C, once, top to bottom. That's fine for "retrieve then answer," but it can't express the things agents do:</p>
+        <div class="grid grid-2">
+          <div class="card"><h4>What a chain can't do</h4><ul style="margin:6px 0 0;padding-left:18px"><li><strong>Loop</strong> — "call a tool, look at the result, decide whether to call another."</li><li><strong>Branch</strong> — take a different path depending on the LLM's decision.</li><li><strong>Pause &amp; resume</strong> — stop for human approval, continue later.</li><li><strong>Remember</strong> — keep state across turns and across restarts.</li></ul></div>
+          <div class="card"><h4>What a graph adds</h4><p>LangGraph models the app as nodes connected by edges over a shared <strong>state</strong>. Edges can be conditional (branch) and can point backward (loop). A built-in <strong>checkpointer</strong> saves state so a run can pause and resume. This is the control flow agents require.</p></div>
+        </div>
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The one-sentence model</div>
+          <p>A LangGraph app = <strong>a shared state object</strong> + <strong>nodes</strong> that transform it + <strong>edges</strong> that decide what runs next, compiled into a runnable graph with optional <strong>persistence</strong>.</p></div>
+        </div>
+
+        <!-- 2 -->
+        <h2 id="components">2 · The components at a glance</h2>
+        <div class="comp-grid">
+          <div class="comp"><h4>State</h4><div class="role">The shared data every node reads &amp; writes. The single source of truth.</div></div>
+          <div class="comp"><h4>Node</h4><div class="role">A unit of work — a Python function that takes state and returns an update.</div></div>
+          <div class="comp"><h4>Edge</h4><div class="role">Wiring that says "after node X, go to node Y."</div></div>
+          <div class="comp"><h4>Conditional edge</h4><div class="role">An edge whose target is chosen at runtime by a router function — branching &amp; looping.</div></div>
+          <div class="comp"><h4>StateGraph</h4><div class="role">The builder you add nodes/edges to, then <code>.compile()</code> into a runnable app.</div></div>
+          <div class="comp"><h4>Reducer</h4><div class="role">Rule for how a state field is updated (overwrite vs append). Key for message history.</div></div>
+          <div class="comp"><h4>Checkpointer</h4><div class="role">Persistence — saves state per step so a graph can pause, resume, and remember across sessions.</div></div>
+          <div class="comp"><h4>ToolNode</h4><div class="role">A ready-made node that runs whatever tool the LLM asked for.</div></div>
+          <div class="comp"><h4>Human-in-the-loop</h4><div class="role"><code>interrupt</code> — pause the graph for human input/approval, then continue.</div></div>
+        </div>
+        <p>We'll build them up in order; by the end they assemble into a small working agent (§10).</p>
+
+        <!-- 3 -->
+        <h2 id="state">3 · State — the shared object</h2>
+        <p>Everything in a LangGraph run flows through one <strong>state</strong> object. You define its shape as a typed dictionary; each node receives the current state and returns a partial update, which LangGraph merges in.</p>
+        <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import TypedDict
+
+class State(TypedDict):
+    question: str
+    answer: str
+    steps: int</code></pre></div>
+        <div class="callout tip">
+          <div class="c-ico">💡</div>
+          <div class="c-body"><div class="c-title">Mental model</div>
+          <p>Think of state as a whiteboard the whole graph shares. A node reads what it needs, writes its contribution, and hands control on. Nodes don't call each other directly — they communicate only through state.</p></div>
+        </div>
+
+        <!-- 4 -->
+        <h2 id="reducers">4 · Reducers — how state fields update</h2>
+        <p>By default, returning a field from a node <em>overwrites</em> it. But often you want to <em>append</em> — most importantly for a running list of chat messages. A <strong>reducer</strong> is a function attached to a field that says how updates combine. The canonical one is <code>add_messages</code>, which appends to (and de-duplicates) a message list.</p>
+        <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import Annotated, TypedDict
+from langgraph.graph.message import add_messages
+
+class State(TypedDict):
+    # Annotated[type, reducer] — updates to `messages` are APPENDED, not replaced
+    messages: Annotated[list, add_messages]
+    steps: int                       # no reducer → each update OVERWRITES</code></pre></div>
+        <div class="callout note">
+          <div class="c-ico">🧩</div>
+          <div class="c-body"><div class="c-title">Why this matters</div>
+          <p>Without a reducer, each node that "added a message" would wipe the conversation. <code>Annotated[list, add_messages]</code> is what makes message history accumulate correctly across nodes and turns. You can write custom reducers for any append/merge semantics you need.</p></div>
+        </div>
+
+        <!-- 5 -->
+        <h2 id="nodes">5 · Nodes — units of work</h2>
+        <p>A node is just a function: <code>state → partial update</code>. It can do anything — call an LLM, run a tool, transform data. It returns only the fields it changes.</p>
+        <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
+<pre><code>from langchain_openai import ChatOpenAI
+llm = ChatOpenAI(model="gpt-4o-mini")     # Ollama: ChatOllama(model="llama3.1")
+
+def answer_node(state: State) -> dict:
+    reply = llm.invoke(state["messages"])
+    return {"messages": [reply],          # appended (add_messages reducer)
+            "steps": state["steps"] + 1}  # overwritten</code></pre></div>
+        <div class="callout tip">
+          <div class="c-ico">📝</div>
+          <div class="c-body"><div class="c-title">Rules of a node</div>
+          <p>Return a <em>dict of changes</em>, not the whole state. Keep nodes single-purpose (one LLM call, one tool, one transform) — small nodes make the graph readable and the control flow easy to reason about.</p></div>
+        </div>
+
+        <!-- 6 -->
+        <h2 id="edges">6 · Edges — normal &amp; conditional</h2>
+        <p>Edges define control flow. There are two kinds, plus two special endpoints.</p>
+        <h3 id="edge-normal">6.1 Normal edges — fixed wiring</h3>
+        <p>"After node A, always go to node B." <code>START</code> marks where the graph begins; <code>END</code> marks where it stops.</p>
+        <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
+<pre><code>from langgraph.graph import StateGraph, START, END
+
+g = StateGraph(State)
+g.add_node("answer", answer_node)
+g.add_edge(START, "answer")     # entry point
+g.add_edge("answer", END)       # done after answering</code></pre></div>
+        <h3 id="edge-conditional">6.2 Conditional edges — branching &amp; looping</h3>
+        <p>This is what makes it a <em>graph</em> and not a chain. A <strong>router</strong> function reads the state and returns the name of the next node — so the path is decided <em>at runtime</em>. Pointing an edge back to an earlier node creates a loop.</p>
+        <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
+<pre><code>def route(state: State) -> str:
+    last = state["messages"][-1]
+    # if the LLM asked to call a tool, go run it; otherwise finish
+    return "tools" if getattr(last, "tool_calls", None) else END
+
+g.add_conditional_edges("agent", route, {"tools": "tools", END: END})
+g.add_edge("tools", "agent")     # ← loop back: tool result returns to the agent</code></pre></div>
+        <div class="diagram">
+          <div class="lg-graph">
+<span class="muted">START</span>
+   │
+   ▼
+<span class="n">agent</span>  <span class="muted">(LLM decides: answer or call a tool)</span>
+   │ <span class="c">route(state)</span>
+   ├─<span class="e">"tools"</span>─▶ <span class="n">tools</span> ──┐
+   │                  │  <span class="muted">(tool result appended to state)</span>
+   │   ◀──────────────┘  loop back to agent
+   └─<span class="e">END</span>─▶ <span class="muted">STOP</span>
+          </div>
+          <div class="diagram-caption">A conditional edge + a back-edge form the classic agent loop: think → act → observe → think, until done.</div>
+        </div>
+
+        <!-- 7 -->
+        <h2 id="stategraph">7 · StateGraph — build &amp; compile</h2>
+        <p>The <code>StateGraph</code> is the builder. You add nodes and edges to it, then call <code>.compile()</code> to get a runnable app you can <code>invoke</code> or <code>stream</code>.</p>
+        <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
+<pre><code>builder = StateGraph(State)
+builder.add_node("agent", agent_node)
+builder.add_node("tools", tool_node)
+builder.add_edge(START, "agent")
+builder.add_conditional_edges("agent", route, {"tools": "tools", END: END})
+builder.add_edge("tools", "agent")
+
+app = builder.compile()                       # → runnable graph
+result = app.invoke({"messages": [("user", "What's 23 * 47?")], "steps": 0})</code></pre></div>
+        <div class="callout tip">
+          <div class="c-ico">🌊</div>
+          <div class="c-body"><div class="c-title">invoke vs stream</div>
+          <p><code>app.invoke(...)</code> runs to completion and returns the final state. <code>app.stream(...)</code> yields the state after <em>each node</em> — use it to show step-by-step progress (great for a UI, and for debugging which node did what).</p></div>
+        </div>
+
+        <!-- 8 -->
+        <h2 id="checkpointer">8 · Checkpointer — persistence &amp; memory</h2>
+        <p>Pass a <strong>checkpointer</strong> at compile time and LangGraph saves the state after every step. This unlocks three things at once: <strong>memory across turns</strong>, <strong>pause/resume</strong>, and <strong>recovery</strong> after a crash. Each conversation is keyed by a <code>thread_id</code>.</p>
+        <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
+<pre><code>from langgraph.checkpoint.memory import MemorySaver   # in-memory (dev)
+# production: SqliteSaver / PostgresSaver — same interface, durable storage
+
+app = builder.compile(checkpointer=MemorySaver())
+
+cfg = {"configurable": {"thread_id": "chat_42"}}      # identifies the conversation
+app.invoke({"messages": [("user", "My name is Alice.")]}, cfg)
+app.invoke({"messages": [("user", "What's my name?")]}, cfg)   # → "Alice" (state persisted)</code></pre></div>
+        <div class="callout note">
+          <div class="c-ico">🧠</div>
+          <div class="c-body"><div class="c-title">This is short-term memory, done for you</div>
+          <p>The checkpointer <em>is</em> the conversation-buffer / working-memory pattern from the <a href="memory.html#short-term">Memory tab §5</a> — LangGraph just manages it automatically and persists it by <code>thread_id</code>. Swap <code>MemorySaver</code> for <code>SqliteSaver</code>/<code>PostgresSaver</code> and the same app remembers across restarts.</p></div>
+        </div>
+
+        <!-- 9 -->
+        <h2 id="tools">9 · Tools &amp; ToolNode</h2>
+        <p>An agent acts by calling <strong>tools</strong>. You bind tools to the LLM so it can <em>request</em> them, and add a <strong>ToolNode</strong> that <em>executes</em> whatever the LLM asked for. The conditional edge from §6.2 routes between the two.</p>
+        <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
+<pre><code>from langchain_core.tools import tool
+from langgraph.prebuilt import ToolNode
+
+@tool
+def multiply(a: int, b: int) -> int:
+    "Multiply two integers."
+    return a * b
+
+tools = [multiply]
+llm_with_tools = ChatOpenAI(model="gpt-4o-mini").bind_tools(tools)
+
+def agent_node(state: State) -> dict:
+    return {"messages": [llm_with_tools.invoke(state["messages"])]}
+
+tool_node = ToolNode(tools)            # runs whichever tool the LLM requested</code></pre></div>
+        <div class="callout note">
+          <div class="c-ico">📎</div>
+          <div class="c-body"><div class="c-title">The agent loop, assembled</div>
+          <p><code>agent</code> node (LLM, may emit tool calls) → conditional edge → <code>ToolNode</code> (runs the tool) → back-edge to <code>agent</code> (sees the result) → repeats until the LLM answers with no tool call. That's the loop diagrammed in §6.2. The concept is from <a href="modules/08_agents.html">08 · Agentic AI →</a>; LangGraph gives it durable structure.</p></div>
+        </div>
+
+        <!-- 10 -->
+        <h2 id="hitl">10 · Human-in-the-loop</h2>
+        <p>Because the checkpointer can pause and resume a run, LangGraph can stop and wait for a human — for approval before a risky action, or to collect missing input. The <code>interrupt</code> primitive pauses inside a node; you resume by invoking again with the human's decision.</p>
+        <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
+<pre><code>from langgraph.types import interrupt, Command
+
+def approve_node(state: State) -> dict:
+    decision = interrupt({"action": "run SQL DELETE", "sql": state["sql"]})  # ⏸ pause here
+    if decision != "approve":
+        return {"answer": "Cancelled by the operator."}
+    return {"answer": run_sql(state["sql"])}                                 # ▶ resume
+
+# first call pauses at the interrupt; the graph state is checkpointed
+app.invoke({...}, cfg)
+# later: resume with the human's answer
+app.invoke(Command(resume="approve"), cfg)</code></pre></div>
+        <div class="callout key">
+          <div class="c-ico">🛑</div>
+          <div class="c-body"><div class="c-title">Why this is a guardrail</div>
+          <p>Human-in-the-loop is the structural way to gate irreversible or sensitive actions (deletes, sends, payments) behind explicit approval — the "always ask before a destructive action" rule from the <a href="guardrails.html#failure">Guardrails tab</a>, enforced by the graph rather than by hoping the model behaves.</p></div>
+        </div>
+
+        <!-- 11 -->
+        <h2 id="full-example">11 · Putting it together — a tool-using agent</h2>
+        <p>All the components in one minimal but complete graph: an agent that can multiply numbers via a tool, looping until it has the final answer, with memory via a checkpointer.</p>
+        <div class="code-block"><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> agent_graph.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import Annotated, TypedDict
+from langchain_core.tools import tool
+from langchain_openai import ChatOpenAI
+from langgraph.graph import StateGraph, START, END
+from langgraph.graph.message import add_messages
+from langgraph.prebuilt import ToolNode
+from langgraph.checkpoint.memory import MemorySaver
+
+# 1 · State (with a message reducer)
+class State(TypedDict):
+    messages: Annotated[list, add_messages]
+
+# 2 · Tools + an LLM that can request them
+@tool
+def multiply(a: int, b: int) -> int:
+    "Multiply two integers."
+    return a * b
+
+llm = ChatOpenAI(model="gpt-4o-mini").bind_tools([multiply])
+
+# 3 · Nodes
+def agent(state: State) -> dict:
+    return {"messages": [llm.invoke(state["messages"])]}
+
+# 4 · Router (conditional edge)
+def route(state: State):
+    last = state["messages"][-1]
+    return "tools" if getattr(last, "tool_calls", None) else END
+
+# 5 · Build the graph
+builder = StateGraph(State)
+builder.add_node("agent", agent)
+builder.add_node("tools", ToolNode([multiply]))
+builder.add_edge(START, "agent")
+builder.add_conditional_edges("agent", route, {"tools": "tools", END: END})
+builder.add_edge("tools", "agent")          # loop back with the tool result
+
+# 6 · Compile with persistence
+app = builder.compile(checkpointer=MemorySaver())
+
+# 7 · Run
+cfg = {"configurable": {"thread_id": "demo"}}
+out = app.invoke({"messages": [("user", "What is 23 * 47, then add 1?")]}, cfg)
+print(out["messages"][-1].content)          # → 1082</code></pre></div>
+        <div class="callout tip">
+          <div class="c-ico">▶️</div>
+          <div class="c-body"><div class="c-title">What happens at run time</div>
+          <p><code>agent</code> sees the question and emits a <code>multiply(23, 47)</code> tool call → router sends it to <code>tools</code> → <code>ToolNode</code> returns 1081 → back to <code>agent</code>, which adds 1 and answers 1082, no more tool calls → router returns <code>END</code>. The whole trajectory is checkpointed under <code>thread_id="demo"</code>.</p></div>
+        </div>
+
+        <!-- 12 -->
+        <h2 id="patterns">12 · Common patterns &amp; when to use them</h2>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Pattern</th><th>Shape</th><th>Use for</th></tr>
+            <tr><td><strong>ReAct agent</strong></td><td>agent ⇄ tools loop (this page)</td><td>Tool-using assistants, the default agent</td></tr>
+            <tr><td><strong>Router / branching</strong></td><td>one node → conditional edge → specialized nodes</td><td>Send different query types down different paths (SQL vs docs vs web)</td></tr>
+            <tr><td><strong>Plan → execute</strong></td><td>planner node → loop over a step node</td><td>Multi-step tasks decomposed up front</td></tr>
+            <tr><td><strong>Reflection</strong></td><td>generate → critique → (loop back to) generate</td><td>Self-improving output; draft then revise</td></tr>
+            <tr><td><strong>Human-in-the-loop</strong></td><td>node with <code>interrupt</code> + resume</td><td>Approval gates, collecting missing input</td></tr>
+            <tr><td><strong>Multi-agent</strong></td><td>supervisor node routes to worker subgraphs</td><td>Teams of specialized agents (see <a href="modules/13_multi_agents.html">Module 13</a>)</td></tr>
+          </table>
+        </div>
+
+        <!-- 13 -->
+        <h2 id="best-practices">13 · Best practices &amp; pitfalls</h2>
+        <ul>
+          <li><strong>Keep nodes small and single-purpose</strong> — one LLM call or one tool per node makes the graph readable and debuggable.</li>
+          <li><strong>Use the right reducer</strong> — <code>add_messages</code> for chat history; without a reducer a field is overwritten (a common "where did my messages go?" bug).</li>
+          <li><strong>Always set a recursion/step limit</strong> — a bad router can loop forever; cap iterations so a runaway agent stops.</li>
+          <li><strong>Stream for visibility</strong> — <code>app.stream()</code> shows which node ran and what it changed; pair with <a href="langfuse.html">Langfuse</a> to trace it in production.</li>
+          <li><strong>Pick a durable checkpointer for prod</strong> — <code>MemorySaver</code> is dev-only; use <code>Sqlite</code>/<code>Postgres</code> savers so state survives restarts.</li>
+          <li><strong>Gate risky actions with human-in-the-loop</strong> — don't let the graph run a delete/send/payment without an <code>interrupt</code> approval step.</li>
+          <li><strong>Keep state lean</strong> — store what nodes need, not everything; large state is copied each step and costs tokens when fed to the LLM.</li>
+        </ul>
+
+        <div class="page-nav">
+          <a href="modules/08_agents.html"><div class="dir">← Concept</div><div class="ttl">08 · Agentic AI</div></a>
+          <a class="next" href="modules/12_langgraph.html"><div class="dir">Go deeper →</div><div class="ttl">Module 12 · LangGraph</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/app.js"></script>
+<script src="assets/enhance.js"></script>
+<script src="assets/section-nav.js"></script>
+</body>
+</html>

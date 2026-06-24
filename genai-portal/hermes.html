@@ -1,0 +1,250 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Hermes (Nous Research) — Open Function-Calling Models · GenAI Mastery</title>
+<meta name="description" content="What the Nous Research Hermes models are, why they matter, their function-calling format, running them locally with Ollama, and using Hermes as the brain of a local agent — basics to intermediate.">
+<link rel="stylesheet" href="assets/styles.css">
+<style>
+  .nav .sec-num { font-family: var(--font-mono); }
+</style>
+</head>
+<body data-page="hermes">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <div class="brand-mark">G</div>
+        <div class="brand-text"><strong>GenAI Mastery</strong><span>Hermes · open models</span></div>
+      </a>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-secsearch placeholder="Jump to a section…  ( / )">
+      </div>
+      <div class="search-results" data-secresults></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Foundations / <b>Hermes — open function-calling models</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Open-weight models · local agents</div>
+        <h1>Hermes (Nous Research)</h1>
+        <p class="lead"><strong>Hermes</strong> is a family of <em>open-weight</em>, instruction-tuned LLMs from <strong>Nous Research</strong>, fine-tuned on top of open base models (mostly Llama, also Mistral/Qwen). Their claim to fame for builders: strong, <em>structured function-calling</em> and steerability, in a model you can download and run on your own hardware — making Hermes a popular "brain" for <strong>local, private, free</strong> agents.</p>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~20 min read</span>
+          <span class="pill">Beginner → intermediate</span>
+          <span class="pill purple">Open weights · Ollama · local</span>
+        </div>
+
+        <div class="callout note">
+          <div class="c-ico">🔗</div>
+          <div class="c-body"><div class="c-title">Where this fits</div>
+          <p>Hermes is one concrete <em>open model</em> you can drop into the patterns taught elsewhere in this hub. Running models locally is covered in <a href="modules/03_local_llms.html">03 · Local LLMs &amp; Ollama →</a>; using a model as an agent brain is the <a href="claude-agent.html">Claude Agent</a> and <a href="langgraph.html">LangGraph</a> tabs (Hermes slots in where Claude/GPT would). Where those use a hosted model, Hermes is the local, no-API-key alternative.</p></div>
+        </div>
+
+        <!-- 1 -->
+        <h2 id="what">1 · What Hermes is</h2>
+        <p>Hermes models are <strong>fine-tunes</strong>: Nous Research takes a strong open base model and post-trains it for instruction-following, conversation, and — crucially — reliable tool/function calling and adherence to a system prompt.</p>
+        <div class="grid grid-3">
+          <div class="card"><span class="ico">🔓</span><h4>Open weights</h4><p>Downloadable and self-hostable. No API key, no per-token cost, your data never leaves your machine.</p></div>
+          <div class="card"><span class="ico">🛠️</span><h4>Function-calling first</h4><p>Trained to emit structured tool calls reliably — the capability that makes a model usable as an agent.</p></div>
+          <div class="card"><span class="ico">🎛️</span><h4>Steerable</h4><p>Strong system-prompt adherence and "neutral" alignment — it follows your instructions rather than refusing freely.</p></div>
+        </div>
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The one-line summary</div>
+          <p>Hermes = an <strong>open, locally-runnable model tuned for tool calling</strong>. When you want an agent's brain to be free, private and offline, Hermes is one of the go-to choices.</p></div>
+        </div>
+
+        <!-- 2 -->
+        <h2 id="versions">2 · The versions, briefly</h2>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Generation</th><th>Built on</th><th>Notable for</th></tr>
+            <tr><td>Hermes 2 / 2 Pro</td><td>Mistral, Llama, others</td><td>Popularized a clean, dedicated function-calling format</td></tr>
+            <tr><td>Hermes 3</td><td>Llama 3.1 (8B / 70B / 405B)</td><td>Stronger reasoning, agentic use, long context, structured output</td></tr>
+            <tr><td>Hermes 4</td><td>Latest open bases</td><td>Further improvements to reasoning &amp; tool use</td></tr>
+          </table>
+        </div>
+        <div class="callout tip">
+          <div class="c-ico">📦</div>
+          <div class="c-body"><div class="c-title">Sizes &amp; quantization</div>
+          <p>Smaller variants (e.g. 8B) run on a single consumer GPU or a modern laptop, especially <em>quantized</em> (compressed to 4-bit, etc.). Bigger variants (70B+) need more VRAM but reason better. The quantization/VRAM trade-off is exactly the topic of <a href="modules/03_local_llms.html#">03 · Local LLMs &amp; Ollama</a>.</p></div>
+        </div>
+
+        <!-- 3 -->
+        <h2 id="run">3 · Running Hermes locally with Ollama</h2>
+        <p>The fastest way to try Hermes is <a href="modules/03_local_llms.html">Ollama</a>, which downloads and serves the model with one command and exposes an OpenAI-compatible API.</p>
+        <div class="code-block"><div class="code-head"><span class="lang">bash</span><button class="copy-btn">Copy</button></div>
+<pre><code># pull a Hermes model (name depends on the tag available in the registry)
+ollama pull hermes3
+
+# chat with it directly
+ollama run hermes3 "Explain function calling in one sentence."
+
+# or serve the OpenAI-compatible endpoint (default: http://localhost:11434/v1)
+ollama serve</code></pre></div>
+        <p>Because Ollama speaks the OpenAI API, you can talk to Hermes with the standard OpenAI client — just point <code>base_url</code> at Ollama and use any key string:</p>
+        <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
+<pre><code>from openai import OpenAI
+
+client = OpenAI(base_url="http://localhost:11434/v1", api_key="ollama")  # key unused locally
+
+resp = client.chat.completions.create(
+    model="hermes3",
+    messages=[{"role": "user", "content": "Give me three uses for a vector database."}],
+)
+print(resp.choices[0].message.content)</code></pre></div>
+
+        <!-- 4 -->
+        <h2 id="function-calling">4 · Function calling — Hermes's signature feature</h2>
+        <p>What makes Hermes useful for agents is <strong>reliable function calling</strong>: given a list of tools, it emits a structured call you can parse and execute. Two ways to use it:</p>
+
+        <h3 id="fc-openai">4.1 Via the OpenAI tools API (easiest)</h3>
+        <p>Through Ollama's OpenAI-compatible endpoint, you can pass <code>tools</code> just like you would to GPT, and read back <code>tool_calls</code>. The agent loop is then identical to any other OpenAI-style model.</p>
+        <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
+<pre><code>tools = [{
+    "type": "function",
+    "function": {
+        "name": "get_weather",
+        "description": "Get current weather for a city.",
+        "parameters": {
+            "type": "object",
+            "properties": {"city": {"type": "string"}},
+            "required": ["city"],
+        },
+    },
+}]
+
+resp = client.chat.completions.create(
+    model="hermes3",
+    messages=[{"role": "user", "content": "What's the weather in Paris?"}],
+    tools=tools,
+)
+call = resp.choices[0].message.tool_calls[0]
+print(call.function.name, call.function.arguments)   # → get_weather {"city": "Paris"}</code></pre></div>
+
+        <h3 id="fc-native">4.2 The native Hermes tool-call format</h3>
+        <p>Under the hood, Hermes was trained to express tool calls with explicit tags in its output — typically a system prompt listing the tools, and the model replying inside <code>&lt;tool_call&gt;…&lt;/tool_call&gt;</code> tags containing JSON. Knowing this helps when you use Hermes <em>without</em> the OpenAI wrapper (e.g. raw <code>transformers</code>):</p>
+        <div class="code-block"><div class="code-head"><span class="lang">hermes tool-call style (illustrative)</span><button class="copy-btn">Copy</button></div>
+<pre><code>System: You are a function-calling AI. Available tools:
+&lt;tools&gt;[{"name":"get_weather","arguments":{"city":"string"}}]&lt;/tools&gt;
+Respond with a tool call as: &lt;tool_call&gt;{"name":..,"arguments":..}&lt;/tool_call&gt;
+
+User: What's the weather in Paris?
+
+Assistant: &lt;tool_call&gt;{"name": "get_weather", "arguments": {"city": "Paris"}}&lt;/tool_call&gt;</code></pre></div>
+        <p>Your code parses the <code>&lt;tool_call&gt;</code> JSON, runs the tool, and feeds the result back (often inside a <code>&lt;tool_response&gt;</code> tag) for the next turn — the same loop, just with tag-parsing instead of an SDK field.</p>
+        <div class="callout note">
+          <div class="c-ico">🧭</div>
+          <div class="c-body"><div class="c-title">Which to use</div>
+          <p>Prefer <strong>§4.1 (OpenAI tools API via Ollama)</strong> — it hides the tag format and lets you reuse the exact agent loop from the <a href="claude-agent.html#manual-loop">Claude Agent tab</a> and frameworks like <a href="langgraph.html">LangGraph</a>. Use the <strong>native format (§4.2)</strong> only when you run the raw weights yourself and need full control over the prompt template.</p></div>
+        </div>
+
+        <!-- 5 -->
+        <h2 id="agent">5 · Hermes as an agent brain</h2>
+        <p>Once Hermes can call functions, it slots into the agent loop from the <a href="claude-agent.html#loop">Claude Agent tab</a> — the only change is the model and the client. Here's the loop with Hermes via Ollama:</p>
+        <div class="code-block"><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> local_agent.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>import json
+from openai import OpenAI
+
+client = OpenAI(base_url="http://localhost:11434/v1", api_key="ollama")
+
+tools = [{
+    "type": "function",
+    "function": {
+        "name": "multiply",
+        "description": "Multiply two numbers.",
+        "parameters": {"type": "object",
+            "properties": {"a": {"type": "number"}, "b": {"type": "number"}},
+            "required": ["a", "b"]},
+    },
+}]
+
+def run_tool(name, args):
+    if name == "multiply":
+        return str(args["a"] * args["b"])
+    return "unknown tool"
+
+messages = [{"role": "user", "content": "What is 23 * 47?"}]
+
+while True:
+    resp = client.chat.completions.create(model="hermes3",
+                                          messages=messages, tools=tools)
+    msg = resp.choices[0].message
+    if not msg.tool_calls:                      # Hermes answered → done
+        break
+    messages.append(msg)                        # keep the assistant turn
+    for call in msg.tool_calls:                 # run each requested tool
+        args = json.loads(call.function.arguments)
+        messages.append({
+            "role": "tool",
+            "tool_call_id": call.id,
+            "content": run_tool(call.function.name, args),
+        })
+
+print(messages[-1].content if messages[-1].get("role") == "tool" else msg.content)</code></pre></div>
+        <div class="callout tip">
+          <div class="c-ico">🔁</div>
+          <div class="c-body"><div class="c-title">Same loop, different brain</div>
+          <p>This is the identical gather → act → observe loop — only the model string (<code>hermes3</code>) and the local <code>base_url</code> differ. That's the whole point: agent architecture is model-agnostic, so you can swap a hosted model for a local Hermes when privacy or cost demands it.</p></div>
+        </div>
+
+        <!-- 6 -->
+        <h2 id="when">6 · When to choose Hermes (vs a hosted model)</h2>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Choose Hermes (local) when…</th><th>Choose a hosted model (Claude/GPT) when…</th></tr>
+            <tr><td>Data must stay on-prem / private</td><td>You want the strongest reasoning available</td></tr>
+            <tr><td>You want zero per-token cost at scale</td><td>You don't want to manage GPUs / infra</td></tr>
+            <tr><td>You need to run fully offline</td><td>You need very long context or the latest capabilities</td></tr>
+            <tr><td>You want to fine-tune / fully control the model</td><td>You want managed safety, tools and SLAs</td></tr>
+          </table>
+        </div>
+        <div class="callout note">
+          <div class="c-ico">⚖️</div>
+          <div class="c-body"><div class="c-title">Honest trade-off</div>
+          <p>An 8B–70B Hermes won't match a frontier hosted model on the hardest reasoning or longest-horizon agentic tasks. But for scoped, well-defined tool-using agents — especially where privacy, cost or offline operation matter — it's an excellent, capable choice. Many teams use both: Hermes for routine/private steps, a frontier model for the hard ones.</p></div>
+        </div>
+
+        <!-- 7 -->
+        <h2 id="best-practices">7 · Best practices &amp; pitfalls</h2>
+        <ul>
+          <li><strong>Use the OpenAI-compatible endpoint</strong> (via Ollama) so your agent code is portable across Hermes, GPT and others — don't hand-parse tags unless you must.</li>
+          <li><strong>Match model size to hardware</strong> — start with a quantized 8B to validate the workflow, scale up only if reasoning quality requires it (see <a href="modules/03_local_llms.html">Local LLMs</a>).</li>
+          <li><strong>Validate tool-call JSON</strong> — local models can occasionally emit malformed arguments; parse defensively and retry on failure.</li>
+          <li><strong>Keep the tool set small &amp; descriptions sharp</strong> — smaller models choose tools less reliably than frontier models, so clear, few tools help a lot.</li>
+          <li><strong>Add your own guardrails</strong> — open models have lighter built-in safety, so the <a href="guardrails.html">Guardrails tab</a> rules (scope, secrets, PII, injection) matter <em>more</em>, not less.</li>
+          <li><strong>Cap iterations</strong> — as with any agent loop, bound the steps so a confused local model can't spin forever.</li>
+          <li><strong>Trace it</strong> — point <a href="langfuse.html#openai-wrapper">Langfuse</a> at the OpenAI-compatible calls to see latency, tokens and tool usage, just like a hosted model.</li>
+        </ul>
+
+        <div class="page-nav">
+          <a href="modules/03_local_llms.html"><div class="dir">← Foundations</div><div class="ttl">03 · Local LLMs &amp; Ollama</div></a>
+          <a class="next" href="claude-agent.html"><div class="dir">Use it as a brain →</div><div class="ttl">How a Claude Agent Works</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/app.js"></script>
+<script src="assets/enhance.js"></script>
+<script src="assets/section-nav.js"></script>
+</body>
+</html>

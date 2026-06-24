@@ -195,6 +195,9 @@
   <button class="hub-tab" role="tab" id="tab-langfuse" aria-controls="panel-langfuse" aria-selected="false"><span class="em">📡</span>Langfuse</button>
   <button class="hub-tab" role="tab" id="tab-guardrails" aria-controls="panel-guardrails" aria-selected="false"><span class="em">🛡️</span>Guardrails</button>
   <button class="hub-tab" role="tab" id="tab-memory"   aria-controls="panel-memory"   aria-selected="false"><span class="em">🧠</span>Memory</button>
+  <button class="hub-tab" role="tab" id="tab-langgraph" aria-controls="panel-langgraph" aria-selected="false"><span class="em">🕸️</span>LangGraph</button>
+  <button class="hub-tab" role="tab" id="tab-claudeagent" aria-controls="panel-claudeagent" aria-selected="false"><span class="em">🤖</span>Claude Agent</button>
+  <button class="hub-tab" role="tab" id="tab-hermes"    aria-controls="panel-hermes"    aria-selected="false"><span class="em">🔱</span>Hermes</button>
 </div>
 
 <!-- ===================== TAB 1 — GenAI Mastery (original content, inline) ===================== -->
@@ -281,6 +284,12 @@
               </a>
             </li>
             <li>
+              <a class="rm-link" href="#claudeagent" data-goto-tab="tab-claudeagent">
+                <span class="rm-ttl">How a Claude Agent Works <span class="tag">Tab</span></span>
+                <span class="rm-why">The agent loop made concrete on Claude — tools, the tool runner, the Agent SDK, context &amp; safety.</span>
+              </a>
+            </li>
+            <li>
               <a class="rm-link" href="#ragmcp" data-goto-tab="tab-ragmcp">
                 <span class="rm-ttl">RAG · MCP · Agents · LLMs <span class="tag">Tab</span></span>
                 <span class="rm-why">A hands-on, build-it guide that ties LLMs, RAG, agents and MCP together with runnable projects.</span>
@@ -299,9 +308,21 @@
               </a>
             </li>
             <li>
+              <a class="rm-link" href="#langgraph" data-goto-tab="tab-langgraph">
+                <span class="rm-ttl">LangGraph &amp; its components <span class="tag">Tab</span></span>
+                <span class="rm-why">Build agents as stateful graphs — state, nodes, edges, the checkpointer and human-in-the-loop. The structure behind a real agent.</span>
+              </a>
+            </li>
+            <li>
+              <a class="rm-link" href="#hermes" data-goto-tab="tab-hermes">
+                <span class="rm-ttl">Hermes — open local models <span class="tag">Tab · optional</span></span>
+                <span class="rm-why">Run a capable, free, private agent brain on your own hardware — open function-calling models via Ollama.</span>
+              </a>
+            </li>
+            <li>
               <a class="rm-link" href="modules/14_production_genai.html">
                 <span class="rm-ttl">Advanced &amp; Production <span class="tag">Modules 07–15</span></span>
-                <span class="rm-why">Advanced RAG, LangChain, LlamaIndex, LangGraph, multi-agent systems and shipping it for real.</span>
+                <span class="rm-why">Advanced RAG, LangChain, LlamaIndex, multi-agent systems and shipping it for real.</span>
               </a>
             </li>
           </ol>
@@ -389,6 +410,27 @@
   </div>
 </div>
 
+<!-- ===================== TAB 8 — LangGraph (langgraph.html) ===================== -->
+<div class="hub-panel" id="panel-langgraph" role="tabpanel" aria-labelledby="tab-langgraph" data-active="false">
+  <div class="hub-frame-wrap">
+    <iframe data-src="langgraph.html" title="LangGraph & its components — stateful agent graphs" loading="lazy"></iframe>
+  </div>
+</div>
+
+<!-- ===================== TAB 9 — Claude Agent (claude-agent.html) ===================== -->
+<div class="hub-panel" id="panel-claudeagent" role="tabpanel" aria-labelledby="tab-claudeagent" data-active="false">
+  <div class="hub-frame-wrap">
+    <iframe data-src="claude-agent.html" title="How a Claude agent works — the Agent SDK & loop" loading="lazy"></iframe>
+  </div>
+</div>
+
+<!-- ===================== TAB 10 — Hermes (hermes.html) ===================== -->
+<div class="hub-panel" id="panel-hermes" role="tabpanel" aria-labelledby="tab-hermes" data-active="false">
+  <div class="hub-frame-wrap">
+    <iframe data-src="hermes.html" title="Hermes (Nous Research) — open function-calling models" loading="lazy"></iframe>
+  </div>
+</div>
+
 <!-- ===================== TAB CONTROLLER ===================== -->
 <script>
 (function(){
@@ -400,7 +442,10 @@
     'tab-ragdeep':'panel-ragdeep',
     'tab-langfuse':'panel-langfuse',
     'tab-guardrails':'panel-guardrails',
-    'tab-memory':'panel-memory'
+    'tab-memory':'panel-memory',
+    'tab-langgraph':'panel-langgraph',
+    'tab-claudeagent':'panel-claudeagent',
+    'tab-hermes':'panel-hermes'
   };
 
   // Short labels for the mobile header (the full button text can be long).
@@ -411,7 +456,10 @@
     'tab-ragdeep':'RAG, End-to-End',
     'tab-langfuse':'Langfuse',
     'tab-guardrails':'Guardrails',
-    'tab-memory':'Memory'
+    'tab-memory':'Memory',
+    'tab-langgraph':'LangGraph',
+    'tab-claudeagent':'Claude Agent',
+    'tab-hermes':'Hermes'
   };
   var curLabel = document.querySelector('[data-current-tab]');
 
@@ -459,6 +507,11 @@
   if(menuBtn) menuBtn.addEventListener('click', function(){ setDrawer(!document.body.classList.contains('hub-nav-open')); });
   if(backdrop) backdrop.addEventListener('click', function(){ setDrawer(false); });
   document.addEventListener('keydown', function(e){ if(e.key === 'Escape') setDrawer(false); });
+
+  // A "Home" button inside any tab's iframe posts this message → switch to home tab.
+  window.addEventListener('message', function(e){
+    if(e && e.data && e.data.type === 'genai-hub-home'){ activate('tab-mastery', true); window.scrollTo(0,0); }
+  });
 
   // Honor deep-link hash (#agents / #ragmcp / #mastery) on load.
   var initial = (location.hash || '').replace('#','');
