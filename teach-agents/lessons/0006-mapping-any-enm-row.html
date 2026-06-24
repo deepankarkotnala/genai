@@ -1,0 +1,214 @@
+<meta charset="utf-8">
+<title>Lesson 6 — Mapping Any EnM Row</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<script defer src="../assets/sidenav.js"></script>
+
+<p class="kicker">Lesson 6 · Capstone + Hands-on</p>
+<h1>A method to map any EnM row to an implementation</h1>
+
+<div class="lesson-meta">
+  <span><b>Reading time:</b> ~25 min (plus exercise)</span>
+  <span><b>Type:</b> Capstone — synthesizes Lessons 1–5</span>
+  <span><b>Prerequisite:</b> Lessons 1–5</span>
+  <span><b>You produce:</b> a decomposition of one EnM row</span>
+</div>
+
+<div class="objectives">
+  <h3>By the end of this lesson you will be able to</h3>
+  <ul>
+    <li>Apply a repeatable 5-step method to turn any EnM row into a concrete agent design.</li>
+    <li>Make the most important call correctly: is each sub-task <em>LLM reasoning</em> or <em>classical computation</em>?</li>
+    <li>Work through scenario #1 (the "Digital Console Engineer") end to end.</li>
+    <li>Produce your own decomposition of an unseen row and defend it.</li>
+  </ul>
+</div>
+
+<div class="toc">
+  <h3>In this lesson</h3>
+  <ol>
+    <li><a href="#method">The 5-step method</a></li>
+    <li><a href="#step3">Why Step 3 is the whole game</a></li>
+    <li><a href="#worked">Worked example — Scenario #1</a></li>
+    <li><a href="#shape">The resulting shape</a></li>
+    <li><a href="#exercise">Hands-on — do it yourself</a></li>
+    <li><a href="#wisdom">Where to go from here</a></li>
+    <li><a href="#checks">Check yourself</a></li>
+  </ol>
+</div>
+
+<h2 id="method">1. The 5-step method</h2>
+<p>This is the payoff of the whole course: a checklist that converts any vague "we want an agent for X" into a
+buildable, defensible design. Run every EnM row through these five steps.</p>
+<ul class="steps">
+  <li><strong>Name the business outcome.</strong> One sentence, taken from the xlsx "Purpose" column. If you
+      can't state it in one sentence, the scope is too fuzzy to design for.</li>
+  <li><strong>List the sub-tasks.</strong> What distinct things must happen to get from raw inputs to that
+      outcome? Aim for 3–6. These become your candidate agents.</li>
+  <li><strong>For each sub-task, decide: LLM or classical?</strong> Simulation, solver, statistics, ML →
+      <em>classical tool</em>. Reasoning, contextualizing, explaining, routing → <em>LLM agent</em>. (This is
+      the crucial step — Section 2 is entirely about it.)</li>
+  <li><strong>Define the handoffs.</strong> What does each agent output, and which agent consumes it? Draw the
+      arrows. (Lesson 4's chain is the template.)</li>
+  <li><strong>Choose the shape.</strong> Workflow or autonomous (Lesson 5's decision rule), and mark where the
+      guardrails / constraint agents go.</li>
+</ul>
+
+<h2 id="step3">2. Why Step 3 is the whole game</h2>
+<div class="key">
+  <span class="label">Reasoning or computation?</span>
+  Beginners draw every box as "an AI agent." Experts ask one question of each box: <em>"Is this
+  <strong>reasoning</strong> (something a thoughtful person does with language and judgment) or
+  <strong>computation</strong> (something a formula, solver, or model does with numbers)?"</em> In EnM, most
+  boxes are computation wrapped as tools; only a few are genuine LLM reasoning. Getting this split right is
+  the difference between a buildable design and a fantasy — and it's the single skill this whole course was
+  built to give you.
+</div>
+<p>A quick test for any sub-task: <em>"Could I, in principle, write an exact formula or algorithm for this?"</em>
+If yes, it's classical — wrap it as a tool. <em>"Does it require weighing fuzzy context, explaining, or
+deciding what to do next?"</em> If yes, that's where the LLM belongs.</p>
+
+<table>
+  <tr><th>Sub-task sounds like…</th><th>Usually…</th></tr>
+  <tr><td>"optimize", "simulate", "predict the value", "calculate"</td><td>Classical (solver / sim / model as tool)</td></tr>
+  <tr><td>"detect anomalies", "forecast the trend", "score / rank"</td><td>Classical (statistics / ML as tool)</td></tr>
+  <tr><td>"explain to the operator", "summarize", "decide which tool", "answer the question"</td><td>LLM reasoning</td></tr>
+  <tr><td>"build a knowledge graph from SOPs", "retrieve relevant docs"</td><td>Mixed: retrieval (classical) + LLM reasoning over results</td></tr>
+</table>
+
+<h2 id="worked">3. Worked example — Scenario #1: the "Digital Console Engineer"</h2>
+<p><strong>Step 1 — Outcome (from xlsx):</strong> real-time optimization of furnaces, reactors, distillation,
+cracking, hydrotreating, and polymer units.</p>
+<p><strong>Step 2 — Sub-tasks:</strong> the xlsx already names three, and we'll surface a fourth that's
+implied. <strong>Step 3 — LLM or classical?</strong> applied to each:</p>
+
+<table>
+  <tr><th>Sub-task (from xlsx)</th><th>LLM or classical?</th><th>Why</th></tr>
+  <tr><td><strong>First-Principle Agent</strong> — invoke kinetic simulation, generate yield vectors on demand</td><td>Classical (simulation as tool)</td><td>Runs physics/chemistry kinetic equations. Zero language involved. The agent only <em>calls</em> it with parameters.</td></tr>
+  <tr><td><strong>Evolution Agent</strong> — differential evolution to find global-maximum yield</td><td>Classical (solver as tool)</td><td>A deterministic optimization algorithm. The "intelligence" is the search math, not a model. You could write its exact algorithm — so it's classical.</td></tr>
+  <tr><td><strong>Physical-Properties Agent</strong> — predict product slates via exponential smoothing between yield steps</td><td>Classical (interpolation as tool)</td><td>Numerical interpolation/smoothing — again a formula, wrapped as a tool.</td></tr>
+  <tr><td><strong>(implied) Console reasoning layer</strong> — explain recommended setpoints to the operator, flag trade-offs</td><td>LLM reasoning</td><td>The genuinely linguistic part: turn cold numbers into operator guidance, weigh context, answer "why."</td></tr>
+</table>
+
+<div class="warn-box">
+  <span class="label">The punchline for #1</span>
+  Almost the entire "Digital Console Engineer" is <strong>classical optimization and simulation</strong>. The
+  LLM's role is thin: orchestrate the tools, respect constraints, and translate results into human guidance.
+  If a vendor pitches this as "an LLM that optimizes the plant," that's a red flag — the LLM does not
+  optimize; the <em>solver</em> does. (The same pattern, scaled plant-wide, is scenario #8 Integrated Margin
+  Management.)
+</div>
+
+<h2 id="shape">4. The resulting shape (Steps 4 &amp; 5)</h2>
+<p><strong>Step 4 — Handoffs</strong> and <strong>Step 5 — Shape:</strong> a <em>workflow</em> (the sequence
+is stable, and it touches live control → Lesson 5 rules #1 and #4), with a constraint guardrail before
+anything reaches the operator, run on a loop in near-real-time:</p>
+<div class="loop">
+  <span class="step">First-Principle<br><small>sim → yields</small></span><span class="arrow">→</span>
+  <span class="step">Evolution<br><small>find optimum</small></span><span class="arrow">→</span>
+  <span class="step">Properties<br><small>product slate</small></span><span class="arrow">→</span>
+  <span class="step">Constraint<br><small>safe? compliant?</small></span><span class="arrow">→</span>
+  <span class="step">Console LLM<br><small>explain to operator</small></span>
+</div>
+<p class="caption">Scenario #1 as a workflow. Four classical tools, conducted and explained by one LLM layer, gated by a constraint guardrail.</p>
+
+<h2 id="exercise">5. Hands-on — do it yourself</h2>
+<p>This is the exercise that turns the course from "read" into "can do." Open
+<a href="../../EnM%20Agents.xlsx">EnM Agents.xlsx</a> (or the text dump in
+<a href="../../enm_dump.txt">enm_dump.txt</a>) and pick a row we have <em>not</em> done together —
+<strong>#4 (Knowledge Capture)</strong>, <strong>#6 (EDA)</strong>, or <strong>#7 (Loop Failure)</strong>.
+Fill in this template (on paper, or in a text file):</p>
+<pre><code>SCENARIO #: ____   Title: _______________________________________
+
+STEP 1 — OUTCOME (one sentence):
+   _________________________________________________________
+
+STEP 2 — SUB-TASKS:
+   1) ______________  2) ______________  3) ______________
+
+STEP 3 — LLM vs CLASSICAL (the important one):
+   1) ______ because __________________________________
+   2) ______ because __________________________________
+   3) ______ because __________________________________
+
+STEP 4 — HANDOFFS:
+   ______ -> ______ -> ______
+
+STEP 5 — SHAPE:
+   workflow / autonomous;  guardrails at: ______________
+   reason for the shape: _______________________________</code></pre>
+
+<p>Then <strong>bring it to me in chat</strong> and I'll critique it against the method — that feedback loop
+is where the skill actually sticks. (Recall from Lesson 1: skills come from effortful retrieval plus
+feedback, not from reading alone.)</p>
+
+<div class="note">
+  <span class="label">Hint for #4 (Knowledge Capture)</span>
+  This one flips the usual balance — it's <em>mostly LLM + retrieval</em>: a Contextualization Agent (build a
+  knowledge graph from SOPs and answer FAQs — this is <strong>RAG</strong>) hands off to a Gap Analysis Agent
+  (compare "ideal state" vs "current state" and recommend steps to close the gap). Very different from #1,
+  where the LLM was thin and the solvers did the work. That contrast <em>is</em> the lesson: the right
+  architecture depends entirely on whether the work is reasoning or computation.
+</div>
+
+<h2 id="wisdom">6. Where to go from here (turning knowledge into wisdom)</h2>
+<p>You now have the full arc: concept (L1) → first agent (L2) → forecasting (L3) → orchestration (L4) →
+choosing the shape (L5) → mapping any row (L6). The last ingredient is <strong>wisdom</strong> — testing
+these designs against reality:</p>
+<ul>
+  <li><strong>Inside your org:</strong> walk the EnM team through a row you mapped and let them poke holes.
+      That's the tightest, highest-value feedback loop you have — real constraints, real domain experts.</li>
+  <li><a href="https://www.reddit.com/r/AI_Agents/">r/AI_Agents</a> — post a decomposition and ask "is this a
+      sane design?" Practitioners will tell you where the autonomy is misplaced.</li>
+  <li>Revisit <a href="https://www.anthropic.com/engineering/building-effective-agents">Building Effective
+      Agents</a> now that you have the full mental model — it reads very differently the second time.</li>
+</ul>
+
+<div class="recap">
+  <h3>Recap — the method in one breath</h3>
+  <ul>
+    <li><strong>1. Outcome</strong> (one sentence) → <strong>2. Sub-tasks</strong> (3–6) → <strong>3. LLM or classical?</strong> (the crucial call) → <strong>4. Handoffs</strong> → <strong>5. Shape</strong> (workflow vs. autonomous + guardrails).</li>
+    <li>Step 3 is the whole game: ask "reasoning or computation?" of every box.</li>
+    <li>In EnM, most boxes are <strong>computation wrapped as tools</strong>; the LLM conducts and explains.</li>
+    <li>You can now decompose any row — and, crucially, <strong>defend why</strong> each piece is shaped the way it is.</li>
+  </ul>
+</div>
+
+<h2 id="checks">7. Check yourself</h2>
+<div class="quiz" data-good="Right — it's a solver, not a language model." data-bad="Re-read the #1 worked example.">
+  <div class="q">In scenario #1, the "Evolution Agent" finds the optimal yield. What actually does the optimizing?</div>
+  <button class="opt">The language model's reasoning</button>
+  <button class="opt" data-correct="1">A differential-evolution algorithm wrapped as a tool</button>
+  <button class="opt">A human operator</button>
+  <button class="opt">The knowledge graph</button>
+  <div class="feedback"></div>
+</div>
+<div class="quiz" data-good="Correct — that question separates classical tools from LLM reasoning." data-bad="Re-read Section 2.">
+  <div class="q">What's the quickest test for whether a sub-task is classical or LLM?</div>
+  <button class="opt">Is it expensive?</button>
+  <button class="opt">Does the vendor call it 'AI'?</button>
+  <button class="opt" data-correct="1">Could you write an exact formula/algorithm for it? (yes → classical)</button>
+  <button class="opt">Is it the first step?</button>
+  <div class="feedback"></div>
+</div>
+<div class="quiz" data-good="Right — #4 is mostly retrieval + LLM reasoning, unlike #1." data-bad="Re-read the hint in Section 5.">
+  <div class="q">Compared with #1, scenario #4 (Knowledge Capture) leans far more on…</div>
+  <button class="opt">Differential-evolution solvers</button>
+  <button class="opt">Kinetic simulations</button>
+  <button class="opt" data-correct="1">LLM reasoning plus retrieval (RAG over SOPs)</button>
+  <button class="opt">Real-time control loops</button>
+  <div class="feedback"></div>
+</div>
+
+<div class="ask">
+  💬 <strong>Map a row and paste it here</strong> — I'll grade it against the 5-step method and we'll refine
+  from there. This is also where the live <code>/teach</code> command picks up once you restart Claude Code
+  and run it from inside this folder.
+</div>
+
+<div class="nav">
+  <a href="0005-workflow-vs-agent.html">← Lesson 5</a>
+  <a href="../index.html">↑ Course index</a>
+  <a href="../reference/agent-glossary.html">Glossary →</a>
+</div>
+<script src="../assets/quiz.js"></script>

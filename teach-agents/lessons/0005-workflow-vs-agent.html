@@ -1,0 +1,204 @@
+<meta charset="utf-8">
+<title>Lesson 5 — Workflow vs. Autonomous Agent</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="stylesheet" href="../assets/style.css">
+<script defer src="../assets/sidenav.js"></script>
+
+<p class="kicker">Lesson 5 · Concept</p>
+<h1>Workflow or agent? Choosing per scenario</h1>
+
+<div class="lesson-meta">
+  <span><b>Reading time:</b> ~20 min</span>
+  <span><b>Type:</b> Concept + decision method</span>
+  <span><b>Prerequisite:</b> Lessons 1–4</span>
+  <span><b>Next:</b> Lesson 6 (capstone)</span>
+</div>
+
+<div class="objectives">
+  <h3>By the end of this lesson you will be able to</h3>
+  <ul>
+    <li>Place any system on the spectrum from <strong>fixed workflow</strong> to <strong>autonomous agent</strong>.</li>
+    <li>Apply a 4-question decision rule to choose the right shape for an EnM scenario.</li>
+    <li>Explain why "the simplest thing that works" is usually a workflow, not full autonomy.</li>
+    <li>Produce a first-pass decomposition for the two EnM rows marked "need to think through" (#3 and #5).</li>
+  </ul>
+</div>
+
+<div class="toc">
+  <h3>In this lesson</h3>
+  <ol>
+    <li><a href="#spectrum">The spectrum, not a binary</a></li>
+    <li><a href="#compare">Workflow vs. autonomous, compared</a></li>
+    <li><a href="#default">The default that surprises people</a></li>
+    <li><a href="#rule">A 4-question decision rule</a></li>
+    <li><a href="#apply">Applying it to EnM #3 and #5</a></li>
+    <li><a href="#checks">Check yourself</a></li>
+  </ol>
+</div>
+
+<h2 id="spectrum">1. The spectrum, not a binary</h2>
+<p>"Agentic" is not all-or-nothing. The real question is: <strong>how much of the decision-making do you hand
+to the LLM at runtime?</strong> There's a whole spectrum:</p>
+<div class="loop">
+  <span class="step">Fixed code<br><small>no LLM</small></span><span class="arrow">→</span>
+  <span class="step">Workflow<br><small>LLM in fixed steps</small></span><span class="arrow">→</span>
+  <span class="step">Workflow + local autonomy<br><small>LLM chooses within a step</small></span><span class="arrow">→</span>
+  <span class="step">Autonomous agent<br><small>LLM chooses everything</small></span>
+</div>
+<p class="caption">More autonomy to the right. More predictability, lower cost, easier debugging to the left.</p>
+
+<p>Lesson 4's orchestrator sits at the "Workflow" point: the model makes decisions <em>inside</em> each agent
+(which tag to inspect, how to phrase a diagnosis), but the <em>order</em> of agents is fixed by us. We could
+push right — let an LLM decide which agent runs next — but, as you'll see, that's rarely the right move.</p>
+
+<h2 id="compare">2. Workflow vs. autonomous, compared</h2>
+<div class="def"><span class="term">Workflow</span> — a system where <em>you</em> define the sequence of
+steps in advance. The path is the same every run. LLMs may do work within steps, but they don't choose the
+path.</div>
+<div class="def"><span class="term">Autonomous agent</span> — a system where the <em>LLM</em> decides, at
+runtime, what to do next and in what order. The path varies from run to run depending on what it discovers.</div>
+
+<table>
+  <tr><th></th><th>Workflow</th><th>Autonomous agent</th></tr>
+  <tr><td>Who decides the steps?</td><td>You, in advance (fixed path)</td><td>The LLM, at runtime</td></tr>
+  <tr><td>Predictability</td><td>High — same path every time</td><td>Lower — path varies</td></tr>
+  <tr><td>Best when</td><td>Steps are known &amp; stable</td><td>Steps depend on what's discovered</td></tr>
+  <tr><td>Cost &amp; latency</td><td>Lower, bounded</td><td>Higher, variable</td></tr>
+  <tr><td>Debuggability</td><td>Easy — trace a fixed path</td><td>Harder — every run differs</td></tr>
+  <tr><td>Failure mode</td><td>Rigid — can't handle the unforeseen</td><td>Unpredictable — can wander or loop</td></tr>
+  <tr><td>EnM example</td><td>#2 Anomaly→RCA→Remediation (known sequence)</td><td>#6 EDA exploring an unfamiliar dataset</td></tr>
+</table>
+
+<h2 id="default">3. The default that surprises people</h2>
+<div class="key">
+  <span class="label">Prefer the simplest thing that works</span>
+  Hard-won industry experience (and <a href="https://www.anthropic.com/engineering/building-effective-agents">Anthropic's
+  guidance</a>): most reliable "agents" in production are actually <strong>workflows</strong> with one or two
+  genuinely autonomous steps. Full autonomy is a cost — in latency, money, and unpredictability — that you
+  pay only where the path truly cannot be known in advance.
+</div>
+<p>This runs against the hype, which sells maximum autonomy as maximum sophistication. In reality, the
+sophisticated move is to <em>localize</em> autonomy: let the LLM be creative exactly where creativity is
+needed, and pin everything else down so it's reliable. A system that does the right five steps every time is
+worth more than one that might do the right steps, or might not.</p>
+
+<div class="plain">
+  <span class="label">In plain English</span>
+  Don't give the AI the steering wheel for the whole journey when you only need it to parallel-park. Fixed
+  route, AI for the tricky bit.
+</div>
+
+<h2 id="rule">4. A 4-question decision rule</h2>
+<p>For any scenario in the spreadsheet, ask these in order. The first "yes" usually decides the shape.</p>
+<ul class="steps">
+  <li><strong>Are the steps the same every time?</strong> If yes → <em>workflow</em>. The sequence is known,
+      so encode it. (EnM #2 reliability chain; #8 margin chain.)</li>
+  <li><strong>Does the next step depend on what the last step found?</strong> If yes, you need <em>some</em>
+      autonomy — but <em>localize</em> it. Let an agent choose <em>within</em> a step, not redesign the whole
+      flow. (E.g. the Anomaly Agent choosing which tags to drill into.)</li>
+  <li><strong>Is the task genuinely open-ended exploration?</strong> Only then reach for a fully
+      <em>autonomous</em> orchestrator. (EnM #6 EDA — "suggest nuances … candidates for digital intervention"
+      — is genuinely open-ended: you don't know in advance what you'll find.)</li>
+  <li><strong>Where's the risk?</strong> Anything touching live control, safety, or money (EnM #1 console,
+      #8 margins) wants a <em>workflow</em> with explicit constraint/guardrail agents — never free roaming. A
+      wandering autonomous agent near a live reactor is unacceptable regardless of how clever it is.</li>
+</ul>
+
+<h2 id="apply">5. Applying it to the "think-through" rows</h2>
+<p>The spreadsheet explicitly flags #3 (Energy &amp; Carbon) and #5 (Planning &amp; Economics) as <em>"need to
+think through how to break it up into agents."</em> The decision rule gives you a defensible starting
+decomposition for each. <strong>Treat these as proposals to argue about, not final answers</strong> — which
+is exactly what the spreadsheet is asking for.</p>
+
+<table>
+  <tr><th>EnM #3 — Energy &amp; Carbon Optimization ("Digital Energy Manager")</th></tr>
+  <tr><td>
+    <strong>Shape: workflow</strong> (steps are stable; touches energy cost &amp; compliance → rule #1 and #4).
+    <br><br>
+    <strong>1. Measurement Agent</strong> — a tool that pulls energy use &amp; emissions per unit. (Classical
+    data access.)<br>
+    <strong>2. Forecast Agent</strong> — projects demand / load ahead. (Classical forecasting, like Lesson 3.)<br>
+    <strong>3. Optimization Agent</strong> — a solver (the differential-evolution "Evolution Agent" pattern)
+    that finds the lowest-carbon feasible setpoints. (Classical optimization.)<br>
+    <strong>4. Constraint Agent</strong> — enforces emissions/compliance limits on any proposed setpoint.
+    (Guardrail.)<br>
+    <strong>5. Explainer (LLM)</strong> — turns the numbers into guidance for the energy manager.
+    <br><br>
+    <em>Autonomy is near zero; the LLM only contextualizes and explains. The intelligence is in the solver.</em>
+  </td></tr>
+</table>
+
+<table>
+  <tr><th>EnM #5 — Planning &amp; Economics ("Digital Economist")</th></tr>
+  <tr><td>
+    <strong>Shape: workflow with a human in the loop</strong> (money at stake → rule #4 dominates).
+    <br><br>
+    <strong>1. Data Agent</strong> — gathers prices, margins, constraints. (Classical data access.)<br>
+    <strong>2. Scenario Agent</strong> — generates a handful of plan options. (Here a little LLM creativity is
+    useful — this is the one place autonomy earns its keep.)<br>
+    <strong>3. Economics Agent</strong> — scores each option. (The solver / economic model.)<br>
+    <strong>4. Present ranked options to a human planner</strong> — who makes the final call.
+    <br><br>
+    <em>Autonomy is confined to <strong>generating</strong> scenarios; the <strong>choice</strong> stays
+    bounded and human-reviewed because the consequences are financial. Never let an autonomous agent commit
+    money unsupervised.</em>
+  </td></tr>
+</table>
+
+<div class="note">
+  <span class="label">These are sketches, on purpose</span>
+  You now have enough to walk into the EnM discussion and propose a concrete decomposition for #3 and #5 —
+  and, more importantly, to <em>defend why</em> each is a workflow rather than a free-roaming agent. Lesson 6
+  turns this into a repeatable method you can apply to <em>any</em> row yourself.
+</div>
+
+<div class="recap">
+  <h3>Recap</h3>
+  <ul>
+    <li>Autonomy is a <strong>spectrum</strong>, not a switch — measured by how much the LLM decides at runtime.</li>
+    <li><strong>Workflow</strong> = you fix the steps; <strong>autonomous</strong> = the LLM picks the steps.</li>
+    <li><strong>Prefer the simplest thing that works</strong>: usually a workflow with localized autonomy.</li>
+    <li>Decision rule: same steps? → workflow. Step depends on findings? → localize autonomy. Open-ended? → autonomous. Risky/money/safety? → workflow + guardrails.</li>
+    <li>EnM #3 and #5 are best modeled as <strong>workflows</strong>; the LLM explains, the solver decides.</li>
+  </ul>
+</div>
+
+<h2 id="checks">6. Check yourself</h2>
+<div class="quiz" data-good="Right — known, stable, safety-relevant steps favor a workflow." data-bad="Re-read the decision rule in Section 4.">
+  <div class="q">EnM #2's steps are always Anomaly → RCA → Remediation, and it touches reliability/safety. What does the rule suggest?</div>
+  <button class="opt">A fully autonomous agent that decides everything</button>
+  <button class="opt" data-correct="1">A workflow (fixed path) with specialist agents inside it</button>
+  <button class="opt">A single LLM call</button>
+  <button class="opt">No agents at all</button>
+  <div class="feedback"></div>
+</div>
+<div class="quiz" data-good="Correct — open-ended discovery is where autonomy earns its cost." data-bad="Re-read Section 4, question 3.">
+  <div class="q">Which EnM scenario is the best candidate for genuine autonomy?</div>
+  <button class="opt">#2 Reliability (fixed chain)</button>
+  <button class="opt">#8 Margin management (money at stake)</button>
+  <button class="opt" data-correct="1">#6 EDA exploring an unfamiliar dataset</button>
+  <button class="opt">#1 Live console control</button>
+  <div class="feedback"></div>
+</div>
+<div class="quiz" data-good="Right — confine autonomy to generating options; humans make the financial call." data-bad="Re-read the #5 sketch in Section 5.">
+  <div class="q">For #5 (Planning &amp; Economics), where should autonomy be allowed?</div>
+  <button class="opt">In committing the final financial decision</button>
+  <button class="opt" data-correct="1">In generating candidate scenarios, with humans choosing</button>
+  <button class="opt">Nowhere — it must be 100% fixed code</button>
+  <button class="opt">Everywhere — let the LLM run the business</button>
+  <div class="feedback"></div>
+</div>
+
+<p>📖 <strong>Primary source:</strong> revisit the "Workflows vs. agents" section of
+<a href="https://www.anthropic.com/engineering/building-effective-agents">Building Effective Agents</a> with
+this decision rule in mind.</p>
+
+<div class="ask">
+  💬 Want me to turn the #3 or #5 sketch into a runnable skeleton like Lesson 4's orchestrator? Ask me.
+</div>
+
+<div class="nav">
+  <a href="0004-orchestration.html">← Lesson 4</a>
+  <a href="0006-mapping-any-enm-row.html">Lesson 6 →</a>
+</div>
+<script src="../assets/quiz.js"></script>
