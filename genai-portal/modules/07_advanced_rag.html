@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>07 · Advanced RAG — GenAI Mastery</title>
+<meta name="description" content="Production RAG techniques: hybrid search, reranking, query expansion, context compression, parent-document retrieval, Graph RAG, Agentic RAG, hallucination mitigation, and RAG evaluation.">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body data-page="07">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <div class="brand-mark">G</div>
+        <div class="brand-text"><strong>GenAI Mastery</strong><span>DS → Senior GenAI Engineer</span></div>
+      </a>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search modules…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Retrieval / <b>07 · Advanced RAG</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Module 07 · Retrieval track</div>
+        <h1>Advanced RAG</h1>
+        <p class="lead">Naive RAG (Module 06) demos beautifully and then disappoints in production: it misses exact terms, retrieves near-misses, fumbles vague or multi-part questions, and you have no number telling you how good it is. This module is the toolbox that turns a demo into a system — <strong>hybrid search, reranking, query transformation, smarter chunk retrieval, Graph & Agentic RAG, and the evaluation discipline that lets you prove any of it helped.</strong></p>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~75 min read</span>
+          <span class="pill">Difficulty · Intermediate→Advanced</span>
+          <span class="pill purple">Prereq · Module 06</span>
+        </div>
+
+        <!-- ============ 1. EXECUTIVE SUMMARY ============ -->
+        <h2 id="summary">1 · Executive summary</h2>
+        <p>Advanced RAG is a set of upgrades to each stage of the pipeline, plus the measurement loop that justifies them. You improve <strong>recall</strong> (find more of the right chunks) with hybrid search and query expansion; you improve <strong>precision</strong> (rank the right chunks first) with reranking and compression; you improve <strong>context quality</strong> with parent-document and Graph RAG; and you handle hard questions with <strong>Agentic RAG</strong>. Crucially, you measure every change with a <strong>RAG evaluation</strong> harness so improvements are real, not vibes.</p>
+        <div class="grid grid-3">
+          <div class="card" data-reveal><span class="ico">🎯</span><h4>Better recall</h4><p>Hybrid (dense+sparse) search, query expansion/rewriting, multi-query — find chunks naive vector search misses.</p></div>
+          <div class="card" data-reveal><span class="ico">🔬</span><h4>Better precision</h4><p>Cross-encoder reranking and context compression put the <em>right</em> evidence first and strip the noise.</p></div>
+          <div class="card" data-reveal><span class="ico">🧠</span><h4>Better reasoning</h4><p>Parent-document, Graph RAG, and Agentic RAG handle context, relationships, and multi-hop questions.</p></div>
+        </div>
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The one idea to remember</div>
+          <p><strong>Retrieve broadly, then rank precisely, and measure everything.</strong> The winning pattern is two-stage: a cheap, high-recall first pass (hybrid) feeds an expensive, high-precision reranker — all validated by an eval set. Don't add a technique you can't prove helped.</p></div>
+        </div>
+
+        <!-- ============ 2. FIRST PRINCIPLES ============ -->
+        <h2 id="first-principles">2 · First-principles breakdown</h2>
+
+        <h3>What — fixing the four failure modes of naive RAG</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Naive RAG fails when…</th><th>Because…</th><th>Fix</th></tr></thead>
+          <tbody>
+            <tr><td>Query has exact terms/IDs/codes</td><td>Dense embeddings blur exact tokens</td><td><strong>Hybrid search</strong></td></tr>
+            <tr><td>Right chunk retrieved but ranked #7</td><td>Bi-encoder similarity is coarse</td><td><strong>Reranking</strong></td></tr>
+            <tr><td>Query is vague / under-specified</td><td>One short query → poor vector</td><td><strong>Query expansion / rewriting</strong></td></tr>
+            <tr><td>Answer needs multiple hops or relationships</td><td>Single retrieval can't reason</td><td><strong>Agentic / Graph RAG</strong></td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>Why — recall and precision are different problems</h3>
+        <p>From classic ML you know the precision/recall tension. RAG has the same split: <strong>recall</strong> = did we retrieve the chunk that contains the answer <em>at all</em>? <strong>precision</strong> = is the right chunk near the top, with little noise around it? These need different tools. Hybrid search and query expansion raise recall; reranking and compression raise precision. Treating them as one knob is why naive tuning plateaus.</p>
+
+        <div class="callout note"><div class="c-ico">🪜</div><div class="c-body"><div class="c-title">The two-stage mental model</div>
+        <p><strong>Stage 1 (retrieve, cheap, recall-first):</strong> cast a wide net — fetch top-50 with hybrid search. <strong>Stage 2 (rerank, expensive, precision-first):</strong> a cross-encoder re-scores those 50 and keeps the best 5. You only run the expensive model on a small candidate set, getting precision without paying to score the whole corpus.</p></div></div>
+
+        <h3>How — where each technique plugs into the pipeline</h3>
+        <div class="cssflow">
+          <div class="fnode accent">Query</div><div class="farrow"></div>
+          <div class="fnode">Query transform<small>rewrite · expand · multi-query · HyDE</small></div><div class="farrow"></div>
+          <div class="fnode">Hybrid retrieve<small>dense + sparse → fuse (RRF)</small></div><div class="farrow"></div>
+          <div class="fnode">Rerank<small>cross-encoder top-50 → top-5</small></div><div class="farrow"></div>
+          <div class="fnode">Compress / expand context<small>strip noise · parent-doc</small></div><div class="farrow"></div>
+          <div class="fnode accent">Generate + cite</div>
+        </div>
+
+        <!-- ============ 3. VISUAL ARCHITECTURE ============ -->
+        <h2 id="architecture">3 · Visual architecture</h2>
+
+        <h3>Hybrid search + reranking</h3>
+        <div class="diagram">
+          <svg viewBox="0 0 740 290" width="740" role="img" aria-label="Hybrid + rerank architecture">
+            <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="var(--text-muted)"/></marker></defs>
+            <rect class="flow-node-accent" x="20" y="115" width="90" height="50" rx="10"/><text class="flow-label" x="65" y="145" text-anchor="middle">Query</text>
+            <!-- two retrievers -->
+            <rect class="flow-node" x="160" y="50" width="140" height="50" rx="10"/><text class="flow-label" x="230" y="72" text-anchor="middle">Dense (vector)</text><text class="flow-sub" x="230" y="89" text-anchor="middle">semantic · top-50</text>
+            <rect class="flow-node" x="160" y="180" width="140" height="50" rx="10"/><text class="flow-label" x="230" y="202" text-anchor="middle">Sparse (BM25)</text><text class="flow-sub" x="230" y="219" text-anchor="middle">lexical · top-50</text>
+            <path class="flow-arrow" d="M110,130 C135,130 140,80 158,76"/>
+            <path class="flow-arrow" d="M110,150 C135,150 140,200 158,204"/>
+            <!-- fuse -->
+            <rect class="flow-node" x="350" y="115" width="120" height="50" rx="10"/><text class="flow-label" x="410" y="137" text-anchor="middle">Fuse (RRF)</text><text class="flow-sub" x="410" y="154" text-anchor="middle">merge rankings</text>
+            <path class="flow-arrow" d="M300,75 C330,75 340,120 348,128"/>
+            <path class="flow-arrow" d="M300,205 C330,205 340,160 348,152"/>
+            <!-- rerank -->
+            <rect class="flow-node-accent" x="510" y="115" width="120" height="50" rx="10"/><text class="flow-label" x="570" y="137" text-anchor="middle">Reranker</text><text class="flow-sub" x="570" y="154" text-anchor="middle">cross-encoder → top-5</text>
+            <path class="flow-arrow" d="M470,140 L508,140"/>
+            <rect class="flow-node" x="660" y="115" width="70" height="50" rx="10"/><text class="flow-label" x="695" y="145" text-anchor="middle">LLM</text>
+            <path class="flow-arrow" d="M630,140 L658,140"/>
+          </svg>
+          <div class="diagram-caption">Figure 1 · Two retrievers run in parallel, fuse with Reciprocal Rank Fusion, then a cross-encoder reranks the candidates before generation.</div>
+        </div>
+
+        <h3>Bi-encoder vs cross-encoder (why reranking works)</h3>
+        <div class="diagram">
+          <svg viewBox="0 0 700 200" width="700" role="img" aria-label="Bi-encoder vs cross-encoder">
+            <text class="flow-sub" x="170" y="24" text-anchor="middle" style="fill:var(--blue);font-weight:700">BI-ENCODER (retrieval)</text>
+            <rect class="flow-node" x="40" y="40" width="100" height="40" rx="8"/><text class="flow-sub" x="90" y="64" text-anchor="middle" style="fill:var(--text)">encode(query)</text>
+            <rect class="flow-node" x="40" y="100" width="100" height="40" rx="8"/><text class="flow-sub" x="90" y="124" text-anchor="middle" style="fill:var(--text)">encode(doc)</text>
+            <text class="flow-label" x="230" y="95" style="fill:var(--text)">→ cos sim</text>
+            <text class="flow-sub" x="170" y="165" text-anchor="middle">fast · precompute docs · coarse</text>
+
+            <line x1="360" y1="30" x2="360" y2="175" stroke="var(--border)"/>
+            <text class="flow-sub" x="540" y="24" text-anchor="middle" style="fill:var(--accent);font-weight:700">CROSS-ENCODER (rerank)</text>
+            <rect class="flow-node-accent" x="430" y="70" width="180" height="44" rx="8"/><text class="flow-sub" x="520" y="97" text-anchor="middle" style="fill:var(--text)">encode(query + doc together)</text>
+            <text class="flow-label" x="630" y="97" style="fill:var(--accent)">→ score</text>
+            <text class="flow-sub" x="540" y="150" text-anchor="middle">slow · sees interaction · accurate</text>
+          </svg>
+          <div class="diagram-caption">Figure 2 · Bi-encoders embed query and doc separately (fast, used to retrieve). Cross-encoders process them together (accurate, used to rerank a small candidate set).</div>
+        </div>
+
+        <!-- ============ 4. DEEP TECHNICAL ============ -->
+        <h2 id="deep-dive">4 · Deep technical explanation</h2>
+
+        <h3>Hybrid search &amp; Reciprocal Rank Fusion</h3>
+        <p>Dense finds meaning; sparse (BM25) finds exact terms. Hybrid runs both and fuses results. <strong>RRF</strong> is the robust default — it merges by <em>rank</em>, not raw scores (which live on incomparable scales): <code>score(d) = Σ 1/(k + rank_i(d))</code> over each retriever, with <code>k≈60</code>.</p>
+
+        <h3>Query transformation</h3>
+        <ul>
+          <li><strong>Rewriting</strong> — clean a messy/conversational query into a search-friendly one ("what about the other one?" → resolve the reference).</li>
+          <li><strong>Expansion / multi-query</strong> — generate several paraphrases, retrieve for each, union the results → higher recall for vague queries.</li>
+          <li><strong>HyDE</strong> (Hypothetical Document Embeddings) — ask the LLM to draft a fake answer, embed <em>that</em>, and retrieve with it; the hypothetical answer often sits closer to real passages than the bare question.</li>
+          <li><strong>Decomposition</strong> — split a multi-part question into sub-questions, retrieve for each (bridges to Agentic RAG).</li>
+        </ul>
+
+        <h3>Context compression</h3>
+        <p>Retrieved chunks contain irrelevant sentences that waste tokens and dilute attention (lost-in-the-middle, Module 02). <strong>Compression</strong> trims each chunk to only the parts relevant to the query — via an extractive LLM filter or a small relevance model — shrinking cost and sharpening the prompt.</p>
+
+        <h3>Parent-document (small-to-big) retrieval</h3>
+        <p>The chunking dilemma: small chunks retrieve precisely but lack context; large chunks have context but match poorly. <strong>Parent-document</strong> resolves it: index <em>small</em> chunks for retrieval, but when one hits, return its <em>parent</em> (the surrounding section/page) to the LLM. You get precise matching <em>and</em> full context.</p>
+        <div class="diagram">
+          <svg viewBox="0 0 640 170" width="640" role="img" aria-label="Parent document retrieval">
+            <defs><marker id="arrow3" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="var(--text-muted)"/></marker></defs>
+            <rect class="flow-node-accent" x="20" y="65" width="110" height="44" rx="9"/><text class="flow-label" x="75" y="92" text-anchor="middle">Query</text>
+            <rect class="flow-node" x="180" y="65" width="150" height="44" rx="9"/><text class="flow-sub" x="255" y="84" text-anchor="middle" style="fill:var(--text);font-weight:600">match small child chunk</text><text class="flow-sub" x="255" y="99" text-anchor="middle">(precise)</text>
+            <rect class="flow-node" x="380" y="65" width="150" height="44" rx="9"/><text class="flow-sub" x="455" y="84" text-anchor="middle" style="fill:var(--text);font-weight:600">return parent section</text><text class="flow-sub" x="455" y="99" text-anchor="middle">(full context)</text>
+            <rect class="flow-node-accent" x="560" y="65" width="60" height="44" rx="9"/><text class="flow-label" x="590" y="92" text-anchor="middle">LLM</text>
+            <path class="flow-arrow" d="M130,87 L178,87"/><path class="flow-arrow" d="M330,87 L378,87"/><path class="flow-arrow" d="M530,87 L558,87"/>
+          </svg>
+          <div class="diagram-caption">Figure 3 · Match on small chunks, generate from their larger parents — precision + context.</div>
+        </div>
+
+        <h3>Graph RAG</h3>
+        <p>For questions about <em>relationships</em> ("how are X and Y connected?", "summarize everything about entity Z"), vector search alone is weak. <strong>Graph RAG</strong> extracts entities and relationships into a knowledge graph, then retrieves connected subgraphs (and/or community summaries) as context. It shines for multi-hop and global "sense-making" queries that span many documents.</p>
+
+        <h3>Agentic RAG</h3>
+        <p>The most powerful pattern: let an <strong>agent</strong> (Module 08) <em>decide how to retrieve</em>. It can rewrite the query, choose among multiple indexes/tools, retrieve iteratively, judge whether it has enough evidence, and retry — turning retrieval from a single static call into an adaptive loop. This is where Retrieval and Agents tracks merge.</p>
+
+        <h3>Hallucination mitigation in RAG</h3>
+        <div class="grid grid-2">
+          <div class="card"><h4>Before generation</h4><ul style="margin-bottom:0"><li>Score threshold → "I don't know" (Module 06)</li><li>Rerank so true evidence is on top</li><li>Compress to remove distractors</li></ul></div>
+          <div class="card"><h4>After generation</h4><ul style="margin-bottom:0"><li>Require citations; verify each claim maps to a chunk</li><li>Faithfulness check (LLM-as-judge): is every statement supported?</li><li>Self-correction loop if unsupported claims found</li></ul></div>
+        </div>
+
+        <h3>RAG evaluation — the discipline that makes the rest real</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Metric</th><th>Question it answers</th><th>Stage</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Context recall</strong></td><td>Did we retrieve the chunk(s) containing the answer?</td><td>Retrieval</td></tr>
+            <tr><td><strong>Context precision</strong></td><td>Are relevant chunks ranked above irrelevant ones?</td><td>Retrieval / rerank</td></tr>
+            <tr><td><strong>Faithfulness</strong></td><td>Is the answer supported by the retrieved context (not hallucinated)?</td><td>Generation</td></tr>
+            <tr><td><strong>Answer relevance</strong></td><td>Does the answer actually address the question?</td><td>Generation</td></tr>
+          </tbody>
+        </table></div>
+        <div class="callout warn"><div class="c-ico">📊</div><div class="c-body"><p><strong>You cannot improve what you don't measure.</strong> Build a golden eval set (question, gold-answer, gold-source) before adding techniques. Frameworks like <strong>RAGAS</strong> compute these metrics. Every change (chunk size, hybrid, rerank) is an A/B against the eval set — keep it only if the numbers move. This connects directly to Module 14.</p></div></div>
+
+        <!-- ============ 5. INTERACTIVE ============ -->
+        <h2 id="interactive">5 · Interactive: hybrid + rerank in action</h2>
+        <p>See how reranking rescues a relevant chunk that vector search alone buried, and how hybrid catches an exact-term miss.</p>
+        <div class="demo" data-stepdemo>
+          <div class="demo-title"><span class="badge">DEMO</span> Query: "error code E-4042 on the X200 pump"</div>
+          <div class="demo-stage">
+            <span class="chip">dense top-3 (misses exact code)</span><span class="chip arrow">+</span>
+            <span class="chip vec">sparse BM25 finds "E-4042"</span><span class="chip arrow">→</span>
+            <span class="chip tok">RRF fuse</span><span class="chip arrow">→</span>
+            <span class="chip vec">cross-encoder rerank</span><span class="chip arrow">→</span>
+            <span class="chip" style="font-weight:700;background:var(--green-soft);color:var(--green)">exact troubleshooting passage #1 ✓</span>
+          </div>
+          <div class="demo-stage" style="margin-top:14px">
+            <button class="btn" data-run>▶ Run hybrid + rerank</button>
+            <button class="btn ghost sm" data-reset>Reset</button>
+          </div>
+          <p style="font-size:12.5px;color:var(--text-muted);margin:14px 0 0">Dense search alone ranked the exact passage #6 (semantic blur on the code). BM25 surfaced it via the literal "E-4042"; RRF merged both lists; the cross-encoder, seeing query+passage together, promoted it to #1. Naive RAG would have missed it.</p>
+        </div>
+
+        <!-- ============ 6. PYTHON ============ -->
+        <h2 id="python">6 · Practical Python</h2>
+
+        <h3>Minimal — add a reranker to your RAG</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> rerank_minimal.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">from</span> sentence_transformers <span class="tok-kw">import</span> CrossEncoder
+
+reranker = <span class="tok-fn">CrossEncoder</span>(<span class="tok-str">"cross-encoder/ms-marco-MiniLM-L-6-v2"</span>)
+
+<span class="tok-kw">def</span> <span class="tok-fn">rerank</span>(query, candidates, top_n=<span class="tok-num">5</span>):
+    <span class="tok-com"># candidates: list[str]. Cross-encoder scores (query, doc) pairs.</span>
+    pairs = [(query, c) <span class="tok-kw">for</span> c <span class="tok-kw">in</span> candidates]
+    scores = reranker.<span class="tok-fn">predict</span>(pairs)
+    ranked = <span class="tok-fn">sorted</span>(<span class="tok-fn">zip</span>(candidates, scores), key=<span class="tok-kw">lambda</span> x: -x[<span class="tok-num">1</span>])
+    <span class="tok-kw">return</span> [c <span class="tok-kw">for</span> c, _ <span class="tok-kw">in</span> ranked[:top_n]]
+
+<span class="tok-com"># Retrieve 50 cheaply with vectors, then rerank to the best 5.</span></code></pre>
+        </div>
+
+        <h3>Intermediate — hybrid search with Reciprocal Rank Fusion</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> hybrid_rrf.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">from</span> rank_bm25 <span class="tok-kw">import</span> BM25Okapi
+<span class="tok-kw">import</span> numpy <span class="tok-kw">as</span> np
+
+<span class="tok-kw">def</span> <span class="tok-fn">reciprocal_rank_fusion</span>(ranked_lists, k=<span class="tok-num">60</span>):
+    <span class="tok-str">"""Merge multiple ranked lists of doc ids by RRF."""</span>
+    scores = {}
+    <span class="tok-kw">for</span> lst <span class="tok-kw">in</span> ranked_lists:
+        <span class="tok-kw">for</span> rank, doc_id <span class="tok-kw">in</span> <span class="tok-fn">enumerate</span>(lst):
+            scores[doc_id] = scores.<span class="tok-fn">get</span>(doc_id, <span class="tok-num">0.0</span>) + <span class="tok-num">1.0</span> / (k + rank)
+    <span class="tok-kw">return</span> <span class="tok-fn">sorted</span>(scores, key=scores.get, reverse=<span class="tok-kw">True</span>)
+
+<span class="tok-kw">def</span> <span class="tok-fn">hybrid_search</span>(query, corpus, doc_vecs, embed, bm25, k=<span class="tok-num">50</span>):
+    <span class="tok-com"># Dense ranking</span>
+    qv = <span class="tok-fn">embed</span>(query)
+    dense = np.<span class="tok-fn">argsort</span>(-(doc_vecs @ qv))[:k].<span class="tok-fn">tolist</span>()
+    <span class="tok-com"># Sparse ranking</span>
+    sparse = np.<span class="tok-fn">argsort</span>(-bm25.<span class="tok-fn">get_scores</span>(query.<span class="tok-fn">split</span>()))[:k].<span class="tok-fn">tolist</span>()
+    <span class="tok-com"># Fuse — robust to incomparable score scales</span>
+    <span class="tok-kw">return</span> <span class="tok-fn">reciprocal_rank_fusion</span>([dense, sparse])
+
+bm25 = <span class="tok-fn">BM25Okapi</span>([d.<span class="tok-fn">split</span>() <span class="tok-kw">for</span> d <span class="tok-kw">in</span> corpus])</code></pre>
+        </div>
+
+        <h3>Production — an advanced retriever (query rewrite → hybrid → rerank → compress)</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> advanced_retriever.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">class</span> <span class="tok-cls">AdvancedRetriever</span>:
+    <span class="tok-str">"""Two-stage retrieval with query transform, hybrid fuse, rerank, compress."""</span>
+    <span class="tok-kw">def</span> <span class="tok-fn">__init__</span>(self, embed, bm25, store, reranker, llm):
+        self.embed, self.bm25, self.store = embed, bm25, store
+        self.reranker, self.llm = reranker, llm
+
+    <span class="tok-kw">def</span> <span class="tok-fn">retrieve</span>(self, query, tenant, k_first=<span class="tok-num">50</span>, k_final=<span class="tok-num">5</span>):
+        <span class="tok-com"># 1 · query transform: rewrite + 2 paraphrases (multi-query)</span>
+        queries = self.<span class="tok-fn">_expand</span>(query)
+        <span class="tok-com"># 2 · hybrid retrieve for every query variant, union candidates</span>
+        cand_ids = <span class="tok-fn">set</span>()
+        <span class="tok-kw">for</span> q <span class="tok-kw">in</span> queries:
+            cand_ids.<span class="tok-fn">update</span>(self.<span class="tok-fn">_hybrid</span>(q, tenant, k_first))
+        cands = self.store.<span class="tok-fn">fetch</span>(cand_ids)
+        <span class="tok-com"># 3 · rerank with cross-encoder (precision)</span>
+        scored = self.reranker.<span class="tok-fn">predict</span>([(query, c.text) <span class="tok-kw">for</span> c <span class="tok-kw">in</span> cands])
+        top = [c <span class="tok-kw">for</span> c, _ <span class="tok-kw">in</span>
+               <span class="tok-fn">sorted</span>(<span class="tok-fn">zip</span>(cands, scored), key=<span class="tok-kw">lambda</span> x: -x[<span class="tok-num">1</span>])[:k_final]]
+        <span class="tok-com"># 4 · context compression: keep only query-relevant sentences</span>
+        <span class="tok-kw">return</span> [self.<span class="tok-fn">_compress</span>(query, c) <span class="tok-kw">for</span> c <span class="tok-kw">in</span> top]
+
+    <span class="tok-kw">def</span> <span class="tok-fn">_expand</span>(self, query):
+        out = self.llm.<span class="tok-fn">complete</span>(
+            <span class="tok-str">f"Rewrite this search query and give 2 paraphrases, one per line:\n{query}"</span>,
+            temperature=<span class="tok-num">0.3</span>)
+        <span class="tok-kw">return</span> [query] + [l.<span class="tok-fn">strip</span>() <span class="tok-kw">for</span> l <span class="tok-kw">in</span> out.<span class="tok-fn">splitlines</span>() <span class="tok-kw">if</span> l.<span class="tok-fn">strip</span>()][:<span class="tok-num">2</span>]
+
+    <span class="tok-kw">def</span> <span class="tok-fn">_compress</span>(self, query, chunk):
+        chunk.text = self.llm.<span class="tok-fn">complete</span>(
+            <span class="tok-str">f"Extract ONLY sentences relevant to: {query}\n\n{chunk.text}"</span>,
+            temperature=<span class="tok-num">0</span>)
+        <span class="tok-kw">return</span> chunk</code></pre>
+        </div>
+        <div class="callout note"><div class="c-ico">⚖️</div><div class="c-body"><p>Every stage adds latency and cost. Query expansion and compression each cost an LLM call; reranking adds a model pass. <strong>Add them one at a time and keep only what your eval set rewards.</strong> A great reranker often beats five other tricks combined.</p></div></div>
+
+        <h3>Evaluating it (RAGAS-style)</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> eval_rag.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-com"># Golden set drives every decision. Pseudocode for the core loop.</span>
+<span class="tok-kw">def</span> <span class="tok-fn">evaluate</span>(pipeline, golden):     <span class="tok-com"># golden: [{q, gold_answer, gold_source_id}]</span>
+    rec = faith = rel = <span class="tok-num">0</span>
+    <span class="tok-kw">for</span> ex <span class="tok-kw">in</span> golden:
+        out = pipeline.<span class="tok-fn">answer</span>(ex[<span class="tok-str">"q"</span>])
+        retrieved_ids = {s[<span class="tok-str">"id"</span>] <span class="tok-kw">for</span> s <span class="tok-kw">in</span> out[<span class="tok-str">"sources"</span>]}
+        rec   += ex[<span class="tok-str">"gold_source_id"</span>] <span class="tok-kw">in</span> retrieved_ids          <span class="tok-com"># context recall</span>
+        faith += <span class="tok-fn">judge_supported</span>(out[<span class="tok-str">"answer"</span>], out[<span class="tok-str">"sources"</span>])  <span class="tok-com"># LLM-as-judge</span>
+        rel   += <span class="tok-fn">judge_relevant</span>(out[<span class="tok-str">"answer"</span>], ex[<span class="tok-str">"q"</span>])
+    n = <span class="tok-fn">len</span>(golden)
+    <span class="tok-kw">return</span> {<span class="tok-str">"recall"</span>: rec/n, <span class="tok-str">"faithfulness"</span>: faith/n, <span class="tok-str">"answer_relevance"</span>: rel/n}</code></pre>
+        </div>
+
+        <!-- ============ 7. OLLAMA ============ -->
+        <h2 id="ollama">7 · Ollama implementation</h2>
+        <p>All advanced techniques run locally — reranking, query expansion, compression, and the LLM-judge can all use local models.</p>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> local_advanced.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">import</span> ollama
+
+<span class="tok-com"># Query expansion with a local model</span>
+<span class="tok-kw">def</span> <span class="tok-fn">expand_local</span>(query):
+    out = ollama.<span class="tok-fn">chat</span>(model=<span class="tok-str">"qwen2.5"</span>, messages=[{<span class="tok-str">"role"</span>: <span class="tok-str">"user"</span>,
+        <span class="tok-str">"content"</span>: <span class="tok-str">f"Give 3 search paraphrases (one per line) for: {query}"</span>}])
+    <span class="tok-kw">return</span> [l.<span class="tok-fn">strip</span>() <span class="tok-kw">for</span> l <span class="tok-kw">in</span> out[<span class="tok-str">"message"</span>][<span class="tok-str">"content"</span>].<span class="tok-fn">splitlines</span>() <span class="tok-kw">if</span> l.<span class="tok-fn">strip</span>()]
+
+<span class="tok-com"># Local faithfulness judge — keeps the whole eval loop offline</span>
+<span class="tok-kw">def</span> <span class="tok-fn">judge_supported</span>(answer, context):
+    verdict = ollama.<span class="tok-fn">chat</span>(model=<span class="tok-str">"qwen2.5"</span>, messages=[{<span class="tok-str">"role"</span>: <span class="tok-str">"user"</span>,
+        <span class="tok-str">"content"</span>: <span class="tok-str">f"Is every claim in the ANSWER supported by CONTEXT? "</span>
+                   <span class="tok-str">f"Reply YES or NO.\nCONTEXT:{context}\nANSWER:{answer}"</span>}])
+    <span class="tok-kw">return</span> <span class="tok-str">"YES"</span> <span class="tok-kw">in</span> verdict[<span class="tok-str">"message"</span>][<span class="tok-str">"content"</span>].<span class="tok-fn">upper</span>()</code></pre>
+        </div>
+        <div class="callout tip"><div class="c-ico">🔒</div><div class="c-body"><p>The cross-encoder reranker (sentence-transformers) and local Ollama models give you an <strong>entirely offline advanced-RAG + eval stack</strong> — no data or queries ever leave the machine. This is the on-prem capstone backbone.</p></div></div>
+
+        <!-- ============ 8. INDUSTRY ============ -->
+        <h2 id="industry">8 · Industry perspective</h2>
+        <div class="grid grid-2">
+          <div class="card"><h4>🚀 Startups</h4><p>Add techniques reactively: ship naive RAG, watch failure logs, add hybrid when exact-term misses appear, add a reranker when "right answer ranked low" complaints come in. An eval set early saves months of guessing.</p></div>
+          <div class="card"><h4>🏢 Enterprises</h4><p>Often run hybrid + rerank by default, with Graph RAG for connected-entity domains (compliance, investigations, knowledge bases) and rigorous eval gates in CI. Retrieval quality is a tracked SLO with dashboards.</p></div>
+        </div>
+        <h3>The pragmatic upgrade order (by ROI)</h3>
+        <div class="timeline">
+          <div class="step"><h4>1 · Build an eval set</h4><p>Before anything else. You can't tune blind.</p></div>
+          <div class="step"><h4>2 · Fix chunking</h4><p>Highest leverage, lowest cost. Often the single biggest win.</p></div>
+          <div class="step"><h4>3 · Add a reranker</h4><p>Usually the best precision-per-effort upgrade.</p></div>
+          <div class="step"><h4>4 · Add hybrid search</h4><p>Fixes exact-term/code recall misses.</p></div>
+          <div class="step"><h4>5 · Query expansion / parent-doc / compression</h4><p>Targeted fixes for specific failure modes you've measured.</p></div>
+          <div class="step"><h4>6 · Graph / Agentic RAG</h4><p>Only when multi-hop/relationship queries are core — they add real complexity.</p></div>
+        </div>
+        <p><strong>Common production challenges:</strong> reranker latency budget, query-expansion cost blowup, Graph RAG ingestion complexity, eval-set drift as the corpus grows, and "improvements" that help anecdotes but hurt the aggregate metric.</p>
+
+        <!-- ============ 9. MISTAKES ============ -->
+        <h2 id="mistakes">9 · Top mistakes engineers make</h2>
+        <div class="grid grid-2">
+          <div class="card"><h4>❌ Adding techniques without an eval set</h4><p>You can't tell if hybrid/rerank helped. Build the golden set <em>first</em>; every change is an A/B.</p></div>
+          <div class="card"><h4>❌ Fusing raw scores</h4><p>Dense and BM25 scores live on different scales. Fuse by rank (RRF), not by raw score.</p></div>
+          <div class="card"><h4>❌ Reranking everything</h4><p>Cross-encoders are slow. Rerank a small candidate set (top-50), not the whole corpus.</p></div>
+          <div class="card"><h4>❌ Over-aggressive compression</h4><p>Strip too much and you delete the answer. Compress conservatively and measure faithfulness.</p></div>
+          <div class="card"><h4>❌ Reaching for Graph RAG first</h4><p>It's heavy. Most apps win more from chunking + rerank. Use Graph RAG only for genuine relationship queries.</p></div>
+          <div class="card"><h4>❌ Stacking every trick at once</h4><p>You won't know what helped, and latency explodes. Add one, measure, keep or drop.</p></div>
+        </div>
+
+        <!-- ============ 10. INTERVIEW ============ -->
+        <h2 id="interview">10 · Interview preparation</h2>
+
+        <details class="collapse"><summary><span class="pill green">Beginner</span> &nbsp;What is hybrid search and why use it? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Running both dense (semantic) and sparse (lexical/BM25) retrieval and fusing the results. Dense captures meaning/paraphrase; sparse captures exact terms, IDs, and codes that embeddings blur. Together they recover relevant chunks that either alone would miss.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill green">Beginner</span> &nbsp;What does a reranker do? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>It re-scores a candidate set with a cross-encoder that processes the query and document <em>together</em>, capturing their interaction far better than separate embeddings. You retrieve broadly (cheap bi-encoder) then rerank the top candidates (accurate cross-encoder) to push the best evidence to the top.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill blue">Intermediate</span> &nbsp;Bi-encoder vs cross-encoder — why use both? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Bi-encoders embed query and docs independently, so doc vectors are precomputed and retrieval is fast — but the comparison is coarse. Cross-encoders feed query+doc through the model together for an accurate relevance score, but can't be precomputed (too slow over a whole corpus). So: bi-encoder retrieves many candidates fast; cross-encoder reranks the small set precisely. Best of both.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill blue">Intermediate</span> &nbsp;Explain parent-document retrieval and the problem it solves. <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Small chunks match precisely but lack surrounding context; large chunks have context but match poorly (diluted embeddings). Parent-document indexes small child chunks for retrieval but returns the larger parent (section/page) to the LLM — precise matching plus full context for generation.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill amber">Senior</span> &nbsp;How do you reduce hallucination in a RAG system? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Layered defenses. <strong>Retrieval:</strong> raise recall (hybrid, expansion) and precision (rerank) so the right evidence is present and on top; score threshold + "I don't know" when nothing qualifies. <strong>Prompt:</strong> instruct grounding only, require citations. <strong>Post-generation:</strong> a faithfulness judge verifies every claim maps to context, with a self-correction retry on unsupported claims. <strong>Measurement:</strong> track faithfulness on an eval set so regressions are caught. No single trick — defense in depth.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill amber">Senior</span> &nbsp;When is Graph RAG worth its complexity? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>When questions are about <em>relationships</em> or require <em>global synthesis</em> across many documents — multi-hop ("how is A connected to C through B?"), entity-centric summaries ("everything about supplier X"), or "themes across the whole corpus." Vector search retrieves locally similar chunks but can't traverse relationships. Graph RAG extracts an entity/relationship graph and retrieves connected subgraphs or community summaries. For typical fact-lookup Q&A it's overkill — chunking + hybrid + rerank wins on ROI.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill purple">Staff · design</span> &nbsp;Design an evaluation-driven RAG improvement program. <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Establish a <strong>golden eval set</strong> (representative questions with gold answers + gold source ids), refreshed as the corpus evolves. Define metrics: context recall &amp; precision (retrieval), faithfulness &amp; answer relevance (generation). Build an offline harness (RAGAS-style) that runs on every change and gates deploys (CI). Treat each technique — chunk size, hybrid, rerank, expansion — as an experiment with a hypothesis and an A/B against the baseline; keep only statistically meaningful wins, watching the latency/cost budget. Add online signals (thumbs, citation-click-through, "I don't know" rate) and sample real failures back into the eval set. Pair with observability/tracing (Module 14) so you can attribute regressions to a stage. The deliverable isn't a clever pipeline — it's a measurement loop that compounds.</p></div></details>
+
+        <!-- ============ 11. QUIZ ============ -->
+        <h2 id="quiz">11 · Knowledge check</h2>
+
+        <div class="quiz">
+          <div class="q">1 · Why fuse hybrid results with Reciprocal Rank Fusion instead of adding raw scores?</div>
+          <label class="opt">RRF is faster to compute</label>
+          <label class="opt" data-correct="true">Dense and BM25 scores are on incomparable scales; RRF merges by rank position instead</label>
+          <label class="opt">RRF removes the need for a reranker</label>
+          <label class="opt">Raw scores can't be negative</label>
+          <div class="explain">Cosine similarities and BM25 scores live in different ranges, so summing them is meaningless. RRF uses rank position (1/(k+rank)), which is scale-free and robust.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">2 · A reranker uses a cross-encoder because it…</div>
+          <label class="opt">Is faster than a bi-encoder</label>
+          <label class="opt" data-correct="true">Processes query and document together, capturing their interaction for a more accurate score</label>
+          <label class="opt">Doesn't need a GPU</label>
+          <label class="opt">Produces embeddings you can cache</label>
+          <div class="explain">Cross-encoders see query+doc jointly, so they model relevance far better than independently-embedded vectors — at the cost of speed, which is why they only rerank a small candidate set.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">3 · Your users search by exact error codes and vector search keeps missing them. Best fix?</div>
+          <label class="opt">Increase top-k to 100</label>
+          <label class="opt">Raise the temperature</label>
+          <label class="opt" data-correct="true">Add hybrid search so BM25 catches the exact code</label>
+          <label class="opt">Use a bigger embedding model</label>
+          <div class="explain">Dense embeddings blur exact tokens like "E-4042". Sparse/BM25 matches them literally; hybrid (dense+sparse, fused) recovers both meaning and exact terms.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">4 · What must exist before you start adding advanced RAG techniques?</div>
+          <label class="opt">A GPU cluster</label>
+          <label class="opt">A fine-tuned model</label>
+          <label class="opt" data-correct="true">A golden evaluation set to measure whether each change actually helps</label>
+          <label class="opt">A graph database</label>
+          <div class="explain">Without an eval set (recall, precision, faithfulness, relevance), you're tuning blind. Every technique should be an A/B you keep only if the metrics improve.</div>
+        </div>
+
+        <!-- ============ 12. ACTIVE RECALL ============ -->
+        <h2 id="recall">12 · Active recall</h2>
+        <p>Answer first, then reveal. Re-test tomorrow and in a week.</p>
+        <details class="recall"><summary><span class="q-ico">Q</span> State the two-stage retrieve-then-rerank pattern and why it's efficient. <span class="chev">›</span></summary><div class="a">Cheap high-recall retrieval (hybrid bi-encoder) fetches ~50 candidates; an expensive high-precision cross-encoder reranks just those to the best 5. You only run the slow model on a small set, getting precision without scoring the whole corpus.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> Write the RRF scoring formula. <span class="chev">›</span></summary><div class="a">score(d) = Σ over retrievers of 1 / (k + rank_i(d)), with k ≈ 60. Higher (better) rank in any list raises the fused score.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> What problem does parent-document retrieval solve? <span class="chev">›</span></summary><div class="a">The small-vs-large chunk dilemma: index small chunks for precise matching but return their larger parent section to the LLM for full context.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> Name the four core RAG evaluation metrics. <span class="chev">›</span></summary><div class="a">Context recall, context precision (retrieval); faithfulness, answer relevance (generation).</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> When does Agentic RAG beat single-shot retrieval? <span class="chev">›</span></summary><div class="a">When the question needs adaptive/iterative retrieval — rewriting the query, choosing among tools/indexes, retrieving in multiple hops, and judging whether enough evidence has been gathered before answering.</div></details>
+
+        <!-- ============ 13. EXERCISES ============ -->
+        <h2 id="exercises">13 · Exercises</h2>
+        <div class="callout tip"><div class="c-ico">🟢</div><div class="c-body"><div class="c-title">Easy</div><p>Take your Module 06 RAG and bolt on the cross-encoder reranker from §6. Retrieve top-20, rerank to top-5, and compare answers on 5 questions where naive RAG struggled.</p></div></div>
+        <div class="callout warn"><div class="c-ico">🟡</div><div class="c-body"><div class="c-title">Medium</div><p>Implement hybrid search with RRF (dense + BM25) over a corpus containing product codes. Build 15 queries (some semantic, some exact-code) and measure recall@5 for dense-only vs hybrid. Show hybrid wins on the exact-code queries.</p></div></div>
+        <div class="callout danger"><div class="c-ico">🔴</div><div class="c-body"><div class="c-title">Hard</div><p>Build the eval harness from §6 (recall, faithfulness, answer-relevance with a local LLM judge). Run an ablation: baseline → +rerank → +hybrid → +query-expansion. Produce a table of all four metrics per configuration, and write up which techniques earned their latency cost and which didn't.</p></div></div>
+
+        <!-- ============ 14. MINI PROJECT ============ -->
+        <h2 id="mini-project">14 · Mini project — "RAG Upgrade Lab"</h2>
+        <div class="card">
+          <p><strong>Goal:</strong> A harness that lets you toggle advanced techniques on/off and instantly see their effect on quality metrics — turning RAG tuning from guesswork into experiments.</p>
+          <h4>Requirements</h4>
+          <ul>
+            <li>A config object with flags: <code>hybrid</code>, <code>rerank</code>, <code>expand</code>, <code>compress</code>, <code>parent_doc</code></li>
+            <li>A golden eval set (≥20 Q/A/source triples) over a real corpus</li>
+            <li>Run the pipeline under each config; report context recall, faithfulness, answer relevance, and p50 latency</li>
+            <li>Print a leaderboard of configurations by a chosen primary metric</li>
+          </ul>
+          <h4>Stretch</h4>
+          <ul style="margin-bottom:0"><li>Add parent-document retrieval and Graph RAG as toggles.</li><li>Add a per-query failure inspector showing the retrieved chunks for debugging.</li></ul>
+        </div>
+
+        <!-- ============ 15. REAL PROJECT CONNECTION ============ -->
+        <h2 id="real-project">15 · Real project connection</h2>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Project</th><th>Advanced-RAG techniques used</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Hybrid Search RAG</strong></td><td>This module <em>is</em> the project: dense + BM25 + RRF + rerank, evaluated.</td></tr>
+            <tr><td><strong>Multi-PDF RAG</strong></td><td>Parent-document retrieval for context, metadata filtering per doc, rerank for precision across many files.</td></tr>
+            <tr><td><strong>ElasticSearch Investigation Agent</strong></td><td>ES does hybrid (BM25 + dense_vector) natively; Graph/Agentic RAG for multi-hop investigations.</td></tr>
+            <tr><td><strong>Multi-Agent Plant Assistant</strong></td><td>Agentic RAG: agents choose indexes, rewrite queries, retrieve iteratively over manuals + telemetry.</td></tr>
+            <tr><td><strong>Enterprise Platform</strong></td><td>Hybrid + rerank by default, eval gates in CI, faithfulness monitoring in production.</td></tr>
+          </tbody>
+        </table></div>
+
+        <div class="complete-bar">
+          <div><strong style="font-size:15px">Finished Module 07?</strong><p style="margin:2px 0 0;font-size:13.5px;color:var(--text-muted)">You can now build measured, production-grade retrieval. Next track: Agents.</p></div>
+          <button class="btn" data-complete>Mark module complete</button>
+        </div>
+
+        <div class="page-nav">
+          <a href="06_rag_basics.html"><div class="dir">← Previous</div><div class="ttl">06 · RAG Basics</div></a>
+          <a class="next" href="08_agents.html"><div class="dir">Next →</div><div class="ttl">08 · Agentic AI</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,456 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>10 · LangChain — GenAI Mastery</title>
+<meta name="description" content="LangChain from first principles: the Runnable interface, LCEL pipe composition, prompt | model | parser chains, retrievers, RAG chains, memory, streaming, and production patterns.">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body data-page="10">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <div class="brand-mark">G</div>
+        <div class="brand-text"><strong>GenAI Mastery</strong><span>DS → Senior GenAI Engineer</span></div>
+      </a>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search modules…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Frameworks / <b>10 · LangChain</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Module 10 · Frameworks track</div>
+        <h1>LangChain</h1>
+        <p class="lead">You've now built LLM calls, embeddings, RAG, and agents largely from scratch — which is the right way to understand them. <strong>LangChain</strong> is the framework that packages those patterns into composable, swappable building blocks so you stop rewriting glue. Its modern core is small and elegant: the <strong>Runnable</strong> interface and the <strong>LCEL</strong> pipe operator. Learn those two ideas and the rest is library.</p>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~55 min read</span>
+          <span class="pill">Difficulty · Intermediate</span>
+          <span class="pill purple">Prereq · Modules 01, 04–07</span>
+        </div>
+
+        <!-- ============ 1. EXECUTIVE SUMMARY ============ -->
+        <h2 id="summary">1 · Executive summary</h2>
+        <p><strong>LangChain</strong> is an orchestration framework for LLM applications. Its modern foundation is the <strong>Runnable</strong> — a standard interface (<code>invoke</code>, <code>batch</code>, <code>stream</code>, async variants) implemented by every component (prompts, models, parsers, retrievers). Because they share that interface, you compose them with the <strong>pipe operator</strong> (<code>|</code>) into a <strong>chain</strong>: <code>prompt | model | parser</code>. This is <strong>LCEL</strong> (LangChain Expression Language), and it gives you streaming, batching, async, and retries for free.</p>
+        <div class="grid grid-3">
+          <div class="card" data-reveal><span class="ico">❓</span><h4>Why it exists</h4><p>Every LLM app re-implements prompting, retries, RAG wiring, memory, streaming. LangChain standardizes these as interchangeable parts.</p></div>
+          <div class="card" data-reveal><span class="ico">🔧</span><h4>Problem it solves</h4><p>Composition. Swap a model, add a retriever, change a parser — without rewriting the pipeline. Provider-agnostic by design.</p></div>
+          <div class="card" data-reveal><span class="ico">🌐</span><h4>Where it fits</h4><p>The "glue + components" layer. Pairs with LlamaIndex (11) for data, LangGraph (12) for stateful loops, and your vector DB (05).</p></div>
+        </div>
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The one idea to remember</div>
+          <p><strong>Everything is a Runnable; you compose them with <code>|</code>.</strong> <code>chain = prompt | model | parser</code>. Once something is a Runnable, it gets streaming, batching, async, and retries automatically. Master LCEL and LangChain stops being magic.</p></div>
+        </div>
+
+        <!-- ============ 2. FIRST PRINCIPLES ============ -->
+        <h2 id="first-principles">2 · First-principles breakdown</h2>
+
+        <h3>What — Unix pipes for LLM components</h3>
+        <p>In the shell, <code>cat file | grep error | sort | uniq</code> chains small programs that each read input and produce output. LCEL is the same idea for AI: each component takes an input and returns an output, and <code>|</code> feeds one into the next. <code>prompt | model | parser</code> means "format the prompt, send it to the model, parse the result." The data flows left to right.</p>
+
+        <div class="callout note"><div class="c-ico">🔧</div><div class="c-body"><div class="c-title">The Runnable contract</div>
+        <p>A Runnable promises five methods: <code>invoke(x)</code> (one input → one output), <code>batch([x])</code> (many in parallel), <code>stream(x)</code> (yield tokens as they arrive), plus async <code>ainvoke</code>/<code>astream</code>. <strong>Because every piece implements this same contract, they're freely interchangeable and composable</strong> — that's the entire design.</p></div></div>
+
+        <h3>Why — composition beats monoliths</h3>
+        <p>Without a framework, a RAG pipeline is a tangle of bespoke functions. As requirements change (new model, add reranking, stream the output, run 100 queries in parallel), you rewrite plumbing. LCEL turns each concern into a swappable Runnable. Want streaming? It's already there. Want to swap OpenAI for a local Ollama model? Change one line — the chain is unaffected because the interface is identical.</p>
+
+        <h3>How — three building blocks</h3>
+        <div class="cssflow">
+          <div class="fnode accent">PromptTemplate<small>fills variables → a prompt</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">ChatModel<small>prompt → model response</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">OutputParser<small>response → str / JSON / object</small></div>
+          <div class="farrow"></div>
+          <div class="fnode accent">Result</div>
+        </div>
+        <p>Add a <strong>retriever</strong> Runnable in front and you have RAG; add <strong>memory</strong> and you have a chatbot. Same composition rules throughout.</p>
+
+        <!-- ============ 3. VISUAL ARCHITECTURE ============ -->
+        <h2 id="architecture">3 · Visual architecture</h2>
+
+        <h3>An LCEL RAG chain</h3>
+        <div class="diagram">
+          <svg viewBox="0 0 740 270" width="740" role="img" aria-label="LCEL RAG chain">
+            <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="var(--text-muted)"/></marker></defs>
+            <rect class="flow-node-accent" x="20" y="110" width="90" height="50" rx="10"/><text class="flow-label" x="65" y="140" text-anchor="middle">Question</text>
+            <!-- parallel: retriever + passthrough -->
+            <rect class="flow-node" x="160" y="50" width="150" height="50" rx="10"/><text class="flow-label" x="235" y="72" text-anchor="middle">retriever</text><text class="flow-sub" x="235" y="89" text-anchor="middle">→ context docs</text>
+            <rect class="flow-node" x="160" y="170" width="150" height="50" rx="10"/><text class="flow-label" x="235" y="192" text-anchor="middle">passthrough</text><text class="flow-sub" x="235" y="209" text-anchor="middle">→ question</text>
+            <path class="flow-arrow" d="M110,125 C135,125 140,80 158,76"/>
+            <path class="flow-arrow" d="M110,145 C135,145 140,190 158,194"/>
+            <rect class="flow-node" x="360" y="110" width="110" height="50" rx="10"/><text class="flow-label" x="415" y="132" text-anchor="middle">prompt</text><text class="flow-sub" x="415" y="149" text-anchor="middle">{context}{question}</text>
+            <path class="flow-arrow" d="M310,75 C340,75 350,120 358,128"/>
+            <path class="flow-arrow" d="M310,195 C340,195 350,150 358,142"/>
+            <rect class="flow-node-accent" x="510" y="110" width="100" height="50" rx="10"/><text class="flow-label" x="560" y="140" text-anchor="middle">model</text>
+            <rect class="flow-node" x="650" y="110" width="80" height="50" rx="10"/><text class="flow-label" x="690" y="140" text-anchor="middle">parser</text>
+            <path class="flow-arrow" d="M470,135 L508,135"/><path class="flow-arrow" d="M610,135 L648,135"/>
+            <text class="flow-sub" x="370" y="250" text-anchor="middle">chain = {"context": retriever, "question": passthrough} | prompt | model | parser</text>
+          </svg>
+          <div class="diagram-caption">Figure 1 · A RAG chain in LCEL. The dict runs branches in parallel; <code>|</code> sequences the rest. This whole thing is itself a Runnable.</div>
+        </div>
+
+        <h3>The LangChain ecosystem (what's a package)</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Package</th><th>Contains</th></tr></thead>
+          <tbody>
+            <tr><td><code>langchain-core</code></td><td>The Runnable interface, LCEL, base abstractions (prompts, messages, parsers)</td></tr>
+            <tr><td><code>langchain-openai</code> / <code>-ollama</code> / …</td><td>Provider integrations (one per provider) — swap by importing a different one</td></tr>
+            <tr><td><code>langchain</code></td><td>Higher-level chains, retrievers, helpers</td></tr>
+            <tr><td><code>langchain-community</code></td><td>Third-party integrations (vector stores, loaders, tools)</td></tr>
+            <tr><td><code>langgraph</code></td><td>Stateful, cyclic orchestration (Module 12) — for agents/loops LCEL can't express</td></tr>
+          </tbody>
+        </table></div>
+
+        <!-- ============ 4. DEEP TECHNICAL ============ -->
+        <h2 id="deep-dive">4 · Deep technical explanation</h2>
+
+        <h3>LCEL composition primitives</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Construct</th><th>Meaning</th></tr></thead>
+          <tbody>
+            <tr><td><code>a | b</code> (RunnableSequence)</td><td>Run a, feed its output to b (left→right pipe)</td></tr>
+            <tr><td><code>{"x": a, "y": b}</code> (RunnableParallel)</td><td>Run a and b on the same input concurrently; output a dict</td></tr>
+            <tr><td><code>RunnablePassthrough()</code></td><td>Pass the input through unchanged (often inside a parallel dict)</td></tr>
+            <tr><td><code>RunnableLambda(fn)</code></td><td>Wrap any plain function as a Runnable</td></tr>
+            <tr><td><code>.with_retry()</code> / <code>.with_fallbacks()</code></td><td>Add resilience to any Runnable declaratively</td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>Why LCEL gives you streaming &amp; batching "for free"</h3>
+        <p>Because the composition graph is declarative, LangChain knows the structure of your pipeline. So when you call <code>.stream()</code> on a chain, it streams from the model node and pipes tokens through downstream parsers; <code>.batch()</code> fans inputs out in parallel; async works end-to-end. You didn't write any of that concurrency — the framework derives it from the Runnable graph.</p>
+
+        <h3>Retrievers — RAG as a Runnable</h3>
+        <p>A <strong>retriever</strong> is a Runnable that takes a query string and returns documents. Any vector store (Module 05) exposes one via <code>.as_retriever()</code>. Because it's a Runnable, it drops straight into a chain — and you can wrap it with reranking, multi-query, or compression (Module 07) and it's still just a Runnable.</p>
+
+        <h3>Memory — the modern way</h3>
+        <p>Older LangChain had bespoke "Memory" classes; the modern approach is <strong>message history</strong> wrapped around a chain with <code>RunnableWithMessageHistory</code> (and for anything stateful/branching, you graduate to LangGraph's checkpointed state, Module 12). The principle is unchanged from Module 08: working/short-term history in context, long-term in a store.</p>
+
+        <h3>Output parsing &amp; structured output</h3>
+        <p>Parsers turn raw text into usable types: <code>StrOutputParser</code> (plain text), <code>JsonOutputParser</code>, or <code>.with_structured_output(PydanticModel)</code> to force a typed schema (great for extraction). Structured output + temperature 0 (Module 01) is the reliable pattern for machine-consumable results.</p>
+
+        <h3>Tradeoffs &amp; limitations</h3>
+        <div class="grid grid-2">
+          <div class="card"><h4>Strengths</h4><ul style="margin-bottom:0"><li>Provider-agnostic, swappable components</li><li>Free streaming/batching/async/retries</li><li>Huge integration ecosystem</li><li>Tight LangSmith tracing (Module 14)</li></ul></div>
+          <div class="card"><h4>Limits</h4><ul style="margin-bottom:0"><li>Abstraction can hide what's happening (debug the trace)</li><li>Fast-moving API; pin versions</li><li>LCEL is for DAGs — loops/branches need LangGraph</li><li>Easy to over-abstract a simple call</li></ul></div>
+        </div>
+
+        <!-- ============ 5. INTERACTIVE ============ -->
+        <h2 id="interactive">5 · Interactive: compose a chain</h2>
+        <p>Watch data flow through <code>prompt | model | parser</code>, then through a RAG chain that adds a retriever in parallel.</p>
+        <div class="demo" data-stepdemo>
+          <div class="demo-title"><span class="badge">DEMO</span> LCEL pipe execution</div>
+          <div class="demo-stage">
+            <span class="chip">{"topic": "RAG"}</span><span class="chip arrow">|</span>
+            <span class="chip vec">prompt → "Explain RAG…"</span><span class="chip arrow">|</span>
+            <span class="chip tok">model → response obj</span><span class="chip arrow">|</span>
+            <span class="chip vec">StrOutputParser → "RAG is…"</span><span class="chip arrow">→</span>
+            <span class="chip" style="font-weight:700;background:var(--green-soft);color:var(--green)">clean string ✓</span>
+          </div>
+          <div class="demo-stage" style="margin-top:14px">
+            <button class="btn" data-run>▶ Run chain</button>
+            <button class="btn ghost sm" data-reset>Reset</button>
+          </div>
+          <p style="font-size:12.5px;color:var(--text-muted);margin:14px 0 0">Each <code>|</code> hands the previous step's output to the next. Swap <code>model</code> for a local Ollama model and the chain is unchanged — that's the payoff of the shared Runnable interface.</p>
+        </div>
+
+        <!-- ============ 6. PYTHON ============ -->
+        <h2 id="python">6 · Practical Python</h2>
+
+        <h3>Minimal — your first LCEL chain</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> chain_minimal.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">from</span> langchain_openai <span class="tok-kw">import</span> ChatOpenAI
+<span class="tok-kw">from</span> langchain_core.prompts <span class="tok-kw">import</span> ChatPromptTemplate
+<span class="tok-kw">from</span> langchain_core.output_parsers <span class="tok-kw">import</span> StrOutputParser
+
+prompt = ChatPromptTemplate.<span class="tok-fn">from_template</span>(<span class="tok-str">"Explain {topic} in 2 sentences."</span>)
+model  = <span class="tok-fn">ChatOpenAI</span>(model=<span class="tok-str">"gpt-4o-mini"</span>, temperature=<span class="tok-num">0</span>)
+parser = <span class="tok-fn">StrOutputParser</span>()
+
+chain = prompt | model | parser            <span class="tok-com"># LCEL composition</span>
+
+<span class="tok-fn">print</span>(chain.<span class="tok-fn">invoke</span>({<span class="tok-str">"topic"</span>: <span class="tok-str">"vector databases"</span>}))   <span class="tok-com"># one call</span>
+<span class="tok-fn">print</span>(chain.<span class="tok-fn">batch</span>([{<span class="tok-str">"topic"</span>: <span class="tok-str">"RAG"</span>}, {<span class="tok-str">"topic"</span>: <span class="tok-str">"MCP"</span>}]))  <span class="tok-com"># parallel</span>
+<span class="tok-kw">for</span> tok <span class="tok-kw">in</span> chain.<span class="tok-fn">stream</span>({<span class="tok-str">"topic"</span>: <span class="tok-str">"agents"</span>}):       <span class="tok-com"># streaming, free</span>
+    <span class="tok-fn">print</span>(tok, end=<span class="tok-str">""</span>, flush=<span class="tok-kw">True</span>)</code></pre>
+        </div>
+
+        <h3>Intermediate — a full RAG chain with a retriever</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> rag_chain.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">from</span> langchain_core.prompts <span class="tok-kw">import</span> ChatPromptTemplate
+<span class="tok-kw">from</span> langchain_core.runnables <span class="tok-kw">import</span> RunnablePassthrough
+<span class="tok-kw">from</span> langchain_core.output_parsers <span class="tok-kw">import</span> StrOutputParser
+<span class="tok-kw">from</span> langchain_openai <span class="tok-kw">import</span> ChatOpenAI, OpenAIEmbeddings
+<span class="tok-kw">from</span> langchain_community.vectorstores <span class="tok-kw">import</span> FAISS
+
+<span class="tok-com"># 1 · index documents (Modules 04–05)</span>
+store = FAISS.<span class="tok-fn">from_texts</span>(
+    [<span class="tok-str">"Returns accepted within 30 days."</span>, <span class="tok-str">"Free shipping over $50."</span>],
+    embedding=<span class="tok-fn">OpenAIEmbeddings</span>())
+retriever = store.<span class="tok-fn">as_retriever</span>(search_kwargs={<span class="tok-str">"k"</span>: <span class="tok-num">2</span>})   <span class="tok-com"># a Runnable</span>
+
+prompt = ChatPromptTemplate.<span class="tok-fn">from_template</span>(
+    <span class="tok-str">"Answer ONLY from context, cite, or say you don't know.\n"</span>
+    <span class="tok-str">"Context:\n{context}\n\nQuestion: {question}"</span>)
+
+<span class="tok-kw">def</span> <span class="tok-fn">format_docs</span>(docs): <span class="tok-kw">return</span> <span class="tok-str">"\n\n"</span>.<span class="tok-fn">join</span>(d.page_content <span class="tok-kw">for</span> d <span class="tok-kw">in</span> docs)
+
+<span class="tok-com"># 2 · compose: retriever runs in parallel with the passed-through question</span>
+chain = (
+    {<span class="tok-str">"context"</span>: retriever | format_docs, <span class="tok-str">"question"</span>: <span class="tok-fn">RunnablePassthrough</span>()}
+    | prompt
+    | <span class="tok-fn">ChatOpenAI</span>(model=<span class="tok-str">"gpt-4o-mini"</span>, temperature=<span class="tok-num">0</span>)
+    | <span class="tok-fn">StrOutputParser</span>()
+)
+<span class="tok-fn">print</span>(chain.<span class="tok-fn">invoke</span>(<span class="tok-str">"How long do I have to return something?"</span>))</code></pre>
+        </div>
+
+        <h3>Intermediate+ — conversational memory &amp; structured output</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> memory_and_structured.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">from</span> langchain_core.chat_history <span class="tok-kw">import</span> InMemoryChatMessageHistory
+<span class="tok-kw">from</span> langchain_core.runnables.history <span class="tok-kw">import</span> RunnableWithMessageHistory
+<span class="tok-kw">from</span> pydantic <span class="tok-kw">import</span> BaseModel, Field
+
+<span class="tok-com"># --- memory: wrap a chain with per-session message history ---</span>
+_sessions = {}
+<span class="tok-kw">def</span> <span class="tok-fn">get_history</span>(session_id):
+    <span class="tok-kw">return</span> _sessions.<span class="tok-fn">setdefault</span>(session_id, <span class="tok-fn">InMemoryChatMessageHistory</span>())
+
+chat = <span class="tok-fn">RunnableWithMessageHistory</span>(chain, get_history)    <span class="tok-com"># remembers per session</span>
+chat.<span class="tok-fn">invoke</span>({<span class="tok-str">"question"</span>: <span class="tok-str">"My name is Sam."</span>},
+           config={<span class="tok-str">"configurable"</span>: {<span class="tok-str">"session_id"</span>: <span class="tok-str">"u1"</span>}})
+
+<span class="tok-com"># --- structured output: force a typed schema ---</span>
+<span class="tok-kw">class</span> <span class="tok-cls">Ticket</span>(BaseModel):
+    priority: <span class="tok-cls">str</span> = <span class="tok-fn">Field</span>(description=<span class="tok-str">"low | medium | high"</span>)
+    summary: <span class="tok-cls">str</span>
+
+extractor = <span class="tok-fn">ChatOpenAI</span>(temperature=<span class="tok-num">0</span>).<span class="tok-fn">with_structured_output</span>(Ticket)
+<span class="tok-fn">print</span>(extractor.<span class="tok-fn">invoke</span>(<span class="tok-str">"Server is down for all users!!"</span>))
+<span class="tok-com"># Ticket(priority='high', summary='Server outage affecting all users')</span></code></pre>
+        </div>
+
+        <h3>Production — a resilient, traced, swappable RAG service</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> prod_chain.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">import</span> os
+<span class="tok-kw">from</span> langchain_core.runnables <span class="tok-kw">import</span> RunnablePassthrough
+<span class="tok-kw">from</span> langchain_core.output_parsers <span class="tok-kw">import</span> StrOutputParser
+
+<span class="tok-kw">def</span> <span class="tok-fn">build_model</span>():
+    <span class="tok-com"># Provider-agnostic: same chain, local or hosted, by config.</span>
+    <span class="tok-kw">if</span> os.<span class="tok-fn">getenv</span>(<span class="tok-str">"LLM_BACKEND"</span>) == <span class="tok-str">"local"</span>:
+        <span class="tok-kw">from</span> langchain_ollama <span class="tok-kw">import</span> ChatOllama
+        <span class="tok-kw">return</span> <span class="tok-fn">ChatOllama</span>(model=<span class="tok-str">"qwen2.5"</span>, temperature=<span class="tok-num">0</span>)
+    <span class="tok-kw">from</span> langchain_openai <span class="tok-kw">import</span> ChatOpenAI
+    <span class="tok-kw">return</span> <span class="tok-fn">ChatOpenAI</span>(model=<span class="tok-str">"gpt-4o-mini"</span>, temperature=<span class="tok-num">0</span>)
+
+<span class="tok-kw">def</span> <span class="tok-fn">build_chain</span>(retriever, prompt):
+    model = <span class="tok-fn">build_model</span>().<span class="tok-fn">with_retry</span>(stop_after_attempt=<span class="tok-num">3</span>)   <span class="tok-com"># resilience</span>
+    <span class="tok-kw">return</span> (
+        {<span class="tok-str">"context"</span>: retriever, <span class="tok-str">"question"</span>: <span class="tok-fn">RunnablePassthrough</span>()}
+        | prompt | model | <span class="tok-fn">StrOutputParser</span>()
+    )
+
+<span class="tok-com"># Tracing: set LANGCHAIN_TRACING_V2=true + LANGCHAIN_API_KEY and every</span>
+<span class="tok-com"># invoke is captured in LangSmith — inputs, outputs, latency, token cost.</span>
+<span class="tok-com"># Serve with LangServe or wrap chain.invoke() in your FastAPI route.</span></code></pre>
+        </div>
+        <div class="callout tip"><div class="c-ico">🔭</div><div class="c-body"><p>The biggest production win is <strong>tracing</strong>: with LangSmith, every chain run records the exact prompt, retrieved docs, model output, latency, and cost at each step — turning the "abstraction hides things" weakness into full observability. We build on this in <a href="14_production_genai.html">Module 14</a>.</p></div></div>
+
+        <!-- ============ 7. OLLAMA ============ -->
+        <h2 id="ollama">7 · Ollama implementation</h2>
+        <p>LangChain's provider-agnostic design means going local is a one-import change — the chain itself never changes.</p>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> langchain_ollama.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-com"># pip install langchain-ollama</span>
+<span class="tok-kw">from</span> langchain_ollama <span class="tok-kw">import</span> ChatOllama, OllamaEmbeddings
+<span class="tok-kw">from</span> langchain_core.prompts <span class="tok-kw">import</span> ChatPromptTemplate
+<span class="tok-kw">from</span> langchain_core.output_parsers <span class="tok-kw">import</span> StrOutputParser
+<span class="tok-kw">from</span> langchain_community.vectorstores <span class="tok-kw">import</span> FAISS
+
+<span class="tok-com"># Local model + local embeddings → fully offline LangChain RAG</span>
+emb = <span class="tok-fn">OllamaEmbeddings</span>(model=<span class="tok-str">"nomic-embed-text"</span>)
+store = FAISS.<span class="tok-fn">from_texts</span>([<span class="tok-str">"Ollama serves on port 11434."</span>], embedding=emb)
+
+prompt = ChatPromptTemplate.<span class="tok-fn">from_template</span>(<span class="tok-str">"Context:{context}\nQ:{question}"</span>)
+chain = (store.<span class="tok-fn">as_retriever</span>() | (<span class="tok-kw">lambda</span> d: d[<span class="tok-num">0</span>].page_content)
+         | (<span class="tok-kw">lambda</span> c: {<span class="tok-str">"context"</span>: c, <span class="tok-str">"question"</span>: <span class="tok-str">"What port?"</span>})
+         | prompt | <span class="tok-fn">ChatOllama</span>(model=<span class="tok-str">"qwen2.5"</span>, temperature=<span class="tok-num">0</span>) | <span class="tok-fn">StrOutputParser</span>())
+<span class="tok-fn">print</span>(chain.<span class="tok-fn">invoke</span>(<span class="tok-str">"What port?"</span>))</code></pre>
+        </div>
+        <div class="callout note"><div class="c-ico">🔁</div><div class="c-body"><p>This is the core promise: the <em>only</em> difference between the cloud and local versions is which integration package you import. The chain structure, streaming, batching, and retries are identical — write once, run anywhere.</p></div></div>
+
+        <!-- ============ 8. INDUSTRY ============ -->
+        <h2 id="industry">8 · Industry perspective</h2>
+        <div class="grid grid-2">
+          <div class="card"><h4>🚀 Startups</h4><p>Use LangChain to go from idea to RAG/agent demo fast, leaning on its loaders, vector-store integrations, and LangSmith tracing. Watch for over-abstraction — drop to raw SDK calls where the chain adds no value.</p></div>
+          <div class="card"><h4>🏢 Enterprises</h4><p>Value provider-agnosticism (avoid lock-in, switch models by config), the integration breadth, and LangSmith for eval + observability + prompt management. Pin versions and wrap chains behind their own service boundary.</p></div>
+        </div>
+        <h3>LangChain vs LlamaIndex vs LangGraph — the boundary</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Use…</th><th>When you need…</th></tr></thead>
+          <tbody>
+            <tr><td><strong>LangChain (LCEL)</strong></td><td>General composition of prompts/models/retrievers/tools as a DAG; provider-agnostic glue</td></tr>
+            <tr><td><strong>LlamaIndex (11)</strong></td><td>Data-centric RAG: ingestion, indexing strategies, advanced retrievers, query engines</td></tr>
+            <tr><td><strong>LangGraph (12)</strong></td><td>Stateful, cyclic, branching flows — agents, loops, human-in-the-loop (LCEL is DAG-only)</td></tr>
+          </tbody>
+        </table></div>
+        <p><strong>Common production challenges:</strong> breaking changes across versions (pin them), abstraction obscuring the real prompt/tokens (use tracing), over-engineering simple calls, and dependency bloat from <code>langchain-community</code> (import only what you use).</p>
+
+        <!-- ============ 9. MISTAKES ============ -->
+        <h2 id="mistakes">9 · Top mistakes engineers make</h2>
+        <div class="grid grid-2">
+          <div class="card"><h4>❌ Using LangChain for a single LLM call</h4><p>If you just need one completion, call the SDK. LCEL pays off when you compose, stream, batch, or swap parts.</p></div>
+          <div class="card"><h4>❌ Not pinning versions</h4><p>The API moves fast. Pin exact versions and read migration notes before upgrading.</p></div>
+          <div class="card"><h4>❌ Debugging blind</h4><p>Abstractions hide the real prompt. Turn on LangSmith tracing (or print intermediate steps) to see what's actually sent.</p></div>
+          <div class="card"><h4>❌ Forcing loops into LCEL</h4><p>LCEL is a DAG — no cycles. Agents/retries/branches belong in LangGraph (Module 12).</p></div>
+          <div class="card"><h4>❌ Ignoring structured output</h4><p>Parsing free text with regex is fragile. Use <code>with_structured_output</code> for machine-consumable results.</p></div>
+          <div class="card"><h4>❌ Old "Chain"/"Memory" classes</h4><p>Legacy <code>LLMChain</code>/<code>ConversationChain</code> are deprecated. Use LCEL + <code>RunnableWithMessageHistory</code>.</p></div>
+        </div>
+
+        <!-- ============ 10. INTERVIEW ============ -->
+        <h2 id="interview">10 · Interview preparation</h2>
+
+        <details class="collapse"><summary><span class="pill green">Beginner</span> &nbsp;What is LangChain and why use it? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>An orchestration framework for LLM apps that standardizes components (prompts, models, parsers, retrievers) behind a common Runnable interface, so you compose them with the pipe operator and swap parts without rewriting plumbing. It provides provider-agnosticism, free streaming/batching/async/retries, a large integration ecosystem, and tracing via LangSmith.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill green">Beginner</span> &nbsp;What does <code>prompt | model | parser</code> mean? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>An LCEL chain: format the prompt with input variables, send it to the model, then parse the model's response (e.g. to a plain string). The <code>|</code> pipes each step's output into the next, like Unix pipes. The whole chain is itself a Runnable you can invoke/batch/stream.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill blue">Intermediate</span> &nbsp;What is the Runnable interface and why does it matter? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>The common contract — <code>invoke</code>, <code>batch</code>, <code>stream</code>, and async variants — implemented by every LangChain component. Because they all share it, any component is interchangeable and composable, and the framework can derive streaming, batching, and async automatically from the composition graph. It's the foundation that makes LCEL work.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill blue">Intermediate</span> &nbsp;How do you build a RAG chain in LCEL? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Run the retriever and the question in parallel into a dict (<code>{"context": retriever | format_docs, "question": RunnablePassthrough()}</code>), pipe that into a prompt template, then into the model, then an output parser. The parallel dict fetches context while passing the question through; the pipes sequence prompt→model→parse. The retriever comes from <code>vectorstore.as_retriever()</code> and is itself a Runnable.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill amber">Senior</span> &nbsp;When would you NOT use LangChain, or drop to raw SDK? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>For a single, simple completion the abstraction adds dependency weight and indirection with no benefit — call the provider SDK. Drop to raw calls in hot paths where you need precise control over requests/streaming, or when debugging an issue the abstraction obscures. Use LangChain where composition, swappability, integrations, or tracing genuinely pay off; for cyclic/stateful agent flows, use LangGraph instead of bending LCEL. Match the tool to the complexity.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill amber">Senior</span> &nbsp;How do you make a LangChain app production-ready? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Pin exact package versions; enable LangSmith tracing for observability and prompt/version management; add <code>.with_retry()</code>/<code>.with_fallbacks()</code> for resilience and a fallback model; use structured output for machine-consumable results; keep prompts in a versioned registry; build an eval set (Module 07/14) gating prompt/chain changes; wrap chains behind your own service boundary (FastAPI/LangServe) so you can swap the framework if needed; and set temperature/timeouts/token budgets explicitly. Treat the chain as one component in your system, not the whole architecture.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill purple">Staff · design</span> &nbsp;Design a provider-agnostic LLM layer for an org using LangChain. <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>A thin internal library exposing chains built from <code>langchain-core</code> Runnables, with the model created by a factory driven by config (so local Ollama, OpenAI, or a gateway are interchangeable). Centralize: a versioned <strong>prompt registry</strong>; <strong>retry/fallback</strong> policies (primary → cheaper/local fallback); <strong>structured-output</strong> schemas; <strong>LangSmith tracing</strong> for per-team cost/latency and eval; and <strong>guardrails</strong> wrapping inputs/outputs (Module 14). Expose chains via a service boundary (LangServe/FastAPI) so consumers don't import LangChain directly — that keeps you free to swap or drop the framework. Gate every prompt/chain change on an eval set in CI. The goal: teams get composable, observable, swappable LLM components without lock-in to any single provider or even to LangChain itself.</p></div></details>
+
+        <!-- ============ 11. QUIZ ============ -->
+        <h2 id="quiz">11 · Knowledge check</h2>
+
+        <div class="quiz">
+          <div class="q">1 · What does the pipe operator do in LCEL?</div>
+          <label class="opt">Runs two chains and picks the best output</label>
+          <label class="opt" data-correct="true">Feeds the output of the left Runnable as input to the right one (sequence)</label>
+          <label class="opt">Caches results to disk</label>
+          <label class="opt">Splits the input across GPUs</label>
+          <div class="explain"><code>a | b</code> builds a RunnableSequence: run a, pass its output to b. Like Unix pipes, data flows left to right through the composed Runnables.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">2 · You call <code>.stream()</code> on a chain and tokens appear live. Who implemented the streaming?</div>
+          <label class="opt">You did, manually</label>
+          <label class="opt" data-correct="true">LangChain derives it from the Runnable composition graph — it's automatic</label>
+          <label class="opt">The vector database</label>
+          <label class="opt">The operating system</label>
+          <div class="explain">Because every component is a Runnable and the graph is declarative, LangChain provides streaming/batching/async for free — you didn't write the concurrency.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">3 · Your app needs an agent loop with retries and branching. Best tool?</div>
+          <label class="opt">A long LCEL chain</label>
+          <label class="opt">A single prompt</label>
+          <label class="opt" data-correct="true">LangGraph — LCEL is a DAG and can't express cycles/branches cleanly</label>
+          <label class="opt">A bigger model</label>
+          <div class="explain">LCEL composes acyclic pipelines. Stateful loops, conditional branches, and human-in-the-loop belong in LangGraph (Module 12).</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">4 · How do you switch a chain from OpenAI to a local Ollama model?</div>
+          <label class="opt">Rewrite the entire chain</label>
+          <label class="opt" data-correct="true">Swap the model component (import ChatOllama instead) — the rest is unchanged</label>
+          <label class="opt">You can't; chains are provider-specific</label>
+          <label class="opt">Retrain the embeddings</label>
+          <div class="explain">Both models implement the same Runnable interface, so only the model node changes. Provider-agnosticism is a core LangChain value.</div>
+        </div>
+
+        <!-- ============ 12. ACTIVE RECALL ============ -->
+        <h2 id="recall">12 · Active recall</h2>
+        <p>Answer first, then reveal. Re-test tomorrow and in a week.</p>
+        <details class="recall"><summary><span class="q-ico">Q</span> What are the five methods of the Runnable interface? <span class="chev">›</span></summary><div class="a"><code>invoke</code>, <code>batch</code>, <code>stream</code>, and their async variants <code>ainvoke</code>/<code>astream</code> (plus <code>abatch</code>). The shared contract is what makes components composable.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> Write the shape of an LCEL RAG chain. <span class="chev">›</span></summary><div class="a"><code>{"context": retriever | format_docs, "question": RunnablePassthrough()} | prompt | model | parser</code> — parallel dict fetches context + passes the question, then sequence prompt→model→parse.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> What is a retriever, in Runnable terms? <span class="chev">›</span></summary><div class="a">A Runnable that takes a query string and returns documents; obtained from a vector store via <code>.as_retriever()</code>, so it drops into any chain.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> LangChain vs LangGraph — when each? <span class="chev">›</span></summary><div class="a">LangChain/LCEL for acyclic composition (prompt|model|retriever|parser). LangGraph for stateful, cyclic, branching flows — agents, loops, human-in-the-loop.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> How do you add resilience to a chain declaratively? <span class="chev">›</span></summary><div class="a"><code>.with_retry()</code> for automatic retries and <code>.with_fallbacks([...])</code> to fall back to another model/chain on failure — both available on any Runnable.</div></details>
+
+        <!-- ============ 13. EXERCISES ============ -->
+        <h2 id="exercises">13 · Exercises</h2>
+        <div class="callout tip"><div class="c-ico">🟢</div><div class="c-body"><div class="c-title">Easy</div><p>Build <code>prompt | model | StrOutputParser()</code>. Call <code>.invoke</code>, then <code>.batch</code> over 3 inputs, then <code>.stream</code> one. Observe that you wrote zero extra code for batching/streaming.</p></div></div>
+        <div class="callout warn"><div class="c-ico">🟡</div><div class="c-body"><div class="c-title">Medium</div><p>Build the RAG chain from §6 over a small corpus. Then refactor it to be provider-agnostic with the <code>build_model()</code> factory and run it once on OpenAI and once on local Ollama — proving only the model node changed. Add <code>.with_retry()</code>.</p></div></div>
+        <div class="callout danger"><div class="c-ico">🔴</div><div class="c-body"><div class="c-title">Hard</div><p>Build a conversational RAG service: <code>RunnableWithMessageHistory</code> for per-session memory, structured output for a final "answer + sources" object, LangSmith tracing enabled, and a fallback model. Expose it via FastAPI and verify a multi-turn conversation references earlier context. Inspect a trace and identify the exact prompt sent to the model.</p></div></div>
+
+        <!-- ============ 14. MINI PROJECT ============ -->
+        <h2 id="mini-project">14 · Mini project — "Composable RAG Toolkit"</h2>
+        <div class="card">
+          <p><strong>Goal:</strong> A small reusable LangChain module exposing a configurable RAG chain that any teammate can import and point at their data.</p>
+          <h4>Requirements</h4>
+          <ul>
+            <li>A <code>build_rag(retriever, *, backend, k, with_memory)</code> factory returning an LCEL chain</li>
+            <li>Provider-agnostic model selection (Ollama/OpenAI) by config</li>
+            <li>Optional conversational memory and structured "answer+sources" output</li>
+            <li><code>.with_retry()</code> + a fallback model; LangSmith tracing toggle</li>
+          </ul>
+          <h4>Stretch</h4>
+          <ul style="margin-bottom:0"><li>Wrap a reranker (Module 07) as a Runnable in the retrieval step.</li><li>Serve the chain with LangServe and call it over HTTP.</li></ul>
+        </div>
+
+        <!-- ============ 15. REAL PROJECT CONNECTION ============ -->
+        <h2 id="real-project">15 · Real project connection</h2>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Project</th><th>How LangChain applies</th></tr></thead>
+          <tbody>
+            <tr><td><strong>PDF / Multi-PDF RAG</strong></td><td>LCEL RAG chain + community PDF loaders + a vector-store retriever; swap models by config.</td></tr>
+            <tr><td><strong>Hybrid Search RAG</strong></td><td>Wrap hybrid retrieval + reranker as Runnables inside the chain.</td></tr>
+            <tr><td><strong>Local ChatGPT Clone</strong></td><td><code>ChatOllama</code> + streaming + <code>RunnableWithMessageHistory</code> for a fully local chat.</td></tr>
+            <tr><td><strong>SQL / EDA Agent</strong></td><td>LCEL for the deterministic parts; graduate the agent loop to LangGraph (Module 12).</td></tr>
+            <tr><td><strong>Enterprise Platform</strong></td><td>The provider-agnostic LLM layer + LangSmith tracing from §10's staff design.</td></tr>
+          </tbody>
+        </table></div>
+
+        <div class="complete-bar">
+          <div><strong style="font-size:15px">Finished Module 10?</strong><p style="margin:2px 0 0;font-size:13.5px;color:var(--text-muted)">You can compose LLM pipelines cleanly. Next: the data framework, LlamaIndex.</p></div>
+          <button class="btn" data-complete>Mark module complete</button>
+        </div>
+
+        <div class="page-nav">
+          <a href="09_mcp.html"><div class="dir">← Previous</div><div class="ttl">09 · Model Context Protocol</div></a>
+          <a class="next" href="11_llamaindex.html"><div class="dir">Next →</div><div class="ttl">11 · LlamaIndex</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>03 · Local LLMs & Ollama — GenAI Mastery</title>
+<meta name="description" content="Run LLMs on your own hardware: quantization, GGUF, VRAM math, Ollama setup, Modelfiles, the local serving API, and choosing between Llama, Qwen and Gemma.">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body data-page="03">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <div class="brand-mark">G</div>
+        <div class="brand-text"><strong>GenAI Mastery</strong><span>DS → Senior GenAI Engineer</span></div>
+      </a>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search modules…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Foundations / <b>03 · Local LLMs &amp; Ollama</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Module 03 · Foundations track</div>
+        <h1>Local LLMs &amp; Ollama</h1>
+        <p class="lead">A frontier API is the fastest way to ship, but it isn't always an option: regulated data can't leave the building, costs balloon at scale, and offline/edge deployments have no internet. Running models locally — on your laptop or a single GPU box — solves all three. <strong>Ollama</strong> makes it as easy as <code>docker run</code>, and the architecture you learned in Module 02 tells you exactly what hardware you'll need.</p>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~55 min read</span>
+          <span class="pill">Difficulty · Intermediate</span>
+          <span class="pill purple">Prereq · Modules 01–02, Docker basics</span>
+        </div>
+
+        <!-- ============ 1. EXECUTIVE SUMMARY ============ -->
+        <h2 id="summary">1 · Executive summary</h2>
+        <p>A <strong>local LLM</strong> is an open-weights model (Llama, Qwen, Gemma, Mistral, Phi…) that you download and run on your own compute, with no API call leaving your machine. The enabling trick is <strong>quantization</strong>: storing weights in 4–8 bits instead of 16/32, which shrinks a model 3–4× so it fits in consumer VRAM. <strong>Ollama</strong> is the runtime that packages model + weights + config into one pullable artifact and serves an OpenAI-compatible API on <code>localhost:11434</code>.</p>
+        <div class="grid grid-3">
+          <div class="card" data-reveal><span class="ico">❓</span><h4>Why it exists</h4><p>Privacy, cost control, offline capability, low latency, and zero per-token billing — at the price of owning the hardware and ops.</p></div>
+          <div class="card" data-reveal><span class="ico">🔧</span><h4>Problem it solves</h4><p>"My data can't go to a third party" and "my inference bill is unsustainable." Local inference removes both constraints.</p></div>
+          <div class="card" data-reveal><span class="ico">🌐</span><h4>Where it fits</h4><p>Powers private RAG, on-prem agents, edge devices, and dev loops where you iterate without metered API costs.</p></div>
+        </div>
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The one idea to remember</div>
+          <p><strong>Local LLM feasibility is a memory problem.</strong> If the quantized weights plus the KV cache fit in your VRAM (or RAM), it runs — fast on GPU, slower on CPU. Everything in this module is about making that fit and serving it cleanly.</p></div>
+        </div>
+
+        <!-- ============ 2. FIRST PRINCIPLES ============ -->
+        <h2 id="first-principles">2 · First-principles breakdown</h2>
+
+        <h3>What — a file of numbers and a program that runs it</h3>
+        <p>A model is just a large file of weights (a few GB) plus an architecture spec. To "run" it you need a program (an <em>inference engine</em>) that loads those weights into memory and executes the transformer forward pass from Module 02 for each token. Ollama bundles the engine (<code>llama.cpp</code> under the hood), the weights, and a config into one named, versioned artifact — much like a container image.</p>
+
+        <h3>Why — quantization makes big models fit small hardware</h3>
+        <p>A 7-billion-parameter model in 16-bit precision needs ~14 GB just for weights — too big for an 8 GB GPU. <strong>Quantization</strong> rounds each weight to fewer bits. The headline trade: a tiny accuracy loss for a huge memory and speed win.</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Quant</th><th>Bits/weight</th><th>7B model size</th><th>Quality</th><th>Use when</th></tr></thead>
+          <tbody>
+            <tr><td>FP16 (full)</td><td>16</td><td>~14 GB</td><td>Reference</td><td>Big GPU, max fidelity</td></tr>
+            <tr><td>Q8_0</td><td>8</td><td>~7.5 GB</td><td>Near-lossless</td><td>Quality-sensitive tasks</td></tr>
+            <tr><td><strong>Q4_K_M</strong></td><td>~4.5</td><td>~4.4 GB</td><td>Very good (sweet spot)</td><td><strong>Default for most local use</strong></td></tr>
+            <tr><td>Q3_K_M</td><td>~3.5</td><td>~3.5 GB</td><td>Noticeable degradation</td><td>Very tight VRAM</td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>How — the VRAM budget you can do on a napkin</h3>
+        <p>Two things consume memory: the <strong>weights</strong> (fixed) and the <strong>KV cache</strong> (grows with context length × layers × hidden size, shrunk by GQA from Module 02).</p>
+        <div class="callout note"><div class="c-ico">🧮</div><div class="c-body"><div class="c-title">Rule of thumb</div>
+        <p><strong>VRAM ≈ quantized weight size × 1.2</strong> (the 20% covers KV cache + activations at modest context). A Q4 7B model (~4.4 GB) wants ~5–6 GB VRAM; an 8 GB GPU runs it comfortably. Long contexts push the KV-cache term up — that's when the 1.2 becomes 1.5+.</p></div></div>
+
+        <div class="cssflow">
+          <div class="fnode accent">Pick a model + quant<small>qwen2.5:7b-q4_K_M</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">ollama pull<small>downloads GGUF weights</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">Weights load into VRAM/RAM<small>once, then cached</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">ollama serve<small>OpenAI-compatible API :11434</small></div>
+          <div class="farrow"></div>
+          <div class="fnode accent">Your app calls localhost<small>private · offline · free per-token</small></div>
+        </div>
+
+        <!-- ============ 3. VISUAL ARCHITECTURE ============ -->
+        <h2 id="architecture">3 · Visual architecture</h2>
+        <p>How a request flows through a local stack, and where memory lives:</p>
+        <div class="diagram">
+          <svg viewBox="0 0 740 320" width="740" role="img" aria-label="Local LLM architecture">
+            <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="var(--text-muted)"/></marker></defs>
+            <!-- app -->
+            <rect class="flow-node-accent" x="20" y="120" width="130" height="60" rx="10"/><text class="flow-label" x="85" y="146" text-anchor="middle">Your app</text><text class="flow-sub" x="85" y="164" text-anchor="middle">FastAPI / SDK</text>
+            <!-- ollama server -->
+            <rect x="200" y="40" width="350" height="240" rx="16" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="5 5"/>
+            <text class="flow-sub" x="375" y="62" text-anchor="middle" style="fill:var(--accent);font-weight:700">OLLAMA SERVER (localhost:11434)</text>
+            <rect class="flow-node" x="230" y="120" width="130" height="60" rx="10"/><text class="flow-label" x="295" y="146" text-anchor="middle">HTTP API</text><text class="flow-sub" x="295" y="164" text-anchor="middle">/v1 OpenAI-compat</text>
+            <rect class="flow-node" x="400" y="120" width="130" height="60" rx="10"/><text class="flow-label" x="465" y="146" text-anchor="middle">llama.cpp engine</text><text class="flow-sub" x="465" y="164" text-anchor="middle">scheduler · KV cache</text>
+            <rect class="flow-node" x="290" y="215" width="180" height="46" rx="10"/><text class="flow-sub" x="380" y="243" text-anchor="middle" style="fill:var(--text);font-weight:600">Model registry (GGUF + Modelfile)</text>
+            <!-- hardware -->
+            <rect class="flow-node" x="600" y="100" width="120" height="100" rx="10"/><text class="flow-label" x="660" y="135" text-anchor="middle">GPU / CPU</text><text class="flow-sub" x="660" y="153" text-anchor="middle">weights in VRAM</text><text class="flow-sub" x="660" y="169" text-anchor="middle">+ KV cache</text><text class="flow-sub" x="660" y="185" text-anchor="middle">+ activations</text>
+            <!-- arrows -->
+            <path class="flow-arrow" d="M150,150 L228,150"/>
+            <path class="flow-arrow" d="M360,150 L398,150"/>
+            <path class="flow-arrow" d="M530,150 L598,150"/>
+            <path class="flow-arrow" d="M465,180 L420,213"/>
+            <text class="flow-sub" x="190" y="135" text-anchor="middle" style="fill:var(--text-muted)">JSON</text>
+          </svg>
+          <div class="diagram-caption">Figure 1 · Ollama is a thin server over llama.cpp. Weights load once into device memory; requests reuse them.</div>
+        </div>
+
+        <!-- ============ 4. DEEP TECHNICAL ============ -->
+        <h2 id="deep-dive">4 · Deep technical explanation</h2>
+
+        <h3>GGUF — the container format for local weights</h3>
+        <p><strong>GGUF</strong> is a single-file format (used by llama.cpp/Ollama) that stores quantized tensors plus metadata: architecture, context length, tokenizer, and chat template. One file = fully self-describing model. Ollama wraps a GGUF with a <strong>Modelfile</strong> (defaults, system prompt, params) into a named tag.</p>
+
+        <h3>GPU offload, CPU fallback, and hybrid</h3>
+        <p>llama.cpp can split layers between GPU and CPU. If the model doesn't fully fit in VRAM, it offloads as many layers as possible to the GPU and runs the rest on CPU — slower, but it still works. Fully on GPU is fastest; fully on CPU is the universal fallback (good for small models / dev machines).</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Placement</th><th>Speed</th><th>When</th></tr></thead>
+          <tbody>
+            <tr><td>Full GPU offload</td><td>⚡ Fastest (tens–hundreds tok/s)</td><td>Model fits VRAM</td></tr>
+            <tr><td>Hybrid (partial offload)</td><td>🟡 Moderate</td><td>Model slightly too big for VRAM</td></tr>
+            <tr><td>CPU only</td><td>🐢 Slow (few tok/s)</td><td>No GPU; small models; max compatibility</td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>Context length & the KV cache, locally</h3>
+        <p>The architecture from Module 02 has a direct cost here. Ollama's <code>num_ctx</code> sets context length; a larger window allocates a bigger KV cache up front. On a memory-constrained box, raising <code>num_ctx</code> from 2k to 32k can be the difference between fitting and OOM. GQA (grouped-query attention) in Llama/Qwen keeps this cache small — the reason these models are local-friendly.</p>
+
+        <h3>Throughput vocabulary</h3>
+        <ul>
+          <li><strong>Prompt eval (prefill)</strong> — processing your input prompt, done in parallel; fast.</li>
+          <li><strong>Token generation (decode)</strong> — autoregressive, one token at a time; the speed you "feel."</li>
+          <li><strong>tok/s</strong> — tokens per second; the headline metric. <strong>TTFT</strong> — time to first token; what users perceive as responsiveness.</li>
+        </ul>
+
+        <h3>Tradeoffs & limitations</h3>
+        <div class="grid grid-2">
+          <div class="card"><h4>Wins</h4><ul style="margin-bottom:0"><li>Total data privacy</li><li>No per-token cost</li><li>Works offline / on edge</li><li>Full control over versioning</li></ul></div>
+          <div class="card"><h4>Costs</h4><ul style="margin-bottom:0"><li>You own GPU + ops + scaling</li><li>Open models lag frontier on hardest tasks</li><li>Quantization can dent quality on edge cases</li><li>Concurrency needs a real server (vLLM) beyond Ollama's single-box scope</li></ul></div>
+        </div>
+
+        <!-- ============ 5. INTERACTIVE ============ -->
+        <h2 id="interactive">5 · Interactive: will it fit?</h2>
+        <p>A back-of-envelope VRAM estimator. Type model size in billions of params and choose a quant level mentally — the demo computes the fit.</p>
+        <div class="demo">
+          <div class="demo-title"><span class="badge">DEMO</span> VRAM fit estimator</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap;align-items:end">
+            <label style="font-size:13px">Params (B)<br><input class="demo-input" id="vr-params" type="number" value="7" min="0.5" step="0.5" style="width:110px"></label>
+            <label style="font-size:13px">Bits/weight<br><input class="demo-input" id="vr-bits" type="number" value="4.5" min="2" step="0.5" style="width:110px"></label>
+            <label style="font-size:13px">Your VRAM (GB)<br><input class="demo-input" id="vr-vram" type="number" value="8" min="1" step="1" style="width:110px"></label>
+            <button class="btn" id="vr-go">Compute</button>
+          </div>
+          <div id="vr-out" class="demo-stage" style="margin-top:16px"></div>
+        </div>
+        <script>
+          (function(){
+            var go=document.getElementById('vr-go'); if(!go) return;
+            go.addEventListener('click',function(){
+              var p=parseFloat(document.getElementById('vr-params').value)||7;
+              var b=parseFloat(document.getElementById('vr-bits').value)||4.5;
+              var v=parseFloat(document.getElementById('vr-vram').value)||8;
+              var w=p*1e9*b/8/1e9;            // weight GB
+              var need=w*1.2;                  // +KV/activations
+              var out=document.getElementById('vr-out');
+              var fits=need<=v;
+              out.innerHTML='<span class="chip vec show">weights ≈ '+w.toFixed(1)+' GB</span>'+
+                '<span class="chip tok show">est. need ≈ '+need.toFixed(1)+' GB (×1.2)</span>'+
+                '<span class="chip show" style="font-weight:700;background:'+(fits?'var(--green-soft)':'var(--red-soft)')+';color:'+(fits?'var(--green)':'var(--red)')+'">'+
+                (fits?'✓ Fits on '+v+' GB — full GPU offload':'✗ Too big for '+v+' GB — use a smaller quant, smaller model, or hybrid/CPU')+'</span>';
+            });
+            go.click();
+          })();
+        </script>
+
+        <!-- ============ 6. PYTHON ============ -->
+        <h2 id="python">6 · Practical Python</h2>
+
+        <h3>Minimal — chat with a local model</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> minimal_local.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-com"># Ollama's native client (pip install ollama)</span>
+<span class="tok-kw">import</span> ollama
+
+resp = ollama.<span class="tok-fn">chat</span>(model=<span class="tok-str">"llama3.2"</span>, messages=[
+    {<span class="tok-str">"role"</span>: <span class="tok-str">"user"</span>, <span class="tok-str">"content"</span>: <span class="tok-str">"Name 3 use cases for local LLMs."</span>}
+])
+<span class="tok-fn">print</span>(resp[<span class="tok-str">"message"</span>][<span class="tok-str">"content"</span>])</code></pre>
+        </div>
+
+        <h3>Intermediate — OpenAI-compatible + streaming + params</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> compat_stream.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-com"># Reuse the OpenAI SDK so swapping local↔hosted is a one-line change.</span>
+<span class="tok-kw">from</span> openai <span class="tok-kw">import</span> OpenAI
+
+client = <span class="tok-fn">OpenAI</span>(base_url=<span class="tok-str">"http://localhost:11434/v1"</span>, api_key=<span class="tok-str">"ollama"</span>)
+
+stream = client.chat.completions.<span class="tok-fn">create</span>(
+    model=<span class="tok-str">"qwen2.5"</span>,
+    temperature=<span class="tok-num">0.2</span>,
+    max_tokens=<span class="tok-num">300</span>,
+    extra_body={<span class="tok-str">"options"</span>: {<span class="tok-str">"num_ctx"</span>: <span class="tok-num">8192</span>}},  <span class="tok-com"># context window</span>
+    messages=[{<span class="tok-str">"role"</span>: <span class="tok-str">"user"</span>, <span class="tok-str">"content"</span>: <span class="tok-str">"Explain quantization simply."</span>}],
+    stream=<span class="tok-kw">True</span>,
+)
+<span class="tok-kw">for</span> chunk <span class="tok-kw">in</span> stream:
+    delta = chunk.choices[<span class="tok-num">0</span>].delta.content <span class="tok-kw">or</span> <span class="tok-str">""</span>
+    <span class="tok-fn">print</span>(delta, end=<span class="tok-str">""</span>, flush=<span class="tok-kw">True</span>)</code></pre>
+        </div>
+
+        <h3>Production — a backend-switchable LLM service (FastAPI)</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> local_service.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">import</span> os
+<span class="tok-kw">from</span> fastapi <span class="tok-kw">import</span> FastAPI
+<span class="tok-kw">from</span> pydantic <span class="tok-kw">import</span> BaseModel
+<span class="tok-kw">from</span> openai <span class="tok-kw">import</span> OpenAI
+
+<span class="tok-com"># One config flag flips between local Ollama and a hosted gateway.</span>
+BACKEND = os.<span class="tok-fn">getenv</span>(<span class="tok-str">"LLM_BACKEND"</span>, <span class="tok-str">"local"</span>)
+CFG = {
+    <span class="tok-str">"local"</span>:  {<span class="tok-str">"base_url"</span>: <span class="tok-str">"http://localhost:11434/v1"</span>, <span class="tok-str">"key"</span>: <span class="tok-str">"ollama"</span>, <span class="tok-str">"model"</span>: <span class="tok-str">"qwen2.5"</span>},
+    <span class="tok-str">"hosted"</span>: {<span class="tok-str">"base_url"</span>: os.<span class="tok-fn">getenv</span>(<span class="tok-str">"OPENAI_BASE_URL"</span>), <span class="tok-str">"key"</span>: os.<span class="tok-fn">getenv</span>(<span class="tok-str">"OPENAI_API_KEY"</span>), <span class="tok-str">"model"</span>: <span class="tok-str">"gpt-4o-mini"</span>},
+}[BACKEND]
+
+client = <span class="tok-fn">OpenAI</span>(base_url=CFG[<span class="tok-str">"base_url"</span>], api_key=CFG[<span class="tok-str">"key"</span>])
+app = <span class="tok-fn">FastAPI</span>(title=<span class="tok-str">"Local LLM Service"</span>)
+
+<span class="tok-kw">class</span> <span class="tok-cls">Ask</span>(BaseModel):
+    prompt: <span class="tok-cls">str</span>
+    temperature: <span class="tok-cls">float</span> = <span class="tok-num">0.2</span>
+
+<span class="tok-dec">@app.get</span>(<span class="tok-str">"/health"</span>)
+<span class="tok-kw">def</span> <span class="tok-fn">health</span>():
+    <span class="tok-kw">try</span>:                               <span class="tok-com"># liveness: is the model loaded & serving?</span>
+        client.models.<span class="tok-fn">list</span>()
+        <span class="tok-kw">return</span> {<span class="tok-str">"status"</span>: <span class="tok-str">"ok"</span>, <span class="tok-str">"backend"</span>: BACKEND, <span class="tok-str">"model"</span>: CFG[<span class="tok-str">"model"</span>]}
+    <span class="tok-kw">except</span> <span class="tok-cls">Exception</span> <span class="tok-kw">as</span> e:
+        <span class="tok-kw">return</span> {<span class="tok-str">"status"</span>: <span class="tok-str">"degraded"</span>, <span class="tok-str">"error"</span>: <span class="tok-fn">str</span>(e)}
+
+<span class="tok-dec">@app.post</span>(<span class="tok-str">"/ask"</span>)
+<span class="tok-kw">def</span> <span class="tok-fn">ask</span>(q: Ask):
+    r = client.chat.completions.<span class="tok-fn">create</span>(
+        model=CFG[<span class="tok-str">"model"</span>], temperature=q.temperature,
+        messages=[{<span class="tok-str">"role"</span>: <span class="tok-str">"user"</span>, <span class="tok-str">"content"</span>: q.prompt}],
+    )
+    <span class="tok-kw">return</span> {<span class="tok-str">"answer"</span>: r.choices[<span class="tok-num">0</span>].message.content,
+            <span class="tok-str">"tokens"</span>: r.usage.total_tokens <span class="tok-kw">if</span> r.usage <span class="tok-kw">else</span> <span class="tok-kw">None</span>}</code></pre>
+        </div>
+        <div class="callout tip"><div class="c-ico">🐳</div><div class="c-body"><p>In production you'd run Ollama as a container (<code>docker run -d --gpus all -v ollama:/root/.ollama -p 11434:11434 ollama/ollama</code>) and your FastAPI service in another, on the same Docker network — exactly the pattern used in the <a href="15_capstone_projects.html">Local ChatGPT Clone</a> capstone.</p></div></div>
+
+        <!-- ============ 7. OLLAMA ============ -->
+        <h2 id="ollama">7 · Ollama in depth</h2>
+
+        <h3>Core commands</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> ollama_cheatsheet.sh</span><button class="copy-btn">Copy</button></div>
+          <pre><code>ollama pull llama3.2           <span class="tok-com"># download a model</span>
+ollama pull qwen2.5:7b-instruct-q4_K_M   <span class="tok-com"># specific size + quant tag</span>
+ollama list                    <span class="tok-com"># models on disk</span>
+ollama ps                      <span class="tok-com"># models currently loaded in memory</span>
+ollama run gemma2 <span class="tok-str">"hello"</span>       <span class="tok-com"># one-shot or interactive chat</span>
+ollama show qwen2.5            <span class="tok-com"># architecture: ctx len, params, quant</span>
+ollama cp qwen2.5 my-qwen      <span class="tok-com"># clone to customize</span>
+ollama rm gemma2               <span class="tok-com"># free disk</span>
+OLLAMA_HOST=0.0.0.0 ollama serve   <span class="tok-com"># expose on the network (mind security!)</span></code></pre>
+        </div>
+
+        <h3>The Modelfile — bake in behavior</h3>
+        <p>A <strong>Modelfile</strong> is to a model what a Dockerfile is to an image: it pins a base model, default params, a system prompt, and the chat template into a reusable named tag.</p>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> Modelfile</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">FROM</span> qwen2.5:7b-instruct-q4_K_M
+
+<span class="tok-com"># sampling defaults baked into the model tag</span>
+<span class="tok-kw">PARAMETER</span> temperature 0.1
+<span class="tok-kw">PARAMETER</span> num_ctx 8192
+<span class="tok-kw">PARAMETER</span> top_p 0.9
+<span class="tok-kw">PARAMETER</span> stop <span class="tok-str">"&lt;/answer&gt;"</span>
+
+<span class="tok-com"># a persistent system persona</span>
+<span class="tok-kw">SYSTEM</span> <span class="tok-str">"""</span>
+<span class="tok-str">You are a precise data-engineering assistant. Answer only from</span>
+<span class="tok-str">provided context. If unsure, say "I don't know". Be concise.</span>
+<span class="tok-str">"""</span></code></pre>
+        </div>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> build.sh</span><button class="copy-btn">Copy</button></div>
+          <pre><code>ollama create de-assistant -f ./Modelfile
+ollama run de-assistant <span class="tok-str">"What is GGUF?"</span>   <span class="tok-com"># uses your baked params + system prompt</span></code></pre>
+        </div>
+
+        <h3>Choosing a model — Llama vs. Qwen vs. Gemma</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Family</th><th>Maker</th><th>Sweet spot</th><th>Reach for it when…</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Llama 3.x</strong></td><td>Meta</td><td>Balanced general assistant, strong tool-calling</td><td>You want a reliable all-rounder & big ecosystem</td></tr>
+            <tr><td><strong>Qwen 2.5</strong></td><td>Alibaba</td><td>Reasoning, math, code, multilingual; great small sizes</td><td>Coding/analysis agents, non-English, tight VRAM</td></tr>
+            <tr><td><strong>Gemma 2</strong></td><td>Google</td><td>Efficient quality at 2B/9B; fast on modest hardware</td><td>Edge/CPU, latency-sensitive, small footprint</td></tr>
+          </tbody>
+        </table></div>
+        <div class="callout note"><div class="c-ico">📏</div><div class="c-body"><p><strong>Pick by size first, family second.</strong> A well-chosen 7B-Q4 that fits your GPU and runs fast beats a 14B that thrashes between VRAM and RAM. Benchmark <em>your</em> task — leaderboards rarely match your prompt distribution.</p></div></div>
+
+        <!-- ============ 8. INDUSTRY ============ -->
+        <h2 id="industry">8 · Industry perspective</h2>
+        <div class="grid grid-2">
+          <div class="card"><h4>🚀 Startups</h4><p>Use Ollama for the dev loop (free iteration, no metered calls) and for cost-sensitive features. Many ship a "small local model for easy requests, hosted frontier model for hard ones" router to cut bills.</p></div>
+          <div class="card"><h4>🏢 Enterprises</h4><p>Run open models in a VPC/on-prem for regulated data (healthcare, finance, defense). At scale they graduate from Ollama (single box) to <strong>vLLM/TGI</strong> clusters with paged-KV batching for high concurrency.</p></div>
+        </div>
+        <h3>Ollama vs. vLLM — know the boundary</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th></th><th>Ollama</th><th>vLLM / TGI</th></tr></thead>
+          <tbody>
+            <tr><td>Goal</td><td>Easy local/dev & single-user</td><td>High-throughput multi-user serving</td></tr>
+            <tr><td>Concurrency</td><td>Limited (sequential-ish)</td><td>Continuous batching, many requests</td></tr>
+            <tr><td>Setup</td><td>One command</td><td>More config, GPU cluster</td></tr>
+            <tr><td>Use it for</td><td>Prototyping, desktop apps, edge</td><td>Production API at scale</td></tr>
+          </tbody>
+        </table></div>
+        <p><strong>Common production challenges:</strong> cold-start model load time, VRAM OOM under long context, single-box concurrency limits, keeping model versions consistent across environments, and securing an exposed <code>:11434</code> port.</p>
+
+        <!-- ============ 9. MISTAKES ============ -->
+        <h2 id="mistakes">9 · Top mistakes engineers make</h2>
+        <div class="grid grid-2">
+          <div class="card"><h4>❌ Downloading FP16 onto an 8 GB GPU</h4><p>It won't fit. Start at Q4_K_M and only go higher if quality demands it and VRAM allows.</p></div>
+          <div class="card"><h4>❌ Cranking num_ctx "to be safe"</h4><p>Big context pre-allocates a big KV cache and can OOM. Set it to what you actually need.</p></div>
+          <div class="card"><h4>❌ Expecting frontier quality</h4><p>A 7B local model isn't GPT-4. Match model size to task difficulty; route hard tasks to a bigger/hosted model.</p></div>
+          <div class="card"><h4>❌ Exposing :11434 to the internet</h4><p>Ollama has no auth by default. Keep it on localhost or behind an authenticated gateway/reverse proxy.</p></div>
+          <div class="card"><h4>❌ Benchmarking only tok/s</h4><p>TTFT and quality matter as much as throughput. Measure all three on your real workload.</p></div>
+          <div class="card"><h4>❌ Forgetting the chat template</h4><p>Wrong prompt formatting silently degrades output. Let Ollama's bundled template handle it; don't hand-format unless you know the model's format.</p></div>
+        </div>
+
+        <!-- ============ 10. INTERVIEW ============ -->
+        <h2 id="interview">10 · Interview preparation</h2>
+
+        <details class="collapse"><summary><span class="pill green">Beginner</span> &nbsp;Why run an LLM locally instead of calling an API? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Data privacy (nothing leaves your network), no per-token cost, offline/edge capability, predictable latency, and full version control. The trade-off is that you own the hardware, ops, and scaling, and open models may lag frontier quality on the hardest tasks.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill green">Beginner</span> &nbsp;What is quantization and what does it cost you? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Storing model weights at lower precision (e.g. 4-bit instead of 16-bit), shrinking memory ~3–4× and speeding inference. The cost is a small, usually acceptable accuracy loss; aggressive quants (Q3 and below) degrade quality more noticeably. Q4_K_M is the common sweet spot.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill blue">Intermediate</span> &nbsp;Estimate the VRAM to run a 13B model at Q4. <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>~4.5 bits × 13B / 8 ≈ 7.3 GB of weights, ×1.2 for KV cache + activations ≈ <strong>~9 GB</strong> at modest context. A 12 GB GPU runs it comfortably; an 8 GB GPU would need a smaller quant, shorter context, or partial CPU offload (slower).</p></div></details>
+
+        <details class="collapse"><summary><span class="pill blue">Intermediate</span> &nbsp;What's the difference between Ollama and vLLM? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Ollama optimizes for easy single-box/local use and developer experience. vLLM optimizes for high-throughput multi-user serving via continuous batching and paged KV cache. Use Ollama to prototype and for desktop/edge; graduate to vLLM/TGI for a production API serving many concurrent users.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill amber">Senior</span> &nbsp;A hospital wants private RAG over patient records. Walk through your local deployment. <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>All compute on-prem/in-VPC; nothing leaves the network. Run a local instruct model (e.g. Qwen2.5/Llama3.x, Q4–Q8 by GPU budget) via vLLM for concurrency, plus a local embedding model. Vector DB on-prem (pgvector/Qdrant). Add a gateway for auth, audit logging, and PII guardrails; pin model + prompt versions; build an eval set of clinical Q&A to gate releases. Document hardware sizing from the VRAM math and plan capacity for peak concurrency. Privacy and auditability are the design center, not latency.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill purple">Staff · design</span> &nbsp;Design a hybrid local+hosted model router to cut cost 70% without hurting quality. <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Classify each request by difficulty (heuristics + a tiny classifier or the local model's self-assessed confidence). Route easy/high-volume tasks (formatting, extraction, simple Q&A) to a local Q4 model; escalate hard/ambiguous tasks (complex reasoning, long context) to a hosted frontier model. Add a confidence/verification gate: if the local output fails a validator (schema, faithfulness, low logprob), retry on hosted. Track per-route quality with evals and per-route cost; tune the threshold to hit the cost target while keeping quality SLO. Cache identical requests. This routing layer lives in the orchestration tier from Module 01's gateway design.</p></div></details>
+
+        <!-- ============ 11. QUIZ ============ -->
+        <h2 id="quiz">11 · Knowledge check</h2>
+
+        <div class="quiz">
+          <div class="q">1 · What is the primary purpose of quantization?</div>
+          <label class="opt">To make the model more accurate</label>
+          <label class="opt" data-correct="true">To reduce memory footprint (and speed inference) by lowering weight precision</label>
+          <label class="opt">To encrypt the model weights</label>
+          <label class="opt">To increase the context window</label>
+          <div class="explain">Quantization stores weights in fewer bits (e.g. 4-bit), shrinking the model ~3–4× so it fits consumer VRAM and runs faster, at a small accuracy cost.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">2 · Roughly how much VRAM does a 7B model at Q4 need?</div>
+          <label class="opt">~14 GB</label>
+          <label class="opt" data-correct="true">~5–6 GB</label>
+          <label class="opt">~28 GB</label>
+          <label class="opt">~1 GB</label>
+          <div class="explain">~4.5 bits × 7B / 8 ≈ 4.4 GB of weights, ×1.2 for KV cache/activations ≈ 5–6 GB. That's why it runs on an 8 GB GPU.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">3 · You need to serve 200 concurrent users with a local model. Which tool?</div>
+          <label class="opt">Ollama on a laptop</label>
+          <label class="opt" data-correct="true">vLLM/TGI with continuous batching on a GPU server</label>
+          <label class="opt">Run 200 copies of the model</label>
+          <label class="opt">CPU-only inference</label>
+          <div class="explain">Ollama targets single-box/dev use. High concurrency needs continuous batching and a paged KV cache — vLLM/TGI's specialty.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">4 · What does a Modelfile let you do?</div>
+          <label class="opt">Train a model from scratch</label>
+          <label class="opt">Quantize a model on the fly</label>
+          <label class="opt" data-correct="true">Bake a base model + default params + system prompt into a reusable named tag</label>
+          <label class="opt">Convert PyTorch checkpoints to ONNX</label>
+          <div class="explain">A Modelfile is like a Dockerfile for models: pin a base, set parameters (temperature, num_ctx, stop), and a system prompt, then <code>ollama create</code> a custom tag.</div>
+        </div>
+
+        <!-- ============ 12. ACTIVE RECALL ============ -->
+        <h2 id="recall">12 · Active recall</h2>
+        <p>Answer first, then reveal. Re-test tomorrow and in a week.</p>
+        <details class="recall"><summary><span class="q-ico">Q</span> What two things consume GPU memory when running a local LLM? <span class="chev">›</span></summary><div class="a">The quantized model weights (fixed) and the KV cache (grows with context length × layers, shrunk by GQA). Activations add a small amount.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> What is GGUF? <span class="chev">›</span></summary><div class="a">A single-file format for quantized models used by llama.cpp/Ollama, storing tensors plus metadata (architecture, context length, tokenizer, chat template) — a fully self-describing model file.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> Give the napkin formula for VRAM need. <span class="chev">›</span></summary><div class="a">VRAM ≈ (params × bits/weight ÷ 8) × 1.2. The 1.2 covers KV cache + activations at modest context; it rises with longer context.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> When do you choose Gemma over Qwen/Llama? <span class="chev">›</span></summary><div class="a">When you need maximum efficiency on modest/edge hardware (small 2B/9B sizes, fast, low footprint) and the task doesn't require the heaviest reasoning.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> What's the difference between TTFT and tok/s? <span class="chev">›</span></summary><div class="a">TTFT (time to first token) is perceived responsiveness — how long until output starts. tok/s (tokens per second) is generation throughput — how fast the rest streams.</div></details>
+
+        <!-- ============ 13. EXERCISES ============ -->
+        <h2 id="exercises">13 · Exercises</h2>
+        <div class="callout tip"><div class="c-ico">🟢</div><div class="c-body"><div class="c-title">Easy</div><p>Install Ollama, pull <code>llama3.2</code>, <code>qwen2.5</code>, and <code>gemma2</code>. Run <code>ollama show</code> on each and record context length, params, and quantization. Note which loads fastest.</p></div></div>
+        <div class="callout warn"><div class="c-ico">🟡</div><div class="c-body"><div class="c-title">Medium</div><p>Write a Modelfile that pins a system prompt for a "SQL-only assistant" with temperature 0 and a stop sequence. Build it with <code>ollama create</code> and verify the persona persists across runs. Then benchmark tok/s at <code>num_ctx</code> 2048 vs 16384.</p></div></div>
+        <div class="callout danger"><div class="c-ico">🔴</div><div class="c-body"><div class="c-title">Hard</div><p>Build the backend-switchable FastAPI service from §6, containerize Ollama + the service with docker-compose on one network, add a <code>/health</code> readiness probe, and load-test concurrency with <code>locust</code>. Observe where single-box Ollama saturates — then justify when you'd move to vLLM.</p></div></div>
+
+        <!-- ============ 14. MINI PROJECT ============ -->
+        <h2 id="mini-project">14 · Mini project — "Private Notes Q&amp;A"</h2>
+        <div class="card">
+          <p><strong>Goal:</strong> A fully offline CLI that answers questions about a folder of your personal markdown notes using only a local model — zero network calls.</p>
+          <h4>Requirements</h4>
+          <ul>
+            <li>Read all <code>.md</code> files in a directory and concatenate (small corpus, no RAG yet)</li>
+            <li>Use a local Ollama model via the OpenAI-compatible client</li>
+            <li>Stream answers; print tok/s and TTFT for each query</li>
+            <li>A custom Modelfile with a "answer only from the notes" system prompt</li>
+          </ul>
+          <h4>Stretch</h4>
+          <ul style="margin-bottom:0"><li>Add a <code>--backend</code> flag to compare local vs. hosted quality side by side.</li><li>Detect when the notes exceed <code>num_ctx</code> and warn — motivating RAG in Module 06.</li></ul>
+        </div>
+
+        <!-- ============ 15. REAL PROJECT CONNECTION ============ -->
+        <h2 id="real-project">15 · Real project connection</h2>
+        <p>Local inference is the privacy-and-cost backbone of the capstones:</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Project</th><th>How local LLMs apply</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Local ChatGPT Clone</strong></td><td>This module <em>is</em> the engine — Ollama + FastAPI + streaming UI, fully offline.</td></tr>
+            <tr><td><strong>PDF / Multi-PDF RAG</strong></td><td>Run the generator (and even the embedding model) locally so confidential PDFs never leave the machine.</td></tr>
+            <tr><td><strong>SQL / EDA Agent</strong></td><td>Local Qwen at temperature 0 generates SQL/analysis privately; the VRAM math sizes your box.</td></tr>
+            <tr><td><strong>ElasticSearch Agent</strong></td><td>On-prem deployments keep proprietary logs internal — local model + local ES.</td></tr>
+            <tr><td><strong>Enterprise GenAI Platform</strong></td><td>Self-hosted serving (graduating Ollama → vLLM) plus the hybrid local/hosted router from §10.</td></tr>
+          </tbody>
+        </table></div>
+
+        <div class="complete-bar">
+          <div><strong style="font-size:15px">Finished Module 03?</strong><p style="margin:2px 0 0;font-size:13.5px;color:var(--text-muted)">You can now run models privately and size the hardware to match.</p></div>
+          <button class="btn" data-complete>Mark module complete</button>
+        </div>
+
+        <div class="page-nav">
+          <a href="02_transformers.html"><div class="dir">← Previous</div><div class="ttl">02 · Transformers Deep Dive</div></a>
+          <a class="next" href="04_embeddings.html"><div class="dir">Next →</div><div class="ttl">04 · Embeddings</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

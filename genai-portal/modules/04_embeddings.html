@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>04 · Embeddings — GenAI Mastery</title>
+<meta name="description" content="Turn text into vectors that capture meaning: what embeddings are, cosine similarity, dense vs sparse, choosing an embedding model, normalization, chunk granularity, and production embedding pipelines.">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body data-page="04">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <div class="brand-mark">G</div>
+        <div class="brand-text"><strong>GenAI Mastery</strong><span>DS → Senior GenAI Engineer</span></div>
+      </a>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search modules…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Retrieval / <b>04 · Embeddings</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Module 04 · Retrieval track</div>
+        <h1>Embeddings — turning meaning into math</h1>
+        <p class="lead">An LLM can reason about text, but it can't <em>search</em> millions of documents to find what's relevant — that would blow past any context window. Embeddings solve this: they compress a piece of text into a vector of numbers so that <strong>similar meanings land near each other in space</strong>. Distance becomes a proxy for relevance, and suddenly semantic search, RAG, clustering, and dedup are all just geometry.</p>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~55 min read</span>
+          <span class="pill">Difficulty · Intermediate</span>
+          <span class="pill purple">Prereq · Modules 01–02</span>
+        </div>
+
+        <!-- ============ 1. EXECUTIVE SUMMARY ============ -->
+        <h2 id="summary">1 · Executive summary</h2>
+        <p>An <strong>embedding</strong> is a fixed-length vector (e.g. 384, 768, or 1536 numbers) produced by a model that has learned to map text into a space where <strong>semantic similarity equals geometric closeness</strong>. "How do I reset my password?" and "I forgot my login credentials" produce nearby vectors even though they share almost no words. That property is the foundation of every retrieval system in this course.</p>
+        <div class="grid grid-3">
+          <div class="card" data-reveal><span class="ico">❓</span><h4>Why it exists</h4><p>Keyword search misses meaning ("car" ≠ "automobile"). Embeddings capture semantics so search works on intent, not exact strings.</p></div>
+          <div class="card" data-reveal><span class="ico">🔧</span><h4>Problem it solves</h4><p>"Find the few relevant passages out of millions, fast." Convert everything to vectors once, then compare by distance.</p></div>
+          <div class="card" data-reveal><span class="ico">🌐</span><h4>Where it fits</h4><p>The first half of RAG. Embeddings feed the <a href="05_vector_databases.html">vector DB</a> (Module 05) and power <a href="06_rag_basics.html">retrieval</a> (Module 06).</p></div>
+        </div>
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The one idea to remember</div>
+          <p><strong>An embedding is a coordinate for meaning.</strong> Text → vector once; then "relevant" becomes "close." Cosine similarity is the ruler you measure closeness with.</p></div>
+        </div>
+
+        <!-- ============ 2. FIRST PRINCIPLES ============ -->
+        <h2 id="first-principles">2 · First-principles breakdown</h2>
+
+        <h3>What — a map where neighbors mean similar things</h3>
+        <p>Picture a giant map. Every sentence gets a pin. The model places pins so that sentences about <em>refunds</em> cluster in one region, <em>shipping</em> in another, <em>poetry</em> far away. The map has hundreds of dimensions (not two), but the intuition holds: <strong>nearby pins = related meaning</strong>. To find passages relevant to a question, you embed the question, drop its pin, and grab the nearest neighbors.</p>
+
+        <div class="callout note"><div class="c-ico">🧭</div><div class="c-body"><div class="c-title">The classic analogy</div>
+        <p>The famous result <code>king − man + woman ≈ queen</code> shows directions in the space carry meaning. Modern sentence embeddings extend this from single words to whole passages — the <em>geometry encodes semantics</em>.</p></div></div>
+
+        <h3>Why — distance is cheap, understanding is expensive</h3>
+        <p>Comparing two vectors with cosine similarity is a single dot product — microseconds. Asking an LLM "are these two paragraphs about the same thing?" costs a full forward pass and dollars. Embeddings move the expensive "understanding" step to a one-time encode, then let cheap geometry do the matching at query time across millions of items.</p>
+
+        <h3>How — from transformer to a single vector</h3>
+        <p>An embedding model is usually a transformer <em>encoder</em> (Module 02, bidirectional). It reads the text, produces a contextual vector per token, then <strong>pools</strong> them into one vector (mean-pooling or a special <code>[CLS]</code> token). The model is trained with <em>contrastive learning</em>: pull similar pairs together, push dissimilar pairs apart.</p>
+        <div class="cssflow">
+          <div class="fnode accent">Text<small>"reset my password"</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">Tokenize</div>
+          <div class="farrow"></div>
+          <div class="fnode">Encoder transformer<small>per-token vectors</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">Pooling<small>mean / CLS → 1 vector</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">Normalize<small>unit length</small></div>
+          <div class="farrow"></div>
+          <div class="fnode accent">Embedding vector<small>[0.02, -0.11, …] (768-d)</small></div>
+        </div>
+
+        <!-- ============ 3. VISUAL ARCHITECTURE ============ -->
+        <h2 id="architecture">3 · Visual architecture</h2>
+        <p>How embeddings sit in a retrieval pipeline — note the same model embeds <em>both</em> documents (at index time) and the query (at search time):</p>
+        <div class="diagram">
+          <svg viewBox="0 0 740 320" width="740" role="img" aria-label="Embedding pipeline">
+            <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="var(--text-muted)"/></marker></defs>
+            <!-- index time -->
+            <text class="flow-sub" x="180" y="28" text-anchor="middle" style="fill:var(--accent);font-weight:700">INDEX TIME (once)</text>
+            <rect class="flow-node" x="20" y="45" width="120" height="46" rx="9"/><text class="flow-label" x="80" y="73" text-anchor="middle">Documents</text>
+            <rect class="flow-node-accent" x="180" y="45" width="130" height="46" rx="9"/><text class="flow-label" x="245" y="67" text-anchor="middle">Embedding model</text><text class="flow-sub" x="245" y="83" text-anchor="middle">same model →</text>
+            <rect class="flow-node" x="350" y="45" width="120" height="46" rx="9"/><text class="flow-label" x="410" y="73" text-anchor="middle">Doc vectors</text>
+            <path class="flow-arrow" d="M140,68 L178,68"/><path class="flow-arrow" d="M310,68 L348,68"/>
+            <!-- store -->
+            <rect class="flow-node" x="540" y="120" width="160" height="70" rx="10"/><text class="flow-label" x="620" y="150" text-anchor="middle">Vector store</text><text class="flow-sub" x="620" y="167" text-anchor="middle">index of all vectors</text><text class="flow-sub" x="620" y="182" text-anchor="middle">(Module 05)</text>
+            <path class="flow-arrow" d="M470,75 C520,75 540,120 560,128"/>
+            <!-- query time -->
+            <text class="flow-sub" x="180" y="225" text-anchor="middle" style="fill:var(--blue);font-weight:700">QUERY TIME (per request)</text>
+            <rect class="flow-node" x="20" y="240" width="120" height="46" rx="9"/><text class="flow-label" x="80" y="268" text-anchor="middle">Query</text>
+            <rect class="flow-node-accent" x="180" y="240" width="130" height="46" rx="9"/><text class="flow-label" x="245" y="268" text-anchor="middle">Embedding model</text>
+            <rect class="flow-node" x="350" y="240" width="120" height="46" rx="9"/><text class="flow-label" x="410" y="268" text-anchor="middle">Query vector</text>
+            <path class="flow-arrow" d="M140,263 L178,263"/><path class="flow-arrow" d="M310,263 L348,263"/>
+            <path class="flow-arrow flow-dash" d="M470,255 C530,255 540,200 560,190"/>
+            <text class="flow-sub" x="525" y="232" text-anchor="middle" style="fill:var(--text-muted)">nearest-neighbor search</text>
+          </svg>
+          <div class="diagram-caption">Figure 1 · Documents are embedded once; queries are embedded per request and matched by nearest-neighbor search. <strong>Same model on both sides — non-negotiable.</strong></div>
+        </div>
+
+        <!-- ============ 4. DEEP TECHNICAL ============ -->
+        <h2 id="deep-dive">4 · Deep technical explanation</h2>
+
+        <h3>Measuring similarity</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Metric</th><th>Formula</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Cosine similarity</strong></td><td>(A·B)/(‖A‖‖B‖)</td><td>Angle between vectors; ignores magnitude. <strong>The default for text.</strong> Range −1…1.</td></tr>
+            <tr><td><strong>Dot product</strong></td><td>A·B</td><td>Cosine × magnitudes. Equals cosine <em>when vectors are normalized</em> — and most are.</td></tr>
+            <tr><td><strong>Euclidean (L2)</strong></td><td>‖A − B‖</td><td>Straight-line distance. Equivalent ranking to cosine for normalized vectors.</td></tr>
+          </tbody>
+        </table></div>
+        <div class="callout tip"><div class="c-ico">✅</div><div class="c-body"><p><strong>Normalize, then use dot product.</strong> If you L2-normalize every vector to unit length, dot product == cosine similarity but is faster and is what vector DBs optimize. Most modern embedding models already output normalized vectors — confirm before mixing metrics.</p></div></div>
+
+        <h3>Dense vs. sparse embeddings</h3>
+        <div class="grid grid-2">
+          <div class="card"><h4>Dense (semantic)</h4><p>Few hundred–few thousand floats, every dim is "active." Captures meaning/synonyms. Misses exact keywords, codes, and rare proper nouns. This module's focus.</p></div>
+          <div class="card"><h4>Sparse (lexical)</h4><p>Vocabulary-sized, mostly zeros (BM25, SPLADE). Captures exact terms, IDs, jargon. Misses paraphrase. We combine both in <strong>hybrid search</strong> (<a href="07_advanced_rag.html">Module 07</a>).</p></div>
+        </div>
+
+        <h3>Choosing an embedding model</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Consideration</th><th>What to weigh</th></tr></thead>
+          <tbody>
+            <tr><td>Dimensionality</td><td>384 (fast, light) vs 768/1024 (richer) vs 1536+ (best, heavier storage & compute). More dims = more storage and slower search.</td></tr>
+            <tr><td>Domain fit</td><td>General (all-MiniLM, bge, e5) vs domain-tuned (code, legal, biomedical). Match the model to your data.</td></tr>
+            <tr><td>Max sequence length</td><td>Inputs beyond the limit are truncated — your tail text silently vanishes. Drives your chunk size.</td></tr>
+            <tr><td>Asymmetric vs symmetric</td><td>Some models (e5, bge) want prefixes like <code>"query:"</code> / <code>"passage:"</code>. Using them wrong tanks recall.</td></tr>
+            <tr><td>Local vs hosted</td><td>Run open models (sentence-transformers, bge, nomic) via Ollama for privacy; hosted for convenience/quality.</td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>Why chunk granularity is an embedding decision</h3>
+        <p>A single vector must summarize an <em>entire</em> input. Embed a whole 20-page PDF into one vector and it becomes a mushy average — useless for retrieval. Embed each sentence and you lose surrounding context. The sweet spot (typically a few hundred tokens per chunk, with overlap) is a tradeoff you tune in <a href="06_rag_basics.html">Module 06</a>; the constraint originates here, in how embeddings compress.</p>
+
+        <h3>Tradeoffs & limitations</h3>
+        <div class="grid grid-2">
+          <div class="card"><h4>Strengths</h4><ul style="margin-bottom:0"><li>Meaning-based matching</li><li>One-time encode, cheap query-time search</li><li>Language- and format-agnostic</li></ul></div>
+          <div class="card"><h4>Limits</h4><ul style="margin-bottom:0"><li>Weak on exact terms/IDs (→ hybrid)</li><li>"Curse of dimensionality" — everything looks moderately similar at scale</li><li>Model-specific: <strong>never mix vectors from different models</strong></li><li>Encodes training biases</li></ul></div>
+        </div>
+
+        <!-- ============ 5. INTERACTIVE ============ -->
+        <h2 id="interactive">5 · Interactive: text → vector</h2>
+        <p>Type any phrase and watch it become tokens, then a vector ready for similarity search.</p>
+        <div class="demo" data-embed-demo>
+          <div class="demo-title"><span class="badge">DEMO</span> Generate an embedding</div>
+          <div style="display:flex;gap:10px;flex-wrap:wrap">
+            <input class="demo-input" type="text" placeholder="machine learning for time series" style="flex:1;min-width:220px">
+            <button class="btn" data-run>▶ Generate embedding</button>
+          </div>
+          <div data-stage style="margin-top:16px"></div>
+        </div>
+        <div class="callout note"><div class="c-ico">ℹ️</div><div class="c-body"><p>The bars are an illustrative visualization (12 of 768 dimensions). A real model would output 768 floats; you'd then compute cosine similarity against your indexed vectors to find the nearest neighbors.</p></div></div>
+
+        <!-- ============ 6. PYTHON ============ -->
+        <h2 id="python">6 · Practical Python</h2>
+
+        <h3>Minimal — embed text & compare meanings</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> minimal_embed.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">from</span> sentence_transformers <span class="tok-kw">import</span> SentenceTransformer, util
+
+model = <span class="tok-fn">SentenceTransformer</span>(<span class="tok-str">"all-MiniLM-L6-v2"</span>)   <span class="tok-com"># 384-d, fast, local</span>
+
+a = model.<span class="tok-fn">encode</span>(<span class="tok-str">"How do I reset my password?"</span>, normalize_embeddings=<span class="tok-kw">True</span>)
+b = model.<span class="tok-fn">encode</span>(<span class="tok-str">"I forgot my login credentials"</span>, normalize_embeddings=<span class="tok-kw">True</span>)
+c = model.<span class="tok-fn">encode</span>(<span class="tok-str">"What's the weather tomorrow?"</span>, normalize_embeddings=<span class="tok-kw">True</span>)
+
+<span class="tok-fn">print</span>(<span class="tok-str">"a↔b"</span>, util.<span class="tok-fn">cos_sim</span>(a, b).<span class="tok-fn">item</span>())   <span class="tok-com"># ~0.6  (related)</span>
+<span class="tok-fn">print</span>(<span class="tok-str">"a↔c"</span>, util.<span class="tok-fn">cos_sim</span>(a, c).<span class="tok-fn">item</span>())   <span class="tok-com"># ~0.1  (unrelated)</span></code></pre>
+        </div>
+
+        <h3>Intermediate — a tiny semantic search index (NumPy)</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> mini_search.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">import</span> numpy <span class="tok-kw">as</span> np
+<span class="tok-kw">from</span> sentence_transformers <span class="tok-kw">import</span> SentenceTransformer
+
+model = <span class="tok-fn">SentenceTransformer</span>(<span class="tok-str">"all-MiniLM-L6-v2"</span>)
+docs = [
+    <span class="tok-str">"Reset your password from the account settings page."</span>,
+    <span class="tok-str">"Our refund policy allows returns within 30 days."</span>,
+    <span class="tok-str">"Two-factor authentication adds a second login step."</span>,
+    <span class="tok-str">"Shipping is free on orders over $50."</span>,
+]
+<span class="tok-com"># Index once: normalized so dot product == cosine</span>
+doc_vecs = model.<span class="tok-fn">encode</span>(docs, normalize_embeddings=<span class="tok-kw">True</span>)
+
+<span class="tok-kw">def</span> <span class="tok-fn">search</span>(query, k=<span class="tok-num">2</span>):
+    q = model.<span class="tok-fn">encode</span>(query, normalize_embeddings=<span class="tok-kw">True</span>)
+    scores = doc_vecs @ q                  <span class="tok-com"># cosine via dot product</span>
+    top = np.<span class="tok-fn">argsort</span>(-scores)[:k]
+    <span class="tok-kw">return</span> [(docs[i], <span class="tok-fn">round</span>(<span class="tok-fn">float</span>(scores[i]), <span class="tok-num">3</span>)) <span class="tok-kw">for</span> i <span class="tok-kw">in</span> top]
+
+<span class="tok-fn">print</span>(<span class="tok-fn">search</span>(<span class="tok-str">"I can't log in"</span>))
+<span class="tok-com"># [('Reset your password...', 0.52), ('Two-factor authentication...', 0.41)]</span></code></pre>
+        </div>
+
+        <h3>Production — a batched, cached, fault-tolerant embedder</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> embedder.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">import</span> hashlib, logging
+<span class="tok-kw">from</span> functools <span class="tok-kw">import</span> lru_cache
+<span class="tok-kw">from</span> sentence_transformers <span class="tok-kw">import</span> SentenceTransformer
+
+log = logging.<span class="tok-fn">getLogger</span>(<span class="tok-str">"embedder"</span>)
+
+<span class="tok-kw">class</span> <span class="tok-cls">Embedder</span>:
+    <span class="tok-str">"""Batched embedding with caching + model-version tagging."""</span>
+    <span class="tok-kw">def</span> <span class="tok-fn">__init__</span>(self, model_name=<span class="tok-str">"BAAI/bge-small-en-v1.5"</span>, batch_size=<span class="tok-num">64</span>):
+        self.name = model_name
+        self.model = <span class="tok-fn">SentenceTransformer</span>(model_name)
+        self.batch_size = batch_size
+
+    <span class="tok-kw">def</span> <span class="tok-fn">version</span>(self) -> <span class="tok-cls">str</span>:
+        <span class="tok-com"># Tag stored vectors with model id — never mix models in one index!</span>
+        <span class="tok-kw">return</span> self.name
+
+    <span class="tok-kw">def</span> <span class="tok-fn">embed_docs</span>(self, texts: <span class="tok-cls">list</span>[<span class="tok-cls">str</span>]):
+        <span class="tok-com"># bge wants a query prefix at search time, not for passages</span>
+        <span class="tok-kw">return</span> self.model.<span class="tok-fn">encode</span>(texts, batch_size=self.batch_size,
+                                 normalize_embeddings=<span class="tok-kw">True</span>,
+                                 show_progress_bar=<span class="tok-kw">False</span>)
+
+    <span class="tok-dec">@lru_cache</span>(maxsize=<span class="tok-num">10_000</span>)
+    <span class="tok-kw">def</span> <span class="tok-fn">embed_query</span>(self, text: <span class="tok-cls">str</span>):
+        prefixed = <span class="tok-str">f"query: {text}"</span>            <span class="tok-com"># asymmetric model convention</span>
+        <span class="tok-kw">return</span> self.model.<span class="tok-fn">encode</span>(prefixed, normalize_embeddings=<span class="tok-kw">True</span>)
+
+    <span class="tok-kw">def</span> <span class="tok-fn">key</span>(self, text: <span class="tok-cls">str</span>) -> <span class="tok-cls">str</span>:
+        <span class="tok-kw">return</span> hashlib.<span class="tok-fn">sha256</span>((self.name + text).<span class="tok-fn">encode</span>()).<span class="tok-fn">hexdigest</span>()</code></pre>
+        </div>
+        <div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><p><strong>Tag every stored vector with its model version.</strong> When you upgrade embedding models, the old vectors are incompatible — you must re-embed the whole corpus. Mixing models in one index silently destroys retrieval quality.</p></div></div>
+
+        <!-- ============ 7. OLLAMA ============ -->
+        <h2 id="ollama">7 · Ollama implementation</h2>
+        <p>Embeddings can run fully locally too — keep your documents private end-to-end.</p>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> bash</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-com"># Pull a dedicated local embedding model</span>
+ollama pull nomic-embed-text     <span class="tok-com"># 768-d, strong general embeddings</span>
+ollama pull mxbai-embed-large    <span class="tok-com"># 1024-d, higher quality</span>
+ollama pull bge-m3               <span class="tok-com"># multilingual + dense/sparse hybrid</span></code></pre>
+        </div>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> local_embed.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">import</span> ollama, numpy <span class="tok-kw">as</span> np
+
+<span class="tok-kw">def</span> <span class="tok-fn">embed</span>(text, model=<span class="tok-str">"nomic-embed-text"</span>):
+    v = ollama.<span class="tok-fn">embeddings</span>(model=model, prompt=text)[<span class="tok-str">"embedding"</span>]
+    v = np.<span class="tok-fn">array</span>(v)
+    <span class="tok-kw">return</span> v / np.linalg.<span class="tok-fn">norm</span>(v)          <span class="tok-com"># normalize → cosine via dot</span>
+
+q   = <span class="tok-fn">embed</span>(<span class="tok-str">"local embedding models"</span>)
+doc = <span class="tok-fn">embed</span>(<span class="tok-str">"running sentence encoders on your own GPU"</span>)
+<span class="tok-fn">print</span>(<span class="tok-str">"cosine:"</span>, <span class="tok-fn">float</span>(q @ doc))</code></pre>
+        </div>
+        <div class="callout tip"><div class="c-ico">🔒</div><div class="c-body"><p>Local embedding + local generation (Module 03) = a RAG pipeline where <strong>no text ever leaves your machine</strong>. This is the privacy backbone of the on-prem capstones.</p></div></div>
+
+        <!-- ============ 8. INDUSTRY ============ -->
+        <h2 id="industry">8 · Industry perspective</h2>
+        <div class="grid grid-2">
+          <div class="card"><h4>🚀 Startups</h4><p>Start with a small open model (all-MiniLM/bge-small) for cost and speed, hosted embeddings if convenience wins. Re-embedding cost is small early — they iterate on chunking before optimizing the model.</p></div>
+          <div class="card"><h4>🏢 Enterprises</h4><p>Standardize on one embedding model across teams (so vectors are comparable), version it explicitly, and plan re-embedding pipelines as a first-class job. Often fine-tune embeddings on domain data for a measurable recall lift.</p></div>
+        </div>
+        <h3>Beyond RAG: where embeddings show up</h3>
+        <ul>
+          <li><strong>Deduplication & clustering</strong> — group near-identical tickets, articles, or logs.</li>
+          <li><strong>Classification</strong> — nearest-centroid or kNN over embeddings, often beating bespoke classifiers with little data.</li>
+          <li><strong>Recommendation</strong> — "more like this" via nearest neighbors.</li>
+          <li><strong>Anomaly detection</strong> — outliers are vectors far from every cluster.</li>
+          <li><strong>Semantic caching</strong> — return a cached LLM answer if a new query is embeddings-close to a past one (cost saver, Module 14).</li>
+        </ul>
+        <p><strong>Common production challenges:</strong> embedding-model upgrades forcing full re-index, latency of embedding at query time (cache it), inconsistent normalization across services, and the query/passage prefix gotcha silently halving recall.</p>
+
+        <!-- ============ 9. MISTAKES ============ -->
+        <h2 id="mistakes">9 · Top mistakes engineers make</h2>
+        <div class="grid grid-2">
+          <div class="card"><h4>❌ Mixing models in one index</h4><p>Vectors from different models live in different spaces — distances are meaningless. One index, one model, one version.</p></div>
+          <div class="card"><h4>❌ Skipping normalization (then using dot product)</h4><p>Unnormalized dot products rank by magnitude, not meaning. Normalize, or use cosine explicitly.</p></div>
+          <div class="card"><h4>❌ Ignoring query/passage prefixes</h4><p>Asymmetric models (e5, bge) need <code>"query:"</code>/<code>"passage:"</code> prefixes. Omit them and recall craters.</p></div>
+          <div class="card"><h4>❌ Embedding huge chunks</h4><p>One vector can't represent 20 pages. Oversized chunks average out the signal. Chunk thoughtfully (Module 06).</p></div>
+          <div class="card"><h4>❌ Relying on dense alone for IDs/codes</h4><p>Exact tokens (SKUs, error codes, names) need lexical/sparse search. Use hybrid (Module 07).</p></div>
+          <div class="card"><h4>❌ Re-embedding the query every request</h4><p>For repeated/popular queries, cache the query vector — it's pure compute you can avoid.</p></div>
+        </div>
+
+        <!-- ============ 10. INTERVIEW ============ -->
+        <h2 id="interview">10 · Interview preparation</h2>
+
+        <details class="collapse"><summary><span class="pill green">Beginner</span> &nbsp;What is a text embedding? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>A fixed-length numeric vector representing the meaning of a piece of text, produced by a model trained so that semantically similar texts get nearby vectors. It lets you measure relevance with geometric distance instead of keyword overlap.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill green">Beginner</span> &nbsp;Why cosine similarity instead of Euclidean distance for text? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Cosine measures the angle between vectors, ignoring magnitude — and for text, direction (which concepts are present) matters more than length. With normalized vectors, cosine, dot product, and Euclidean give the same ranking, so people normalize and use the fast dot product.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill blue">Intermediate</span> &nbsp;Dense vs sparse embeddings — when do you need each? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Dense (semantic) embeddings match meaning and paraphrase but miss exact terms. Sparse/lexical (BM25, SPLADE) match exact keywords, codes, and rare proper nouns but miss synonyms. Use dense for conceptual queries, sparse for precise terms, and <strong>hybrid</strong> (combine both, then rerank) when you need both — covered in Module 07.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill blue">Intermediate</span> &nbsp;How does embedding dimensionality affect a system? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Higher dimensions can capture more nuance but cost more storage (linear in dims × number of vectors) and slightly slower similarity computation and index build. 384-d is fast/light; 768–1024 is a common quality balance; 1536+ for top quality. Choose based on recall needs vs. storage/latency budget; some models (Matryoshka) let you truncate dims gracefully.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill amber">Senior</span> &nbsp;Your retrieval quality dropped overnight. Embeddings are a suspect — how do you investigate? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Check for a silent model/version change (different model → incompatible space) or a normalization/prefix regression (someone dropped the <code>query:</code> prefix). Verify index and query use the <em>same</em> model + same preprocessing. Inspect a few queries' nearest neighbors manually. Run your retrieval eval set (recall@k, MRR) against a known-good baseline. If a model upgrade happened, you likely need a full re-embed; partial re-index leaves mixed spaces.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill purple">Staff · design</span> &nbsp;Design an embedding platform serving 50 teams over billions of documents. <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Centralize a versioned <strong>embedding service</strong> (one or few approved models) so vectors are comparable and re-index jobs are coordinated. Components: a batched GPU embedding API with autoscaling; a feature/registry that records <em>model id + version + normalization</em> alongside every vector; an idempotent, resumable re-embedding pipeline (model upgrades = backfill jobs); a cache layer for hot query vectors and semantic caching; cost/latency dashboards per team. Governance: deprecation policy for models, eval gates before any model swap (recall@k regression check), and PII handling for inputs. Treat the embedding model like a database schema — versioned, migrated deliberately, never silently changed.</p></div></details>
+
+        <!-- ============ 11. QUIZ ============ -->
+        <h2 id="quiz">11 · Knowledge check</h2>
+
+        <div class="quiz">
+          <div class="q">1 · Two sentences with no words in common can still have high embedding similarity. Why?</div>
+          <label class="opt">It's a bug in the model</label>
+          <label class="opt" data-correct="true">Embeddings capture meaning, so paraphrases land close in vector space</label>
+          <label class="opt">Because they have the same length</label>
+          <label class="opt">Only if they share punctuation</label>
+          <div class="explain">Embeddings encode semantics, not surface words. "Reset my password" and "forgot my login" share meaning, so their vectors are close despite different words.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">2 · You normalize all vectors to unit length. Now dot product equals…</div>
+          <label class="opt">Euclidean distance</label>
+          <label class="opt" data-correct="true">Cosine similarity</label>
+          <label class="opt">The L1 norm</label>
+          <label class="opt">Nothing useful</label>
+          <div class="explain">Cosine = (A·B)/(‖A‖‖B‖). If ‖A‖=‖B‖=1, the denominator is 1, so dot product == cosine — faster and what vector DBs optimize.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">3 · Which task most needs sparse/lexical search alongside dense embeddings?</div>
+          <label class="opt">Finding paraphrased FAQ answers</label>
+          <label class="opt">Clustering similar articles</label>
+          <label class="opt" data-correct="true">Matching exact product SKUs or error codes</label>
+          <label class="opt">"More like this" recommendations</label>
+          <div class="explain">Dense embeddings blur exact tokens. SKUs, IDs, and error codes are precise strings that lexical/sparse search matches reliably — hence hybrid search.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">4 · You upgrade your embedding model. What must you do?</div>
+          <label class="opt">Nothing — vectors are interchangeable</label>
+          <label class="opt">Only re-embed new documents</label>
+          <label class="opt" data-correct="true">Re-embed the entire corpus; old vectors live in a different space</label>
+          <label class="opt">Just change the similarity metric</label>
+          <div class="explain">Different models produce incompatible spaces. Mixing old and new vectors makes distances meaningless — you must re-embed everything and version the index.</div>
+        </div>
+
+        <!-- ============ 12. ACTIVE RECALL ============ -->
+        <h2 id="recall">12 · Active recall</h2>
+        <p>Answer first, then reveal. Re-test tomorrow and in a week.</p>
+        <details class="recall"><summary><span class="q-ico">Q</span> In one sentence, what does an embedding model do? <span class="chev">›</span></summary><div class="a">Maps text to a fixed-length vector such that semantically similar texts are close in the vector space.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> Write the cosine similarity formula. <span class="chev">›</span></summary><div class="a">cos(A,B) = (A·B) / (‖A‖·‖B‖). For unit-normalized vectors it reduces to the dot product A·B.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> Why must index-time and query-time use the same embedding model? <span class="chev">›</span></summary><div class="a">Different models produce vectors in different, incomparable spaces. Distances are only meaningful within one model's space, so both sides must match (and use the same normalization/prefixes).</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> What is the query/passage prefix gotcha? <span class="chev">›</span></summary><div class="a">Asymmetric models (e5, bge) are trained to prepend <code>query:</code> to queries and <code>passage:</code> to documents. Omitting or swapping them significantly degrades retrieval recall.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> Name two non-RAG uses of embeddings. <span class="chev">›</span></summary><div class="a">Any two of: deduplication, clustering, classification (kNN/centroid), recommendation, anomaly detection, semantic caching.</div></details>
+
+        <!-- ============ 13. EXERCISES ============ -->
+        <h2 id="exercises">13 · Exercises</h2>
+        <div class="callout tip"><div class="c-ico">🟢</div><div class="c-body"><div class="c-title">Easy</div><p>Embed 5 sentences (some related, some not) with <code>all-MiniLM-L6-v2</code> and print the full 5×5 cosine similarity matrix. Confirm related pairs score highest.</p></div></div>
+        <div class="callout warn"><div class="c-ico">🟡</div><div class="c-body"><div class="c-title">Medium</div><p>Build the NumPy semantic search from §6 over 50 FAQ entries. Then add a lexical baseline (simple TF-IDF or keyword match) and find a query where dense beats lexical and one where lexical beats dense — motivating hybrid search.</p></div></div>
+        <div class="callout danger"><div class="c-ico">🔴</div><div class="c-body"><div class="c-title">Hard</div><p>Embed the same 200 docs with two different models (e.g. MiniLM-384 vs bge-small-768). Build separate indexes, run a 20-query eval, and compare recall@5 and latency. Then demonstrate the failure mode: query one index with the other model's vectors and measure the quality collapse.</p></div></div>
+
+        <!-- ============ 14. MINI PROJECT ============ -->
+        <h2 id="mini-project">14 · Mini project — "Semantic Duplicate Finder"</h2>
+        <div class="card">
+          <p><strong>Goal:</strong> Given a CSV of support tickets, cluster near-duplicates so agents see "12 people reported this" instead of 12 separate tickets.</p>
+          <h4>Requirements</h4>
+          <ul>
+            <li>Embed every ticket with a local model (normalized)</li>
+            <li>Compute pairwise cosine similarity; group pairs above a threshold</li>
+            <li>Output clusters with a representative ticket + member count</li>
+            <li>Make the threshold a CLI flag and show how it changes cluster granularity</li>
+          </ul>
+          <h4>Stretch</h4>
+          <ul style="margin-bottom:0"><li>Use proper clustering (e.g. HDBSCAN/agglomerative) over embeddings instead of a threshold.</li><li>Add a "find similar to this ticket" query mode — a preview of vector search.</li></ul>
+        </div>
+
+        <!-- ============ 15. REAL PROJECT CONNECTION ============ -->
+        <h2 id="real-project">15 · Real project connection</h2>
+        <p>Embeddings are the entry point to every retrieval-based capstone:</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Project</th><th>Embedding role</th></tr></thead>
+          <tbody>
+            <tr><td><strong>PDF RAG</strong></td><td>Each chunk → vector; the query → vector; cosine finds the relevant passages to feed the LLM.</td></tr>
+            <tr><td><strong>Multi-PDF RAG</strong></td><td>Same model across all PDFs so vectors are comparable; metadata tags which doc each vector came from.</td></tr>
+            <tr><td><strong>Hybrid Search RAG</strong></td><td>Dense embeddings combine with sparse/BM25 — this module supplies the dense half.</td></tr>
+            <tr><td><strong>ElasticSearch Agent</strong></td><td>ES dense-vector fields store these embeddings for kNN search alongside its lexical engine.</td></tr>
+            <tr><td><strong>Enterprise Platform</strong></td><td>The centralized, versioned embedding service from §10's staff design question.</td></tr>
+          </tbody>
+        </table></div>
+
+        <div class="complete-bar">
+          <div><strong style="font-size:15px">Finished Module 04?</strong><p style="margin:2px 0 0;font-size:13.5px;color:var(--text-muted)">You can now turn meaning into vectors — next, store and search them at scale.</p></div>
+          <button class="btn" data-complete>Mark module complete</button>
+        </div>
+
+        <div class="page-nav">
+          <a href="03_local_llms.html"><div class="dir">← Previous</div><div class="ttl">03 · Local LLMs &amp; Ollama</div></a>
+          <a class="next" href="05_vector_databases.html"><div class="dir">Next →</div><div class="ttl">05 · Vector Databases</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

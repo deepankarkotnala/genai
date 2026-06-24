@@ -1,0 +1,489 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>02 · Transformers Deep Dive — GenAI Mastery</title>
+<meta name="description" content="The transformer architecture from first principles: tokens to embeddings, self-attention, Q/K/V, multi-head attention, positional encoding, residuals, layernorm, and the decoder stack that powers every LLM.">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body data-page="02">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <div class="brand-mark">G</div>
+        <div class="brand-text"><strong>GenAI Mastery</strong><span>DS → Senior GenAI Engineer</span></div>
+      </a>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search modules…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Foundations / <b>02 · Transformers Deep Dive</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Module 02 · Foundations track</div>
+        <h1>Transformers — the engine inside every LLM</h1>
+        <p class="lead">In Module 01 we treated the model as a black box: <code>f(tokens) → next-token distribution</code>. Now we open the box. The transformer is what makes that function possible, and its central mechanism — <strong>self-attention</strong> — is the single most important idea in modern AI. Understand it once and embeddings, context windows, KV caches, and even RAG retrieval all click into place.</p>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~60 min read</span>
+          <span class="pill">Difficulty · Intermediate</span>
+          <span class="pill purple">Prereq · Module 01, linear algebra basics</span>
+        </div>
+
+        <!-- ============ 1. EXECUTIVE SUMMARY ============ -->
+        <h2 id="summary">1 · Executive summary</h2>
+        <p>The <strong>transformer</strong> (Vaswani et al., 2017, <em>"Attention Is All You Need"</em>) replaced recurrent networks with a mechanism that lets every token look directly at every other token in a single, fully-parallel step. This solved two problems at once: <strong>long-range dependencies</strong> (RNNs forget distant context) and <strong>training speed</strong> (RNNs are inherently sequential; transformers are not).</p>
+        <div class="grid grid-3">
+          <div class="card" data-reveal><span class="ico">❓</span><h4>Why it exists</h4><p>RNNs/LSTMs processed text one step at a time, couldn't be parallelized on GPUs, and lost long-range context. The transformer fixed all three.</p></div>
+          <div class="card" data-reveal><span class="ico">🔧</span><h4>Problem it solves</h4><p>"Which earlier words matter for predicting this one?" Self-attention computes that relevance dynamically, for every pair of tokens, in parallel.</p></div>
+          <div class="card" data-reveal><span class="ico">🌐</span><h4>Where it fits</h4><p>It is <em>the</em> architecture. LLMs are stacked transformer decoder blocks. Embedding models are transformer encoders. Knowing it explains the whole stack.</p></div>
+        </div>
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The one idea to remember</div>
+          <p><strong>Attention is a learned, content-based weighted average.</strong> Each token builds a query, compares it against every token's key to get relevance weights, then mixes their values by those weights. Everything else — multi-head, positional encoding, residuals — is engineering around that core.</p></div>
+        </div>
+
+        <!-- ============ 2. FIRST PRINCIPLES ============ -->
+        <h2 id="first-principles">2 · First-principles breakdown</h2>
+
+        <h3>What — attention as a "soft lookup"</h3>
+        <p>Forget matrices for a second. Imagine reading the sentence: <em>"The trophy didn't fit in the suitcase because <strong>it</strong> was too big."</em> To understand <em>"it"</em>, your brain glances back and decides <em>"it" refers to the trophy</em>, not the suitcase. You <strong>attended</strong> to the relevant earlier word.</p>
+        <p>Self-attention does exactly this, mechanically. For every word, it asks: <em>"Given what I'm looking for, how relevant is each other word?"</em> — then blends the relevant words' information into a new, context-aware representation of the current word.</p>
+
+        <div class="callout note">
+          <div class="c-ico">🔎</div>
+          <div class="c-body"><div class="c-title">The dictionary analogy (Q, K, V)</div>
+          <p>Think of a Python dict lookup. You have a <strong>query</strong> ("what am I looking for?"), you compare it to every <strong>key</strong> ("what does each entry offer?"), and you retrieve the matching <strong>value</strong>. Attention is a <em>soft</em>, differentiable version: instead of one exact match, you get a weighted blend of <em>all</em> values, weighted by how well each key matches your query.</p></div>
+        </div>
+
+        <h3>Why — parallelism + global context</h3>
+        <p>The genius is that the relevance comparison for all token pairs is just one big matrix multiplication — which GPUs do extremely fast and fully in parallel. Unlike an RNN, the model doesn't walk left-to-right; it sees the whole sequence at once and learns which connections matter. That's why transformers scaled to billions of parameters and trillions of tokens.</p>
+
+        <h3>How — five stages, top to bottom</h3>
+        <div class="cssflow">
+          <div class="fnode accent">Token IDs<small>[101, 7592, 2026, ...]</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">Embedding + positional encoding<small>IDs → vectors that know their order</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">× N decoder blocks<small>attention → feed-forward, each with residual + norm</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">Final layer norm + projection<small>→ logits over vocabulary</small></div>
+          <div class="farrow"></div>
+          <div class="fnode accent">Next-token distribution</div>
+        </div>
+
+        <!-- ============ 3. VISUAL ARCHITECTURE ============ -->
+        <h2 id="architecture">3 · Visual architecture</h2>
+
+        <h3>The decoder block (what LLMs stack)</h3>
+        <p>GPT-style LLMs are a stack of identical <strong>decoder blocks</strong>. Each block has two sub-layers — masked multi-head self-attention and a feed-forward network — each wrapped in a residual connection and layer normalization.</p>
+        <div class="diagram">
+          <svg viewBox="0 0 460 470" width="420" role="img" aria-label="Transformer decoder block">
+            <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="var(--text-muted)"/></marker></defs>
+            <!-- outer block -->
+            <rect x="60" y="20" width="340" height="430" rx="16" fill="none" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="5 5"/>
+            <text class="flow-sub" x="230" y="42" text-anchor="middle" style="fill:var(--accent);font-weight:700">DECODER BLOCK  (repeat × N)</text>
+            <!-- input -->
+            <rect class="flow-node" x="140" y="410" width="180" height="34" rx="8"/><text class="flow-label" x="230" y="432" text-anchor="middle">Input embeddings</text>
+            <!-- attn -->
+            <rect class="flow-node-accent" x="120" y="300" width="220" height="50" rx="10"/><text class="flow-label" x="230" y="322" text-anchor="middle">Masked Multi-Head Attention</text><text class="flow-sub" x="230" y="339" text-anchor="middle">tokens attend to past tokens</text>
+            <rect class="flow-node" x="120" y="258" width="220" height="30" rx="8"/><text class="flow-sub" x="230" y="278" text-anchor="middle" style="font-weight:600;fill:var(--text)">Add &amp; Norm  (residual + LayerNorm)</text>
+            <!-- ffn -->
+            <rect class="flow-node-accent" x="120" y="150" width="220" height="50" rx="10"/><text class="flow-label" x="230" y="172" text-anchor="middle">Feed-Forward Network</text><text class="flow-sub" x="230" y="189" text-anchor="middle">per-token MLP (expand → GELU → shrink)</text>
+            <rect class="flow-node" x="120" y="108" width="220" height="30" rx="8"/><text class="flow-sub" x="230" y="128" text-anchor="middle" style="font-weight:600;fill:var(--text)">Add &amp; Norm  (residual + LayerNorm)</text>
+            <!-- out -->
+            <rect class="flow-node" x="140" y="58" width="180" height="34" rx="8"/><text class="flow-label" x="230" y="80" text-anchor="middle">→ next block / logits</text>
+            <!-- arrows -->
+            <path class="flow-arrow" d="M230,410 L230,352"/>
+            <path class="flow-arrow" d="M230,300 L230,290"/>
+            <path class="flow-arrow" d="M230,258 L230,202"/>
+            <path class="flow-arrow" d="M230,150 L230,140"/>
+            <path class="flow-arrow" d="M230,108 L230,94"/>
+            <!-- residual skip lines -->
+            <path d="M95,427 C40,427 40,273 115,273" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-dasharray="3 3"/>
+            <path d="M95,273 C40,273 40,123 115,123" fill="none" stroke="var(--blue)" stroke-width="1.5" stroke-dasharray="3 3"/>
+            <text class="flow-sub" x="34" y="350" text-anchor="middle" transform="rotate(-90 34 350)" style="fill:var(--blue)">residual skip</text>
+          </svg>
+          <div class="diagram-caption">Figure 1 · One decoder block. LLMs stack 12–120+ of these. Blue dashed lines are residual connections that let gradients flow.</div>
+        </div>
+
+        <h3>Self-attention data flow</h3>
+        <p>Inside that attention sub-layer, every token's embedding is projected into three vectors — Query, Key, Value — and combined as shown:</p>
+        <div class="diagram">
+          <svg viewBox="0 0 720 300" width="720" role="img" aria-label="Self attention QKV flow">
+            <defs><marker id="arrow3" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="var(--text-muted)"/></marker></defs>
+            <rect class="flow-node-accent" x="20" y="125" width="110" height="50" rx="10"/><text class="flow-label" x="75" y="147" text-anchor="middle">Token x</text><text class="flow-sub" x="75" y="164" text-anchor="middle">embedding</text>
+            <!-- three projections -->
+            <rect class="flow-node" x="190" y="40" width="90" height="40" rx="8"/><text class="flow-label" x="235" y="65" text-anchor="middle">Q = xWq</text>
+            <rect class="flow-node" x="190" y="130" width="90" height="40" rx="8"/><text class="flow-label" x="235" y="155" text-anchor="middle">K = xWk</text>
+            <rect class="flow-node" x="190" y="220" width="90" height="40" rx="8"/><text class="flow-label" x="235" y="245" text-anchor="middle">V = xWv</text>
+            <path class="flow-arrow" style="marker-end:url(#arrow3)" d="M130,140 L188,60"/>
+            <path class="flow-arrow" style="marker-end:url(#arrow3)" d="M130,150 L188,150"/>
+            <path class="flow-arrow" style="marker-end:url(#arrow3)" d="M130,160 L188,240"/>
+            <!-- scores -->
+            <rect class="flow-node" x="340" y="80" width="140" height="50" rx="10"/><text class="flow-label" x="410" y="100" text-anchor="middle">scores = Q·Kᵀ/√d</text><text class="flow-sub" x="410" y="117" text-anchor="middle">relevance of each token</text>
+            <rect class="flow-node" x="340" y="155" width="140" height="44" rx="10"/><text class="flow-label" x="410" y="182" text-anchor="middle">softmax → weights</text>
+            <path class="flow-arrow" style="marker-end:url(#arrow3)" d="M280,60 C320,60 320,95 338,98"/>
+            <path class="flow-arrow" style="marker-end:url(#arrow3)" d="M280,150 C320,150 320,150 338,150"/>
+            <path class="flow-arrow" style="marker-end:url(#arrow3)" d="M410,130 L410,153"/>
+            <!-- weighted sum of V -->
+            <rect class="flow-node-accent" x="540" y="120" width="160" height="55" rx="10"/><text class="flow-label" x="620" y="143" text-anchor="middle">Σ weightsᵢ · Vᵢ</text><text class="flow-sub" x="620" y="160" text-anchor="middle">context-aware output</text>
+            <path class="flow-arrow" style="marker-end:url(#arrow3)" d="M480,177 C510,177 510,150 538,150"/>
+            <path class="flow-arrow" style="marker-end:url(#arrow3)" d="M280,240 C420,240 480,200 538,160"/>
+          </svg>
+          <div class="diagram-caption">Figure 2 · scaled dot-product attention: <code>Attention(Q,K,V) = softmax(QKᵀ/√d) · V</code>.</div>
+        </div>
+
+        <!-- ============ 4. DEEP TECHNICAL ============ -->
+        <h2 id="deep-dive">4 · Deep technical explanation</h2>
+
+        <h3>From token to vector: the embedding layer</h3>
+        <p>The first learned layer is an <strong>embedding table</strong>: a big matrix of shape <code>[vocab_size, d_model]</code>. Token ID 7592 just selects row 7592 — a dense vector (e.g. 768 or 4096 dimensions). These vectors are <em>learned</em> so that semantically related tokens land near each other. (This is the same idea we exploit directly in <a href="04_embeddings.html">Module 04</a>.)</p>
+
+        <h3>Positional encoding: order from a bag of vectors</h3>
+        <p>Attention is <strong>permutation-invariant</strong> — by itself it treats input as an unordered set, so <em>"dog bites man"</em> and <em>"man bites dog"</em> would look identical. We inject order by adding a <strong>positional encoding</strong> to each embedding.</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Scheme</th><th>Idea</th><th>Used by</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Sinusoidal</strong></td><td>Fixed sine/cosine waves of varying frequency added to embeddings</td><td>Original transformer</td></tr>
+            <tr><td><strong>Learned absolute</strong></td><td>A trainable vector per position</td><td>Early GPT/BERT</td></tr>
+            <tr><td><strong>RoPE (Rotary)</strong></td><td>Rotates Q/K by an angle proportional to position — encodes <em>relative</em> distance, extrapolates to longer contexts</td><td>Llama, Qwen, most modern LLMs</td></tr>
+            <tr><td><strong>ALiBi</strong></td><td>Adds a distance-based penalty to attention scores</td><td>Some long-context models</td></tr>
+          </tbody>
+        </table></div>
+        <div class="callout note"><div class="c-ico">💡</div><div class="c-body"><p><strong>RoPE is why modern models extend context.</strong> Because it encodes <em>relative</em> position by rotation, you can interpolate/scale the rotations to stretch an 8k model toward 32k+ — the basis of context-extension tricks.</p></div></div>
+
+        <h3>Scaled dot-product attention, precisely</h3>
+        <p>For a sequence packed into matrices, the whole operation is four lines:</p>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> attention_math.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">import</span> numpy <span class="tok-kw">as</span> np
+
+<span class="tok-kw">def</span> <span class="tok-fn">softmax</span>(x, axis=-<span class="tok-num">1</span>):
+    e = np.<span class="tok-fn">exp</span>(x - x.<span class="tok-fn">max</span>(axis=axis, keepdims=<span class="tok-kw">True</span>))
+    <span class="tok-kw">return</span> e / e.<span class="tok-fn">sum</span>(axis=axis, keepdims=<span class="tok-kw">True</span>)
+
+<span class="tok-kw">def</span> <span class="tok-fn">attention</span>(Q, K, V, mask=<span class="tok-kw">None</span>):
+    d_k = Q.shape[-<span class="tok-num">1</span>]
+    scores = Q @ K.T / np.<span class="tok-fn">sqrt</span>(d_k)        <span class="tok-com"># [seq, seq] relevance matrix</span>
+    <span class="tok-kw">if</span> mask <span class="tok-kw">is</span> <span class="tok-kw">not</span> <span class="tok-kw">None</span>:
+        scores = np.<span class="tok-fn">where</span>(mask, scores, -<span class="tok-num">1e9</span>)   <span class="tok-com"># causal mask: can't see future</span>
+    weights = <span class="tok-fn">softmax</span>(scores)                 <span class="tok-com"># rows sum to 1</span>
+    <span class="tok-kw">return</span> weights @ V                         <span class="tok-com"># [seq, d_v] blended values</span></code></pre>
+        </div>
+        <p><strong>Why divide by √dₖ?</strong> Without it, dot products grow large in high dimensions, pushing softmax into a near-one-hot regime where gradients vanish. Scaling keeps the distribution soft and trainable.</p>
+
+        <h3>The causal mask: why LLMs can't peek ahead</h3>
+        <p>Decoder LLMs are trained to predict the <em>next</em> token, so token <em>i</em> must only attend to tokens <em>≤ i</em>. A triangular <strong>causal mask</strong> sets future scores to −∞ before softmax. This is also what makes the <strong>KV cache</strong> from Module 01 valid: past keys/values never change, so they can be cached.</p>
+
+        <h3>Multi-head attention: many perspectives at once</h3>
+        <p>One attention computation captures one kind of relationship. <strong>Multi-head attention</strong> runs <em>h</em> attentions in parallel on lower-dimensional projections, then concatenates. One head might track syntax (subject↔verb), another coreference (<em>"it"</em>↔<em>"trophy"</em>), another long-range topic. The heads are learned, not assigned.</p>
+        <div class="diagram">
+          <svg viewBox="0 0 640 170" width="640" role="img" aria-label="Multi-head attention">
+            <defs><marker id="arrow4" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="var(--text-muted)"/></marker></defs>
+            <rect class="flow-node-accent" x="20" y="60" width="90" height="50" rx="10"/><text class="flow-label" x="65" y="90" text-anchor="middle">Input</text>
+            <rect class="flow-node" x="180" y="15" width="110" height="34" rx="8"/><text class="flow-sub" x="235" y="37" text-anchor="middle" style="fill:var(--text);font-weight:600">Head 1 (syntax)</text>
+            <rect class="flow-node" x="180" y="68" width="110" height="34" rx="8"/><text class="flow-sub" x="235" y="90" text-anchor="middle" style="fill:var(--text);font-weight:600">Head 2 (coref)</text>
+            <rect class="flow-node" x="180" y="121" width="110" height="34" rx="8"/><text class="flow-sub" x="235" y="143" text-anchor="middle" style="fill:var(--text);font-weight:600">Head h (…)</text>
+            <rect class="flow-node" x="360" y="60" width="100" height="50" rx="10"/><text class="flow-label" x="410" y="90" text-anchor="middle">Concat</text>
+            <rect class="flow-node-accent" x="510" y="60" width="110" height="50" rx="10"/><text class="flow-label" x="565" y="85" text-anchor="middle">Linear Wₒ</text><text class="flow-sub" x="565" y="101" text-anchor="middle">→ output</text>
+            <path class="flow-arrow" style="marker-end:url(#arrow4)" d="M110,80 L178,32"/><path class="flow-arrow" style="marker-end:url(#arrow4)" d="M110,85 L178,85"/><path class="flow-arrow" style="marker-end:url(#arrow4)" d="M110,90 L178,138"/>
+            <path class="flow-arrow" style="marker-end:url(#arrow4)" d="M290,32 L358,80"/><path class="flow-arrow" style="marker-end:url(#arrow4)" d="M290,85 L358,85"/><path class="flow-arrow" style="marker-end:url(#arrow4)" d="M290,138 L358,90"/>
+            <path class="flow-arrow" style="marker-end:url(#arrow4)" d="M460,85 L508,85"/>
+          </svg>
+          <div class="diagram-caption">Figure 3 · h heads learn different relationships in parallel, then merge through an output projection.</div>
+        </div>
+
+        <h3>Feed-forward, residuals, and normalization</h3>
+        <ul>
+          <li><strong>Feed-forward network (FFN):</strong> a per-token MLP that expands to ~4× width, applies a non-linearity (GELU/SwiGLU), and projects back. This is where much of a model's "knowledge" capacity lives — and where Mixture-of-Experts (MoE) models swap in sparse expert FFNs.</li>
+          <li><strong>Residual connections:</strong> <code>x + sublayer(x)</code>. Gradients flow straight through the <code>+</code>, enabling 100+ layer depth without vanishing gradients.</li>
+          <li><strong>Layer normalization:</strong> stabilizes activations. Modern LLMs use <strong>pre-norm</strong> (normalize <em>before</em> the sub-layer) and often <strong>RMSNorm</strong> for efficiency.</li>
+        </ul>
+
+        <h3>Tradeoffs & limitations</h3>
+        <div class="grid grid-2">
+          <div class="card"><h4>Strengths</h4><ul style="margin-bottom:0"><li>Fully parallel training (GPU-friendly)</li><li>Direct long-range connections</li><li>Scales predictably with params/data/compute</li></ul></div>
+          <div class="card"><h4>The quadratic wall</h4><ul style="margin-bottom:0"><li>Attention is <strong>O(n²)</strong> in sequence length — the root cause of context limits & cost</li><li>Memory-hungry (KV cache grows with context)</li><li>Mitigations: FlashAttention (faster exact attention), sliding-window, grouped-query attention (GQA), linear-attention variants</li></ul></div>
+        </div>
+
+        <!-- ============ 5. INTERACTIVE ============ -->
+        <h2 id="interactive">5 · Interactive: build attention step by step</h2>
+        <p>Reveal the pipeline one stage at a time and watch how a token's representation becomes context-aware.</p>
+        <div class="demo" data-stepdemo>
+          <div class="demo-title"><span class="badge">DEMO</span> Resolving "it" in: "The trophy didn't fit because <em>it</em> was too big"</div>
+          <div class="demo-stage">
+            <span class="chip">"it" embedding</span>
+            <span class="chip arrow">→</span>
+            <span class="chip vec">Q, K, V projections</span>
+            <span class="chip arrow">→</span>
+            <span class="chip vec">scores vs every token</span>
+            <span class="chip arrow">→</span>
+            <span class="chip tok">softmax weights</span>
+            <span class="chip arrow">→</span>
+            <span class="chip vec" style="font-weight:700">blend → "it" ≈ trophy ✓</span>
+          </div>
+          <div class="demo-stage" style="margin-top:14px">
+            <button class="btn" data-run>▶ Run attention</button>
+            <button class="btn ghost sm" data-reset>Reset</button>
+          </div>
+          <p style="font-size:12.5px;color:var(--text-muted);margin:14px 0 0">Illustrative attention weights for "it": <b>trophy 0.62</b>, suitcase 0.18, big 0.09, fit 0.05, rest 0.06. The high weight on "trophy" means its Value dominates the blended output — the model has resolved the reference.</p>
+        </div>
+
+        <!-- ============ 6. PYTHON ============ -->
+        <h2 id="python">6 · Practical Python</h2>
+
+        <h3>Minimal — single-head self-attention from scratch</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> self_attention.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">import</span> torch, torch.nn.functional <span class="tok-kw">as</span> F
+
+<span class="tok-kw">def</span> <span class="tok-fn">self_attention</span>(x, Wq, Wk, Wv, causal=<span class="tok-kw">True</span>):
+    <span class="tok-com"># x: [seq, d_model]</span>
+    Q, K, V = x @ Wq, x @ Wk, x @ Wv
+    d_k = Q.shape[-<span class="tok-num">1</span>]
+    scores = Q @ K.transpose(-<span class="tok-num">2</span>, -<span class="tok-num">1</span>) / d_k**<span class="tok-num">0.5</span>
+    <span class="tok-kw">if</span> causal:
+        seq = x.shape[<span class="tok-num">0</span>]
+        m = torch.<span class="tok-fn">triu</span>(torch.<span class="tok-fn">ones</span>(seq, seq), diagonal=<span class="tok-num">1</span>).<span class="tok-fn">bool</span>()
+        scores = scores.<span class="tok-fn">masked_fill</span>(m, <span class="tok-fn">float</span>(<span class="tok-str">"-inf"</span>))
+    weights = F.<span class="tok-fn">softmax</span>(scores, dim=-<span class="tok-num">1</span>)
+    <span class="tok-kw">return</span> weights @ V, weights</code></pre>
+        </div>
+
+        <h3>Intermediate — multi-head attention as a reusable module</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> mha.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">import</span> torch, torch.nn <span class="tok-kw">as</span> nn, torch.nn.functional <span class="tok-kw">as</span> F
+
+<span class="tok-kw">class</span> <span class="tok-cls">MultiHeadAttention</span>(nn.Module):
+    <span class="tok-kw">def</span> <span class="tok-fn">__init__</span>(self, d_model, n_heads):
+        <span class="tok-fn">super</span>().<span class="tok-fn">__init__</span>()
+        <span class="tok-kw">assert</span> d_model % n_heads == <span class="tok-num">0</span>
+        self.h, self.dk = n_heads, d_model // n_heads
+        self.qkv = nn.<span class="tok-fn">Linear</span>(d_model, <span class="tok-num">3</span> * d_model)   <span class="tok-com"># fused projection</span>
+        self.out = nn.<span class="tok-fn">Linear</span>(d_model, d_model)
+
+    <span class="tok-kw">def</span> <span class="tok-fn">forward</span>(self, x):              <span class="tok-com"># x: [B, T, d_model]</span>
+        B, T, D = x.shape
+        q, k, v = self.<span class="tok-fn">qkv</span>(x).<span class="tok-fn">chunk</span>(<span class="tok-num">3</span>, dim=-<span class="tok-num">1</span>)
+        <span class="tok-com"># split heads → [B, h, T, dk]</span>
+        q, k, v = [t.<span class="tok-fn">view</span>(B, T, self.h, self.dk).<span class="tok-fn">transpose</span>(<span class="tok-num">1</span>, <span class="tok-num">2</span>) <span class="tok-kw">for</span> t <span class="tok-kw">in</span> (q, k, v)]
+        <span class="tok-com"># PyTorch's fused, FlashAttention-backed kernel (causal=True)</span>
+        o = F.<span class="tok-fn">scaled_dot_product_attention</span>(q, k, v, is_causal=<span class="tok-kw">True</span>)
+        o = o.<span class="tok-fn">transpose</span>(<span class="tok-num">1</span>, <span class="tok-num">2</span>).<span class="tok-fn">reshape</span>(B, T, D)
+        <span class="tok-kw">return</span> self.<span class="tok-fn">out</span>(o)</code></pre>
+        </div>
+
+        <h3>Production — inspect a real model & visualize attention</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> inspect_attention.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-com"># Pull a real pretrained transformer and read its attention maps.</span>
+<span class="tok-kw">from</span> transformers <span class="tok-kw">import</span> AutoTokenizer, AutoModel
+<span class="tok-kw">import</span> torch
+
+name = <span class="tok-str">"sentence-transformers/all-MiniLM-L6-v2"</span>
+tok = AutoTokenizer.<span class="tok-fn">from_pretrained</span>(name)
+model = AutoModel.<span class="tok-fn">from_pretrained</span>(name, attn_implementation=<span class="tok-str">"eager"</span>,
+                                  output_attentions=<span class="tok-kw">True</span>).<span class="tok-fn">eval</span>()
+
+enc = <span class="tok-fn">tok</span>(<span class="tok-str">"The trophy did not fit because it was too big"</span>, return_tensors=<span class="tok-str">"pt"</span>)
+<span class="tok-kw">with</span> torch.<span class="tok-fn">no_grad</span>():
+    out = <span class="tok-fn">model</span>(**enc)
+
+attn = out.attentions[-<span class="tok-num">1</span>][<span class="tok-num">0</span>]            <span class="tok-com"># last layer: [heads, T, T]</span>
+tokens = tok.<span class="tok-fn">convert_ids_to_tokens</span>(enc[<span class="tok-str">"input_ids"</span>][<span class="tok-num">0</span>])
+it_idx = tokens.<span class="tok-fn">index</span>(<span class="tok-str">"it"</span>)
+avg = attn.<span class="tok-fn">mean</span>(<span class="tok-num">0</span>)[it_idx]            <span class="tok-com"># avg over heads: where does "it" look?</span>
+<span class="tok-kw">for</span> t, w <span class="tok-kw">in</span> <span class="tok-fn">sorted</span>(<span class="tok-fn">zip</span>(tokens, avg.<span class="tok-fn">tolist</span>()), key=<span class="tok-kw">lambda</span> p: -p[<span class="tok-num">1</span>])[:<span class="tok-num">4</span>]:
+    <span class="tok-fn">print</span>(<span class="tok-str">f"{t:>10}  {w:.3f}"</span>)</code></pre>
+        </div>
+        <div class="callout tip"><div class="c-ico">🛠️</div><div class="c-body"><p>This <code>output_attentions=True</code> trick is the foundation of interpretability tooling (BertViz, attention rollout). In production you'll more often use the fused <code>scaled_dot_product_attention</code> kernel for speed — it doesn't expose weights, which is the usual exact-speed vs. interpretability tradeoff.</p></div></div>
+
+        <!-- ============ 7. OLLAMA ============ -->
+        <h2 id="ollama">7 · Ollama & local relevance</h2>
+        <p>You don't train transformers locally, but every Ollama model exposes transformer-architecture knobs in its <strong>Modelfile</strong> and metadata. Understanding the architecture explains exactly what these settings do.</p>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> bash</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-com"># Inspect architecture details of a local model</span>
+ollama show qwen2.5 --modelfile
+ollama show llama3.2 <span class="tok-com"># prints params, context length, quantization, embedding length (d_model)</span>
+
+<span class="tok-com"># Typical output fields and what they map to:</span>
+<span class="tok-com">#   parameters        → total weights (embeddings + attn + FFN)</span>
+<span class="tok-com">#   context length    → max sequence n (the O(n²) ceiling)</span>
+<span class="tok-com">#   embedding length  → d_model (width of every token vector)</span>
+<span class="tok-com">#   attention heads   → h in multi-head attention</span></code></pre>
+        </div>
+        <div class="callout note"><div class="c-ico">🧩</div><div class="c-body"><p><strong>Why local models use GQA.</strong> Llama/Qwen use <em>Grouped-Query Attention</em> — many query heads share fewer key/value heads. This shrinks the KV cache (the main VRAM cost at long context), which is exactly why you can run a quantized 7B model with a long context on a consumer GPU. We measure this in <a href="03_local_llms.html">Module 03</a>.</p></div></div>
+
+        <!-- ============ 8. INDUSTRY ============ -->
+        <h2 id="industry">8 · Industry perspective</h2>
+        <div class="grid grid-2">
+          <div class="card"><h4>🚀 Startups</h4><p>Almost never implement attention — they consume pretrained transformers via API or Ollama. The architectural knowledge that pays off: choosing context length vs. cost, knowing why long prompts are quadratic, and picking GQA/long-context models for the workload.</p></div>
+          <div class="card"><h4>🏢 Enterprises</h4><p>May fine-tune or distill transformers, run inference servers (vLLM, TGI) that exploit FlashAttention + paged KV cache, and care deeply about throughput economics — which are all downstream of the architecture in this module.</p></div>
+        </div>
+        <h3>Architecture-driven production levers</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Lever</th><th>Architectural root</th><th>Production payoff</th></tr></thead>
+          <tbody>
+            <tr><td>FlashAttention</td><td>Memory-aware exact attention</td><td>2–4× faster, less VRAM</td></tr>
+            <tr><td>Paged KV cache (vLLM)</td><td>KV cache grows with context</td><td>Higher throughput, more concurrent users</td></tr>
+            <tr><td>GQA / MQA</td><td>Shared K/V heads</td><td>Smaller cache → longer context on same GPU</td></tr>
+            <tr><td>Quantization</td><td>Weights are the bulk of params</td><td>Run big models on small hardware (Module 03)</td></tr>
+          </tbody>
+        </table></div>
+
+        <!-- ============ 9. MISTAKES ============ -->
+        <h2 id="mistakes">9 · Top mistakes engineers make</h2>
+        <div class="grid grid-2">
+          <div class="card"><h4>❌ Thinking attention "understands"</h4><p>It's a weighted average of learned value vectors. Powerful, but mechanical — not comprehension.</p></div>
+          <div class="card"><h4>❌ Forgetting the O(n²) cost</h4><p>Doubling context can quadruple attention compute/memory. This is the real reason long prompts hurt latency and cost.</p></div>
+          <div class="card"><h4>❌ Ignoring positional encoding limits</h4><p>Feeding a model far beyond its trained context (without RoPE scaling) degrades quality sharply — it's extrapolating positions it never saw.</p></div>
+          <div class="card"><h4>❌ Confusing encoder vs. decoder</h4><p>BERT (encoder, bidirectional) is for embeddings/classification; GPT (decoder, causal) is for generation. Picking the wrong family wastes effort.</p></div>
+          <div class="card"><h4>❌ Assuming more heads = better</h4><p>Beyond a point, extra heads add cost without quality. Head count is a tuned hyperparameter, not a dial you crank.</p></div>
+          <div class="card"><h4>❌ Reimplementing attention by hand in prod</h4><p>Use fused kernels (<code>scaled_dot_product_attention</code>, FlashAttention). Hand-rolled loops are slow and numerically fragile.</p></div>
+        </div>
+
+        <!-- ============ 10. INTERVIEW ============ -->
+        <h2 id="interview">10 · Interview preparation</h2>
+
+        <details class="collapse"><summary><span class="pill green">Beginner</span> &nbsp;What problem did the transformer solve over RNNs? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>RNNs processed tokens sequentially (slow, un-parallelizable) and struggled with long-range dependencies due to vanishing gradients. The transformer uses self-attention to connect any two tokens directly in one parallel step, enabling both long-range modeling and GPU-efficient training.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill green">Beginner</span> &nbsp;In attention, what are Q, K, and V? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Three learned linear projections of each token's embedding. <strong>Query</strong> = what this token is looking for; <strong>Key</strong> = what each token offers for matching; <strong>Value</strong> = the information each token contributes. Output = softmax(Q·Kᵀ/√d)·V — a relevance-weighted blend of values.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill blue">Intermediate</span> &nbsp;Why divide attention scores by √dₖ? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>In high dimensions, dot products have large variance (∝ dₖ), pushing softmax toward a near one-hot distribution where gradients vanish. Scaling by √dₖ normalizes the variance, keeping the softmax soft and the model trainable.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill blue">Intermediate</span> &nbsp;Why do residual connections matter for deep transformers? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Each sub-layer computes <code>x + f(x)</code>. The identity path lets gradients flow directly to earlier layers (avoiding vanishing gradients) and lets each block learn a <em>refinement</em> rather than a full transformation, making 100+ layer stacks trainable.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill amber">Senior</span> &nbsp;Your model degrades when prompts exceed ~8k tokens. Why, and what are your options? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Likely exceeding the trained context length — positional encodings are extrapolating to unseen positions, and attention quality drops (lost-in-the-middle). Options: switch to a longer-context model; apply RoPE scaling/interpolation; reduce input via better retrieval/chunking (Modules 6–7); summarize or compress context; or use sliding-window/long-context architectures. Measure with a needle-in-haystack eval before/after.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill amber">Senior</span> &nbsp;Explain the KV cache in terms of the causal mask. <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Because of the causal mask, token <em>i</em>'s keys/values never depend on future tokens and never change once computed. So during autoregressive generation we cache each token's K and V; generating token <em>t+1</em> only requires computing its own Q and attending over the cached K/V — turning per-step cost from O(t²) recompute into O(t). The cache size grows linearly with context, which is the dominant inference memory cost (mitigated by GQA/paged attention).</p></div></details>
+
+        <details class="collapse"><summary><span class="pill purple">Staff · design</span> &nbsp;Design an inference-serving layer to maximize throughput for a 70B model. <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Use a server like vLLM/TGI exploiting architectural facts: <strong>continuous batching</strong> (interleave requests at token granularity since each step is independent), <strong>paged KV cache</strong> (non-contiguous KV blocks → near-zero memory fragmentation, more concurrency), <strong>FlashAttention</strong> kernels, <strong>tensor/pipeline parallelism</strong> across GPUs for the large FFN/attention matmuls, <strong>quantization</strong> (e.g. FP8/INT8) to fit weights and speed matmuls, and <strong>GQA</strong> models to shrink the cache. Add prefix/prompt caching for shared system prompts. Tune the batch/context tradeoff against the O(n²) attention curve and your latency SLO.</p></div></details>
+
+        <!-- ============ 11. QUIZ ============ -->
+        <h2 id="quiz">11 · Knowledge check</h2>
+
+        <div class="quiz">
+          <div class="q">1 · What does the Query vector represent in self-attention?</div>
+          <label class="opt" data-correct="true">What the current token is "looking for" in other tokens</label>
+          <label class="opt">The final output of the layer</label>
+          <label class="opt">The token's position in the sequence</label>
+          <label class="opt">The probability of the next token</label>
+          <div class="explain">Query = what this token seeks. It's dot-producted against every token's Key to compute relevance; the resulting weights blend the Values.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">2 · Why is a causal mask used in decoder LLMs?</div>
+          <label class="opt">To save GPU memory</label>
+          <label class="opt" data-correct="true">So a token can only attend to itself and earlier tokens, never future ones</label>
+          <label class="opt">To make attention bidirectional</label>
+          <label class="opt">To normalize the attention weights</label>
+          <div class="explain">Next-token prediction requires that position i not "see the answer." The triangular mask sets future scores to −∞ before softmax, and is also what makes the KV cache valid.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">3 · The main reason long prompts are expensive is that attention is…</div>
+          <label class="opt">Linear in sequence length</label>
+          <label class="opt">Constant time</label>
+          <label class="opt" data-correct="true">Quadratic — O(n²) — in sequence length</label>
+          <label class="opt">Logarithmic in sequence length</label>
+          <div class="explain">Every token attends to every other token, so the score matrix is n×n. Doubling context roughly quadruples attention compute and memory — the architectural root of context limits.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">4 · What does multi-head attention buy you over single-head?</div>
+          <label class="opt">Lower memory usage</label>
+          <label class="opt" data-correct="true">The ability to attend to different kinds of relationships in parallel subspaces</label>
+          <label class="opt">It removes the need for positional encoding</label>
+          <label class="opt">Deterministic outputs</label>
+          <div class="explain">Each head operates on a projected subspace and can specialize (syntax, coreference, long-range topic). Concatenating them gives a richer representation than one head could.</div>
+        </div>
+
+        <!-- ============ 12. ACTIVE RECALL ============ -->
+        <h2 id="recall">12 · Active recall</h2>
+        <p>Answer first, then reveal. Schedule a re-test tomorrow and next week.</p>
+        <details class="recall"><summary><span class="q-ico">Q</span> State the scaled dot-product attention formula. <span class="chev">›</span></summary><div class="a"><code>Attention(Q,K,V) = softmax(QKᵀ / √dₖ) · V</code> — relevance scores, scaled, softmaxed into weights, used to blend values.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> Why is positional encoding necessary at all? <span class="chev">›</span></summary><div class="a">Self-attention is permutation-invariant — without position info it treats the input as an unordered set, so word order would be lost. Positional encodings (sinusoidal, learned, RoPE) inject order.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> Name the two sub-layers in a decoder block and what wraps each. <span class="chev">›</span></summary><div class="a">(1) Masked multi-head self-attention, (2) position-wise feed-forward network. Each is wrapped in a residual connection + layer normalization (modern models use pre-norm / RMSNorm).</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> What is the difference between an encoder and a decoder transformer? <span class="chev">›</span></summary><div class="a">Encoders use bidirectional attention (each token sees all tokens) — good for embeddings/understanding (BERT). Decoders use causal/masked attention (each token sees only the past) — good for generation (GPT/Llama).</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> What is GQA and why does it matter for local inference? <span class="chev">›</span></summary><div class="a">Grouped-Query Attention shares K/V heads across multiple query heads, shrinking the KV cache. Smaller cache = less VRAM at long context, enabling bigger models / longer contexts on consumer hardware.</div></details>
+
+        <!-- ============ 13. EXERCISES ============ -->
+        <h2 id="exercises">13 · Exercises</h2>
+        <div class="callout tip"><div class="c-ico">🟢</div><div class="c-body"><div class="c-title">Easy</div><p>Run the <code>self_attention.py</code> snippet on a 4-token random input. Print the attention weight matrix and verify each row sums to 1. Toggle <code>causal=False</code> and observe how the upper triangle changes.</p></div></div>
+        <div class="callout warn"><div class="c-ico">🟡</div><div class="c-body"><div class="c-title">Medium</div><p>Load <code>all-MiniLM-L6-v2</code> with <code>output_attentions=True</code> and write a function that, given a sentence and a target word, returns the top-3 tokens it attends to (averaged over heads) in the final layer. Test it on a coreference sentence.</p></div></div>
+        <div class="callout danger"><div class="c-ico">🔴</div><div class="c-body"><div class="c-title">Hard</div><p>Implement a minimal single-block decoder in PyTorch (embedding + RoPE + masked MHA + FFN + pre-norm residuals) and overfit it to memorize one short sentence (predict next token). Confirm training loss approaches zero — proof your forward pass is correct.</p></div></div>
+
+        <!-- ============ 14. MINI PROJECT ============ -->
+        <h2 id="mini-project">14 · Mini project — "Attention Visualizer"</h2>
+        <div class="card">
+          <p><strong>Goal:</strong> Build a small tool that renders an attention heatmap for any input sentence and lets you pick the layer and head.</p>
+          <h4>Requirements</h4>
+          <ul>
+            <li>Load a small HF transformer with <code>output_attentions=True</code></li>
+            <li>Tokenize an input sentence and extract the <code>[layer][head]</code> attention matrix</li>
+            <li>Render it as an N×N heatmap (matplotlib) with token labels on both axes</li>
+            <li>CLI flags: <code>--layer</code>, <code>--head</code>, <code>--avg-heads</code></li>
+          </ul>
+          <h4>Stretch</h4>
+          <ul style="margin-bottom:0"><li>Add an "attention rollout" mode that multiplies attention across layers to show end-to-end token influence.</li><li>Highlight the strongest connection for a chosen query token (coreference demo).</li></ul>
+        </div>
+
+        <!-- ============ 15. REAL PROJECT CONNECTION ============ -->
+        <h2 id="real-project">15 · Real project connection</h2>
+        <p>Transformers are invisible plumbing in the capstones, but the architecture dictates real engineering decisions:</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Project</th><th>Where the architecture bites</th></tr></thead>
+          <tbody>
+            <tr><td><strong>PDF RAG</strong></td><td>The embedding model is a transformer <em>encoder</em>; the generator is a <em>decoder</em>. Context-window (n) limits how many chunks you can stuff — an O(n²) budget decision.</td></tr>
+            <tr><td><strong>Multi-PDF RAG</strong></td><td>Long-context vs. retrieval tradeoff is literally the quadratic-cost curve. You retrieve precisely to avoid paying for huge n.</td></tr>
+            <tr><td><strong>EDA / SQL Agent</strong></td><td>Each agent step re-sends growing context; KV cache + context length govern per-step latency and cost.</td></tr>
+            <tr><td><strong>ElasticSearch Agent</strong></td><td>Number of retrieved hits you can feed is bounded by the model's trained context — architecture sets the ceiling.</td></tr>
+            <tr><td><strong>Enterprise Platform</strong></td><td>Self-hosted inference (vLLM) decisions — batching, paged KV, GQA, quantization — are all direct consequences of this module.</td></tr>
+          </tbody>
+        </table></div>
+
+        <div class="complete-bar">
+          <div><strong style="font-size:15px">Finished Module 02?</strong><p style="margin:2px 0 0;font-size:13.5px;color:var(--text-muted)">You now understand the engine inside every model in this course.</p></div>
+          <button class="btn" data-complete>Mark module complete</button>
+        </div>
+
+        <div class="page-nav">
+          <a href="01_foundations.html"><div class="dir">← Previous</div><div class="ttl">01 · Foundations of LLMs</div></a>
+          <a class="next" href="03_local_llms.html"><div class="dir">Next →</div><div class="ttl">03 · Local LLMs &amp; Ollama</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

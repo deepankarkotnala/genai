@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>13 · Multi-Agent Systems — GenAI Mastery</title>
+<meta name="description" content="Multi-agent systems from first principles: when to use multiple agents, supervisor and network topologies, handoffs, shared state, CrewAI and LangGraph orchestration, and failure modes.">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body data-page="13">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <div class="brand-mark">G</div>
+        <div class="brand-text"><strong>GenAI Mastery</strong><span>DS → Senior GenAI Engineer</span></div>
+      </a>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search modules…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Agents / <b>13 · Multi-Agent Systems</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Module 13 · Agents track</div>
+        <h1>Multi-Agent Systems</h1>
+        <p class="lead">A single agent (Module 08) with too many tools and too broad a mandate gets confused — it picks wrong tools, loses the thread, and bloats its context. The fix mirrors how humans scale work: a <strong>team of specialists</strong>. Multi-agent systems split a complex job across focused agents that each do one thing well, coordinated by a supervisor or by structured handoffs. <strong>CrewAI</strong> and <strong>LangGraph</strong> are the two ways you'll build them.</p>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~55 min read</span>
+          <span class="pill">Difficulty · Advanced</span>
+          <span class="pill purple">Prereq · Modules 08, 12</span>
+        </div>
+
+        <!-- ============ 1. EXECUTIVE SUMMARY ============ -->
+        <h2 id="summary">1 · Executive summary</h2>
+        <p>A <strong>multi-agent system</strong> decomposes a task across several specialized agents, each with its own role, prompt, and tools, coordinated through a <strong>topology</strong> — most often a <strong>supervisor</strong> (a router/manager agent delegates to workers) or a <strong>network</strong> (agents hand off to each other directly). The wins are <strong>specialization</strong> (focused prompts/tools beat one bloated agent), <strong>modularity</strong> (test/iterate one agent at a time), and <strong>parallelism</strong>. The costs are coordination overhead, latency, and new failure modes.</p>
+        <div class="grid grid-3">
+          <div class="card" data-reveal><span class="ico">❓</span><h4>Why it exists</h4><p>One agent with 30 tools and 5 jobs is unreliable. Splitting into focused specialists keeps each prompt/context small and each role testable.</p></div>
+          <div class="card" data-reveal><span class="ico">🔧</span><h4>Problem it solves</h4><p>Complex, multi-domain tasks: research + write + review, or triage → specialist → QA. Divide and conquer with coordination.</p></div>
+          <div class="card" data-reveal><span class="ico">🌐</span><h4>Where it fits</h4><p>The team layer above single agents (08), built on LangGraph (12) or CrewAI; consumes MCP tools (09) and RAG (06–07).</p></div>
+        </div>
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The one idea to remember</div>
+          <p><strong>Multi-agent = specialists + a coordination topology.</strong> Most production systems use a <em>supervisor</em>: one manager routes work to focused workers and assembles the result. Reach for multiple agents only when one well-scoped agent genuinely can't cope — coordination isn't free.</p></div>
+        </div>
+
+        <!-- ============ 2. FIRST PRINCIPLES ============ -->
+        <h2 id="first-principles">2 · First-principles breakdown</h2>
+
+        <h3>What — a project team, not a lone genius</h3>
+        <p>Hand one person research, writing, editing, fact-checking, and formatting and they'll do all of it mediocrely while constantly switching context. Give a small team one role each and the work improves. Multi-agent systems apply this: a <strong>researcher</strong> agent gathers facts, a <strong>writer</strong> drafts, a <strong>critic</strong> reviews — each with a tight prompt and only the tools it needs. A coordinator decides who works when and passes information between them.</p>
+
+        <div class="callout note"><div class="c-ico">🧩</div><div class="c-body"><div class="c-title">Why specialization helps mechanically</div>
+        <p>Each agent's prompt and tool list stay small, so the LLM makes better tool choices (Module 08) and its context isn't polluted with irrelevant instructions. A focused "SQL agent" with 3 tools beats a "do-everything agent" with 30 — fewer ways to go wrong, easier to evaluate, and each can use a different model sized to its job.</p></div></div>
+
+        <h3>Why — and the crucial caveat</h3>
+        <p>Multi-agent buys specialization, modularity, and parallelism. But every handoff is a place to lose information, every agent is more LLM calls (cost + latency), and coordination adds failure modes a single agent never had. <strong>The senior instinct: don't multiply agents prematurely.</strong> Start with one agent; split only when a role is clearly distinct, the single agent is measurably struggling, or you need genuine parallelism.</p>
+
+        <h3>How — coordination topologies</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Topology</th><th>How it works</th><th>Best for</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Supervisor</strong></td><td>A manager agent routes each step to a worker, collects results, decides next</td><td>Most production cases — clear control, easy to reason about</td></tr>
+            <tr><td><strong>Network (handoff)</strong></td><td>Agents hand off directly to whichever peer should act next</td><td>Fluid workflows where any agent may need any other</td></tr>
+            <tr><td><strong>Sequential (pipeline)</strong></td><td>Fixed order: A → B → C, each builds on the last</td><td>Predictable assembly lines (research → write → edit)</td></tr>
+            <tr><td><strong>Hierarchical</strong></td><td>Supervisors of supervisors; teams of teams</td><td>Very large, decomposable problems</td></tr>
+          </tbody>
+        </table></div>
+
+        <!-- ============ 3. VISUAL ARCHITECTURE ============ -->
+        <h2 id="architecture">3 · Visual architecture</h2>
+
+        <h3>Supervisor topology</h3>
+        <div class="diagram">
+          <svg viewBox="0 0 600 280" width="600" role="img" aria-label="Supervisor topology">
+            <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="var(--text-muted)"/></marker></defs>
+            <rect class="flow-node-accent" x="220" y="30" width="160" height="56" rx="12"/><text class="flow-label" x="300" y="54" text-anchor="middle">Supervisor</text><text class="flow-sub" x="300" y="71" text-anchor="middle">routes &amp; assembles</text>
+            <rect class="flow-node" x="40" y="170" width="150" height="56" rx="10"/><text class="flow-label" x="115" y="194" text-anchor="middle">Researcher</text><text class="flow-sub" x="115" y="211" text-anchor="middle">search · RAG tools</text>
+            <rect class="flow-node" x="225" y="170" width="150" height="56" rx="10"/><text class="flow-label" x="300" y="194" text-anchor="middle">Analyst</text><text class="flow-sub" x="300" y="211" text-anchor="middle">SQL · code tools</text>
+            <rect class="flow-node" x="410" y="170" width="150" height="56" rx="10"/><text class="flow-label" x="485" y="194" text-anchor="middle">Writer</text><text class="flow-sub" x="485" y="211" text-anchor="middle">draft · format</text>
+            <!-- two-way arrows supervisor<->workers -->
+            <path class="flow-arrow" d="M270,86 L150,168"/><path class="flow-arrow" d="M150,168 C200,140 240,110 280,88" style="opacity:.45"/>
+            <path class="flow-arrow" d="M300,88 L300,168"/>
+            <path class="flow-arrow" d="M330,86 L450,168"/><path class="flow-arrow" d="M450,168 C400,140 360,110 320,88" style="opacity:.45"/>
+            <text class="flow-sub" x="300" y="258" text-anchor="middle">supervisor delegates a subtask, gets a result back, decides the next worker — repeat until done</text>
+          </svg>
+          <div class="diagram-caption">Figure 1 · Supervisor: a manager agent delegates to focused workers and assembles their outputs. The dominant production pattern.</div>
+        </div>
+
+        <h3>Network (handoff) topology</h3>
+        <div class="diagram">
+          <svg viewBox="0 0 540 230" width="540" role="img" aria-label="Network handoff topology">
+            <defs><marker id="arrow2" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="var(--accent)"/></marker></defs>
+            <rect class="flow-node" x="40" y="40" width="130" height="50" rx="10"/><text class="flow-label" x="105" y="70" text-anchor="middle">Triage</text>
+            <rect class="flow-node" x="360" y="40" width="130" height="50" rx="10"/><text class="flow-label" x="425" y="70" text-anchor="middle">Billing</text>
+            <rect class="flow-node" x="200" y="150" width="130" height="50" rx="10"/><text class="flow-label" x="265" y="180" text-anchor="middle">Tech support</text>
+            <path class="flow-arrow" style="marker-end:url(#arrow2)" d="M170,60 L358,60"/>
+            <path class="flow-arrow" style="marker-end:url(#arrow2)" d="M150,90 L240,148"/>
+            <path class="flow-arrow" style="marker-end:url(#arrow2)" d="M390,90 L300,148"/>
+            <text class="flow-sub" x="265" y="220" text-anchor="middle">any agent can hand off to any other — "this is a billing issue → handoff to Billing"</text>
+          </svg>
+          <div class="diagram-caption">Figure 2 · Network: agents transfer control to peers directly via handoffs. Flexible, but harder to reason about and bound.</div>
+        </div>
+
+        <!-- ============ 4. DEEP TECHNICAL ============ -->
+        <h2 id="deep-dive">4 · Deep technical explanation</h2>
+
+        <h3>Handoffs — passing control and context</h3>
+        <p>A <strong>handoff</strong> transfers control from one agent to another, carrying the relevant context (often the shared message history or a summary). The hard part is <em>what</em> to pass: too little and the receiver lacks context; too much and you pollute its prompt and pay for tokens. In practice, handoffs pass a concise task brief + pointers to shared state, not the entire transcript.</p>
+
+        <h3>Shared state vs message-passing</h3>
+        <div class="grid grid-2">
+          <div class="card"><h4>Shared state (LangGraph)</h4><p>Agents are nodes reading/writing one state object (Module 12). Coordination is explicit graph edges; the supervisor is a routing node. Best for control &amp; auditability.</p></div>
+          <div class="card"><h4>Role + task (CrewAI)</h4><p>You declare Agents (role, goal, backstory, tools) and Tasks; a Crew runs them sequentially or hierarchically. Higher-level and faster to write; less low-level control.</p></div>
+        </div>
+
+        <h3>CrewAI's abstractions</h3>
+        <ul>
+          <li><strong>Agent</strong> — role, goal, backstory, tools, (optionally) its own LLM.</li>
+          <li><strong>Task</strong> — a unit of work with a description, expected output, and an assigned agent.</li>
+          <li><strong>Crew</strong> — the team + a <strong>process</strong>: <code>sequential</code> (pipeline) or <code>hierarchical</code> (a manager LLM delegates — the supervisor pattern).</li>
+        </ul>
+
+        <h3>Communication patterns &amp; cost</h3>
+        <p>Every inter-agent message is context one agent must read and another produced — i.e. LLM tokens. A chatty network of agents can explode cost and latency. Keep messages terse, summarize before handing off, and prefer a supervisor (star) topology over a fully-connected mesh to bound communication paths.</p>
+
+        <h3>Multi-agent failure modes (new ones beyond Module 08)</h3>
+        <div class="grid grid-2">
+          <div class="card"><h4>🔁 Handoff loops</h4><p>A bounces to B bounces back to A forever. Fix: max handoffs, a supervisor with authority to terminate, loop detection.</p></div>
+          <div class="card"><h4>📉 Context loss at handoff</h4><p>Receiver lacks what it needs. Fix: pass a structured brief + shared state; don't assume telepathy.</p></div>
+          <div class="card"><h4>🗣️ Coordination overhead</h4><p>Agents spend more tokens talking than working. Fix: fewer agents, terser protocols, supervisor topology.</p></div>
+          <div class="card"><h4>🎯 Diffuse responsibility</h4><p>No agent owns the final answer; quality slips. Fix: a designated finalizer/critic and clear DoD per task.</p></div>
+          <div class="card"><h4>🧭 Conflicting actions</h4><p>Two agents act on the same resource. Fix: single-writer ownership, locks, or supervisor serialization.</p></div>
+          <div class="card"><h4>💸 Cost/latency multiplication</h4><p>N agents ≈ N× calls. Fix: parallelize independent work; right-size models per role; cap total steps.</p></div>
+        </div>
+
+        <h3>Evaluating multi-agent systems</h3>
+        <p>Beyond single-agent metrics (Module 08): measure <strong>end-to-end task success</strong>, <strong>per-agent contribution</strong> (which agent caused failures?), <strong>handoff correctness</strong> (right agent, right context), <strong>communication efficiency</strong> (messages/tokens per task), and <strong>coordination overhead</strong> vs. a single-agent baseline — to prove the extra complexity earned its keep.</p>
+
+        <!-- ============ 5. INTERACTIVE ============ -->
+        <h2 id="interactive">5 · Interactive: supervisor in action</h2>
+        <p>Trace a market-report task through a supervisor delegating to specialists.</p>
+        <div class="demo" data-stepdemo>
+          <div class="demo-title"><span class="badge">DEMO</span> "Write a 1-page report on EV battery trends"</div>
+          <div class="demo-stage" style="flex-direction:column;align-items:stretch;gap:8px">
+            <span class="chip" style="text-align:left">👔 Supervisor: plan → delegate research</span>
+            <span class="chip vec" style="text-align:left">🔍 Researcher: search + RAG → 6 key facts (returns to supervisor)</span>
+            <span class="chip" style="text-align:left">👔 Supervisor: facts ok → delegate analysis</span>
+            <span class="chip tok" style="text-align:left">📊 Analyst: trends + numbers from facts (returns)</span>
+            <span class="chip vec" style="text-align:left">✍️ Writer: draft 1-page report (returns)</span>
+            <span class="chip tok" style="text-align:left">🧐 Critic: flags 1 unsupported claim → back to Writer</span>
+            <span class="chip" style="text-align:left;font-weight:700;background:var(--green-soft);color:var(--green)">✅ Supervisor assembles final, cited report</span>
+          </div>
+          <div class="demo-stage" style="margin-top:14px">
+            <button class="btn" data-run>▶ Run crew</button>
+            <button class="btn ghost sm" data-reset>Reset</button>
+          </div>
+          <p style="font-size:12.5px;color:var(--text-muted);margin:14px 0 0">Each specialist has a tight role + tools. The supervisor owns the plan and the final output; the critic loop (reflection, Module 08) catches the unsupported claim before delivery.</p>
+        </div>
+
+        <!-- ============ 6. PYTHON ============ -->
+        <h2 id="python">6 · Practical Python</h2>
+
+        <h3>Minimal — a CrewAI sequential crew</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> crew_minimal.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-com"># pip install crewai</span>
+<span class="tok-kw">from</span> crewai <span class="tok-kw">import</span> Agent, Task, Crew, Process
+
+researcher = <span class="tok-fn">Agent</span>(
+    role=<span class="tok-str">"Research Analyst"</span>,
+    goal=<span class="tok-str">"Find accurate, current facts on the topic"</span>,
+    backstory=<span class="tok-str">"Meticulous; never invents sources."</span>,
+    verbose=<span class="tok-kw">True</span>)
+
+writer = <span class="tok-fn">Agent</span>(
+    role=<span class="tok-str">"Technical Writer"</span>,
+    goal=<span class="tok-str">"Write a clear, concise report from the research"</span>,
+    backstory=<span class="tok-str">"Explains complex topics simply."</span>)
+
+research = <span class="tok-fn">Task</span>(description=<span class="tok-str">"Research EV battery trends in 2025."</span>,
+                 expected_output=<span class="tok-str">"6 bullet-point facts with sources."</span>,
+                 agent=researcher)
+write = <span class="tok-fn">Task</span>(description=<span class="tok-str">"Write a 1-page report from the facts."</span>,
+              expected_output=<span class="tok-str">"Markdown report with citations."</span>,
+              agent=writer)
+
+crew = <span class="tok-fn">Crew</span>(agents=[researcher, writer], tasks=[research, write],
+            process=Process.sequential)        <span class="tok-com"># pipeline topology</span>
+<span class="tok-fn">print</span>(crew.<span class="tok-fn">kickoff</span>())</code></pre>
+        </div>
+
+        <h3>Intermediate — hierarchical crew (supervisor) with tools</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> crew_hierarchical.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">from</span> crewai <span class="tok-kw">import</span> Agent, Task, Crew, Process
+<span class="tok-kw">from</span> crewai_tools <span class="tok-kw">import</span> SerperDevTool      <span class="tok-com"># a search tool, e.g.</span>
+
+search = <span class="tok-fn">SerperDevTool</span>()
+
+researcher = <span class="tok-fn">Agent</span>(role=<span class="tok-str">"Researcher"</span>, goal=<span class="tok-str">"Gather facts"</span>,
+                    backstory=<span class="tok-str">"..."</span>, tools=[search])          <span class="tok-com"># only the tools it needs</span>
+analyst    = <span class="tok-fn">Agent</span>(role=<span class="tok-str">"Analyst"</span>, goal=<span class="tok-str">"Find trends in the facts"</span>, backstory=<span class="tok-str">"..."</span>)
+writer     = <span class="tok-fn">Agent</span>(role=<span class="tok-str">"Writer"</span>, goal=<span class="tok-str">"Produce the final report"</span>, backstory=<span class="tok-str">"..."</span>)
+
+task = <span class="tok-fn">Task</span>(description=<span class="tok-str">"Produce a cited 1-page report on EV battery trends."</span>,
+            expected_output=<span class="tok-str">"Markdown report"</span>)
+
+crew = <span class="tok-fn">Crew</span>(
+    agents=[researcher, analyst, writer],
+    tasks=[task],
+    process=Process.hierarchical,              <span class="tok-com"># a manager LLM delegates = supervisor</span>
+    manager_llm=<span class="tok-str">"gpt-4o"</span>)                       <span class="tok-com"># the supervisor's brain</span>
+<span class="tok-fn">print</span>(crew.<span class="tok-fn">kickoff</span>())</code></pre>
+        </div>
+
+        <h3>Intermediate+ — a LangGraph supervisor (full control)</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> langgraph_supervisor.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">from</span> typing <span class="tok-kw">import</span> Annotated, TypedDict, Literal
+<span class="tok-kw">from</span> langgraph.graph <span class="tok-kw">import</span> StateGraph, START, END
+<span class="tok-kw">from</span> langgraph.graph.message <span class="tok-kw">import</span> add_messages
+
+<span class="tok-kw">class</span> <span class="tok-cls">State</span>(TypedDict):
+    messages: Annotated[<span class="tok-cls">list</span>, add_messages]
+    next: <span class="tok-cls">str</span>
+
+WORKERS = [<span class="tok-str">"researcher"</span>, <span class="tok-str">"analyst"</span>, <span class="tok-str">"writer"</span>]
+
+<span class="tok-kw">def</span> <span class="tok-fn">supervisor</span>(state: State):
+    <span class="tok-com"># LLM decides which worker acts next, or FINISH (structured output)</span>
+    decision = manager_llm.<span class="tok-fn">invoke</span>(state[<span class="tok-str">"messages"</span>],
+                  choices=WORKERS + [<span class="tok-str">"FINISH"</span>])
+    <span class="tok-kw">return</span> {<span class="tok-str">"next"</span>: decision}
+
+<span class="tok-kw">def</span> <span class="tok-fn">make_worker</span>(name):
+    <span class="tok-kw">def</span> <span class="tok-fn">node</span>(state: State):
+        out = worker_agents[name].<span class="tok-fn">invoke</span>(state[<span class="tok-str">"messages"</span>])
+        <span class="tok-kw">return</span> {<span class="tok-str">"messages"</span>: [out]}        <span class="tok-com"># write result to shared state</span>
+    <span class="tok-kw">return</span> node
+
+g = <span class="tok-fn">StateGraph</span>(State)
+g.<span class="tok-fn">add_node</span>(<span class="tok-str">"supervisor"</span>, supervisor)
+<span class="tok-kw">for</span> w <span class="tok-kw">in</span> WORKERS:
+    g.<span class="tok-fn">add_node</span>(w, <span class="tok-fn">make_worker</span>(w))
+    g.<span class="tok-fn">add_edge</span>(w, <span class="tok-str">"supervisor"</span>)              <span class="tok-com"># workers report back to supervisor</span>
+g.<span class="tok-fn">add_edge</span>(START, <span class="tok-str">"supervisor"</span>)
+g.<span class="tok-fn">add_conditional_edges</span>(<span class="tok-str">"supervisor"</span>,           <span class="tok-com"># route to chosen worker or finish</span>
+    <span class="tok-kw">lambda</span> s: s[<span class="tok-str">"next"</span>], {**{w: w <span class="tok-kw">for</span> w <span class="tok-kw">in</span> WORKERS}, <span class="tok-str">"FINISH"</span>: END})
+app = g.<span class="tok-fn">compile</span>()</code></pre>
+        </div>
+
+        <h3>Production — bounded, observable orchestration</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> prod_orchestration.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-com"># Production multi-agent guards (extend the LangGraph supervisor):</span>
+<span class="tok-com">#   • recursion_limit       → bound total supervisor↔worker hops (handoff loops)</span>
+<span class="tok-com">#   • per-worker tool scopes → least privilege; right-sized model per role</span>
+<span class="tok-com">#   • structured handoff brief → avoid context loss / token bloat</span>
+<span class="tok-com">#   • checkpointer + tracing → audit which agent did what (Modules 12, 14)</span>
+<span class="tok-com">#   • a single finalizer node → one owner of the final answer</span>
+
+cfg = {<span class="tok-str">"configurable"</span>: {<span class="tok-str">"thread_id"</span>: <span class="tok-str">"job-123"</span>}, <span class="tok-str">"recursion_limit"</span>: <span class="tok-num">20</span>}
+
+<span class="tok-kw">def</span> <span class="tok-fn">handoff_brief</span>(state, to_agent: <span class="tok-cls">str</span>) -> <span class="tok-cls">dict</span>:
+    <span class="tok-str">"""Pass a terse task brief + state pointers, NOT the whole transcript."""</span>
+    <span class="tok-kw">return</span> {<span class="tok-str">"task"</span>: state[<span class="tok-str">"current_subtask"</span>],
+            <span class="tok-str">"facts"</span>: state.<span class="tok-fn">get</span>(<span class="tok-str">"facts"</span>, [])[:<span class="tok-num">10</span>],   <span class="tok-com"># bounded</span>
+            <span class="tok-str">"for"</span>: to_agent}
+
+result = app.<span class="tok-fn">invoke</span>({<span class="tok-str">"messages"</span>: [(<span class="tok-str">"user"</span>, task)]}, cfg)
+<span class="tok-com"># Every transition is checkpointed + traced → per-agent attribution for eval.</span></code></pre>
+        </div>
+        <div class="callout warn"><div class="c-ico">🛡️</div><div class="c-body"><p>The production rule: <strong>bound everything and attribute everything.</strong> Cap handoffs (recursion_limit), scope each agent's tools (least privilege, Module 09), pass terse structured briefs (not transcripts), and trace per-agent so your eval can pinpoint which specialist failed.</p></div></div>
+
+        <!-- ============ 7. OLLAMA ============ -->
+        <h2 id="ollama">7 · Ollama implementation</h2>
+        <p>Run a whole crew locally — and right-size models per role to save VRAM and latency.</p>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> local_crew.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">from</span> crewai <span class="tok-kw">import</span> Agent, Task, Crew, Process, LLM
+
+<span class="tok-com"># Different local models per role — cheap small model for simple roles,</span>
+<span class="tok-com"># stronger model for the supervisor/analyst (Module 03 sizing).</span>
+small = <span class="tok-fn">LLM</span>(model=<span class="tok-str">"ollama/gemma2"</span>, base_url=<span class="tok-str">"http://localhost:11434"</span>)
+strong = <span class="tok-fn">LLM</span>(model=<span class="tok-str">"ollama/qwen2.5"</span>, base_url=<span class="tok-str">"http://localhost:11434"</span>)
+
+writer   = <span class="tok-fn">Agent</span>(role=<span class="tok-str">"Writer"</span>, goal=<span class="tok-str">"Draft the report"</span>, backstory=<span class="tok-str">"..."</span>, llm=small)
+analyst  = <span class="tok-fn">Agent</span>(role=<span class="tok-str">"Analyst"</span>, goal=<span class="tok-str">"Reason over data"</span>, backstory=<span class="tok-str">"..."</span>, llm=strong)
+
+crew = <span class="tok-fn">Crew</span>(agents=[analyst, writer],
+            tasks=[<span class="tok-fn">Task</span>(description=<span class="tok-str">"Summarize plant downtime causes."</span>,
+                        expected_output=<span class="tok-str">"Ranked list + 1-paragraph summary"</span>,
+                        agent=analyst)],
+            process=Process.sequential)
+<span class="tok-fn">print</span>(crew.<span class="tok-fn">kickoff</span>())   <span class="tok-com"># fully offline multi-agent run</span></code></pre>
+        </div>
+        <div class="callout note"><div class="c-ico">⚖️</div><div class="c-body"><p>Local multi-agent is where Module 08's "small models flail more" bites hardest — more agents × weaker models = more coordination errors. Keep crews small, roles crisp, tools minimal, and watch the failure modes from §4 closely.</p></div></div>
+
+        <!-- ============ 8. INDUSTRY ============ -->
+        <h2 id="industry">8 · Industry perspective</h2>
+        <div class="grid grid-2">
+          <div class="card"><h4>🚀 Startups</h4><p>Use CrewAI to prototype a team fast (declare roles + tasks, get a working crew). Validate that multi-agent beats a single tuned agent before committing — often it doesn't, and one good agent ships sooner.</p></div>
+          <div class="card"><h4>🏢 Enterprises</h4><p>Favor LangGraph supervisors for control, durability, and auditability (which agent did what, when — Module 12). Right-size models per role for cost, scope tools per agent for security, and gate consequential actions with human-in-the-loop.</p></div>
+        </div>
+        <h3>CrewAI vs LangGraph for multi-agent</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th></th><th>CrewAI</th><th>LangGraph</th></tr></thead>
+          <tbody>
+            <tr><td>Abstraction</td><td>High — roles, tasks, crews</td><td>Lower — explicit state graph</td></tr>
+            <tr><td>Speed to build</td><td>Very fast</td><td>More setup</td></tr>
+            <tr><td>Control / auditability</td><td>Less granular</td><td>Full (every edge/state)</td></tr>
+            <tr><td>Durability / HITL</td><td>Limited</td><td>First-class (checkpoints)</td></tr>
+            <tr><td>Reach for it when…</td><td>Quick role-based teams</td><td>Production control &amp; compliance</td></tr>
+          </tbody>
+        </table></div>
+        <p><strong>Common production challenges:</strong> proving multi-agent beats a single agent, handoff loops and context loss, runaway token cost from chatty agents, attributing failures to the right agent, and over-engineering simple tasks into elaborate crews.</p>
+
+        <!-- ============ 9. MISTAKES ============ -->
+        <h2 id="mistakes">9 · Top mistakes engineers make</h2>
+        <div class="grid grid-2">
+          <div class="card"><h4>❌ Reaching for multi-agent first</h4><p>Most tasks need one good agent. Multi-agent adds cost, latency, and failure modes. Earn it with evidence.</p></div>
+          <div class="card"><h4>❌ Passing the whole transcript on handoff</h4><p>Bloats context and cost. Pass a terse brief + shared-state pointers.</p></div>
+          <div class="card"><h4>❌ No bound on handoffs</h4><p>Agents ping-pong forever. Cap total hops; give the supervisor authority to terminate.</p></div>
+          <div class="card"><h4>❌ Overlapping roles</h4><p>Fuzzy responsibilities cause conflicts and duplicated work. Make each role distinct with a clear DoD.</p></div>
+          <div class="card"><h4>❌ One model for every role</h4><p>Right-size: a cheap model for simple roles, a strong one for the supervisor/analyst. Saves cost &amp; latency.</p></div>
+          <div class="card"><h4>❌ No per-agent observability</h4><p>When the crew fails you won't know who's at fault. Trace and attribute every step (Module 14).</p></div>
+        </div>
+
+        <!-- ============ 10. INTERVIEW ============ -->
+        <h2 id="interview">10 · Interview preparation</h2>
+
+        <details class="collapse"><summary><span class="pill green">Beginner</span> &nbsp;What is a multi-agent system and why use one? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Several specialized agents, each with its own role, prompt, and tools, coordinated to solve a complex task. Benefits: specialization (focused agents make better decisions than one bloated agent), modularity (test/iterate per agent), and parallelism. Costs: coordination overhead, latency, more LLM calls, and new failure modes — so use it only when one agent genuinely can't cope.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill green">Beginner</span> &nbsp;What is the supervisor pattern? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>A manager agent that receives the task, delegates subtasks to specialized worker agents, collects their results, and decides the next step until done. It's the dominant production topology because control is centralized and easy to reason about — a star shape rather than a chaotic mesh.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill blue">Intermediate</span> &nbsp;Supervisor vs network (handoff) — tradeoffs? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Supervisor centralizes routing: predictable, auditable, easy to bound, but the supervisor is a bottleneck and single point of decision. Network lets any agent hand off to any peer: flexible for fluid workflows, but harder to reason about, easier to loop, and trickier to bound and debug. Most production systems pick supervisor for control; use network when the workflow genuinely needs peer-to-peer transfers.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill blue">Intermediate</span> &nbsp;What's the hard part of a handoff? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Deciding what context to transfer. Too little and the receiving agent lacks the information to act; too much and you pollute its prompt and pay for excess tokens. The right approach passes a concise structured brief (the subtask + the few relevant facts/pointers to shared state), not the entire conversation transcript.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill amber">Senior</span> &nbsp;How do you decide between one agent and a multi-agent system? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Default to one well-scoped agent. Split into multiple agents when: roles are genuinely distinct (different tools/expertise), the single agent is measurably failing (wrong tool choices, context bloat, lost thread on evals), you need true parallelism, or you need different models/permissions per role. Always validate with an eval that the multi-agent version beats the single-agent baseline on success rate <em>and</em> justifies the extra cost/latency. Complexity must earn its place.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill amber">Senior</span> &nbsp;How do you prevent and detect handoff loops? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Prevent: prefer a supervisor topology (bounded paths) over a mesh; give the supervisor sole authority to terminate; set a hard cap on total hops (recursion_limit). Detect: track the handoff sequence and flag repeats (A→B→A→B); monitor messages-per-task and alert on outliers; in the trace, watch for no net progress in shared state across hops. On detection, force termination/escalation and feed the case into the eval suite.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill purple">Staff · design</span> &nbsp;Design a multi-agent customer-support system with safety and observability. <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Topology: a <strong>supervisor/triage</strong> agent routes to specialists (billing, technical, account) — bounded star, not a mesh. Build on LangGraph for explicit routing, durable checkpoints, and per-agent attribution. Each specialist gets <strong>least-privilege tools</strong> via MCP (Module 09) and RAG over its domain docs (07/11). <strong>Handoffs</strong> carry a structured brief + shared-state pointers, capped by recursion_limit with the supervisor able to escalate to a human. <strong>Safety</strong>: human-in-the-loop (Module 12) before refunds/account changes; guardrails on inputs/outputs (Module 14). <strong>Observability</strong>: trace every transition, attribute success/failure per agent, track handoff correctness and tokens/task. <strong>Eval</strong>: golden conversations gating deploys; compare against a single-agent baseline to justify the architecture. A designated finalizer owns the user-facing response. The deliverables that matter: bounded coordination, least privilege, human gates on consequential actions, and per-agent traceability.</p></div></details>
+
+        <!-- ============ 11. QUIZ ============ -->
+        <h2 id="quiz">11 · Knowledge check</h2>
+
+        <div class="quiz">
+          <div class="q">1 · The most common production multi-agent topology is…</div>
+          <label class="opt">A fully-connected mesh of equals</label>
+          <label class="opt" data-correct="true">A supervisor delegating to specialized workers</label>
+          <label class="opt">A single agent with many tools</label>
+          <label class="opt">Random handoffs</label>
+          <div class="explain">The supervisor (star) pattern centralizes routing and control, making the system predictable, boundable, and auditable — the dominant choice in production.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">2 · Why does splitting one big agent into specialists often improve reliability?</div>
+          <label class="opt">Specialists use more tokens</label>
+          <label class="opt" data-correct="true">Each agent's prompt and tool set stay small, so the LLM makes better, less error-prone choices</label>
+          <label class="opt">It removes the need for a model</label>
+          <label class="opt">It eliminates all failure modes</label>
+          <div class="explain">Smaller, focused prompts and minimal tools reduce the ways an agent can go wrong (Module 08) and keep context clean — though coordination adds its own costs.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">3 · What should a handoff typically carry?</div>
+          <label class="opt">The entire conversation transcript</label>
+          <label class="opt" data-correct="true">A concise task brief plus pointers to shared state</label>
+          <label class="opt">Nothing — the next agent figures it out</label>
+          <label class="opt">Only the user's original message</label>
+          <div class="explain">Passing the whole transcript bloats context and cost; passing nothing causes context loss. A terse structured brief + shared-state references is the balance.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">4 · Before shipping a multi-agent system, you should…</div>
+          <label class="opt">Add as many agents as possible</label>
+          <label class="opt" data-correct="true">Prove it beats a single-agent baseline on success and justifies the added cost/latency</label>
+          <label class="opt">Remove all guardrails for speed</label>
+          <label class="opt">Use one model for every agent</label>
+          <div class="explain">Multi-agent adds cost, latency, and failure modes. An eval comparing it to a well-tuned single agent proves the complexity is warranted.</div>
+        </div>
+
+        <!-- ============ 12. ACTIVE RECALL ============ -->
+        <h2 id="recall">12 · Active recall</h2>
+        <p>Answer first, then reveal. Re-test tomorrow and in a week.</p>
+        <details class="recall"><summary><span class="q-ico">Q</span> Name four multi-agent topologies. <span class="chev">›</span></summary><div class="a">Supervisor (manager routes to workers), Network (peer-to-peer handoffs), Sequential/pipeline (fixed order), Hierarchical (supervisors of supervisors).</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> What are CrewAI's three core abstractions? <span class="chev">›</span></summary><div class="a">Agent (role, goal, backstory, tools), Task (description, expected output, assigned agent), and Crew (the team + a process: sequential or hierarchical).</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> List three multi-agent-specific failure modes. <span class="chev">›</span></summary><div class="a">Handoff loops, context loss at handoff, coordination/communication overhead, diffuse responsibility, conflicting actions, cost/latency multiplication. (Any three.)</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> CrewAI vs LangGraph in one line each. <span class="chev">›</span></summary><div class="a">CrewAI: high-level roles/tasks/crews, fast to build. LangGraph: explicit state graph, full control + durability + HITL for production.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> What's the senior default before going multi-agent? <span class="chev">›</span></summary><div class="a">Start with one well-scoped agent; split only when roles are genuinely distinct, the single agent is measurably struggling, or you need real parallelism — and validate the win with an eval.</div></details>
+
+        <!-- ============ 13. EXERCISES ============ -->
+        <h2 id="exercises">13 · Exercises</h2>
+        <div class="callout tip"><div class="c-ico">🟢</div><div class="c-body"><div class="c-title">Easy</div><p>Build the CrewAI sequential crew (researcher → writer) on a topic of your choice. Inspect the intermediate output passed between agents.</p></div></div>
+        <div class="callout warn"><div class="c-ico">🟡</div><div class="c-body"><div class="c-title">Medium</div><p>Convert it to a hierarchical crew with a manager LLM and add a critic agent that can send the draft back to the writer. Then build the same supervisor team in LangGraph and compare control/observability.</p></div></div>
+        <div class="callout danger"><div class="c-ico">🔴</div><div class="c-body"><div class="c-title">Hard</div><p>Build a LangGraph supervisor with researcher/analyst/writer/critic, recursion_limit, structured handoff briefs, per-agent tracing, and a single finalizer node. Then build a single tuned agent for the same task and run an eval (10 tasks) comparing success rate, total tokens, and latency. Report whether multi-agent earned its keep.</p></div></div>
+
+        <!-- ============ 14. MINI PROJECT ============ -->
+        <h2 id="mini-project">14 · Mini project — "Research-&amp;-Report Crew"</h2>
+        <div class="card">
+          <p><strong>Goal:</strong> A supervisor-led crew that turns a topic into a cited 1-page report — the pattern behind the Multi-Agent Plant Assistant capstone.</p>
+          <h4>Requirements</h4>
+          <ul>
+            <li>Researcher (search/RAG tools), Analyst (reasoning), Writer (drafting), Critic (review loop)</li>
+            <li>Supervisor routing (CrewAI hierarchical <em>or</em> LangGraph supervisor)</li>
+            <li>Structured handoffs (brief, not transcript); bounded total hops</li>
+            <li>Final cited report; per-agent trace of who contributed what</li>
+          </ul>
+          <h4>Stretch</h4>
+          <ul style="margin-bottom:0"><li>Right-size models per role (small for writer, strong for analyst).</li><li>Run two specialists in parallel (LangGraph fan-out, Module 12) and merge.</li></ul>
+        </div>
+
+        <!-- ============ 15. REAL PROJECT CONNECTION ============ -->
+        <h2 id="real-project">15 · Real project connection</h2>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Project</th><th>How multi-agent applies</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Multi-Agent Plant Assistant</strong></td><td>This module <em>is</em> the project: supervisor routing to manuals/telemetry/maintenance specialists.</td></tr>
+            <tr><td><strong>EDA Agent</strong></td><td>A planner delegating to data-loading, stats, and visualization specialists.</td></tr>
+            <tr><td><strong>ElasticSearch Investigation Agent</strong></td><td>A triage agent routing to log-search vs metrics-analysis specialists, each with scoped MCP tools.</td></tr>
+            <tr><td><strong>SQL Analysis Agent</strong></td><td>Optionally split query-writing, validation, and explanation into specialist roles.</td></tr>
+            <tr><td><strong>Enterprise Platform</strong></td><td>The supervised, bounded, observable, HITL-gated support/ops crews from §10's staff design.</td></tr>
+          </tbody>
+        </table></div>
+
+        <div class="complete-bar">
+          <div><strong style="font-size:15px">Finished Module 13?</strong><p style="margin:2px 0 0;font-size:13.5px;color:var(--text-muted)">You can coordinate teams of agents. Next: make all of it production-grade.</p></div>
+          <button class="btn" data-complete>Mark module complete</button>
+        </div>
+
+        <div class="page-nav">
+          <a href="12_langgraph.html"><div class="dir">← Previous</div><div class="ttl">12 · LangGraph</div></a>
+          <a class="next" href="14_production_genai.html"><div class="dir">Next →</div><div class="ttl">14 · Production GenAI</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

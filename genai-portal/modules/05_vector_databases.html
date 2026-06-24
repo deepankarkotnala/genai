@@ -1,0 +1,480 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>05 · Vector Databases — GenAI Mastery</title>
+<meta name="description" content="Store and search millions of vectors fast: exact vs approximate nearest neighbor, HNSW and IVF indexes, recall/latency tradeoffs, metadata filtering, and choosing between FAISS, Qdrant, pgvector and ElasticSearch.">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body data-page="05">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <div class="brand-mark">G</div>
+        <div class="brand-text"><strong>GenAI Mastery</strong><span>DS → Senior GenAI Engineer</span></div>
+      </a>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search modules…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Retrieval / <b>05 · Vector Databases</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Module 05 · Retrieval track</div>
+        <h1>Vector Databases</h1>
+        <p class="lead">Module 04 gave you vectors. But comparing a query against ten million stored vectors one-by-one is far too slow for a live request. A <strong>vector database</strong> is purpose-built to answer "which vectors are closest to this one?" in milliseconds — by trading a sliver of accuracy for enormous speed using <strong>approximate nearest-neighbor</strong> indexes. This module is the difference between a toy and a system that scales.</p>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~55 min read</span>
+          <span class="pill">Difficulty · Intermediate</span>
+          <span class="pill purple">Prereq · Module 04</span>
+        </div>
+
+        <!-- ============ 1. EXECUTIVE SUMMARY ============ -->
+        <h2 id="summary">1 · Executive summary</h2>
+        <p>A <strong>vector database</strong> stores embeddings plus metadata and serves <strong>k-nearest-neighbor (kNN)</strong> queries at scale. Its core trick is the <strong>Approximate Nearest Neighbor (ANN) index</strong> — most commonly <strong>HNSW</strong> — which finds <em>almost</em> the true nearest neighbors in logarithmic-ish time instead of scanning everything. You give up a small, tunable amount of recall to gain orders-of-magnitude lower latency.</p>
+        <div class="grid grid-3">
+          <div class="card" data-reveal><span class="ico">❓</span><h4>Why it exists</h4><p>Brute-force similarity over millions of high-dim vectors is O(N·d) per query — too slow. ANN indexes make it fast enough for production.</p></div>
+          <div class="card" data-reveal><span class="ico">🔧</span><h4>Problem it solves</h4><p>"Find the top-k closest vectors out of millions, with metadata filters, in single-digit milliseconds, while accepting live updates."</p></div>
+          <div class="card" data-reveal><span class="ico">🌐</span><h4>Where it fits</h4><p>The storage + retrieval engine of RAG. It sits between <a href="04_embeddings.html">embeddings</a> (04) and <a href="06_rag_basics.html">RAG</a> (06).</p></div>
+        </div>
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The one idea to remember</div>
+          <p><strong>Vector search is a recall-vs-latency dial, not a binary.</strong> ANN trades exactness for speed; you tune index parameters to hit your recall target at your latency budget. Knowing which knobs to turn is the whole skill.</p></div>
+        </div>
+
+        <!-- ============ 2. FIRST PRINCIPLES ============ -->
+        <h2 id="first-principles">2 · First-principles breakdown</h2>
+
+        <h3>What — a search engine for geometry</h3>
+        <p>A normal database finds rows by exact match or range on a column. A vector database finds rows by <em>proximity in space</em>: "give me the 5 vectors nearest to this one." Because there's no notion of "exactly equal" for 768 floats, the query is inherently a ranking-by-distance, not a lookup.</p>
+
+        <h3>Why — brute force doesn't scale</h3>
+        <p>The honest answer ("compare the query to every vector and sort") is called a <strong>flat / exact</strong> search. It's perfectly accurate but costs O(N × d) per query — for 10M vectors × 768 dims that's ~7.7 billion multiply-adds <em>per request</em>. Fine for thousands of vectors; impossible for millions at low latency. ANN indexes restructure the data so you only examine a tiny, well-chosen fraction.</p>
+
+        <div class="callout note"><div class="c-ico">🗺️</div><div class="c-body"><div class="c-title">The intuition behind ANN</div>
+        <p>Think of finding the nearest coffee shop. You don't measure your distance to <em>every</em> shop on Earth — you start in your neighborhood and hop to closer and closer ones. HNSW does exactly this: build a graph of "who's near whom," then greedily walk toward the query. You might miss the true #1 occasionally, but you find great answers fast.</p></div></div>
+
+        <h3>How — index once, search many</h3>
+        <div class="cssflow">
+          <div class="fnode accent">Embeddings + metadata<small>from Module 04</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">Build ANN index<small>HNSW graph / IVF clusters</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">Query vector arrives</div>
+          <div class="farrow"></div>
+          <div class="fnode">Traverse index → candidates<small>+ apply metadata filters</small></div>
+          <div class="farrow"></div>
+          <div class="fnode accent">Top-k results<small>id · score · payload</small></div>
+        </div>
+
+        <!-- ============ 3. VISUAL ARCHITECTURE ============ -->
+        <h2 id="architecture">3 · Visual architecture</h2>
+
+        <h3>HNSW — the hierarchical small-world graph</h3>
+        <p>HNSW builds a multi-layer graph. Top layers are sparse "express lanes" for big jumps; lower layers are dense for fine-grained search. A query enters at the top, greedily hops toward the target, then descends layer by layer — like zooming in on a map.</p>
+        <div class="diagram">
+          <svg viewBox="0 0 660 300" width="660" role="img" aria-label="HNSW layered graph">
+            <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="var(--accent)"/></marker></defs>
+            <!-- layer labels -->
+            <text class="flow-sub" x="40" y="55" style="fill:var(--accent);font-weight:700">L2</text>
+            <text class="flow-sub" x="40" y="150" style="fill:var(--accent);font-weight:700">L1</text>
+            <text class="flow-sub" x="40" y="250" style="fill:var(--accent);font-weight:700">L0</text>
+            <text class="flow-sub" x="610" y="55">sparse · long hops</text>
+            <text class="flow-sub" x="600" y="250">dense · all nodes</text>
+            <!-- L2 (2 nodes) -->
+            <line x1="120" y1="48" x2="520" y2="48" stroke="var(--border-strong)" stroke-width="1.5"/>
+            <circle cx="120" cy="48" r="9" fill="var(--accent-soft)" stroke="var(--accent)"/><circle cx="520" cy="48" r="9" fill="var(--accent-soft)" stroke="var(--accent)"/>
+            <!-- L1 (4 nodes) -->
+            <line x1="120" y1="145" x2="300" y2="145" stroke="var(--border-strong)" stroke-width="1.5"/><line x1="300" y1="145" x2="420" y2="145" stroke="var(--border-strong)" stroke-width="1.5"/><line x1="420" y1="145" x2="520" y2="145" stroke="var(--border-strong)" stroke-width="1.5"/>
+            <circle cx="120" cy="145" r="8" fill="var(--bg-elevated)" stroke="var(--border-strong)"/><circle cx="300" cy="145" r="8" fill="var(--bg-elevated)" stroke="var(--border-strong)"/><circle cx="420" cy="145" r="8" fill="var(--accent-soft)" stroke="var(--accent)"/><circle cx="520" cy="145" r="8" fill="var(--bg-elevated)" stroke="var(--border-strong)"/>
+            <!-- L0 (8 nodes) -->
+            <line x1="100" y1="245" x2="560" y2="245" stroke="var(--border)" stroke-width="1.2"/>
+            <g>
+              <circle cx="100" cy="245" r="7" fill="var(--bg-elevated)" stroke="var(--border-strong)"/>
+              <circle cx="180" cy="245" r="7" fill="var(--bg-elevated)" stroke="var(--border-strong)"/>
+              <circle cx="260" cy="245" r="7" fill="var(--bg-elevated)" stroke="var(--border-strong)"/>
+              <circle cx="340" cy="245" r="7" fill="var(--bg-elevated)" stroke="var(--border-strong)"/>
+              <circle cx="420" cy="245" r="7" fill="var(--green-soft)" stroke="var(--green)" stroke-width="2"/>
+              <circle cx="500" cy="245" r="7" fill="var(--bg-elevated)" stroke="var(--border-strong)"/>
+              <circle cx="560" cy="245" r="7" fill="var(--bg-elevated)" stroke="var(--border-strong)"/>
+            </g>
+            <!-- traversal path -->
+            <path class="flow-arrow flow-dash" d="M120,56 L120,137" style="stroke:var(--accent)"/>
+            <path class="flow-arrow flow-dash" d="M128,145 L292,145" style="stroke:var(--accent)"/>
+            <path class="flow-arrow flow-dash" d="M308,145 L412,145" style="stroke:var(--accent)"/>
+            <path class="flow-arrow flow-dash" d="M420,153 L420,237" style="stroke:var(--accent)"/>
+            <text class="flow-sub" x="330" y="285" text-anchor="middle">query enters at top (L2) → greedy hops → descends → green = nearest neighbor found</text>
+          </svg>
+          <div class="diagram-caption">Figure 1 · HNSW: sparse top layers for fast traversal, dense bottom layer holding every vector. Search is roughly O(log N).</div>
+        </div>
+
+        <h3>System view</h3>
+        <div class="diagram">
+          <svg viewBox="0 0 720 200" width="720" role="img" aria-label="Vector DB system">
+            <defs><marker id="arrow2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="var(--text-muted)"/></marker></defs>
+            <rect class="flow-node-accent" x="20" y="75" width="120" height="55" rx="10"/><text class="flow-label" x="80" y="100" text-anchor="middle">App / RAG</text><text class="flow-sub" x="80" y="117" text-anchor="middle">query vector</text>
+            <rect x="190" y="35" width="350" height="135" rx="14" fill="none" stroke="var(--accent)" stroke-dasharray="5 5"/>
+            <text class="flow-sub" x="365" y="55" text-anchor="middle" style="fill:var(--accent);font-weight:700">VECTOR DATABASE</text>
+            <rect class="flow-node" x="210" y="75" width="120" height="55" rx="10"/><text class="flow-label" x="270" y="100" text-anchor="middle">ANN index</text><text class="flow-sub" x="270" y="117" text-anchor="middle">HNSW / IVF</text>
+            <rect class="flow-node" x="360" y="75" width="120" height="55" rx="10"/><text class="flow-label" x="420" y="97" text-anchor="middle">Metadata</text><text class="flow-sub" x="420" y="114" text-anchor="middle">filters · payload</text>
+            <rect class="flow-node" x="590" y="75" width="110" height="55" rx="10"/><text class="flow-label" x="645" y="100" text-anchor="middle">Top-k</text><text class="flow-sub" x="645" y="117" text-anchor="middle">ids + scores</text>
+            <path class="flow-arrow" d="M140,102 L208,102"/><path class="flow-arrow" d="M330,102 L358,102"/><path class="flow-arrow" d="M540,102 L588,102"/>
+          </svg>
+          <div class="diagram-caption">Figure 2 · A vector DB = ANN index + metadata store + filtering, behind a kNN API.</div>
+        </div>
+
+        <!-- ============ 4. DEEP TECHNICAL ============ -->
+        <h2 id="deep-dive">4 · Deep technical explanation</h2>
+
+        <h3>Index families</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Index</th><th>How it works</th><th>Best for</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Flat (brute force)</strong></td><td>Compare to every vector; exact</td><td>&lt;~50k vectors, or a ground-truth baseline</td></tr>
+            <tr><td><strong>HNSW</strong></td><td>Multi-layer proximity graph; greedy descent</td><td><strong>The default</strong> — great recall/latency, fast queries</td></tr>
+            <tr><td><strong>IVF</strong></td><td>Cluster vectors; search only nearest clusters</td><td>Very large sets where memory matters</td></tr>
+            <tr><td><strong>IVF + PQ</strong></td><td>IVF + product quantization (compress vectors)</td><td>Billions of vectors on limited RAM</td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>The HNSW knobs that decide everything</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Param</th><th>Controls</th><th>Higher = </th></tr></thead>
+          <tbody>
+            <tr><td><code>M</code></td><td>Edges per node (graph density)</td><td>Better recall, more memory, slower build</td></tr>
+            <tr><td><code>ef_construction</code></td><td>Effort while building the graph</td><td>Better index quality, slower build (one-time)</td></tr>
+            <tr><td><code>ef_search</code></td><td>Candidates explored per query</td><td><strong>Better recall, higher latency</strong> — your live dial</td></tr>
+          </tbody>
+        </table></div>
+        <div class="callout tip"><div class="c-ico">🎛️</div><div class="c-body"><p><strong><code>ef_search</code> is your runtime recall/latency lever.</strong> Set <code>M</code> and <code>ef_construction</code> at build time for index quality; tune <code>ef_search</code> per query to trade latency for recall. Always measure recall against a flat-index ground truth before shipping.</p></div></div>
+
+        <h3>Metadata filtering — the production reality</h3>
+        <p>Real queries are "nearest neighbors <em>where tenant = X and date &gt; Y</em>." There are two strategies, and the wrong one wrecks results:</p>
+        <ul>
+          <li><strong>Post-filtering:</strong> ANN first, then drop non-matching results. Fast, but if filters are selective you may get back <em>zero</em> matches (all top-k were filtered out).</li>
+          <li><strong>Pre-filtering:</strong> restrict the search to matching vectors. More correct for selective filters; needs DB support (Qdrant, pgvector, ES do this well).</li>
+        </ul>
+
+        <h3>Distance metrics & quantization recap</h3>
+        <p>Pick the metric your embedding model was trained for — usually <strong>cosine</strong> (or dot product on normalized vectors, Module 04). Many DBs also offer on-disk quantization (scalar/product) to shrink memory at a small recall cost — the storage analogue of model quantization from Module 03.</p>
+
+        <h3>Tradeoffs & limitations</h3>
+        <div class="grid grid-2">
+          <div class="card"><h4>Strengths</h4><ul style="margin-bottom:0"><li>Millisecond kNN over millions of vectors</li><li>Live inserts/updates/deletes</li><li>Metadata filtering + hybrid search</li></ul></div>
+          <div class="card"><h4>Limits</h4><ul style="margin-bottom:0"><li>ANN ≠ exact (tunable miss rate)</li><li>HNSW is memory-hungry (graph in RAM)</li><li>Filtering interacts subtly with ANN recall</li><li>Re-indexing on embedding-model upgrades (Module 04)</li></ul></div>
+        </div>
+
+        <!-- ============ 5. INTERACTIVE ============ -->
+        <h2 id="interactive">5 · Interactive: recall vs latency dial</h2>
+        <p>Move the effort dial (<code>ef_search</code>) and watch the classic tradeoff: more exploration → higher recall, higher latency.</p>
+        <div class="demo">
+          <div class="demo-title"><span class="badge">DEMO</span> ANN tradeoff explorer</div>
+          <label style="font-size:13px;display:block;margin-bottom:8px">ef_search: <b id="ef-val">64</b></label>
+          <input id="ef-range" type="range" min="8" max="512" value="64" step="8" style="width:100%;accent-color:var(--accent)">
+          <div id="ef-out" class="demo-stage" style="margin-top:16px"></div>
+        </div>
+        <script>
+          (function(){
+            var r=document.getElementById('ef-range'); if(!r) return;
+            function render(){
+              var ef=parseInt(r.value,10);
+              document.getElementById('ef-val').textContent=ef;
+              // toy curves: recall saturates, latency grows ~linearly
+              var recall=Math.min(0.999, 0.80 + 0.20*(1-Math.exp(-ef/120)));
+              var latency=0.4+ef*0.045; // ms
+              var out=document.getElementById('ef-out');
+              out.innerHTML=
+                '<span class="chip vec show">recall@10 ≈ '+(recall*100).toFixed(1)+'%</span>'+
+                '<span class="chip tok show">latency ≈ '+latency.toFixed(1)+' ms</span>'+
+                '<div style="width:100%;margin-top:8px"><small style="color:var(--text-muted)">recall</small><div class="vecbar show" style="width:'+(recall*100).toFixed(0)+'%;background:var(--green)"></div>'+
+                '<small style="color:var(--text-muted)">latency (relative)</small><div class="vecbar show" style="width:'+Math.min(100,latency*3).toFixed(0)+'%;background:var(--red)"></div></div>'+
+                '<span class="chip show" style="font-weight:700">'+(ef<32?'⚡ Fast but lossy — risky for high-stakes retrieval':ef>256?'🎯 High recall, paying in latency':'✅ Balanced — common production setting')+'</span>';
+            }
+            r.addEventListener('input',render); render();
+          })();
+        </script>
+
+        <!-- ============ 6. PYTHON ============ -->
+        <h2 id="python">6 · Practical Python</h2>
+
+        <h3>Minimal — FAISS in-memory index</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> faiss_minimal.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">import</span> faiss, numpy <span class="tok-kw">as</span> np
+
+d = <span class="tok-num">384</span>
+vectors = np.random.<span class="tok-fn">rand</span>(<span class="tok-num">10000</span>, d).<span class="tok-fn">astype</span>(<span class="tok-str">"float32"</span>)
+faiss.<span class="tok-fn">normalize_L2</span>(vectors)                 <span class="tok-com"># cosine via inner product</span>
+
+index = faiss.<span class="tok-fn">IndexFlatIP</span>(d)               <span class="tok-com"># exact baseline (inner product)</span>
+index.<span class="tok-fn">add</span>(vectors)
+
+q = vectors[:<span class="tok-num">1</span>]                            <span class="tok-com"># query with the first vector</span>
+scores, ids = index.<span class="tok-fn">search</span>(q, k=<span class="tok-num">5</span>)
+<span class="tok-fn">print</span>(ids[<span class="tok-num">0</span>], scores[<span class="tok-num">0</span>])              <span class="tok-com"># nearest 5 (itself first)</span></code></pre>
+        </div>
+
+        <h3>Intermediate — HNSW with metadata filtering (Qdrant)</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> qdrant_intermediate.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">from</span> qdrant_client <span class="tok-kw">import</span> QdrantClient, models
+
+client = <span class="tok-fn">QdrantClient</span>(<span class="tok-str">":memory:"</span>)        <span class="tok-com"># or url="http://localhost:6333"</span>
+client.<span class="tok-fn">recreate_collection</span>(
+    <span class="tok-str">"docs"</span>,
+    vectors_config=models.<span class="tok-fn">VectorParams</span>(size=<span class="tok-num">384</span>, distance=models.Distance.COSINE),
+    hnsw_config=models.<span class="tok-fn">HnswConfigDiff</span>(m=<span class="tok-num">16</span>, ef_construct=<span class="tok-num">200</span>),
+)
+
+client.<span class="tok-fn">upsert</span>(<span class="tok-str">"docs"</span>, points=[
+    models.<span class="tok-fn">PointStruct</span>(id=<span class="tok-num">1</span>, vector=vec1, payload={<span class="tok-str">"tenant"</span>: <span class="tok-str">"acme"</span>, <span class="tok-str">"year"</span>: <span class="tok-num">2024</span>}),
+    models.<span class="tok-fn">PointStruct</span>(id=<span class="tok-num">2</span>, vector=vec2, payload={<span class="tok-str">"tenant"</span>: <span class="tok-str">"acme"</span>, <span class="tok-str">"year"</span>: <span class="tok-num">2023</span>}),
+])
+
+<span class="tok-com"># Pre-filtered ANN: nearest neighbors WHERE tenant=acme AND year>=2024</span>
+hits = client.<span class="tok-fn">search</span>(
+    <span class="tok-str">"docs"</span>, query_vector=query_vec, limit=<span class="tok-num">5</span>,
+    search_params=models.<span class="tok-fn">SearchParams</span>(hnsw_ef=<span class="tok-num">128</span>),    <span class="tok-com"># ef_search</span>
+    query_filter=models.<span class="tok-fn">Filter</span>(must=[
+        models.<span class="tok-fn">FieldCondition</span>(key=<span class="tok-str">"tenant"</span>, match=models.<span class="tok-fn">MatchValue</span>(value=<span class="tok-str">"acme"</span>)),
+        models.<span class="tok-fn">FieldCondition</span>(key=<span class="tok-str">"year"</span>, range=models.<span class="tok-fn">Range</span>(gte=<span class="tok-num">2024</span>)),
+    ]),
+)
+<span class="tok-kw">for</span> h <span class="tok-kw">in</span> hits: <span class="tok-fn">print</span>(h.id, h.score, h.payload)</code></pre>
+        </div>
+
+        <h3>Production — pgvector with a clean repository layer</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> pgvector_repo.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-com"># Postgres + pgvector: vectors live next to your relational data —</span>
+<span class="tok-com"># one DB, transactional, easy joins/filters. Great default for many teams.</span>
+<span class="tok-kw">import</span> psycopg
+<span class="tok-kw">from</span> pgvector.psycopg <span class="tok-kw">import</span> register_vector
+
+DDL = <span class="tok-str">"""</span>
+<span class="tok-str">CREATE EXTENSION IF NOT EXISTS vector;</span>
+<span class="tok-str">CREATE TABLE IF NOT EXISTS chunks (</span>
+<span class="tok-str">  id bigserial PRIMARY KEY,</span>
+<span class="tok-str">  doc_id text NOT NULL,</span>
+<span class="tok-str">  tenant text NOT NULL,</span>
+<span class="tok-str">  content text NOT NULL,</span>
+<span class="tok-str">  embedding vector(384),</span>
+<span class="tok-str">  model_version text NOT NULL          -- never mix models (Module 04)</span>
+<span class="tok-str">);</span>
+<span class="tok-str">CREATE INDEX IF NOT EXISTS chunks_hnsw</span>
+<span class="tok-str">  ON chunks USING hnsw (embedding vector_cosine_ops)</span>
+<span class="tok-str">  WITH (m = 16, ef_construction = 200);</span>
+<span class="tok-str">"""</span>
+
+<span class="tok-kw">class</span> <span class="tok-cls">VectorRepo</span>:
+    <span class="tok-kw">def</span> <span class="tok-fn">__init__</span>(self, dsn):
+        self.conn = psycopg.<span class="tok-fn">connect</span>(dsn, autocommit=<span class="tok-kw">True</span>)
+        <span class="tok-fn">register_vector</span>(self.conn)
+        self.conn.<span class="tok-fn">execute</span>(DDL)
+
+    <span class="tok-kw">def</span> <span class="tok-fn">search</span>(self, qvec, tenant, k=<span class="tok-num">5</span>, ef=<span class="tok-num">128</span>):
+        self.conn.<span class="tok-fn">execute</span>(<span class="tok-str">"SET hnsw.ef_search = %s"</span>, (ef,))   <span class="tok-com"># runtime recall dial</span>
+        <span class="tok-kw">return</span> self.conn.<span class="tok-fn">execute</span>(<span class="tok-str">"""</span>
+<span class="tok-str">            SELECT id, doc_id, content, 1 - (embedding &lt;=&gt; %s) AS score</span>
+<span class="tok-str">            FROM chunks</span>
+<span class="tok-str">            WHERE tenant = %s                    -- pre-filter</span>
+<span class="tok-str">            ORDER BY embedding &lt;=&gt; %s             -- cosine distance operator</span>
+<span class="tok-str">            LIMIT %s</span>
+<span class="tok-str">        """</span>, (qvec, tenant, qvec, k)).<span class="tok-fn">fetchall</span>()</code></pre>
+        </div>
+        <div class="callout note"><div class="c-ico">🧷</div><div class="c-body"><p>The <code>&lt;=&gt;</code> operator is pgvector's cosine distance. Storing <code>model_version</code> next to each vector enforces the Module 04 rule and makes re-embedding migrations auditable.</p></div></div>
+
+        <!-- ============ 7. OLLAMA ============ -->
+        <h2 id="ollama">7 · Ollama &amp; local stack</h2>
+        <p>Pair local embeddings (Module 04) with a local vector DB for a 100% offline retrieval stack — nothing leaves the box.</p>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> local_stack.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">import</span> ollama, numpy <span class="tok-kw">as</span> np
+<span class="tok-kw">from</span> qdrant_client <span class="tok-kw">import</span> QdrantClient, models
+
+emb = <span class="tok-kw">lambda</span> t: ollama.<span class="tok-fn">embeddings</span>(model=<span class="tok-str">"nomic-embed-text"</span>, prompt=t)[<span class="tok-str">"embedding"</span>]
+
+qc = <span class="tok-fn">QdrantClient</span>(<span class="tok-str">":memory:"</span>)
+qc.<span class="tok-fn">recreate_collection</span>(<span class="tok-str">"local"</span>,
+    vectors_config=models.<span class="tok-fn">VectorParams</span>(size=<span class="tok-num">768</span>, distance=models.Distance.COSINE))
+
+docs = [<span class="tok-str">"Qdrant runs locally"</span>, <span class="tok-str">"FAISS is a library not a server"</span>, <span class="tok-str">"pgvector lives in Postgres"</span>]
+qc.<span class="tok-fn">upsert</span>(<span class="tok-str">"local"</span>, points=[
+    models.<span class="tok-fn">PointStruct</span>(id=i, vector=<span class="tok-fn">emb</span>(d), payload={<span class="tok-str">"text"</span>: d}) <span class="tok-kw">for</span> i, d <span class="tok-kw">in</span> <span class="tok-fn">enumerate</span>(docs)])
+
+hits = qc.<span class="tok-fn">search</span>(<span class="tok-str">"local"</span>, query_vector=<span class="tok-fn">emb</span>(<span class="tok-str">"vector database inside SQL"</span>), limit=<span class="tok-num">2</span>)
+<span class="tok-kw">for</span> h <span class="tok-kw">in</span> hits: <span class="tok-fn">print</span>(h.score, h.payload[<span class="tok-str">"text"</span>])
+<span class="tok-com"># top hit: "pgvector lives in Postgres"</span></code></pre>
+        </div>
+        <div class="callout tip"><div class="c-ico">🐳</div><div class="c-body"><p>Run Qdrant locally with <code>docker run -p 6333:6333 qdrant/qdrant</code>, or just use Postgres+pgvector you already operate. Both are the offline retrieval backbone of the private-RAG capstones.</p></div></div>
+
+        <!-- ============ 8. INDUSTRY ============ -->
+        <h2 id="industry">8 · Industry perspective</h2>
+        <h3>Choosing a vector store</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Option</th><th>Type</th><th>Reach for it when…</th></tr></thead>
+          <tbody>
+            <tr><td><strong>FAISS</strong></td><td>Library (in-process)</td><td>Prototyping, batch jobs, embedded search; no server needed</td></tr>
+            <tr><td><strong>pgvector</strong></td><td>Postgres extension</td><td>You already run Postgres; want transactions + joins + one DB to operate</td></tr>
+            <tr><td><strong>Qdrant / Weaviate / Milvus</strong></td><td>Dedicated vector DB</td><td>Large scale, rich filtering, hybrid search, horizontal scaling</td></tr>
+            <tr><td><strong>ElasticSearch / OpenSearch</strong></td><td>Search engine + dense_vector</td><td>You already run ES; want lexical + vector in one place (your background!)</td></tr>
+            <tr><td><strong>Pinecone</strong></td><td>Managed cloud</td><td>You want zero ops and pay for it</td></tr>
+          </tbody>
+        </table></div>
+        <div class="grid grid-2">
+          <div class="card"><h4>🚀 Startups</h4><p>Default to pgvector (one fewer system) or FAISS for prototypes. Move to a dedicated DB only when scale, filtering, or hybrid needs demand it.</p></div>
+          <div class="card"><h4>🏢 Enterprises</h4><p>Often consolidate on ElasticSearch/OpenSearch (lexical + vector + ops maturity) or a dedicated DB for very large multi-tenant workloads. Care about sharding, replication, backups, and tenant isolation.</p></div>
+        </div>
+        <p><strong>Common production challenges:</strong> recall silently dropping after a careless re-index, post-filtering returning empty results on selective filters, HNSW RAM blowing the budget at scale, hot-shard imbalance in multi-tenant setups, and forgetting to rebuild the index after bulk loads.</p>
+
+        <!-- ============ 9. MISTAKES ============ -->
+        <h2 id="mistakes">9 · Top mistakes engineers make</h2>
+        <div class="grid grid-2">
+          <div class="card"><h4>❌ Never measuring recall</h4><p>ANN is approximate. Without a flat-index ground truth, you don't know what you're missing. Always measure recall@k.</p></div>
+          <div class="card"><h4>❌ Post-filtering selective filters</h4><p>Filtering after ANN can return zero results. Use pre-filtering when filters are selective.</p></div>
+          <div class="card"><h4>❌ Wrong distance metric</h4><p>Using L2 with a cosine-trained model (or unnormalized dot product) silently degrades ranking.</p></div>
+          <div class="card"><h4>❌ HNSW for a tiny dataset</h4><p>For &lt;~50k vectors, flat/exact is fast and perfectly accurate. Don't over-engineer.</p></div>
+          <div class="card"><h4>❌ Ignoring RAM cost</h4><p>HNSW keeps the graph in memory. Plan capacity; use IVF+PQ or quantization for billions of vectors.</p></div>
+          <div class="card"><h4>❌ Cranking ef_search globally</h4><p>High ef_search everywhere tanks latency. Tune per-query/per-route to the recall you actually need.</p></div>
+        </div>
+
+        <!-- ============ 10. INTERVIEW ============ -->
+        <h2 id="interview">10 · Interview preparation</h2>
+
+        <details class="collapse"><summary><span class="pill green">Beginner</span> &nbsp;What is a vector database for? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>To store embeddings and answer "which stored vectors are nearest to this query vector?" at scale and low latency, using approximate nearest-neighbor indexes — plus metadata filtering. It's the storage + retrieval engine of RAG.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill green">Beginner</span> &nbsp;What does "approximate" mean in ANN? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>The index may not return the exact true nearest neighbors every time — it returns very-close ones much faster than brute force. The miss rate (1 − recall) is small and tunable; you trade a little accuracy for big speed gains.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill blue">Intermediate</span> &nbsp;Explain HNSW and its key parameters. <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>A hierarchical navigable small-world graph: multiple layers, sparse on top for long hops, dense at the bottom holding all vectors. Search starts at the top and greedily descends toward the query — roughly O(log N). Params: <code>M</code> (edges/node → recall &amp; memory), <code>ef_construction</code> (build-time quality), and <code>ef_search</code> (query-time candidates → the live recall/latency dial).</p></div></details>
+
+        <details class="collapse"><summary><span class="pill blue">Intermediate</span> &nbsp;Pre-filtering vs post-filtering — when does it matter? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Post-filtering runs ANN then discards non-matches — fine for permissive filters, but selective filters can leave you with too few or zero results because the top-k were all filtered out. Pre-filtering restricts the search space to matching vectors first, giving correct top-k for selective filters. Use pre-filtering for tenant/permission/date constraints.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill amber">Senior</span> &nbsp;Recall is fine in tests but bad in prod. Diagnose. <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Suspects: (1) production data distribution differs from test; (2) <code>ef_search</code> lowered for latency; (3) selective metadata filters + post-filtering starving results; (4) index not rebuilt after a bulk load, or stale after deletes; (5) embedding model/version drift between index and query (Module 04). Reproduce with a flat-index ground truth on prod queries, compare recall@k, and isolate the variable. Fix the specific cause — often raise ef_search or switch to pre-filtering.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill purple">Staff · design</span> &nbsp;Design vector search for 1B vectors, multi-tenant, &lt;50ms p99. <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>1B × 768 floats won't fit one node in RAM as raw HNSW — use <strong>IVF+PQ</strong> or quantized HNSW to compress, and <strong>shard</strong> by tenant or hash with replicas for HA. Pre-filter by tenant (route to the tenant's shard for isolation + smaller search space). Tune <code>ef_search</code> per route to hit p99 under the recall SLO; add a small re-rank stage (Module 07) on the top candidates to recover precision lost to quantization. Operate: background re-index jobs for model upgrades (versioned vectors), warm caches, monitor recall@k continuously with a sampled ground-truth job, and capacity-plan RAM. Consider a tiered design: quantized index for breadth, exact rescoring on finalists.</p></div></details>
+
+        <!-- ============ 11. QUIZ ============ -->
+        <h2 id="quiz">11 · Knowledge check</h2>
+
+        <div class="quiz">
+          <div class="q">1 · What is the core tradeoff an ANN index makes?</div>
+          <label class="opt">Memory for disk</label>
+          <label class="opt" data-correct="true">A small, tunable loss of recall (accuracy) for a large gain in query speed</label>
+          <label class="opt">Accuracy for storage size</label>
+          <label class="opt">Latency for write throughput only</label>
+          <div class="explain">ANN returns <em>almost</em> the true nearest neighbors much faster than brute force. The miss rate is small and tunable via parameters like ef_search.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">2 · Which HNSW parameter is your runtime recall/latency dial?</div>
+          <label class="opt">M</label>
+          <label class="opt">ef_construction</label>
+          <label class="opt" data-correct="true">ef_search</label>
+          <label class="opt">dimensionality</label>
+          <div class="explain">M and ef_construction are set at build time. ef_search controls how many candidates each query explores — raise it for recall, lower it for latency.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">3 · A query filters on a rare tenant and returns 0 results despite matching docs existing. Likely cause?</div>
+          <label class="opt">Wrong embedding dimension</label>
+          <label class="opt" data-correct="true">Post-filtering after ANN removed all top-k candidates</label>
+          <label class="opt">The index is corrupted</label>
+          <label class="opt">Cosine vs dot product mismatch</label>
+          <div class="explain">With selective filters, ANN's top-k may contain no matching rows, so post-filtering yields nothing. Pre-filtering restricts the search to matching vectors and fixes this.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">4 · You have 20,000 vectors. Best index choice?</div>
+          <label class="opt">IVF+PQ for memory savings</label>
+          <label class="opt" data-correct="true">Flat/exact — it's fast enough and perfectly accurate at this size</label>
+          <label class="opt">A sharded HNSW cluster</label>
+          <label class="opt">No index is possible</label>
+          <div class="explain">At ~20k vectors, brute-force exact search is millisecond-fast and 100% accurate. ANN complexity only pays off at much larger scales.</div>
+        </div>
+
+        <!-- ============ 12. ACTIVE RECALL ============ -->
+        <h2 id="recall">12 · Active recall</h2>
+        <p>Answer first, then reveal. Re-test tomorrow and in a week.</p>
+        <details class="recall"><summary><span class="q-ico">Q</span> Why can't we just brute-force compare to every vector in production? <span class="chev">›</span></summary><div class="a">It's O(N·d) per query — billions of operations for millions of high-dim vectors — far too slow for live latency. ANN indexes restructure data so only a small fraction is examined.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> Describe HNSW search in one sentence. <span class="chev">›</span></summary><div class="a">Enter a multi-layer proximity graph at the sparse top, greedily hop toward the query, and descend into denser layers until you reach the nearest neighbors — roughly O(log N).</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> When do you prefer pre-filtering over post-filtering? <span class="chev">›</span></summary><div class="a">When filters are selective (e.g. a specific tenant or recent date), so that searching only the matching subset avoids returning too few or zero results.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> Name two ways to handle a billion vectors that won't fit in RAM as raw HNSW. <span class="chev">›</span></summary><div class="a">IVF+PQ (cluster + product quantization to compress), scalar/product quantization on the vectors, sharding across nodes, and/or exact rescoring of top candidates after a compressed first pass.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> What must you always measure before trusting an ANN setup? <span class="chev">›</span></summary><div class="a">Recall@k against a flat/exact ground truth on representative queries — ANN is approximate, so you verify the miss rate is acceptable at your chosen latency.</div></details>
+
+        <!-- ============ 13. EXERCISES ============ -->
+        <h2 id="exercises">13 · Exercises</h2>
+        <div class="callout tip"><div class="c-ico">🟢</div><div class="c-body"><div class="c-title">Easy</div><p>Build a FAISS <code>IndexFlatIP</code> over 5,000 normalized random vectors and run a few queries. Confirm the query vector returns itself as the top hit with score ≈ 1.0.</p></div></div>
+        <div class="callout warn"><div class="c-ico">🟡</div><div class="c-body"><div class="c-title">Medium</div><p>Build both a flat index and an HNSW index over 100k vectors. For 100 queries, compute recall@10 of HNSW vs the flat ground truth at <code>ef_search</code> = 16, 64, 256. Plot recall and query latency against ef_search.</p></div></div>
+        <div class="callout danger"><div class="c-ico">🔴</div><div class="c-body"><div class="c-title">Hard</div><p>Stand up pgvector (or Qdrant) with a <code>tenant</code> payload. Insert 200k vectors across 50 tenants. Demonstrate the post-filter-returns-empty failure for a rare tenant, then fix it with pre-filtering. Add a <code>model_version</code> column and write the migration query you'd run when upgrading embedding models.</p></div></div>
+
+        <!-- ============ 14. MINI PROJECT ============ -->
+        <h2 id="mini-project">14 · Mini project — "Vector Search Benchmark"</h2>
+        <div class="card">
+          <p><strong>Goal:</strong> Build a small CLI that benchmarks a vector store on <em>your</em> data and prints the recall/latency curve so you can pick parameters with evidence, not vibes.</p>
+          <h4>Requirements</h4>
+          <ul>
+            <li>Load a corpus, embed it (local model from Module 04), and index it</li>
+            <li>Build a flat ground-truth index for recall measurement</li>
+            <li>Sweep <code>ef_search</code> (or nprobe) and report recall@10 + p50/p99 latency per setting</li>
+            <li>Output a table the user can use to choose a setting for a target recall</li>
+          </ul>
+          <h4>Stretch</h4>
+          <ul style="margin-bottom:0"><li>Compare two stores (FAISS vs pgvector) on the same data.</li><li>Add memory-usage reporting per index type.</li></ul>
+        </div>
+
+        <!-- ============ 15. REAL PROJECT CONNECTION ============ -->
+        <h2 id="real-project">15 · Real project connection</h2>
+        <p>The vector DB is the retrieval engine under every RAG capstone:</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Project</th><th>Vector DB role</th></tr></thead>
+          <tbody>
+            <tr><td><strong>PDF RAG</strong></td><td>Store chunk vectors + page/source metadata; kNN retrieves the passages to ground the answer.</td></tr>
+            <tr><td><strong>Multi-PDF RAG</strong></td><td>Metadata pre-filtering by <code>doc_id</code> lets users scope queries to specific documents.</td></tr>
+            <tr><td><strong>Hybrid Search RAG</strong></td><td>The dense half of hybrid search lives here; combined with lexical scores in Module 07.</td></tr>
+            <tr><td><strong>ElasticSearch Agent / MCP</strong></td><td>ES <code>dense_vector</code> + HNSW gives you lexical and vector search in one engine you already operate.</td></tr>
+            <tr><td><strong>Enterprise Platform</strong></td><td>Multi-tenant, sharded, quantized vector store with continuous recall monitoring (the §10 staff design).</td></tr>
+          </tbody>
+        </table></div>
+
+        <div class="complete-bar">
+          <div><strong style="font-size:15px">Finished Module 05?</strong><p style="margin:2px 0 0;font-size:13.5px;color:var(--text-muted)">You can now store and search vectors at scale — time to assemble full RAG.</p></div>
+          <button class="btn" data-complete>Mark module complete</button>
+        </div>
+
+        <div class="page-nav">
+          <a href="04_embeddings.html"><div class="dir">← Previous</div><div class="ttl">04 · Embeddings</div></a>
+          <a class="next" href="06_rag_basics.html"><div class="dir">Next →</div><div class="ttl">06 · RAG Basics</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

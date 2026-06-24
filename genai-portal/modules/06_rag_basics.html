@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>06 · RAG Basics — GenAI Mastery</title>
+<meta name="description" content="Retrieval-Augmented Generation from first principles: chunking, the retrieve-augment-generate loop, grounding, citations, the prompt template, and a complete production RAG pipeline.">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body data-page="06">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <div class="brand-mark">G</div>
+        <div class="brand-text"><strong>GenAI Mastery</strong><span>DS → Senior GenAI Engineer</span></div>
+      </a>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search modules…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Retrieval / <b>06 · RAG Basics</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Module 06 · Retrieval track</div>
+        <h1>Retrieval-Augmented Generation (RAG)</h1>
+        <p class="lead">Module 01 left us with a hard limit: an LLM only knows its training data and hallucinates about anything else — your PDFs, your database, last week's events. RAG is the fix that powers most production GenAI today. The idea is almost embarrassingly simple: <strong>before the model answers, retrieve the relevant facts and paste them into the prompt</strong>. Everything you learned about embeddings (04) and vector DBs (05) now snaps together into one pipeline.</p>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~60 min read</span>
+          <span class="pill">Difficulty · Intermediate</span>
+          <span class="pill purple">Prereq · Modules 01, 04, 05</span>
+        </div>
+
+        <!-- ============ 1. EXECUTIVE SUMMARY ============ -->
+        <h2 id="summary">1 · Executive summary</h2>
+        <p><strong>RAG</strong> grounds an LLM in external knowledge at query time. You split your documents into <strong>chunks</strong>, embed them into a <strong>vector store</strong>, and for each user question you <strong>retrieve</strong> the most relevant chunks, <strong>augment</strong> the prompt with them, and let the model <strong>generate</strong> an answer based on that supplied context. No retraining, knowledge stays current, and answers can cite their sources.</p>
+        <div class="grid grid-3">
+          <div class="card" data-reveal><span class="ico">❓</span><h4>Why it exists</h4><p>Fine-tuning to teach facts is slow, costly, and goes stale. RAG injects fresh, private knowledge at inference with zero retraining.</p></div>
+          <div class="card" data-reveal><span class="ico">🔧</span><h4>Problem it solves</h4><p>Hallucination and stale/missing knowledge. Ground the model in retrieved evidence and it answers from <em>your</em> data, with citations.</p></div>
+          <div class="card" data-reveal><span class="ico">🌐</span><h4>Where it fits</h4><p>The dominant pattern for Q&A over documents, support, search, and enterprise knowledge. Advanced techniques layer on in <a href="07_advanced_rag.html">Module 07</a>.</p></div>
+        </div>
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The one idea to remember</div>
+          <p><strong>RAG = search + prompt-stuffing.</strong> Retrieval decides <em>what the model sees</em>; generation decides <em>how it phrases the answer</em>. Quality is dominated by retrieval — garbage in, garbage out. Fix retrieval first, prompts second.</p></div>
+        </div>
+
+        <!-- ============ 2. FIRST PRINCIPLES ============ -->
+        <h2 id="first-principles">2 · First-principles breakdown</h2>
+
+        <h3>What — an open-book exam for the model</h3>
+        <p>A closed-book exam tests memory; an open-book exam lets you look things up. A vanilla LLM takes a closed-book exam every time — it answers from memory and confidently bluffs when it doesn't know. RAG turns it into an open-book exam: it hands the model the relevant pages first, so the answer is grounded in evidence rather than recall.</p>
+
+        <h3>Why — knowledge changes; weights shouldn't have to</h3>
+        <p>Your documents change daily. Retraining a model for every update is infeasible. RAG decouples <em>knowledge</em> (in a vector store you can update instantly) from <em>reasoning</em> (in the frozen model). Add a document → it's searchable immediately. Delete one → it's gone. This is why RAG, not fine-tuning, is the default for factual Q&A.</p>
+
+        <div class="callout note"><div class="c-ico">⚖️</div><div class="c-body"><div class="c-title">RAG vs fine-tuning — the rule of thumb</div>
+        <p><strong>RAG teaches the model <em>what</em> (facts, knowledge).</strong> <strong>Fine-tuning teaches it <em>how</em> (format, style, behavior).</strong> Need current/private facts → RAG. Need a consistent tone or output schema → fine-tune. They compose; they're not rivals.</p></div></div>
+
+        <h3>How — the five-step loop</h3>
+        <div class="timeline">
+          <div class="step"><h4>1 · Ingest &amp; chunk</h4><p>Load documents, split into retrievable chunks (offline, once).</p></div>
+          <div class="step"><h4>2 · Embed &amp; index</h4><p>Embed each chunk (Module 04), store vectors + metadata in a vector DB (Module 05). Offline.</p></div>
+          <div class="step"><h4>3 · Retrieve</h4><p>Embed the user query, fetch the top-k nearest chunks. Online.</p></div>
+          <div class="step"><h4>4 · Augment</h4><p>Insert retrieved chunks into a prompt template with instructions and the question.</p></div>
+          <div class="step"><h4>5 · Generate</h4><p>The LLM answers from the supplied context, ideally citing which chunks it used.</p></div>
+        </div>
+
+        <!-- ============ 3. VISUAL ARCHITECTURE ============ -->
+        <h2 id="architecture">3 · Visual architecture</h2>
+        <p>The canonical RAG pipeline. Note the clean split: the top row runs <strong>offline</strong> (indexing); the bottom row runs <strong>online</strong> (per query).</p>
+        <div class="diagram">
+          <svg viewBox="0 0 740 330" width="740" role="img" aria-label="RAG pipeline">
+            <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="var(--text-muted)"/></marker></defs>
+            <!-- offline -->
+            <text class="flow-sub" x="200" y="24" style="fill:var(--accent);font-weight:700">OFFLINE · INDEXING (once)</text>
+            <rect class="flow-node" x="20" y="40" width="100" height="44" rx="9"/><text class="flow-label" x="70" y="67" text-anchor="middle">Documents</text>
+            <rect class="flow-node" x="150" y="40" width="100" height="44" rx="9"/><text class="flow-label" x="200" y="62" text-anchor="middle">Chunk</text><text class="flow-sub" x="200" y="77" text-anchor="middle">split + overlap</text>
+            <rect class="flow-node-accent" x="280" y="40" width="100" height="44" rx="9"/><text class="flow-label" x="330" y="67" text-anchor="middle">Embed</text>
+            <rect class="flow-node" x="410" y="40" width="120" height="44" rx="9"/><text class="flow-label" x="470" y="67" text-anchor="middle">Vector store</text>
+            <path class="flow-arrow" d="M120,62 L148,62"/><path class="flow-arrow" d="M250,62 L278,62"/><path class="flow-arrow" d="M380,62 L408,62"/>
+            <!-- online -->
+            <text class="flow-sub" x="200" y="150" style="fill:var(--blue);font-weight:700">ONLINE · PER QUERY</text>
+            <rect class="flow-node-accent" x="20" y="170" width="100" height="46" rx="9"/><text class="flow-label" x="70" y="198" text-anchor="middle">Query</text>
+            <rect class="flow-node" x="150" y="170" width="100" height="46" rx="9"/><text class="flow-label" x="200" y="192" text-anchor="middle">Embed q</text>
+            <rect class="flow-node" x="280" y="170" width="110" height="46" rx="9"/><text class="flow-label" x="335" y="192" text-anchor="middle">Retrieve top-k</text><text class="flow-sub" x="335" y="207" text-anchor="middle">kNN search</text>
+            <rect class="flow-node" x="420" y="170" width="110" height="46" rx="9"/><text class="flow-label" x="475" y="192" text-anchor="middle">Augment</text><text class="flow-sub" x="475" y="207" text-anchor="middle">build prompt</text>
+            <rect class="flow-node-accent" x="560" y="170" width="120" height="46" rx="9"/><text class="flow-label" x="620" y="192" text-anchor="middle">LLM generate</text><text class="flow-sub" x="620" y="207" text-anchor="middle">+ citations</text>
+            <path class="flow-arrow" d="M120,193 L148,193"/><path class="flow-arrow" d="M250,193 L278,193"/><path class="flow-arrow" d="M390,193 L418,193"/><path class="flow-arrow" d="M530,193 L558,193"/>
+            <!-- store feeds retrieve -->
+            <path class="flow-arrow flow-dash" d="M470,84 C470,120 360,140 340,168"/>
+            <text class="flow-sub" x="430" y="130" style="fill:var(--text-muted)">index serves retrieval</text>
+            <!-- answer -->
+            <rect class="flow-node" x="560" y="270" width="120" height="40" rx="9"/><text class="flow-label" x="620" y="295" text-anchor="middle">Grounded answer</text>
+            <path class="flow-arrow" d="M620,216 L620,268"/>
+          </svg>
+          <div class="diagram-caption">Figure 1 · Index offline; retrieve-augment-generate online. The same embedding model is used on both rows (Module 04 rule).</div>
+        </div>
+
+        <!-- ============ 4. DEEP TECHNICAL ============ -->
+        <h2 id="deep-dive">4 · Deep technical explanation</h2>
+
+        <h3>Chunking — the most under-rated lever in RAG</h3>
+        <p>Chunking decides what a single retrievable unit <em>is</em>. Too large → the embedding becomes a mushy average and you waste context (Module 04); too small → you lose surrounding context and retrieve fragments. The goal: each chunk is <strong>self-contained enough to answer on its own</strong>.</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Strategy</th><th>How</th><th>Best for</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Fixed-size + overlap</strong></td><td>N tokens per chunk, ~10–20% overlap so ideas aren't cut mid-thought</td><td>The pragmatic default</td></tr>
+            <tr><td><strong>Recursive/structural</strong></td><td>Split on paragraphs → sentences, respecting boundaries</td><td>Prose, docs, articles</td></tr>
+            <tr><td><strong>Document-structure aware</strong></td><td>Split by headings/sections (Markdown, HTML)</td><td>Manuals, wikis, structured docs</td></tr>
+            <tr><td><strong>Semantic</strong></td><td>Break where embedding similarity drops (topic shifts)</td><td>Mixed-topic long docs</td></tr>
+          </tbody>
+        </table></div>
+        <div class="callout tip"><div class="c-ico">📏</div><div class="c-body"><p><strong>Start with ~300–500 tokens and 50–80 token overlap, then measure.</strong> Always attach metadata (source, page, section) to every chunk — it powers citations and the filtering from Module 05. Chunking is task-specific; tune it with an eval set, don't guess once and forget.</p></div></div>
+
+        <h3>Retrieval parameters</h3>
+        <ul>
+          <li><strong>top-k</strong> — how many chunks to fetch. Too few misses evidence; too many adds noise and cost, and risks "lost in the middle" (Module 02). Typical: 3–8.</li>
+          <li><strong>Score threshold</strong> — drop chunks below a similarity floor so irrelevant junk doesn't pollute the prompt (and so you can answer "I don't know" when nothing is relevant).</li>
+          <li><strong>Context budget</strong> — total retrieved tokens must fit the window with room for the answer (Module 01 token math).</li>
+        </ul>
+
+        <h3>The prompt template — where grounding is enforced</h3>
+        <p>The augmentation prompt is doing real work. It must (1) supply the context, (2) instruct the model to answer <em>only</em> from it, (3) permit "I don't know," and (4) ask for citations.</p>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> rag_prompt.txt</span><button class="copy-btn">Copy</button></div>
+          <pre><code>You are a precise assistant. Answer the QUESTION using ONLY the
+CONTEXT below. If the context does not contain the answer, say
+"I don't have enough information to answer that." Cite sources
+as [1], [2] matching the context blocks. Do not use outside knowledge.
+
+CONTEXT:
+[1] (source: handbook.pdf, p.12) {chunk_1}
+[2] (source: handbook.pdf, p.13) {chunk_2}
+[3] (source: policy.md, §3)      {chunk_3}
+
+QUESTION: {user_question}
+
+ANSWER (with citations):</code></pre>
+        </div>
+
+        <h3>Grounding, citations & "I don't know"</h3>
+        <p><strong>Grounding</strong> means the answer is traceable to retrieved evidence. Citations make this auditable for users and for your evals (Module 07/14). The explicit "I don't know" escape hatch is what separates a trustworthy RAG system from a confident liar — without it, the model fills gaps with hallucination.</p>
+
+        <h3>Tradeoffs & limitations</h3>
+        <div class="grid grid-2">
+          <div class="card"><h4>Strengths</h4><ul style="margin-bottom:0"><li>Fresh, private knowledge with no retraining</li><li>Auditable, citable answers</li><li>Cheaper & faster to update than fine-tuning</li></ul></div>
+          <div class="card"><h4>Limits (→ Module 07 fixes)</h4><ul style="margin-bottom:0"><li>Naive vector search misses exact terms (→ hybrid)</li><li>Top-k ordering imperfect (→ reranking)</li><li>Vague queries retrieve poorly (→ query expansion)</li><li>Multi-hop questions need orchestration (→ agentic RAG)</li></ul></div>
+        </div>
+
+        <!-- ============ 5. INTERACTIVE ============ -->
+        <h2 id="interactive">5 · Interactive: the RAG loop</h2>
+        <p>Step through a query and watch the chunks flow into the prompt and out as a grounded answer.</p>
+        <div class="demo" data-stepdemo>
+          <div class="demo-title"><span class="badge">DEMO</span> "What is our refund window?" → grounded answer</div>
+          <div class="demo-stage">
+            <span class="chip">Query</span><span class="chip arrow">→</span>
+            <span class="chip vec">embed query</span><span class="chip arrow">→</span>
+            <span class="chip tok">retrieve top-3 chunks</span><span class="chip arrow">→</span>
+            <span class="chip vec">stuff into prompt</span><span class="chip arrow">→</span>
+            <span class="chip" style="font-weight:700;background:var(--green-soft);color:var(--green)">"30 days, per policy [1]" ✓</span>
+          </div>
+          <div class="demo-stage" style="margin-top:14px">
+            <button class="btn" data-run>▶ Run RAG</button>
+            <button class="btn ghost sm" data-reset>Reset</button>
+          </div>
+          <p style="font-size:12.5px;color:var(--text-muted);margin:14px 0 0">Retrieved: <b>[1] policy.md §3 (0.71)</b> "Returns accepted within 30 days…", [2] faq.md (0.44), [3] terms.md (0.38). Only [1] crosses the threshold and carries the answer — the model cites it instead of guessing.</p>
+        </div>
+
+        <!-- ============ 6. PYTHON ============ -->
+        <h2 id="python">6 · Practical Python</h2>
+
+        <h3>Minimal — RAG in ~30 lines</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> rag_minimal.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">import</span> numpy <span class="tok-kw">as</span> np
+<span class="tok-kw">from</span> sentence_transformers <span class="tok-kw">import</span> SentenceTransformer
+<span class="tok-kw">from</span> openai <span class="tok-kw">import</span> OpenAI
+
+emb = <span class="tok-fn">SentenceTransformer</span>(<span class="tok-str">"all-MiniLM-L6-v2"</span>)
+llm = <span class="tok-fn">OpenAI</span>(base_url=<span class="tok-str">"http://localhost:11434/v1"</span>, api_key=<span class="tok-str">"ollama"</span>)
+
+docs = [<span class="tok-str">"Returns are accepted within 30 days of purchase."</span>,
+        <span class="tok-str">"Shipping is free on orders over $50."</span>,
+        <span class="tok-str">"Warranty covers manufacturing defects for 1 year."</span>]
+vecs = emb.<span class="tok-fn">encode</span>(docs, normalize_embeddings=<span class="tok-kw">True</span>)   <span class="tok-com"># index</span>
+
+<span class="tok-kw">def</span> <span class="tok-fn">rag</span>(question, k=<span class="tok-num">2</span>):
+    q = emb.<span class="tok-fn">encode</span>(question, normalize_embeddings=<span class="tok-kw">True</span>)
+    top = np.<span class="tok-fn">argsort</span>(-(vecs @ q))[:k]                <span class="tok-com"># retrieve</span>
+    context = <span class="tok-str">"\n"</span>.<span class="tok-fn">join</span>(<span class="tok-str">f"[{i+1}] {docs[d]}"</span> <span class="tok-kw">for</span> i, d <span class="tok-kw">in</span> <span class="tok-fn">enumerate</span>(top))
+    prompt = (<span class="tok-str">f"Answer using ONLY this context, cite [n], or say you don't know.\n"</span>
+              <span class="tok-str">f"CONTEXT:\n{context}\n\nQUESTION: {question}\nANSWER:"</span>)   <span class="tok-com"># augment</span>
+    r = llm.chat.completions.<span class="tok-fn">create</span>(model=<span class="tok-str">"llama3.2"</span>, temperature=<span class="tok-num">0</span>,
+        messages=[{<span class="tok-str">"role"</span>: <span class="tok-str">"user"</span>, <span class="tok-str">"content"</span>: prompt}])    <span class="tok-com"># generate</span>
+    <span class="tok-kw">return</span> r.choices[<span class="tok-num">0</span>].message.content
+
+<span class="tok-fn">print</span>(<span class="tok-fn">rag</span>(<span class="tok-str">"How long do I have to return something?"</span>))
+<span class="tok-com"># "You have 30 days to return a purchase. [1]"</span></code></pre>
+        </div>
+
+        <h3>Intermediate — chunking + a vector store + threshold</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> rag_chunked.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">from</span> langchain_text_splitters <span class="tok-kw">import</span> RecursiveCharacterTextSplitter
+
+<span class="tok-kw">def</span> <span class="tok-fn">chunk_document</span>(text, source):
+    splitter = <span class="tok-fn">RecursiveCharacterTextSplitter</span>(
+        chunk_size=<span class="tok-num">500</span>, chunk_overlap=<span class="tok-num">60</span>,            <span class="tok-com"># tokens-ish; tune!</span>
+        separators=[<span class="tok-str">"\n\n"</span>, <span class="tok-str">"\n"</span>, <span class="tok-str">". "</span>, <span class="tok-str">" "</span>])
+    <span class="tok-kw">return</span> [{<span class="tok-str">"text"</span>: c, <span class="tok-str">"source"</span>: source, <span class="tok-str">"chunk"</span>: i}
+            <span class="tok-kw">for</span> i, c <span class="tok-kw">in</span> <span class="tok-fn">enumerate</span>(splitter.<span class="tok-fn">split_text</span>(text))]
+
+<span class="tok-kw">def</span> <span class="tok-fn">retrieve</span>(qvec, vecs, chunks, k=<span class="tok-num">5</span>, min_score=<span class="tok-num">0.3</span>):
+    scores = vecs @ qvec
+    order = scores.<span class="tok-fn">argsort</span>()[::-<span class="tok-num">1</span>][:k]
+    <span class="tok-com"># threshold: drop weak matches so we can say "I don't know"</span>
+    <span class="tok-kw">return</span> [(chunks[i], <span class="tok-fn">float</span>(scores[i])) <span class="tok-kw">for</span> i <span class="tok-kw">in</span> order <span class="tok-kw">if</span> scores[i] &gt;= min_score]</code></pre>
+        </div>
+
+        <h3>Production — a RAG service with citations &amp; "no answer" handling</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> rag_service.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">from</span> dataclasses <span class="tok-kw">import</span> dataclass
+<span class="tok-kw">from</span> fastapi <span class="tok-kw">import</span> FastAPI
+<span class="tok-kw">from</span> pydantic <span class="tok-kw">import</span> BaseModel
+
+<span class="tok-dec">@dataclass</span>
+<span class="tok-kw">class</span> <span class="tok-cls">Chunk</span>:
+    text: <span class="tok-cls">str</span>; source: <span class="tok-cls">str</span>; page: <span class="tok-cls">int</span>; score: <span class="tok-cls">float</span>
+
+SYSTEM = (<span class="tok-str">"Answer ONLY from the provided context. Cite sources as [n]. "</span>
+          <span class="tok-str">"If the context is insufficient, reply exactly: NO_ANSWER."</span>)
+
+<span class="tok-kw">class</span> <span class="tok-cls">RAGPipeline</span>:
+    <span class="tok-kw">def</span> <span class="tok-fn">__init__</span>(self, embedder, store, llm):
+        self.embedder, self.store, self.llm = embedder, store, llm
+
+    <span class="tok-kw">def</span> <span class="tok-fn">answer</span>(self, question: <span class="tok-cls">str</span>, tenant: <span class="tok-cls">str</span>, k=<span class="tok-num">5</span>):
+        qvec = self.embedder.<span class="tok-fn">embed_query</span>(question)
+        hits = self.store.<span class="tok-fn">search</span>(qvec, tenant=tenant, k=k)      <span class="tok-com"># Module 05 repo</span>
+        hits = [h <span class="tok-kw">for</span> h <span class="tok-kw">in</span> hits <span class="tok-kw">if</span> h.score &gt;= <span class="tok-num">0.3</span>]
+        <span class="tok-kw">if</span> <span class="tok-kw">not</span> hits:
+            <span class="tok-kw">return</span> {<span class="tok-str">"answer"</span>: <span class="tok-str">"I don't have enough information."</span>, <span class="tok-str">"sources"</span>: []}
+        ctx = <span class="tok-str">"\n"</span>.<span class="tok-fn">join</span>(<span class="tok-str">f"[{i+1}] (src:{h.source} p{h.page}) {h.text}"</span>
+                        <span class="tok-kw">for</span> i, h <span class="tok-kw">in</span> <span class="tok-fn">enumerate</span>(hits))
+        out = self.llm.<span class="tok-fn">complete</span>(<span class="tok-str">f"{SYSTEM}\n\nCONTEXT:\n{ctx}\n\nQ: {question}\nA:"</span>,
+                                temperature=<span class="tok-num">0</span>)
+        <span class="tok-kw">if</span> <span class="tok-str">"NO_ANSWER"</span> <span class="tok-kw">in</span> out:
+            <span class="tok-kw">return</span> {<span class="tok-str">"answer"</span>: <span class="tok-str">"I don't have enough information."</span>, <span class="tok-str">"sources"</span>: []}
+        <span class="tok-kw">return</span> {<span class="tok-str">"answer"</span>: out,
+                <span class="tok-str">"sources"</span>: [{<span class="tok-str">"source"</span>: h.source, <span class="tok-str">"page"</span>: h.page, <span class="tok-str">"score"</span>: h.score} <span class="tok-kw">for</span> h <span class="tok-kw">in</span> hits]}
+
+app = <span class="tok-fn">FastAPI</span>()
+<span class="tok-kw">class</span> <span class="tok-cls">Q</span>(BaseModel): question: <span class="tok-cls">str</span>; tenant: <span class="tok-cls">str</span> = <span class="tok-str">"default"</span>
+
+<span class="tok-dec">@app.post</span>(<span class="tok-str">"/ask"</span>)
+<span class="tok-kw">def</span> <span class="tok-fn">ask</span>(q: Q):
+    <span class="tok-kw">return</span> pipeline.<span class="tok-fn">answer</span>(q.question, q.tenant)</code></pre>
+        </div>
+        <div class="callout note"><div class="c-ico">🔗</div><div class="c-body"><p>This pipeline composes the <code>LLMClient</code> (Module 01), <code>Embedder</code> (Module 04), and <code>VectorRepo</code> (Module 05) you've already built. RAG isn't a new tool — it's the assembly of the last three modules.</p></div></div>
+
+        <!-- ============ 7. OLLAMA ============ -->
+        <h2 id="ollama">7 · Ollama implementation — fully offline RAG</h2>
+        <p>Local embedding + local vector DB + local LLM = a RAG system where confidential documents never leave the machine.</p>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> offline_rag.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">import</span> ollama, numpy <span class="tok-kw">as</span> np
+
+emb = <span class="tok-kw">lambda</span> t: np.<span class="tok-fn">array</span>(ollama.<span class="tok-fn">embeddings</span>(model=<span class="tok-str">"nomic-embed-text"</span>, prompt=t)[<span class="tok-str">"embedding"</span>])
+
+<span class="tok-kw">def</span> <span class="tok-fn">offline_rag</span>(question, chunks, k=<span class="tok-num">3</span>):
+    cvecs = np.<span class="tok-fn">stack</span>([<span class="tok-fn">emb</span>(c) <span class="tok-kw">for</span> c <span class="tok-kw">in</span> chunks])
+    cvecs /= np.linalg.<span class="tok-fn">norm</span>(cvecs, axis=<span class="tok-num">1</span>, keepdims=<span class="tok-kw">True</span>)
+    q = <span class="tok-fn">emb</span>(question); q /= np.linalg.<span class="tok-fn">norm</span>(q)
+    top = np.<span class="tok-fn">argsort</span>(-(cvecs @ q))[:k]
+    ctx = <span class="tok-str">"\n"</span>.<span class="tok-fn">join</span>(<span class="tok-str">f"[{i+1}] {chunks[d]}"</span> <span class="tok-kw">for</span> i, d <span class="tok-kw">in</span> <span class="tok-fn">enumerate</span>(top))
+    out = ollama.<span class="tok-fn">chat</span>(model=<span class="tok-str">"qwen2.5"</span>, messages=[{<span class="tok-str">"role"</span>: <span class="tok-str">"user"</span>,
+        <span class="tok-str">"content"</span>: <span class="tok-str">f"Use ONLY this context, cite [n], else say you don't know.\n{ctx}\n\nQ: {question}"</span>}])
+    <span class="tok-kw">return</span> out[<span class="tok-str">"message"</span>][<span class="tok-str">"content"</span>]</code></pre>
+        </div>
+        <div class="callout tip"><div class="c-ico">🔒</div><div class="c-body"><p>Swap the in-memory NumPy index for local Qdrant/pgvector (Module 05) and you have a production-shaped, air-gapped RAG service — the core of the <a href="15_capstone_projects.html">PDF Q&amp;A</a> and on-prem capstones.</p></div></div>
+
+        <!-- ============ 8. INDUSTRY ============ -->
+        <h2 id="industry">8 · Industry perspective</h2>
+        <div class="grid grid-2">
+          <div class="card"><h4>🚀 Startups</h4><p>RAG is usually the <em>first</em> GenAI feature: a "chat with your docs/data" product. Ship naive RAG fast, then iterate on chunking and retrieval where users complain. Eval-driven, not architecture-astronaut.</p></div>
+          <div class="card"><h4>🏢 Enterprises</h4><p>RAG over wikis, tickets, contracts, and policies — with strict access control (per-user/tenant pre-filtering, Module 05), audit trails via citations, and PII guardrails (Module 14). Retrieval quality is a measured KPI, not a hope.</p></div>
+        </div>
+        <h3>The most common production architecture</h3>
+        <div class="cssflow">
+          <div class="fnode">Ingestion pipeline<small>load · chunk · embed · upsert (scheduled)</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">Vector store + metadata<small>access control, freshness</small></div>
+          <div class="farrow"></div>
+          <div class="fnode accent">RAG service<small>retrieve → prompt → generate → cite</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">Eval + observability<small>faithfulness, recall, cost (Module 14)</small></div>
+        </div>
+        <p><strong>Common production challenges:</strong> stale indexes (no re-ingestion schedule), retrieval recall too low (bad chunking), hallucination despite context (weak prompt/no "I don't know"), access-control leaks (missing tenant filter), and no way to measure quality (no eval set).</p>
+
+        <!-- ============ 9. MISTAKES ============ -->
+        <h2 id="mistakes">9 · Top mistakes engineers make</h2>
+        <div class="grid grid-2">
+          <div class="card"><h4>❌ Blaming the LLM for retrieval failures</h4><p>Most "the model is dumb" bugs are bad retrieval. Inspect the retrieved chunks first — if the answer isn't in them, no prompt can save you.</p></div>
+          <div class="card"><h4>❌ Chunking once and forgetting</h4><p>Chunk size/overlap massively affects quality. Tune it against an eval set per corpus.</p></div>
+          <div class="card"><h4>❌ No "I don't know" path</h4><p>Without it, the model fabricates when retrieval comes up empty. Always provide and test the escape hatch.</p></div>
+          <div class="card"><h4>❌ Stuffing top-50 chunks</h4><p>More context isn't better — noise + lost-in-the-middle + cost. Retrieve precisely; rerank later (Module 07).</p></div>
+          <div class="card"><h4>❌ No citations</h4><p>Unverifiable answers can't be trusted or evaluated. Cite chunks and surface sources in the UI.</p></div>
+          <div class="card"><h4>❌ Forgetting to re-ingest</h4><p>An index frozen at launch slowly rots. Schedule ingestion; handle updates and deletes.</p></div>
+        </div>
+
+        <!-- ============ 10. INTERVIEW ============ -->
+        <h2 id="interview">10 · Interview preparation</h2>
+
+        <details class="collapse"><summary><span class="pill green">Beginner</span> &nbsp;What is RAG and what problem does it solve? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Retrieval-Augmented Generation retrieves relevant documents and inserts them into the LLM's prompt before it answers. It solves hallucination and stale/missing knowledge by grounding the model in fresh, private, external data — without retraining — and enables source citations.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill green">Beginner</span> &nbsp;When would you choose RAG over fine-tuning? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Use RAG when you need current or private <em>facts/knowledge</em> that change over time. Use fine-tuning to teach <em>behavior/format/style</em>. RAG updates instantly (add/remove docs) and is cheaper; fine-tuning bakes knowledge into weights and goes stale. They can be combined.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill blue">Intermediate</span> &nbsp;Walk through the RAG pipeline end to end. <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Offline: load documents → chunk (size + overlap) → embed each chunk → store vectors + metadata in a vector DB. Online: embed the query → retrieve top-k nearest chunks (with metadata filters and a score threshold) → build a prompt that supplies the context and instructs grounding + citations → LLM generates the answer → return answer with sources.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill blue">Intermediate</span> &nbsp;How does chunk size affect retrieval quality? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Large chunks dilute the embedding (averaging many topics → poor matching) and waste context tokens. Small chunks lose surrounding context and retrieve fragments. The sweet spot makes each chunk self-contained (~300–500 tokens with overlap). It's corpus-specific — tune with an eval set and respect document structure.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill amber">Senior</span> &nbsp;Your RAG gives correct-looking but wrong answers. How do you debug systematically? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Split the pipeline. <strong>Retrieval check:</strong> log the retrieved chunks — does the answer actually appear in them? If not, it's a retrieval problem (chunking, embedding model, top-k, threshold, missing hybrid/rerank). <strong>Generation check:</strong> if the evidence is present but the answer is wrong, it's a prompt problem (not enforcing grounding, no "I don't know", lost-in-the-middle from too many chunks). Build an eval set with known answers and measure retrieval recall and answer faithfulness separately so you fix the right stage.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill purple">Staff · design</span> &nbsp;Design a RAG platform over 10M documents with per-user access control and freshness SLAs. <span class="chev">›</span></summary>
+        <div class="collapse-body"><p><strong>Ingestion:</strong> a scheduled/event-driven pipeline (connectors → parse → chunk → embed → upsert) with idempotent updates and deletes; track <code>model_version</code> for re-embed migrations. <strong>Storage:</strong> sharded vector DB with per-document ACL metadata; enforce access via <em>pre-filtering</em> on the user's permissions (never post-filter security). <strong>Serving:</strong> retrieve → (hybrid + rerank, Module 07) → grounded prompt with citations → generate; cache hot queries; "I don't know" guardrail. <strong>Freshness:</strong> SLA-driven ingestion cadence + a staleness metric per source. <strong>Quality:</strong> continuous eval (retrieval recall@k, faithfulness, answer-relevance) gating deploys; observability and cost tracking (Module 14). Treat retrieval quality and access control as the two non-negotiables.</p></div></details>
+
+        <!-- ============ 11. QUIZ ============ -->
+        <h2 id="quiz">11 · Knowledge check</h2>
+
+        <div class="quiz">
+          <div class="q">1 · In RAG, which stage most determines answer quality?</div>
+          <label class="opt">The model's temperature</label>
+          <label class="opt" data-correct="true">Retrieval — if the right evidence isn't retrieved, no prompt can fix it</label>
+          <label class="opt">The output token limit</label>
+          <label class="opt">The vector dimensionality</label>
+          <div class="explain">RAG is garbage-in-garbage-out: the model can only answer from what it's given. Debug retrieval (chunks actually contain the answer?) before blaming generation.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">2 · You need the system to admit when it doesn't know. What's essential?</div>
+          <label class="opt">A larger model</label>
+          <label class="opt">More retrieved chunks</label>
+          <label class="opt" data-correct="true">A score threshold + a prompt instruction permitting "I don't know"</label>
+          <label class="opt">Higher temperature</label>
+          <div class="explain">Drop weak matches via a threshold and explicitly allow a "no answer" reply. Otherwise the model fabricates to fill the gap.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">3 · Why is RAG usually preferred over fine-tuning for factual Q&A?</div>
+          <label class="opt">It makes the model smaller</label>
+          <label class="opt" data-correct="true">Knowledge updates instantly without retraining, and answers can cite sources</label>
+          <label class="opt">It eliminates the need for embeddings</label>
+          <label class="opt">It removes all hallucination permanently</label>
+          <div class="explain">RAG decouples knowledge (updatable vector store) from reasoning (frozen model). Add/remove docs instantly, cite sources, no costly retraining. Fine-tuning is for behavior/style.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">4 · Retrieving 50 chunks instead of 5 most likely…</div>
+          <label class="opt">Always improves accuracy</label>
+          <label class="opt" data-correct="true">Adds noise, raises cost, and risks "lost in the middle"</label>
+          <label class="opt">Has no effect</label>
+          <label class="opt">Reduces hallucination to zero</label>
+          <div class="explain">More context dilutes signal with irrelevant chunks, costs more tokens, and models attend less reliably to the middle of long contexts. Retrieve precisely, then rerank (Module 07).</div>
+        </div>
+
+        <!-- ============ 12. ACTIVE RECALL ============ -->
+        <h2 id="recall">12 · Active recall</h2>
+        <p>Answer first, then reveal. Re-test tomorrow and in a week.</p>
+        <details class="recall"><summary><span class="q-ico">Q</span> State the five steps of the RAG loop. <span class="chev">›</span></summary><div class="a">Ingest &amp; chunk → embed &amp; index (offline); retrieve → augment → generate (online).</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> What does the augmentation prompt need to enforce? <span class="chev">›</span></summary><div class="a">Supply the context, instruct the model to answer only from it, permit "I don't know," and request citations to the context blocks.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> RAG vs fine-tuning in one line each. <span class="chev">›</span></summary><div class="a">RAG teaches the model <em>what</em> (facts/knowledge, updatable instantly). Fine-tuning teaches it <em>how</em> (format/style/behavior, baked into weights).</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> Why attach metadata (source, page) to every chunk? <span class="chev">›</span></summary><div class="a">It powers citations (auditable answers) and metadata pre-filtering/access control at retrieval time (Module 05).</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> First thing to inspect when a RAG answer is wrong? <span class="chev">›</span></summary><div class="a">The retrieved chunks — does the correct answer even appear in them? That isolates a retrieval failure from a generation/prompt failure.</div></details>
+
+        <!-- ============ 13. EXERCISES ============ -->
+        <h2 id="exercises">13 · Exercises</h2>
+        <div class="callout tip"><div class="c-ico">🟢</div><div class="c-body"><div class="c-title">Easy</div><p>Run the 30-line minimal RAG over 5 facts. Ask a question whose answer <em>isn't</em> in the docs and confirm it says "I don't know" rather than fabricating.</p></div></div>
+        <div class="callout warn"><div class="c-ico">🟡</div><div class="c-body"><div class="c-title">Medium</div><p>Ingest one real PDF: chunk it (try 300 vs 800 tokens, 0 vs 60 overlap), index in pgvector/Qdrant, and answer 10 questions. Log the retrieved chunks and note which chunking setting retrieves the answer most often.</p></div></div>
+        <div class="callout danger"><div class="c-ico">🔴</div><div class="c-body"><div class="c-title">Hard</div><p>Build a tiny eval harness: 20 (question, expected-answer, gold-source) triples. Measure retrieval recall@k (did the gold source appear?) and answer faithfulness (LLM-as-judge). Sweep chunk size and top-k; produce a table showing the best configuration with evidence — your first eval-driven RAG (foreshadows Modules 07/14).</p></div></div>
+
+        <!-- ============ 14. MINI PROJECT ============ -->
+        <h2 id="mini-project">14 · Mini project — "Chat with one PDF"</h2>
+        <div class="card">
+          <p><strong>Goal:</strong> A small app that ingests a single PDF and answers questions about it with citations — the seed of the PDF Q&A capstone.</p>
+          <h4>Requirements</h4>
+          <ul>
+            <li>Extract text from a PDF and chunk with page-number metadata</li>
+            <li>Embed (local model) and index in a vector store</li>
+            <li>Retrieve top-k with a score threshold; build a grounded prompt</li>
+            <li>Return the answer plus a "Sources" list (file + page)</li>
+            <li>Return "I don't know" when nothing crosses the threshold</li>
+          </ul>
+          <h4>Stretch</h4>
+          <ul style="margin-bottom:0"><li>Add a Streamlit/FastAPI UI that highlights the cited pages.</li><li>Log every Q/A with retrieved chunks for later evaluation.</li></ul>
+        </div>
+
+        <!-- ============ 15. REAL PROJECT CONNECTION ============ -->
+        <h2 id="real-project">15 · Real project connection</h2>
+        <p>RAG is the spine of half the capstones — this module is the baseline they extend:</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Project</th><th>How RAG basics apply</th></tr></thead>
+          <tbody>
+            <tr><td><strong>PDF Q&amp;A</strong></td><td>This module <em>is</em> the project — chunk, embed, retrieve, generate with citations.</td></tr>
+            <tr><td><strong>Multi-PDF RAG</strong></td><td>Same loop + per-document metadata filtering so users scope questions to specific files.</td></tr>
+            <tr><td><strong>Hybrid Search RAG</strong></td><td>Starts from this baseline, then adds lexical + rerank (Module 07).</td></tr>
+            <tr><td><strong>ElasticSearch Agent</strong></td><td>Retrieval becomes an ES query (lexical + dense); the augment/generate steps are identical.</td></tr>
+            <tr><td><strong>Enterprise Platform</strong></td><td>Industrialized RAG: scheduled ingestion, ACL pre-filtering, citations, continuous eval.</td></tr>
+          </tbody>
+        </table></div>
+
+        <div class="complete-bar">
+          <div><strong style="font-size:15px">Finished Module 06?</strong><p style="margin:2px 0 0;font-size:13.5px;color:var(--text-muted)">You can build grounded, citable Q&A. Next: make it production-grade.</p></div>
+          <button class="btn" data-complete>Mark module complete</button>
+        </div>
+
+        <div class="page-nav">
+          <a href="05_vector_databases.html"><div class="dir">← Previous</div><div class="ttl">05 · Vector Databases</div></a>
+          <a class="next" href="07_advanced_rag.html"><div class="dir">Next →</div><div class="ttl">07 · Advanced RAG</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

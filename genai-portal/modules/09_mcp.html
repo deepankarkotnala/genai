@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>09 · Model Context Protocol (MCP) — GenAI Mastery</title>
+<meta name="description" content="The Model Context Protocol from first principles: architecture, servers and clients, tools, resources and prompts, local development, FastAPI-backed MCP, and an ElasticSearch MCP server.">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body data-page="09">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <div class="brand-mark">G</div>
+        <div class="brand-text"><strong>GenAI Mastery</strong><span>DS → Senior GenAI Engineer</span></div>
+      </a>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search modules…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Agents / <b>09 · Model Context Protocol</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Module 09 · Agents track</div>
+        <h1>Model Context Protocol (MCP)</h1>
+        <p class="lead">In Module 08 you wired tools into an agent by hand — schemas, execution, glue code — bespoke to one app and one framework. <strong>MCP</strong> is the open standard that makes that integration universal: write a tool server once, and <em>any</em> MCP-capable client (Claude Desktop, IDEs, your own agent) can use it. It's the "USB-C of AI tooling" — one protocol so models and data sources plug together without custom adapters.</p>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~60 min read</span>
+          <span class="pill">Difficulty · Intermediate</span>
+          <span class="pill purple">Prereq · Module 08, FastAPI basics</span>
+        </div>
+
+        <!-- ============ 1. EXECUTIVE SUMMARY ============ -->
+        <h2 id="summary">1 · Executive summary</h2>
+        <p>The <strong>Model Context Protocol (MCP)</strong> is an open standard (introduced by Anthropic, now broadly adopted) that defines how applications expose <strong>context and capabilities</strong> to LLMs. An <strong>MCP server</strong> publishes three things — <strong>tools</strong> (actions the model can invoke), <strong>resources</strong> (data the model can read), and <strong>prompts</strong> (reusable templates) — over a standard JSON-RPC protocol. An <strong>MCP client</strong> (inside the host app) discovers and calls them. Build the server once; reuse it everywhere.</p>
+        <div class="grid grid-3">
+          <div class="card" data-reveal><span class="ico">❓</span><h4>Why it exists</h4><p>Every tool integration was custom per app × per framework — an M×N explosion. MCP collapses it to M+N: tools and clients share one protocol.</p></div>
+          <div class="card" data-reveal><span class="ico">🔧</span><h4>Problem it solves</h4><p>Standardized, discoverable, reusable tool/data access for LLMs — with a clean security boundary between the model and your systems.</p></div>
+          <div class="card" data-reveal><span class="ico">🌐</span><h4>Where it fits</h4><p>The interoperability layer for agents (08). LangGraph/CrewAI agents consume MCP servers; your services <em>become</em> MCP servers.</p></div>
+        </div>
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The one idea to remember</div>
+          <p><strong>MCP standardizes the agent–tool boundary.</strong> Tools = model can <em>do</em>; Resources = model can <em>read</em>; Prompts = reusable templates. Write a server once; every MCP client gets your capabilities for free.</p></div>
+        </div>
+
+        <!-- ============ 2. FIRST PRINCIPLES ============ -->
+        <h2 id="first-principles">2 · First-principles breakdown</h2>
+
+        <h3>What — a universal adapter for AI capabilities</h3>
+        <p>Before USB, every device had its own connector. Before MCP, every AI app integrated every tool its own way: your ElasticSearch tool for LangChain didn't work in Claude Desktop or in a CrewAI agent — you rewrote it each time. MCP defines a single plug. Expose your database, file system, or API as an MCP server, and any compliant client speaks to it through the same protocol.</p>
+
+        <div class="callout note"><div class="c-ico">🔌</div><div class="c-body"><div class="c-title">The M×N → M+N insight</div>
+        <p>With <em>M</em> AI apps and <em>N</em> tools, bespoke integration needs up to M×N connectors. With MCP, each app implements the client once (M) and each tool implements the server once (N) → <strong>M+N</strong>. That's the same network-effect win that USB, HTTP, and LSP delivered in their domains.</p></div></div>
+
+        <h3>Why — separation of concerns &amp; security boundary</h3>
+        <p>MCP cleanly splits responsibilities: the <strong>host</strong> (the AI app) manages the model and the conversation; the <strong>server</strong> owns access to a specific system (your DB, files, API) and decides exactly what it exposes. The model never touches your database directly — it asks the server, which enforces what's allowed. That boundary is a feature: least-privilege by construction.</p>
+
+        <h3>How — three primitives, one protocol</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Primitive</th><th>What it is</th><th>Who controls invocation</th><th>Example</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Tool</strong></td><td>An action the model can call (has side effects or computation)</td><td><em>Model-controlled</em> — the LLM decides to call it</td><td><code>run_es_query</code>, <code>create_ticket</code></td></tr>
+            <tr><td><strong>Resource</strong></td><td>Read-only data the model/app can load into context</td><td><em>App-controlled</em> — host decides what to attach</td><td><code>file://report.pdf</code>, a DB row</td></tr>
+            <tr><td><strong>Prompt</strong></td><td>A reusable, parameterized prompt template</td><td><em>User-controlled</em> — surfaced as a command</td><td><code>/summarize-incident</code></td></tr>
+          </tbody>
+        </table></div>
+
+        <!-- ============ 3. VISUAL ARCHITECTURE ============ -->
+        <h2 id="architecture">3 · Visual architecture</h2>
+
+        <h3>Host · Client · Server</h3>
+        <div class="diagram">
+          <svg viewBox="0 0 740 300" width="740" role="img" aria-label="MCP architecture">
+            <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="var(--text-muted)"/></marker></defs>
+            <!-- host -->
+            <rect x="20" y="40" width="300" height="220" rx="16" fill="none" stroke="var(--accent)" stroke-dasharray="5 5"/>
+            <text class="flow-sub" x="170" y="62" text-anchor="middle" style="fill:var(--accent);font-weight:700">HOST APP (Claude Desktop, IDE, your agent)</text>
+            <rect class="flow-node-accent" x="50" y="80" width="110" height="55" rx="10"/><text class="flow-label" x="105" y="105" text-anchor="middle">LLM</text><text class="flow-sub" x="105" y="121" text-anchor="middle">reasons + decides</text>
+            <rect class="flow-node" x="190" y="80" width="110" height="55" rx="10"/><text class="flow-label" x="245" y="100" text-anchor="middle">MCP Client A</text><text class="flow-sub" x="245" y="116" text-anchor="middle">1 per server</text>
+            <rect class="flow-node" x="190" y="160" width="110" height="55" rx="10"/><text class="flow-label" x="245" y="180" text-anchor="middle">MCP Client B</text>
+            <path class="flow-arrow" d="M160,107 L188,107"/><path class="flow-arrow" d="M160,115 C175,130 175,175 188,185"/>
+            <!-- transport -->
+            <text class="flow-sub" x="380" y="110" text-anchor="middle" transform="rotate(-90 380 130)">JSON-RPC · stdio / HTTP+SSE</text>
+            <!-- servers -->
+            <rect class="flow-node" x="430" y="80" width="160" height="55" rx="10"/><text class="flow-label" x="510" y="100" text-anchor="middle">MCP Server: ES</text><text class="flow-sub" x="510" y="116" text-anchor="middle">tools · resources · prompts</text>
+            <rect class="flow-node" x="430" y="160" width="160" height="55" rx="10"/><text class="flow-label" x="510" y="180" text-anchor="middle">MCP Server: Files</text>
+            <rect class="flow-node" x="630" y="80" width="90" height="55" rx="10"/><text class="flow-sub" x="675" y="105" text-anchor="middle" style="fill:var(--text);font-weight:600">Elastic-Search</text>
+            <rect class="flow-node" x="630" y="160" width="90" height="55" rx="10"/><text class="flow-sub" x="675" y="190" text-anchor="middle" style="fill:var(--text);font-weight:600">Filesystem</text>
+            <path class="flow-arrow" d="M300,107 L428,107"/><path class="flow-arrow" d="M300,187 L428,187"/>
+            <path class="flow-arrow" d="M590,107 L628,107"/><path class="flow-arrow" d="M590,187 L628,187"/>
+            <text class="flow-sub" x="365" y="245" text-anchor="middle">Each client connects to exactly one server; the host orchestrates many clients.</text>
+          </svg>
+          <div class="diagram-caption">Figure 1 · Host runs the LLM and one MCP client per server. Servers wrap real systems and expose tools/resources/prompts over JSON-RPC.</div>
+        </div>
+
+        <h3>A tool call, end to end</h3>
+        <div class="cssflow">
+          <div class="fnode accent">User asks a question</div><div class="farrow"></div>
+          <div class="fnode">Host lists tools from all servers<small>discovery</small></div><div class="farrow"></div>
+          <div class="fnode">LLM picks a tool + args<small>(Module 08 tool calling)</small></div><div class="farrow"></div>
+          <div class="fnode">Client → Server: tools/call (JSON-RPC)</div><div class="farrow"></div>
+          <div class="fnode">Server executes against the real system</div><div class="farrow"></div>
+          <div class="fnode accent">Result back → LLM → answer</div>
+        </div>
+
+        <!-- ============ 4. DEEP TECHNICAL ============ -->
+        <h2 id="deep-dive">4 · Deep technical explanation</h2>
+
+        <h3>The protocol</h3>
+        <p>MCP rides on <strong>JSON-RPC 2.0</strong>. After a <strong>capability negotiation</strong> handshake (initialize), the client can call standard methods: <code>tools/list</code>, <code>tools/call</code>, <code>resources/list</code>, <code>resources/read</code>, <code>prompts/list</code>, <code>prompts/get</code>. The server responds with structured results. Because the schema is standardized, discovery is automatic — the host learns what a server offers at runtime.</p>
+
+        <h3>Transports</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Transport</th><th>How</th><th>Use when</th></tr></thead>
+          <tbody>
+            <tr><td><strong>stdio</strong></td><td>Server is a local subprocess; messages over stdin/stdout</td><td>Local tools, desktop apps, dev — simplest &amp; default</td></tr>
+            <tr><td><strong>Streamable HTTP / SSE</strong></td><td>Server is an HTTP endpoint; supports remote + streaming</td><td>Remote/shared servers, multi-user, cloud deployment</td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>Tool registration</h3>
+        <p>A tool needs a <strong>name</strong>, a clear <strong>description</strong> (the model reads this to decide when to call it — Module 08), and a typed <strong>input schema</strong>. The official Python SDK (<code>FastMCP</code>) derives the schema from type hints and the docstring, so a well-typed function <em>is</em> a tool definition.</p>
+
+        <h3>Resource &amp; prompt registration</h3>
+        <ul>
+          <li><strong>Resources</strong> are addressed by URI (e.g. <code>es://indices</code>, <code>file:///logs/today.log</code>). The host reads them into context — they're <em>data</em>, not actions, so no side effects.</li>
+          <li><strong>Prompts</strong> are named, parameterized templates the server offers (e.g. an "investigate incident" workflow). Clients surface them as slash-commands/menu items for the user to trigger.</li>
+        </ul>
+
+        <h3>Security model</h3>
+        <p>The server is the trust boundary. Best practices: <strong>least privilege</strong> (expose only needed operations — read-only where possible), <strong>input validation</strong> on every tool, <strong>no secrets in tool descriptions</strong>, <strong>authn/authz</strong> for HTTP transports, and guarding against <strong>prompt injection via resource/tool content</strong> (untrusted data the model reads can carry instructions). Consequential tools should require host-side human approval (Module 08 §6).</p>
+
+        <h3>Tradeoffs &amp; limitations</h3>
+        <div class="grid grid-2">
+          <div class="card"><h4>Strengths</h4><ul style="margin-bottom:0"><li>Write once, use in any MCP client</li><li>Automatic discovery of capabilities</li><li>Clean security/permission boundary</li><li>Decouples tools from agent frameworks</li></ul></div>
+          <div class="card"><h4>Limits</h4><ul style="margin-bottom:0"><li>An extra layer (process/network) vs. direct calls</li><li>Young ecosystem; conventions still settling</li><li>Auth/remote story is evolving</li><li>Overkill for a single in-process tool</li></ul></div>
+        </div>
+
+        <!-- ============ 5. INTERACTIVE ============ -->
+        <h2 id="interactive">5 · Interactive: discover &amp; call</h2>
+        <p>Step through how a host discovers a server's capabilities and routes a model's tool call.</p>
+        <div class="demo" data-stepdemo>
+          <div class="demo-title"><span class="badge">DEMO</span> Host ↔ ElasticSearch MCP server</div>
+          <div class="demo-stage" style="flex-direction:column;align-items:stretch;gap:8px">
+            <span class="chip" style="text-align:left">🤝 initialize → negotiate capabilities</span>
+            <span class="chip vec" style="text-align:left">📋 tools/list → ["list_indices", "search_index", "get_mapping"]</span>
+            <span class="chip" style="text-align:left">💭 LLM: "user wants errors in app-logs → call search_index"</span>
+            <span class="chip vec" style="text-align:left">⚡ tools/call search_index({index:"app-logs", query:"level:ERROR"})</span>
+            <span class="chip tok" style="text-align:left">👁 server runs ES query → returns 23 hits</span>
+            <span class="chip" style="text-align:left;font-weight:700;background:var(--green-soft);color:var(--green)">✅ "Found 23 errors, mostly timeout in service X."</span>
+          </div>
+          <div class="demo-stage" style="margin-top:14px">
+            <button class="btn" data-run>▶ Run MCP flow</button>
+            <button class="btn ghost sm" data-reset>Reset</button>
+          </div>
+          <p style="font-size:12.5px;color:var(--text-muted);margin:14px 0 0">The host never hard-coded these tools — it <em>discovered</em> them via <code>tools/list</code>. Swap in a different server and the same host gains new capabilities with zero code changes.</p>
+        </div>
+
+        <!-- ============ 6. PYTHON ============ -->
+        <h2 id="python">6 · Practical Python — build an MCP server</h2>
+
+        <h3>Minimal — a FastMCP server with one tool</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> server_minimal.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-com"># pip install "mcp[cli]"   — the official Python SDK</span>
+<span class="tok-kw">from</span> mcp.server.fastmcp <span class="tok-kw">import</span> FastMCP
+
+mcp = <span class="tok-fn">FastMCP</span>(<span class="tok-str">"demo-server"</span>)
+
+<span class="tok-dec">@mcp.tool</span>()
+<span class="tok-kw">def</span> <span class="tok-fn">add</span>(a: <span class="tok-cls">int</span>, b: <span class="tok-cls">int</span>) -> <span class="tok-cls">int</span>:
+    <span class="tok-str">"""Add two integers and return the sum."""</span>   <span class="tok-com"># docstring = tool description</span>
+    <span class="tok-kw">return</span> a + b
+
+<span class="tok-dec">@mcp.tool</span>()
+<span class="tok-kw">def</span> <span class="tok-fn">greet</span>(name: <span class="tok-cls">str</span>) -> <span class="tok-cls">str</span>:
+    <span class="tok-str">"""Return a friendly greeting for the given name."""</span>
+    <span class="tok-kw">return</span> <span class="tok-str">f"Hello, {name}!"</span>
+
+<span class="tok-kw">if</span> __name__ == <span class="tok-str">"__main__"</span>:
+    mcp.<span class="tok-fn">run</span>()                <span class="tok-com"># stdio transport by default — type hints become the schema</span></code></pre>
+        </div>
+
+        <h3>Intermediate — tools + resources + prompts together</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> server_full.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">from</span> mcp.server.fastmcp <span class="tok-kw">import</span> FastMCP
+
+mcp = <span class="tok-fn">FastMCP</span>(<span class="tok-str">"knowledge-server"</span>)
+NOTES = {<span class="tok-str">"runbook"</span>: <span class="tok-str">"Restart service X via systemctl..."</span>}
+
+<span class="tok-dec">@mcp.tool</span>()                                  <span class="tok-com"># ACTION (model-controlled)</span>
+<span class="tok-kw">def</span> <span class="tok-fn">save_note</span>(key: <span class="tok-cls">str</span>, text: <span class="tok-cls">str</span>) -> <span class="tok-cls">str</span>:
+    <span class="tok-str">"""Persist a note under a key."""</span>
+    NOTES[key] = text
+    <span class="tok-kw">return</span> <span class="tok-str">f"saved {key}"</span>
+
+<span class="tok-dec">@mcp.resource</span>(<span class="tok-str">"note://{key}"</span>)              <span class="tok-com"># DATA (app-controlled, read-only)</span>
+<span class="tok-kw">def</span> <span class="tok-fn">read_note</span>(key: <span class="tok-cls">str</span>) -> <span class="tok-cls">str</span>:
+    <span class="tok-str">"""Read a stored note by key."""</span>
+    <span class="tok-kw">return</span> NOTES.<span class="tok-fn">get</span>(key, <span class="tok-str">"(not found)"</span>)
+
+<span class="tok-dec">@mcp.prompt</span>()                                <span class="tok-com"># TEMPLATE (user-controlled)</span>
+<span class="tok-kw">def</span> <span class="tok-fn">incident_review</span>(service: <span class="tok-cls">str</span>) -> <span class="tok-cls">str</span>:
+    <span class="tok-str">"""Reusable incident-review prompt."""</span>
+    <span class="tok-kw">return</span> (<span class="tok-str">f"Investigate the latest incident for {service}. "</span>
+            <span class="tok-str">"List symptoms, likely cause, and remediation steps."</span>)
+
+<span class="tok-kw">if</span> __name__ == <span class="tok-str">"__main__"</span>:
+    mcp.<span class="tok-fn">run</span>()</code></pre>
+        </div>
+
+        <h3>A client that consumes the server</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> client.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">import</span> asyncio
+<span class="tok-kw">from</span> mcp <span class="tok-kw">import</span> ClientSession, StdioServerParameters
+<span class="tok-kw">from</span> mcp.client.stdio <span class="tok-kw">import</span> stdio_client
+
+<span class="tok-kw">async def</span> <span class="tok-fn">main</span>():
+    params = <span class="tok-fn">StdioServerParameters</span>(command=<span class="tok-str">"python"</span>, args=[<span class="tok-str">"server_full.py"</span>])
+    <span class="tok-kw">async with</span> <span class="tok-fn">stdio_client</span>(params) <span class="tok-kw">as</span> (read, write):
+        <span class="tok-kw">async with</span> <span class="tok-fn">ClientSession</span>(read, write) <span class="tok-kw">as</span> s:
+            <span class="tok-kw">await</span> s.<span class="tok-fn">initialize</span>()
+            tools = <span class="tok-kw">await</span> s.<span class="tok-fn">list_tools</span>()           <span class="tok-com"># discovery</span>
+            <span class="tok-fn">print</span>(<span class="tok-str">"tools:"</span>, [t.name <span class="tok-kw">for</span> t <span class="tok-kw">in</span> tools.tools])
+            res = <span class="tok-kw">await</span> s.<span class="tok-fn">call_tool</span>(<span class="tok-str">"save_note"</span>, {<span class="tok-str">"key"</span>: <span class="tok-str">"x"</span>, <span class="tok-str">"text"</span>: <span class="tok-str">"hi"</span>})
+            <span class="tok-fn">print</span>(res.content)
+
+asyncio.<span class="tok-fn">run</span>(<span class="tok-fn">main</span>())</code></pre>
+        </div>
+
+        <h3>Production — a FastAPI-backed MCP server (your existing API → MCP)</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> fastapi_mcp.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-com"># You already build FastAPI services. Two clean ways to expose them via MCP:</span>
+<span class="tok-com"># (A) Wrap existing service functions as MCP tools (share business logic).</span>
+<span class="tok-com"># (B) Mount MCP as an HTTP transport alongside your REST routes.</span>
+<span class="tok-kw">from</span> fastapi <span class="tok-kw">import</span> FastAPI
+<span class="tok-kw">from</span> mcp.server.fastmcp <span class="tok-kw">import</span> FastMCP
+<span class="tok-kw">import</span> httpx
+
+<span class="tok-com"># --- shared business logic (used by both REST and MCP) ---</span>
+<span class="tok-kw">async def</span> <span class="tok-fn">_lookup_order</span>(order_id: <span class="tok-cls">str</span>) -> <span class="tok-cls">dict</span>:
+    <span class="tok-kw">async with</span> httpx.<span class="tok-fn">AsyncClient</span>() <span class="tok-kw">as</span> c:
+        r = <span class="tok-kw">await</span> c.<span class="tok-fn">get</span>(<span class="tok-str">f"http://orders-svc/orders/{order_id}"</span>)
+        <span class="tok-kw">return</span> r.<span class="tok-fn">json</span>()
+
+<span class="tok-com"># --- REST surface (humans / existing clients) ---</span>
+api = <span class="tok-fn">FastAPI</span>()
+<span class="tok-dec">@api.get</span>(<span class="tok-str">"/orders/{order_id}"</span>)
+<span class="tok-kw">async def</span> <span class="tok-fn">get_order</span>(order_id: <span class="tok-cls">str</span>):
+    <span class="tok-kw">return</span> <span class="tok-kw">await</span> <span class="tok-fn">_lookup_order</span>(order_id)
+
+<span class="tok-com"># --- MCP surface (LLM agents), HTTP transport for remote use ---</span>
+mcp = <span class="tok-fn">FastMCP</span>(<span class="tok-str">"orders-mcp"</span>)
+
+<span class="tok-dec">@mcp.tool</span>()
+<span class="tok-kw">async def</span> <span class="tok-fn">lookup_order</span>(order_id: <span class="tok-cls">str</span>) -> <span class="tok-cls">dict</span>:
+    <span class="tok-str">"""Look up an order's status and items by its ID."""</span>
+    <span class="tok-kw">return</span> <span class="tok-kw">await</span> <span class="tok-fn">_lookup_order</span>(order_id)   <span class="tok-com"># same logic, zero duplication</span>
+
+<span class="tok-com"># Serve MCP over Streamable HTTP (e.g. uvicorn) for remote agents.</span>
+app = mcp.<span class="tok-fn">streamable_http_app</span>()        <span class="tok-com"># mount alongside or separate from `api`</span></code></pre>
+        </div>
+        <div class="callout tip"><div class="c-ico">🧩</div><div class="c-body"><p>The senior pattern: <strong>keep business logic in plain functions</strong> and expose it through <em>both</em> REST (for humans/services) and MCP (for agents). One implementation, two interfaces — no drift. Your FastAPI + Docker skills transfer directly.</p></div></div>
+
+        <!-- ============ 7. OLLAMA ============ -->
+        <h2 id="ollama">7 · Local MCP development &amp; Ollama</h2>
+        <p>MCP servers run locally over stdio — perfect for offline dev. Pair a local Ollama model (with tool calling, Module 08) as the host's brain and your MCP servers as its hands, for a 100% local agentic stack.</p>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> dev.sh</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-com"># Inspect/debug a server interactively with the MCP Inspector</span>
+mcp dev server_full.py        <span class="tok-com"># opens a UI to list/call tools, read resources</span>
+
+<span class="tok-com"># Register a local server with Claude Desktop (stdio)</span>
+<span class="tok-com"># ~/.config/Claude/claude_desktop_config.json:</span>
+<span class="tok-com"># { "mcpServers": { "knowledge": {</span>
+<span class="tok-com">#     "command": "python", "args": ["/abs/path/server_full.py"] } } }</span></code></pre>
+        </div>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> local_host.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-com"># Minimal "host": local Ollama model + an MCP server's tools.</span>
+<span class="tok-kw">import</span> asyncio, json, ollama
+<span class="tok-kw">from</span> mcp <span class="tok-kw">import</span> ClientSession, StdioServerParameters
+<span class="tok-kw">from</span> mcp.client.stdio <span class="tok-kw">import</span> stdio_client
+
+<span class="tok-kw">async def</span> <span class="tok-fn">run</span>(user_msg):
+    p = <span class="tok-fn">StdioServerParameters</span>(command=<span class="tok-str">"python"</span>, args=[<span class="tok-str">"server_full.py"</span>])
+    <span class="tok-kw">async with</span> <span class="tok-fn">stdio_client</span>(p) <span class="tok-kw">as</span> (r, w), <span class="tok-fn">ClientSession</span>(r, w) <span class="tok-kw">as</span> s:
+        <span class="tok-kw">await</span> s.<span class="tok-fn">initialize</span>()
+        listed = (<span class="tok-kw">await</span> s.<span class="tok-fn">list_tools</span>()).tools
+        <span class="tok-com"># translate MCP tool schemas → Ollama tool format</span>
+        tools = [{<span class="tok-str">"type"</span>: <span class="tok-str">"function"</span>, <span class="tok-str">"function"</span>: {
+            <span class="tok-str">"name"</span>: t.name, <span class="tok-str">"description"</span>: t.description,
+            <span class="tok-str">"parameters"</span>: t.inputSchema}} <span class="tok-kw">for</span> t <span class="tok-kw">in</span> listed]
+        out = ollama.<span class="tok-fn">chat</span>(model=<span class="tok-str">"qwen2.5"</span>,
+            messages=[{<span class="tok-str">"role"</span>: <span class="tok-str">"user"</span>, <span class="tok-str">"content"</span>: user_msg}], tools=tools)
+        <span class="tok-kw">for</span> call <span class="tok-kw">in</span> out[<span class="tok-str">"message"</span>].<span class="tok-fn">get</span>(<span class="tok-str">"tool_calls"</span>, []):
+            res = <span class="tok-kw">await</span> s.<span class="tok-fn">call_tool</span>(call[<span class="tok-str">"function"</span>][<span class="tok-str">"name"</span>],
+                                     call[<span class="tok-str">"function"</span>][<span class="tok-str">"arguments"</span>])
+            <span class="tok-fn">print</span>(res.content)
+
+asyncio.<span class="tok-fn">run</span>(<span class="tok-fn">run</span>(<span class="tok-str">"Save a note 'deploy' = 'use blue-green'"</span>))</code></pre>
+        </div>
+
+        <!-- ============ ELASTICSEARCH MCP ============ -->
+        <h2 id="elasticsearch">8 · ElasticSearch MCP server (worked example)</h2>
+        <p>This is exactly the kind of server you'll build at work: wrap ElasticSearch so any agent can investigate logs and indices safely. Note the <strong>read-only, least-privilege</strong> design.</p>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> es_mcp_server.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">from</span> mcp.server.fastmcp <span class="tok-kw">import</span> FastMCP
+<span class="tok-kw">from</span> elasticsearch <span class="tok-kw">import</span> Elasticsearch
+
+mcp = <span class="tok-fn">FastMCP</span>(<span class="tok-str">"elasticsearch"</span>)
+es = <span class="tok-fn">Elasticsearch</span>(<span class="tok-str">"http://localhost:9200"</span>)
+
+ALLOWED = {<span class="tok-str">"app-logs"</span>, <span class="tok-str">"audit"</span>, <span class="tok-str">"metrics"</span>}    <span class="tok-com"># allow-list = least privilege</span>
+
+<span class="tok-kw">def</span> <span class="tok-fn">_check</span>(index: <span class="tok-cls">str</span>):
+    <span class="tok-kw">if</span> index <span class="tok-kw">not</span> <span class="tok-kw">in</span> ALLOWED:
+        <span class="tok-kw">raise</span> <span class="tok-fn">ValueError</span>(<span class="tok-str">f"index '{index}' not permitted"</span>)
+
+<span class="tok-dec">@mcp.tool</span>()
+<span class="tok-kw">def</span> <span class="tok-fn">list_indices</span>() -> <span class="tok-cls">list</span>[<span class="tok-cls">str</span>]:
+    <span class="tok-str">"""List the ElasticSearch indices available for querying."""</span>
+    <span class="tok-kw">return</span> <span class="tok-fn">sorted</span>(ALLOWED)
+
+<span class="tok-dec">@mcp.tool</span>()
+<span class="tok-kw">def</span> <span class="tok-fn">get_mapping</span>(index: <span class="tok-cls">str</span>) -> <span class="tok-cls">dict</span>:
+    <span class="tok-str">"""Return the field mapping (schema) of an index."""</span>
+    <span class="tok-fn">_check</span>(index)
+    <span class="tok-kw">return</span> es.indices.<span class="tok-fn">get_mapping</span>(index=index).<span class="tok-fn">body</span>
+
+<span class="tok-dec">@mcp.tool</span>()
+<span class="tok-kw">def</span> <span class="tok-fn">search_index</span>(index: <span class="tok-cls">str</span>, query: <span class="tok-cls">str</span>, size: <span class="tok-cls">int</span> = <span class="tok-num">10</span>) -> <span class="tok-cls">dict</span>:
+    <span class="tok-str">"""Run a Lucene query_string search and return the top hits.
+
+    index: one of the allowed indices.
+    query: Lucene syntax, e.g. 'level:ERROR AND service:checkout'.
+    size:  max hits to return (capped at 50)."""</span>
+    <span class="tok-fn">_check</span>(index)
+    size = <span class="tok-fn">min</span>(size, <span class="tok-num">50</span>)                          <span class="tok-com"># bound result size (cost/latency)</span>
+    res = es.<span class="tok-fn">search</span>(index=index, size=size,
+        query={<span class="tok-str">"query_string"</span>: {<span class="tok-str">"query"</span>: query}})
+    hits = res[<span class="tok-str">"hits"</span>][<span class="tok-str">"hits"</span>]
+    <span class="tok-kw">return</span> {<span class="tok-str">"total"</span>: res[<span class="tok-str">"hits"</span>][<span class="tok-str">"total"</span>][<span class="tok-str">"value"</span>],
+            <span class="tok-str">"hits"</span>: [{<span class="tok-str">"id"</span>: h[<span class="tok-str">"_id"</span>], <span class="tok-str">"source"</span>: h[<span class="tok-str">"_source"</span>]} <span class="tok-kw">for</span> h <span class="tok-kw">in</span> hits]}
+
+<span class="tok-dec">@mcp.resource</span>(<span class="tok-str">"es://indices"</span>)
+<span class="tok-kw">def</span> <span class="tok-fn">indices_resource</span>() -> <span class="tok-cls">str</span>:
+    <span class="tok-str">"""The list of queryable indices, as a readable resource."""</span>
+    <span class="tok-kw">return</span> <span class="tok-str">"\n"</span>.<span class="tok-fn">join</span>(<span class="tok-fn">sorted</span>(ALLOWED))
+
+<span class="tok-dec">@mcp.prompt</span>()
+<span class="tok-kw">def</span> <span class="tok-fn">investigate</span>(symptom: <span class="tok-cls">str</span>) -> <span class="tok-cls">str</span>:
+    <span class="tok-str">"""Guided log-investigation prompt."""</span>
+    <span class="tok-kw">return</span> (<span class="tok-str">f"Investigate '{symptom}'. First list_indices, then get_mapping "</span>
+            <span class="tok-str">"for the relevant one, then search_index. Summarize root cause."</span>)
+
+<span class="tok-kw">if</span> __name__ == <span class="tok-str">"__main__"</span>:
+    mcp.<span class="tok-fn">run</span>()</code></pre>
+        </div>
+        <div class="callout warn"><div class="c-ico">🛡️</div><div class="c-body"><p>Notice the safety design: an <strong>index allow-list</strong>, <strong>bounded result size</strong>, <strong>read-only operations only</strong> (no delete/update tools), and rich <strong>docstrings</strong> so the model queries correctly. This server is the heart of the <a href="15_capstone_projects.html">MCP ElasticSearch Server</a> capstone.</p></div></div>
+
+        <!-- ============ 8/9. INDUSTRY ============ -->
+        <h2 id="industry">9 · Industry perspective</h2>
+        <div class="grid grid-2">
+          <div class="card"><h4>🚀 Startups</h4><p>Use existing MCP servers (filesystem, GitHub, Postgres, Slack) to give an assistant capabilities in hours, not weeks. Build one custom server for the proprietary system and you're done.</p></div>
+          <div class="card"><h4>🏢 Enterprises</h4><p>Wrap internal systems (data warehouse, ticketing, ES) as governed MCP servers behind auth, with audit logging and least-privilege scopes. One server is reused across every internal AI app — the integration layer of an enterprise AI platform.</p></div>
+        </div>
+        <h3>Why this matters strategically</h3>
+        <p>MCP turns tool integrations into <strong>reusable infrastructure</strong>. Instead of each team re-wiring ElasticSearch into LangChain, then again into Claude Desktop, then again into a CrewAI agent, you publish <em>one</em> ES MCP server and every team/app consumes it. That's the difference between N teams × M frameworks of glue and a single maintained capability.</p>
+        <p><strong>Common production challenges:</strong> auth for remote/multi-tenant servers, prompt-injection through resource/tool content, versioning tool schemas without breaking clients, observability across the host↔server boundary, and stopping over-broad tools (always prefer narrow, read-only ones).</p>
+
+        <!-- ============ 9. MISTAKES ============ -->
+        <h2 id="mistakes">10 · Top mistakes engineers make</h2>
+        <div class="grid grid-2">
+          <div class="card"><h4>❌ Exposing over-broad tools</h4><p>A generic "run any SQL/ES query" or "execute shell" tool is a security hole. Expose narrow, validated, read-only operations.</p></div>
+          <div class="card"><h4>❌ Weak tool descriptions</h4><p>The model selects and fills tools from descriptions/schemas. Vague docstrings → wrong calls. Treat them as prompts.</p></div>
+          <div class="card"><h4>❌ No input validation</h4><p>The model can pass anything. Validate args and bound result sizes server-side — never trust the caller.</p></div>
+          <div class="card"><h4>❌ Confusing tools and resources</h4><p>Actions (side effects) = tools; read-only data = resources. Mixing them muddles the security model.</p></div>
+          <div class="card"><h4>❌ Ignoring prompt injection</h4><p>Content the model reads (a log line, a doc) can contain instructions. Treat resource/tool output as untrusted.</p></div>
+          <div class="card"><h4>❌ Duplicating business logic</h4><p>Don't reimplement logic in the MCP tool. Share plain functions between REST and MCP surfaces.</p></div>
+        </div>
+
+        <!-- ============ 10. INTERVIEW ============ -->
+        <h2 id="interview">11 · Interview preparation</h2>
+
+        <details class="collapse"><summary><span class="pill green">Beginner</span> &nbsp;What is MCP and what problem does it solve? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>An open standard for how applications expose context and capabilities (tools, resources, prompts) to LLMs over a common JSON-RPC protocol. It replaces bespoke, per-app-per-tool integrations (M×N) with write-once servers any compliant client can use (M+N) — the "USB-C of AI tooling."</p></div></details>
+
+        <details class="collapse"><summary><span class="pill green">Beginner</span> &nbsp;Name MCP's three primitives. <span class="chev">›</span></summary>
+        <div class="collapse-body"><p><strong>Tools</strong> — actions the model can invoke (model-controlled). <strong>Resources</strong> — read-only data loaded into context (app-controlled). <strong>Prompts</strong> — reusable parameterized templates surfaced to the user (user-controlled).</p></div></details>
+
+        <details class="collapse"><summary><span class="pill blue">Intermediate</span> &nbsp;Walk through host, client, and server roles. <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>The <strong>host</strong> is the AI app (Claude Desktop, IDE, your agent) — it runs the LLM and conversation. It spawns one <strong>client</strong> per server. Each <strong>server</strong> wraps a specific system (DB, files, ES) and exposes tools/resources/prompts. Flow: client initializes (capability negotiation) → lists tools → LLM picks one → client calls <code>tools/call</code> → server executes against the real system → result returns. The server is the security boundary.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill blue">Intermediate</span> &nbsp;Tool vs resource — when to use which? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Use a <strong>tool</strong> for actions/computation that the model decides to invoke (side effects: write a record, run a query). Use a <strong>resource</strong> for read-only data the host attaches to context (a file, a config, a row), addressed by URI with no side effects. The split keeps "what the model can do" separate from "what it can read," which clarifies permissions.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill amber">Senior</span> &nbsp;How do you secure an MCP server exposing ElasticSearch? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Least privilege: read-only tools only (no delete/update), an <strong>index allow-list</strong>, and bounded result sizes. Validate every argument server-side; never expose a raw "run any query" tool — offer constrained operations (search, get_mapping). For HTTP transport, add authn/authz and per-caller scopes. Treat returned log content as untrusted (prompt-injection defense). Log all calls for audit. Require host-side human approval for any consequential action. Keep secrets out of descriptions and out of the model's view.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill amber">Senior</span> &nbsp;Why prefer MCP over hard-coding tools in your agent framework? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Decoupling and reuse. Hard-coded tools are tied to one framework and app; an MCP server is consumed by any compliant client (Claude Desktop, IDEs, LangGraph, CrewAI), so one team maintains a capability once and every app benefits. It also enforces a clean security boundary and enables runtime discovery. The cost is an extra layer — justified when a tool is shared across apps; overkill for a single in-process helper.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill purple">Staff · design</span> &nbsp;Design an enterprise MCP gateway exposing 30 internal systems to AI apps. <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>A governed catalog of MCP servers, one per system, behind a central gateway providing: <strong>auth</strong> (SSO/OAuth, per-app and per-user identity propagated to servers), <strong>authorization</strong> (least-privilege scopes; the model only sees tools the caller may use), <strong>safety</strong> (input validation, output redaction/PII, prompt-injection defenses on returned content, human-in-the-loop for consequential tools), <strong>observability</strong> (trace every host↔server call, per-tool cost/latency, full audit log), <strong>schema governance</strong> (versioned tool schemas, deprecation policy, contract tests so client upgrades don't break), and <strong>reliability</strong> (rate limits, timeouts, circuit breakers per backend). Share business logic with existing REST services to avoid drift. The deliverable is reusable, auditable capability infrastructure — the integration spine of the Enterprise GenAI Platform (Module 15).</p></div></details>
+
+        <!-- ============ 11. QUIZ ============ -->
+        <h2 id="quiz">12 · Knowledge check</h2>
+
+        <div class="quiz">
+          <div class="q">1 · What is the core value proposition of MCP?</div>
+          <label class="opt">It makes models run faster</label>
+          <label class="opt" data-correct="true">A single standard so tools written once work with any MCP client (M×N → M+N)</label>
+          <label class="opt">It replaces the need for embeddings</label>
+          <label class="opt">It fine-tunes the model on your data</label>
+          <div class="explain">MCP standardizes the agent–tool boundary. Write a server once and any compliant client can use it, collapsing bespoke per-app-per-tool integrations into a reusable layer.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">2 · Which primitive should expose "delete a record"?</div>
+          <label class="opt">A resource</label>
+          <label class="opt">A prompt</label>
+          <label class="opt" data-correct="true">A tool (it's an action with side effects) — and it should require approval</label>
+          <label class="opt">None — MCP can't do actions</label>
+          <div class="explain">Actions with side effects are tools (model-controlled). Resources are read-only data. A destructive tool should additionally require host-side human approval.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">3 · How does an MCP client know what a server offers?</div>
+          <label class="opt">It's hard-coded in the client</label>
+          <label class="opt" data-correct="true">Runtime discovery via tools/list, resources/list, prompts/list after initialize</label>
+          <label class="opt">By reading the server's source code</label>
+          <label class="opt">It must be configured manually per tool</label>
+          <div class="explain">After capability negotiation, the client calls standardized list methods to discover tools/resources/prompts at runtime — no hard-coding, so swapping servers needs no client changes.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">4 · Best practice for an ElasticSearch MCP tool?</div>
+          <label class="opt">Expose a single "run any query" tool for flexibility</label>
+          <label class="opt" data-correct="true">Narrow, read-only tools with an index allow-list and bounded result size</label>
+          <label class="opt">Let the model pass the ES admin password as an argument</label>
+          <label class="opt">Return the entire index every call</label>
+          <div class="explain">Least privilege: constrained read-only operations, an allow-list of indices, validated args, and capped result sizes. A generic "run anything" tool is a security and cost hazard.</div>
+        </div>
+
+        <!-- ============ 12. ACTIVE RECALL ============ -->
+        <h2 id="recall">13 · Active recall</h2>
+        <p>Answer first, then reveal. Re-test tomorrow and in a week.</p>
+        <details class="recall"><summary><span class="q-ico">Q</span> What are MCP's three primitives and who controls each? <span class="chev">›</span></summary><div class="a">Tools (model-controlled actions), Resources (app-controlled read-only data), Prompts (user-controlled templates).</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> Explain the M×N → M+N argument. <span class="chev">›</span></summary><div class="a">Without a standard, M apps × N tools need up to M×N bespoke integrations. With MCP, each app implements one client (M) and each tool one server (N) → M+N total. Reusable capability infrastructure.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> Name the two MCP transports and when each is used. <span class="chev">›</span></summary><div class="a">stdio (local subprocess, default for dev/desktop) and Streamable HTTP/SSE (remote, multi-user, cloud).</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> List four safety practices for an ES MCP server. <span class="chev">›</span></summary><div class="a">Read-only tools only, index allow-list, bounded result size, server-side input validation; plus auth on HTTP, treat returned content as untrusted, audit logging. (Any four.)</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> Why share business logic between REST and MCP surfaces? <span class="chev">›</span></summary><div class="a">To avoid duplication and drift — one implementation behind two interfaces (humans via REST, agents via MCP) stays correct and maintainable.</div></details>
+
+        <!-- ============ 13. EXERCISES ============ -->
+        <h2 id="exercises">14 · Exercises</h2>
+        <div class="callout tip"><div class="c-ico">🟢</div><div class="c-body"><div class="c-title">Easy</div><p>Build the minimal FastMCP server with <code>add</code> and <code>greet</code> tools. Run <code>mcp dev server_minimal.py</code> and call both tools from the Inspector UI. Confirm the docstrings appear as descriptions.</p></div></div>
+        <div class="callout warn"><div class="c-ico">🟡</div><div class="c-body"><div class="c-title">Medium</div><p>Extend the full server with a resource and a prompt. Write the stdio client from §6, list tools/resources/prompts, call a tool, and read a resource. Then register the server with Claude Desktop (or drive it via the local Ollama host) and use it from a chat.</p></div></div>
+        <div class="callout danger"><div class="c-ico">🔴</div><div class="c-body"><div class="c-title">Hard</div><p>Build the ElasticSearch MCP server against a local ES (docker). Implement <code>list_indices</code>, <code>get_mapping</code>, <code>search_index</code> with an allow-list and bounded size. Drive it with a local Ollama agent to answer "what errors happened in app-logs in the last hour?" Add audit logging of every tool call and a test that a disallowed index is rejected.</p></div></div>
+
+        <!-- ============ 14. MINI PROJECT ============ -->
+        <h2 id="mini-project">15 · Mini project — "Ops Assistant MCP"</h2>
+        <div class="card">
+          <p><strong>Goal:</strong> An MCP server that gives an LLM safe, read-only access to investigate a system — the direct precursor to the ElasticSearch MCP capstone.</p>
+          <h4>Requirements</h4>
+          <ul>
+            <li>Tools: <code>list_indices</code>, <code>get_mapping</code>, <code>search_index</code> (read-only, validated, allow-listed)</li>
+            <li>A resource <code>es://indices</code> listing queryable indices</li>
+            <li>A prompt <code>investigate(symptom)</code> that guides a multi-step investigation</li>
+            <li>Audit log of every tool call (caller, tool, args, result size)</li>
+            <li>Drive it from a host (Claude Desktop or local Ollama) end to end</li>
+          </ul>
+          <h4>Stretch</h4>
+          <ul style="margin-bottom:0"><li>Add HTTP transport + a simple API key so a remote agent can use it.</li><li>Add a <code>recent_errors(index, minutes)</code> convenience tool with safe defaults.</li></ul>
+        </div>
+
+        <!-- ============ 15. REAL PROJECT CONNECTION ============ -->
+        <h2 id="real-project">16 · Real project connection</h2>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Project</th><th>How MCP applies</th></tr></thead>
+          <tbody>
+            <tr><td><strong>MCP ElasticSearch Server</strong></td><td>This module <em>is</em> the project: a governed, read-only ES server consumed by any agent.</td></tr>
+            <tr><td><strong>SQL Analysis Agent</strong></td><td>Expose <code>get_schema</code>/<code>run_sql</code> as an MCP server so the same tools work across hosts.</td></tr>
+            <tr><td><strong>ElasticSearch Investigation Agent</strong></td><td>The agent (Module 08) consumes the ES MCP server's tools to run multi-step investigations.</td></tr>
+            <tr><td><strong>Multi-Agent Plant Assistant</strong></td><td>Shared MCP servers (manuals, telemetry, tickets) reused by every specialist agent.</td></tr>
+            <tr><td><strong>Enterprise Platform</strong></td><td>The MCP gateway from §11 — reusable, audited capability infrastructure for all AI apps.</td></tr>
+          </tbody>
+        </table></div>
+
+        <div class="complete-bar">
+          <div><strong style="font-size:15px">Finished Module 09?</strong><p style="margin:2px 0 0;font-size:13.5px;color:var(--text-muted)">You can standardize and expose tools. Next: the frameworks that orchestrate them.</p></div>
+          <button class="btn" data-complete>Mark module complete</button>
+        </div>
+
+        <div class="page-nav">
+          <a href="08_agents.html"><div class="dir">← Previous</div><div class="ttl">08 · Agentic AI</div></a>
+          <a class="next" href="10_langchain.html"><div class="dir">Next →</div><div class="ttl">10 · LangChain</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

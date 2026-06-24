@@ -1,0 +1,495 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>08 · Agentic AI — GenAI Mastery</title>
+<meta name="description" content="Agents from first principles: the agent loop, ReAct, tool calling, planning, reflection, short- and long-term memory, failure modes, and agent evaluation.">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body data-page="08">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <div class="brand-mark">G</div>
+        <div class="brand-text"><strong>GenAI Mastery</strong><span>DS → Senior GenAI Engineer</span></div>
+      </a>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search modules…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Agents / <b>08 · Agentic AI</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Module 08 · Agents track</div>
+        <h1>Agentic AI</h1>
+        <p class="lead">So far the LLM has been a one-shot function: prompt in, answer out. An <strong>agent</strong> breaks that frame. It runs the model in a <em>loop</em>, lets it <em>use tools</em> (search, code, APIs, your RAG pipeline), observe the results, and decide the next step — until the task is done. This is how an LLM goes from "answers questions" to "gets things done," and it's the conceptual core of MCP, LangGraph, CrewAI, and every capstone agent.</p>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~65 min read</span>
+          <span class="pill">Difficulty · Intermediate→Advanced</span>
+          <span class="pill purple">Prereq · Modules 01, 06–07</span>
+        </div>
+
+        <!-- ============ 1. EXECUTIVE SUMMARY ============ -->
+        <h2 id="summary">1 · Executive summary</h2>
+        <p>An <strong>agent</strong> is an LLM placed in a control loop where it can call <strong>tools</strong> and act on their results. Instead of producing a final answer in one pass, the model reasons about what to do, takes an action (calls a tool), observes the outcome, and repeats. Give it a goal and a toolbox, and it figures out the steps. The dominant pattern, <strong>ReAct</strong> (Reason + Act), interleaves thinking and acting; <strong>planning</strong>, <strong>reflection</strong>, and <strong>memory</strong> make it more capable and reliable.</p>
+        <div class="grid grid-3">
+          <div class="card" data-reveal><span class="ico">❓</span><h4>Why it exists</h4><p>Many tasks need <em>actions</em> and <em>fresh data</em>, not just text — query a DB, run code, call an API, retrieve docs, then synthesize. A single forward pass can't do that.</p></div>
+          <div class="card" data-reveal><span class="ico">🔧</span><h4>Problem it solves</h4><p>Multi-step, tool-using, dynamic tasks where the right next step depends on what previous steps returned.</p></div>
+          <div class="card" data-reveal><span class="ico">🌐</span><h4>Where it fits</h4><p>The behavioral core. MCP (09) standardizes tools; LangGraph (12) orchestrates the loop; CrewAI (13) coordinates many agents.</p></div>
+        </div>
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The one idea to remember</div>
+          <p><strong>An agent is a while-loop around an LLM with tools.</strong> Reason → act (call tool) → observe → repeat until done. Everything else — planning, reflection, memory — is structure layered on that loop to make it smarter and safer.</p></div>
+        </div>
+
+        <!-- ============ 2. FIRST PRINCIPLES ============ -->
+        <h2 id="first-principles">2 · First-principles breakdown</h2>
+
+        <h3>What — an LLM that can do, not just say</h3>
+        <p>Picture a smart but blindfolded analyst in a locked room: brilliant reasoning, but no access to your data and no way to act. That's a bare LLM. An agent hands that analyst a <strong>phone</strong> (call APIs), a <strong>calculator</strong> (run code), a <strong>filing cabinet</strong> (retrieval), and a <strong>notepad</strong> (memory) — and lets them work step by step. The model decides which tool to use; your code executes it and feeds back the result.</p>
+
+        <h3>Why — the world isn't in the weights</h3>
+        <p>LLMs are frozen, stateless, and can't compute reliably or fetch live data (Modules 01–02). Tools fill exactly those gaps: a calculator for arithmetic, search for current facts, a database for your data, code execution for logic. The loop lets the model use a tool's <em>output</em> to decide its <em>next</em> action — which is what "agency" means in practice.</p>
+
+        <div class="callout note"><div class="c-ico">🔄</div><div class="c-body"><div class="c-title">Why a loop, not one shot?</div>
+        <p>Because the model can't know in advance what a tool will return. "Search for X" might yield a result that demands a follow-up query, or reveal the question was ambiguous. The loop lets the agent adapt to observations — exactly like a person debugging: try something, see what happens, adjust.</p></div></div>
+
+        <h3>How — the agent loop, step by step</h3>
+        <div class="timeline">
+          <div class="step"><h4>1 · Receive goal + tools</h4><p>The agent gets the user's objective and a list of available tools (name, description, input schema).</p></div>
+          <div class="step"><h4>2 · Reason (Thought)</h4><p>The LLM decides what to do next given the goal and history so far.</p></div>
+          <div class="step"><h4>3 · Act (Action)</h4><p>It emits a structured tool call (which tool, what arguments).</p></div>
+          <div class="step"><h4>4 · Observe</h4><p>Your runtime executes the tool and feeds the result back into the context.</p></div>
+          <div class="step"><h4>5 · Loop or finish</h4><p>Repeat from step 2 until the model decides it has enough to answer — then it emits the final response.</p></div>
+        </div>
+
+        <!-- ============ 3. VISUAL ARCHITECTURE ============ -->
+        <h2 id="architecture">3 · Visual architecture</h2>
+
+        <h3>The ReAct loop</h3>
+        <div class="diagram">
+          <svg viewBox="0 0 620 330" width="600" role="img" aria-label="ReAct agent loop">
+            <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="var(--accent)"/></marker></defs>
+            <rect class="flow-node-accent" x="240" y="20" width="140" height="46" rx="10"/><text class="flow-label" x="310" y="42" text-anchor="middle">Goal + tools</text><text class="flow-sub" x="310" y="58" text-anchor="middle">user request</text>
+            <!-- thought -->
+            <rect class="flow-node" x="240" y="110" width="140" height="46" rx="10"/><text class="flow-label" x="310" y="132" text-anchor="middle">💭 Thought</text><text class="flow-sub" x="310" y="148" text-anchor="middle">reason next step</text>
+            <!-- action -->
+            <rect class="flow-node" x="430" y="190" width="150" height="46" rx="10"/><text class="flow-label" x="505" y="212" text-anchor="middle">⚡ Action</text><text class="flow-sub" x="505" y="228" text-anchor="middle">call tool(args)</text>
+            <!-- observation -->
+            <rect class="flow-node" x="40" y="190" width="150" height="46" rx="10"/><text class="flow-label" x="115" y="212" text-anchor="middle">👁 Observation</text><text class="flow-sub" x="115" y="228" text-anchor="middle">tool result</text>
+            <!-- tool box -->
+            <rect class="flow-node" x="430" y="280" width="150" height="40" rx="9"/><text class="flow-sub" x="505" y="304" text-anchor="middle" style="fill:var(--text);font-weight:600">Tools: search · SQL · code · RAG</text>
+            <!-- finish -->
+            <rect class="flow-node-accent" x="40" y="280" width="150" height="40" rx="9"/><text class="flow-label" x="115" y="305" text-anchor="middle">✅ Final answer</text>
+            <!-- arrows -->
+            <path class="flow-arrow" style="stroke:var(--accent)" d="M310,66 L310,108"/>
+            <path class="flow-arrow" style="stroke:var(--accent)" d="M380,140 C430,150 450,170 470,188"/>
+            <path class="flow-arrow" style="stroke:var(--text-muted);marker-end:url(#arrow)" d="M505,236 L505,278"/>
+            <path class="flow-arrow" style="stroke:var(--text-muted);marker-end:url(#arrow)" d="M428,300 C300,330 240,250 192,225"/>
+            <path class="flow-arrow flow-dash" style="stroke:var(--accent)" d="M115,190 C115,150 180,140 238,133"/>
+            <text class="flow-sub" x="150" y="120" style="fill:var(--accent)">loop back</text>
+            <path class="flow-arrow" style="stroke:var(--green)" d="M240,133 C150,140 115,200 115,278" />
+            <text class="flow-sub" x="60" y="170" style="fill:var(--green)">done →</text>
+          </svg>
+          <div class="diagram-caption">Figure 1 · ReAct: Thought → Action → Observation, looping until the agent decides it can answer. Your runtime executes the tools.</div>
+        </div>
+
+        <h3>Memory layers</h3>
+        <div class="diagram">
+          <svg viewBox="0 0 700 180" width="700" role="img" aria-label="Agent memory layers">
+            <rect class="flow-node" x="20" y="55" width="200" height="70" rx="10"/><text class="flow-label" x="120" y="82" text-anchor="middle">Working memory</text><text class="flow-sub" x="120" y="100" text-anchor="middle">current context window</text><text class="flow-sub" x="120" y="114" text-anchor="middle">this task's scratchpad</text>
+            <rect class="flow-node" x="250" y="55" width="200" height="70" rx="10"/><text class="flow-label" x="350" y="82" text-anchor="middle">Short-term memory</text><text class="flow-sub" x="350" y="100" text-anchor="middle">conversation history</text><text class="flow-sub" x="350" y="114" text-anchor="middle">summarized as it grows</text>
+            <rect class="flow-node-accent" x="480" y="55" width="200" height="70" rx="10"/><text class="flow-label" x="580" y="82" text-anchor="middle">Long-term memory</text><text class="flow-sub" x="580" y="100" text-anchor="middle">vector store of past facts</text><text class="flow-sub" x="580" y="114" text-anchor="middle">retrieved when relevant</text>
+            <text class="flow-sub" x="350" y="30" text-anchor="middle" style="fill:var(--accent);font-weight:700">narrower &amp; faster ← → broader &amp; persistent</text>
+          </svg>
+          <div class="diagram-caption">Figure 2 · Long-term memory is just RAG (Modules 04–06) pointed at the agent's own history — store facts, retrieve them when relevant.</div>
+        </div>
+
+        <!-- ============ 4. DEEP TECHNICAL ============ -->
+        <h2 id="deep-dive">4 · Deep technical explanation</h2>
+
+        <h3>Tool calling — how the model "uses" a tool</h3>
+        <p>The model can't run code; it emits a <strong>structured request</strong> to. Modern LLMs are trained for <strong>native tool/function calling</strong>: you pass tool schemas (name, description, JSON parameter spec); the model returns a JSON object naming a tool and its arguments; your runtime executes it and returns the result as a new message. The description and schema quality directly determine whether the model picks the right tool — <strong>tool design is prompt engineering</strong>.</p>
+
+        <h3>ReAct vs plan-and-execute</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Pattern</th><th>How</th><th>Best for</th></tr></thead>
+          <tbody>
+            <tr><td><strong>ReAct</strong></td><td>Interleave reason → act → observe, one step at a time</td><td>Exploratory, dynamic tasks where steps depend on results</td></tr>
+            <tr><td><strong>Plan-and-execute</strong></td><td>Make a full plan up front, then execute steps (optionally re-plan)</td><td>Predictable multi-step tasks; cheaper (less re-reasoning)</td></tr>
+            <tr><td><strong>Reflection</strong></td><td>After acting, critique own output and retry/improve</td><td>Quality-critical tasks (code, writing) where self-review helps</td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>Planning &amp; decomposition</h3>
+        <p>For complex goals, the agent first <strong>decomposes</strong> the task into sub-goals (a plan), then executes them — sometimes spawning sub-agents (Module 13). Planning reduces flailing: an explicit plan keeps the agent on track instead of greedily reacting step by step and losing the thread.</p>
+
+        <h3>Reflection — the self-correction loop</h3>
+        <p><strong>Reflection</strong> adds a critique step: after producing an action or answer, the agent (or a separate critic) evaluates it — "did this actually work? is the code correct? did I answer the question?" — and revises if not. This is the agentic analogue of the faithfulness check in Module 07 and dramatically improves reliability on hard tasks.</p>
+
+        <h3>Memory in depth</h3>
+        <ul>
+          <li><strong>Working memory</strong> — the current context window; the live scratchpad of thoughts/observations for this task.</li>
+          <li><strong>Short-term memory</strong> — the conversation/episode history. As it overflows the window, summarize older turns (compression, Module 07) to preserve gist.</li>
+          <li><strong>Long-term memory</strong> — persistent facts/preferences stored in a vector DB and <em>retrieved</em> when relevant. This is literally RAG over the agent's own past. It's how an assistant "remembers you" across sessions.</li>
+        </ul>
+
+        <h3>Agent failure modes (know these cold)</h3>
+        <div class="grid grid-2">
+          <div class="card"><h4>🔁 Loops &amp; flailing</h4><p>Agent repeats the same failing action. Fix: max-step limit, loop detection, force a re-plan or escalate.</p></div>
+          <div class="card"><h4>🛠️ Wrong-tool / bad-args</h4><p>Picks the wrong tool or malformed arguments. Fix: better tool descriptions, schema validation, retry with the error message.</p></div>
+          <div class="card"><h4>💸 Cost / latency blowup</h4><p>Each step is an LLM call; long loops get slow and expensive. Fix: step budgets, caching, cheaper models for sub-steps.</p></div>
+          <div class="card"><h4>🎭 Hallucinated tool results</h4><p>Model "imagines" a tool output instead of waiting for the real one. Fix: enforce that observations come only from real execution; never let the model fabricate them.</p></div>
+          <div class="card"><h4>🧭 Goal drift</h4><p>Loses sight of the original objective mid-loop. Fix: re-inject the goal each step; planning; reflection checkpoints.</p></div>
+          <div class="card"><h4>⚠️ Unsafe actions</h4><p>Destructive tool calls (delete, send, pay). Fix: human-in-the-loop approval (Module 12), allow-lists, dry-run, and least-privilege tools.</p></div>
+        </div>
+
+        <h3>Agent evaluation</h3>
+        <p>Agents are harder to evaluate than RAG because they're multi-step and non-deterministic. Measure:</p>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Dimension</th><th>What to measure</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Task success</strong></td><td>Did it achieve the goal? (final-state check / golden outcome)</td></tr>
+            <tr><td><strong>Trajectory quality</strong></td><td>Were the tool choices sensible? Any wasted/redundant steps?</td></tr>
+            <tr><td><strong>Tool-call correctness</strong></td><td>Right tool, valid args, correct interpretation of results</td></tr>
+            <tr><td><strong>Efficiency</strong></td><td>Steps, tokens, cost, latency to completion</td></tr>
+            <tr><td><strong>Safety</strong></td><td>Did it avoid unsafe/destructive actions and respect guardrails?</td></tr>
+          </tbody>
+        </table></div>
+
+        <!-- ============ 5. INTERACTIVE ============ -->
+        <h2 id="interactive">5 · Interactive: trace a ReAct run</h2>
+        <p>Step through an agent answering "What's the total revenue from orders in California last month?" — watch it reason, call tools, and observe.</p>
+        <div class="demo" data-stepdemo>
+          <div class="demo-title"><span class="badge">DEMO</span> ReAct trace</div>
+          <div class="demo-stage" style="flex-direction:column;align-items:stretch;gap:8px">
+            <span class="chip" style="text-align:left">💭 Thought: I need the orders table schema first.</span>
+            <span class="chip vec" style="text-align:left">⚡ Action: get_schema("orders")</span>
+            <span class="chip tok" style="text-align:left">👁 Observation: columns = [id, state, amount, created_at]</span>
+            <span class="chip" style="text-align:left">💭 Thought: Now query CA orders from last month and sum amount.</span>
+            <span class="chip vec" style="text-align:left">⚡ Action: run_sql("SELECT SUM(amount) … WHERE state='CA' …")</span>
+            <span class="chip tok" style="text-align:left">👁 Observation: 142300.50</span>
+            <span class="chip" style="text-align:left;font-weight:700;background:var(--green-soft);color:var(--green)">✅ Final: "California revenue last month was $142,300.50."</span>
+          </div>
+          <div class="demo-stage" style="margin-top:14px">
+            <button class="btn" data-run>▶ Run agent</button>
+            <button class="btn ghost sm" data-reset>Reset</button>
+          </div>
+          <p style="font-size:12.5px;color:var(--text-muted);margin:14px 0 0">Notice the agent didn't guess the schema — it <em>checked</em> with a tool, then used the result to build the next action. That observe-then-decide pattern is the whole game. This is exactly the SQL Agent capstone.</p>
+        </div>
+
+        <!-- ============ 6. PYTHON ============ -->
+        <h2 id="python">6 · Practical Python</h2>
+
+        <h3>Minimal — a hand-rolled ReAct loop (no framework)</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> react_minimal.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">import</span> json
+<span class="tok-kw">from</span> openai <span class="tok-kw">import</span> OpenAI
+
+client = <span class="tok-fn">OpenAI</span>()
+
+<span class="tok-kw">def</span> <span class="tok-fn">calculator</span>(expr): <span class="tok-kw">return</span> <span class="tok-fn">str</span>(<span class="tok-fn">eval</span>(expr))   <span class="tok-com"># demo only — never eval untrusted input!</span>
+<span class="tok-kw">def</span> <span class="tok-fn">get_weather</span>(city): <span class="tok-kw">return</span> <span class="tok-str">f"{city}: 22°C, clear"</span>
+TOOLS = {<span class="tok-str">"calculator"</span>: calculator, <span class="tok-str">"get_weather"</span>: get_weather}
+
+schema = [
+  {<span class="tok-str">"type"</span>: <span class="tok-str">"function"</span>, <span class="tok-str">"function"</span>: {<span class="tok-str">"name"</span>: <span class="tok-str">"calculator"</span>,
+   <span class="tok-str">"description"</span>: <span class="tok-str">"Evaluate a math expression"</span>,
+   <span class="tok-str">"parameters"</span>: {<span class="tok-str">"type"</span>: <span class="tok-str">"object"</span>, <span class="tok-str">"properties"</span>: {<span class="tok-str">"expr"</span>: {<span class="tok-str">"type"</span>: <span class="tok-str">"string"</span>}}, <span class="tok-str">"required"</span>: [<span class="tok-str">"expr"</span>]}}},
+  {<span class="tok-str">"type"</span>: <span class="tok-str">"function"</span>, <span class="tok-str">"function"</span>: {<span class="tok-str">"name"</span>: <span class="tok-str">"get_weather"</span>,
+   <span class="tok-str">"description"</span>: <span class="tok-str">"Current weather for a city"</span>,
+   <span class="tok-str">"parameters"</span>: {<span class="tok-str">"type"</span>: <span class="tok-str">"object"</span>, <span class="tok-str">"properties"</span>: {<span class="tok-str">"city"</span>: {<span class="tok-str">"type"</span>: <span class="tok-str">"string"</span>}}, <span class="tok-str">"required"</span>: [<span class="tok-str">"city"</span>]}}},
+]
+
+<span class="tok-kw">def</span> <span class="tok-fn">agent</span>(goal, max_steps=<span class="tok-num">6</span>):
+    msgs = [{<span class="tok-str">"role"</span>: <span class="tok-str">"user"</span>, <span class="tok-str">"content"</span>: goal}]
+    <span class="tok-kw">for</span> _ <span class="tok-kw">in</span> <span class="tok-fn">range</span>(max_steps):                       <span class="tok-com"># step budget = loop guard</span>
+        r = client.chat.completions.<span class="tok-fn">create</span>(model=<span class="tok-str">"gpt-4o-mini"</span>,
+                messages=msgs, tools=schema, temperature=<span class="tok-num">0</span>)
+        m = r.choices[<span class="tok-num">0</span>].message
+        <span class="tok-kw">if</span> <span class="tok-kw">not</span> m.tool_calls:                        <span class="tok-com"># no tool → final answer</span>
+            <span class="tok-kw">return</span> m.content
+        msgs.<span class="tok-fn">append</span>(m)
+        <span class="tok-kw">for</span> call <span class="tok-kw">in</span> m.tool_calls:                     <span class="tok-com"># execute each tool call</span>
+            args = json.<span class="tok-fn">loads</span>(call.function.arguments)
+            result = TOOLS[call.function.name](**args)   <span class="tok-com"># REAL execution</span>
+            msgs.<span class="tok-fn">append</span>({<span class="tok-str">"role"</span>: <span class="tok-str">"tool"</span>, <span class="tok-str">"tool_call_id"</span>: call.id, <span class="tok-str">"content"</span>: result})
+    <span class="tok-kw">return</span> <span class="tok-str">"Stopped: step budget exhausted."</span>     <span class="tok-com"># failure-mode guard</span>
+
+<span class="tok-fn">print</span>(<span class="tok-fn">agent</span>(<span class="tok-str">"What is 18% of 2400, and the weather in Mumbai?"</span>))</code></pre>
+        </div>
+
+        <h3>Intermediate — add reflection &amp; long-term memory</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> reflective_agent.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">class</span> <span class="tok-cls">ReflectiveAgent</span>:
+    <span class="tok-kw">def</span> <span class="tok-fn">__init__</span>(self, llm, tools, memory_store):
+        self.llm, self.tools, self.memory = llm, tools, memory_store
+
+    <span class="tok-kw">def</span> <span class="tok-fn">run</span>(self, goal, max_steps=<span class="tok-num">8</span>):
+        <span class="tok-com"># 1 · recall long-term memory relevant to this goal (RAG over past)</span>
+        recalled = self.memory.<span class="tok-fn">search</span>(goal, k=<span class="tok-num">3</span>)
+        context = <span class="tok-str">"\n"</span>.<span class="tok-fn">join</span>(m.text <span class="tok-kw">for</span> m <span class="tok-kw">in</span> recalled)
+        answer = self.<span class="tok-fn">_react_loop</span>(goal, context, max_steps)
+        <span class="tok-com"># 2 · reflect: critique and optionally redo</span>
+        critique = self.llm.<span class="tok-fn">complete</span>(
+            <span class="tok-str">f"Does this fully answer '{goal}'? If not, say what's missing.\n{answer}"</span>)
+        <span class="tok-kw">if</span> <span class="tok-str">"missing"</span> <span class="tok-kw">in</span> critique.<span class="tok-fn">lower</span>():
+            answer = self.<span class="tok-fn">_react_loop</span>(<span class="tok-str">f"{goal}\nFix: {critique}"</span>, context, max_steps)
+        <span class="tok-com"># 3 · write durable facts back to long-term memory</span>
+        self.memory.<span class="tok-fn">add</span>(<span class="tok-str">f"Q:{goal} A:{answer}"</span>)
+        <span class="tok-kw">return</span> answer</code></pre>
+        </div>
+
+        <h3>Production — a guarded agent runtime (budgets, validation, safety)</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> agent_runtime.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">import</span> time, logging
+<span class="tok-kw">from</span> dataclasses <span class="tok-kw">import</span> dataclass, field
+
+log = logging.<span class="tok-fn">getLogger</span>(<span class="tok-str">"agent"</span>)
+
+<span class="tok-dec">@dataclass</span>
+<span class="tok-kw">class</span> <span class="tok-cls">Budget</span>:
+    max_steps: <span class="tok-cls">int</span> = <span class="tok-num">10</span>
+    max_tokens: <span class="tok-cls">int</span> = <span class="tok-num">50_000</span>
+    used_tokens: <span class="tok-cls">int</span> = <span class="tok-num">0</span>
+
+<span class="tok-kw">class</span> <span class="tok-cls">GuardedAgent</span>:
+    <span class="tok-str">"""Production loop with step/token budgets, arg validation, safe tools, tracing."""</span>
+    UNSAFE = {<span class="tok-str">"delete"</span>, <span class="tok-str">"drop"</span>, <span class="tok-str">"send_payment"</span>}   <span class="tok-com"># require approval</span>
+
+    <span class="tok-kw">def</span> <span class="tok-fn">__init__</span>(self, llm, tools, validators, approver=<span class="tok-kw">None</span>):
+        self.llm, self.tools, self.validators, self.approver = llm, tools, validators, approver
+
+    <span class="tok-kw">def</span> <span class="tok-fn">_exec_tool</span>(self, name, args, trace):
+        <span class="tok-kw">if</span> name <span class="tok-kw">not</span> <span class="tok-kw">in</span> self.tools:
+            <span class="tok-kw">return</span> <span class="tok-str">f"ERROR: unknown tool {name}"</span>          <span class="tok-com"># wrong-tool guard</span>
+        <span class="tok-kw">try</span>:
+            self.validators[name](args)                  <span class="tok-com"># schema/arg validation</span>
+        <span class="tok-kw">except</span> <span class="tok-cls">Exception</span> <span class="tok-kw">as</span> e:
+            <span class="tok-kw">return</span> <span class="tok-str">f"ERROR: invalid args: {e}"</span>            <span class="tok-com"># feed error back → self-correct</span>
+        <span class="tok-kw">if</span> name <span class="tok-kw">in</span> self.UNSAFE <span class="tok-kw">and</span> self.approver:
+            <span class="tok-kw">if</span> <span class="tok-kw">not</span> self.approver(name, args):              <span class="tok-com"># human-in-the-loop</span>
+                <span class="tok-kw">return</span> <span class="tok-str">"DENIED by approver"</span>
+        result = self.tools[name](**args)                <span class="tok-com"># real execution only</span>
+        trace.<span class="tok-fn">append</span>({<span class="tok-str">"tool"</span>: name, <span class="tok-str">"args"</span>: args, <span class="tok-str">"result"</span>: result})
+        <span class="tok-kw">return</span> result
+
+    <span class="tok-kw">def</span> <span class="tok-fn">run</span>(self, goal, budget=<span class="tok-kw">None</span>):
+        budget = budget <span class="tok-kw">or</span> <span class="tok-fn">Budget</span>()
+        msgs, trace = [{<span class="tok-str">"role"</span>: <span class="tok-str">"user"</span>, <span class="tok-str">"content"</span>: goal}], []
+        <span class="tok-kw">for</span> step <span class="tok-kw">in</span> <span class="tok-fn">range</span>(budget.max_steps):       <span class="tok-com"># loop/flailing guard</span>
+            <span class="tok-kw">if</span> budget.used_tokens &gt; budget.max_tokens:
+                <span class="tok-kw">return</span> {<span class="tok-str">"answer"</span>: <span class="tok-str">"Budget exhausted."</span>, <span class="tok-str">"trace"</span>: trace}
+            decision = self.llm.<span class="tok-fn">decide</span>(msgs, <span class="tok-fn">list</span>(self.tools))
+            budget.used_tokens += decision.tokens
+            <span class="tok-kw">if</span> decision.is_final:
+                log.<span class="tok-fn">info</span>(<span class="tok-str">"agent.done"</span>, extra={<span class="tok-str">"steps"</span>: step, <span class="tok-str">"trace_len"</span>: <span class="tok-fn">len</span>(trace)})
+                <span class="tok-kw">return</span> {<span class="tok-str">"answer"</span>: decision.content, <span class="tok-str">"trace"</span>: trace}
+            obs = self.<span class="tok-fn">_exec_tool</span>(decision.tool, decision.args, trace)
+            msgs += [decision.message, {<span class="tok-str">"role"</span>: <span class="tok-str">"tool"</span>, <span class="tok-str">"content"</span>: <span class="tok-fn">str</span>(obs)}]
+        <span class="tok-kw">return</span> {<span class="tok-str">"answer"</span>: <span class="tok-str">"Max steps reached."</span>, <span class="tok-str">"trace"</span>: trace}</code></pre>
+        </div>
+        <div class="callout warn"><div class="c-ico">🛡️</div><div class="c-body"><p>Every failure mode from §4 maps to a guard here: step budget (loops), token budget (cost), validators (bad args), the UNSAFE set + approver (unsafe actions), and the <code>trace</code> (evaluation + observability, Module 14). <strong>Agents without guards are incidents waiting to happen.</strong></p></div></div>
+
+        <!-- ============ 7. OLLAMA ============ -->
+        <h2 id="ollama">7 · Ollama implementation</h2>
+        <p>Local models can run agents too — but pick a model trained for tool calling. Llama 3.x and Qwen 2.5 support native function calling via Ollama's tools API.</p>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> local_agent.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">import</span> ollama, json
+
+<span class="tok-kw">def</span> <span class="tok-fn">get_stock</span>(item): <span class="tok-kw">return</span> json.<span class="tok-fn">dumps</span>({<span class="tok-str">"item"</span>: item, <span class="tok-str">"qty"</span>: <span class="tok-num">42</span>})
+
+tools = [{<span class="tok-str">"type"</span>: <span class="tok-str">"function"</span>, <span class="tok-str">"function"</span>: {
+    <span class="tok-str">"name"</span>: <span class="tok-str">"get_stock"</span>, <span class="tok-str">"description"</span>: <span class="tok-str">"Inventory count for an item"</span>,
+    <span class="tok-str">"parameters"</span>: {<span class="tok-str">"type"</span>: <span class="tok-str">"object"</span>, <span class="tok-str">"properties"</span>: {<span class="tok-str">"item"</span>: {<span class="tok-str">"type"</span>: <span class="tok-str">"string"</span>}}, <span class="tok-str">"required"</span>: [<span class="tok-str">"item"</span>]}}}]
+
+msgs = [{<span class="tok-str">"role"</span>: <span class="tok-str">"user"</span>, <span class="tok-str">"content"</span>: <span class="tok-str">"How many pump valves are in stock?"</span>}]
+r = ollama.<span class="tok-fn">chat</span>(model=<span class="tok-str">"qwen2.5"</span>, messages=msgs, tools=tools)
+
+<span class="tok-kw">for</span> call <span class="tok-kw">in</span> r[<span class="tok-str">"message"</span>].<span class="tok-fn">get</span>(<span class="tok-str">"tool_calls"</span>, []):
+    name = call[<span class="tok-str">"function"</span>][<span class="tok-str">"name"</span>]
+    args = call[<span class="tok-str">"function"</span>][<span class="tok-str">"arguments"</span>]
+    obs = <span class="tok-fn">get_stock</span>(**args)                      <span class="tok-com"># real execution</span>
+    msgs += [r[<span class="tok-str">"message"</span>], {<span class="tok-str">"role"</span>: <span class="tok-str">"tool"</span>, <span class="tok-str">"content"</span>: obs}]
+
+final = ollama.<span class="tok-fn">chat</span>(model=<span class="tok-str">"qwen2.5"</span>, messages=msgs)
+<span class="tok-fn">print</span>(final[<span class="tok-str">"message"</span>][<span class="tok-str">"content"</span>])</code></pre>
+        </div>
+        <div class="callout tip"><div class="c-ico">🧪</div><div class="c-body"><p>Smaller local models are weaker at multi-step tool use than frontier models — they loop and mis-call more. Keep tool sets small, descriptions crisp, and step budgets tight when running agents locally. This is a great place to <em>measure</em> the failure modes from §4.</p></div></div>
+
+        <!-- ============ 8. INDUSTRY ============ -->
+        <h2 id="industry">8 · Industry perspective</h2>
+        <div class="grid grid-2">
+          <div class="card"><h4>🚀 Startups</h4><p>Build narrow, reliable agents: one job, a handful of well-tested tools, tight budgets. "Agentic" workflows that are mostly deterministic with one LLM decision point ship faster and break less than open-ended autonomy.</p></div>
+          <div class="card"><h4>🏢 Enterprises</h4><p>Demand guardrails, human-in-the-loop for consequential actions, full trace logging for audit, least-privilege tools, and rigorous eval before any agent touches production systems. Safety and observability are non-negotiable.</p></div>
+        </div>
+        <h3>The "how agentic?" spectrum</h3>
+        <div class="cssflow">
+          <div class="fnode">Fixed workflow<small>code calls LLM at set points</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">Router<small>LLM picks one of N branches</small></div>
+          <div class="farrow"></div>
+          <div class="fnode accent">Tool-using agent<small>ReAct loop, bounded tools</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">Autonomous agent<small>open-ended, self-directed (risky)</small></div>
+        </div>
+        <p><strong>The senior instinct:</strong> use the <em>least</em> agency that solves the problem. More autonomy = more capability but exponentially more failure surface, cost, and unpredictability. Most production "agents" are closer to the left of this spectrum than the hype implies.</p>
+        <p><strong>Common production challenges:</strong> non-determinism breaking tests, cost/latency of multi-step loops, tool reliability (an agent is only as good as its tools), prompt-injection via tool results, and proving safety before launch.</p>
+
+        <!-- ============ 9. MISTAKES ============ -->
+        <h2 id="mistakes">9 · Top mistakes engineers make</h2>
+        <div class="grid grid-2">
+          <div class="card"><h4>❌ No step/cost budget</h4><p>Unbounded loops burn money and hang. Always cap steps and tokens, with a graceful stop.</p></div>
+          <div class="card"><h4>❌ Vague tool descriptions</h4><p>The model picks tools from their descriptions. Poor descriptions = wrong-tool errors. Tool design <em>is</em> prompt engineering.</p></div>
+          <div class="card"><h4>❌ Trusting hallucinated observations</h4><p>Never let the model invent tool outputs. Observations must come only from real execution.</p></div>
+          <div class="card"><h4>❌ Too much autonomy too soon</h4><p>Open-ended agents are unpredictable. Start with the least agency that works; add autonomy only when measured.</p></div>
+          <div class="card"><h4>❌ No human-in-the-loop for risky actions</h4><p>Delete/send/pay must require approval. Least-privilege tools + an approver gate.</p></div>
+          <div class="card"><h4>❌ Not logging the trace</h4><p>Without the full thought/action/observation trace you can't debug, evaluate, or audit. Trace everything.</p></div>
+        </div>
+
+        <!-- ============ 10. INTERVIEW ============ -->
+        <h2 id="interview">10 · Interview preparation</h2>
+
+        <details class="collapse"><summary><span class="pill green">Beginner</span> &nbsp;What is an LLM agent? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>An LLM run in a control loop where it can call tools and act on their results. Instead of one-shot text output, it reasons about the next step, calls a tool, observes the result, and repeats until the goal is met — letting it perform multi-step, tool-using, dynamic tasks.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill green">Beginner</span> &nbsp;What is ReAct? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Reason + Act: a pattern where the agent interleaves Thought (reason about the next step), Action (call a tool), and Observation (the tool's result), looping until it can give a final answer. The interleaving lets it adapt each step to what tools return.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill blue">Intermediate</span> &nbsp;How does tool/function calling actually work? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>You pass the model tool schemas (name, description, JSON parameter spec). The model, trained for this, returns a structured request naming a tool and its arguments instead of plain text. Your runtime executes the tool and returns the result as a new message. The model never runs anything itself — it requests; your code executes. Description/schema quality drives correct tool selection.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill blue">Intermediate</span> &nbsp;Explain the three layers of agent memory. <span class="chev">›</span></summary>
+        <div class="collapse-body"><p><strong>Working memory</strong>: the current context window — the live scratchpad for this task. <strong>Short-term memory</strong>: the conversation/episode history, summarized as it grows to fit the window. <strong>Long-term memory</strong>: persistent facts stored in a vector DB and retrieved when relevant — essentially RAG over the agent's own past, enabling cross-session recall.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill amber">Senior</span> &nbsp;An agent keeps looping on the same failed action. How do you diagnose and fix it? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Inspect the trace: it's usually a tool returning an error the model can't act on, a missing capability, or an ambiguous goal. Fixes: enforce a max-step budget with graceful stop; add loop detection (repeated identical actions → break/re-plan); feed tool errors back clearly so the model can self-correct; improve the failing tool's description or add the missing tool; add a reflection/re-plan step; escalate to a human after N failures. Long-term, add this case to the agent eval set.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill amber">Senior</span> &nbsp;How do you evaluate an agent given non-determinism? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Don't assert exact outputs. Measure: <strong>task success</strong> (final-state/golden-outcome check), <strong>trajectory quality</strong> (sensible tool choices, no wasted steps — often LLM-as-judge over the trace), <strong>tool-call correctness</strong> (right tool, valid args), <strong>efficiency</strong> (steps/tokens/cost/latency), and <strong>safety</strong> (no unsafe actions). Run a suite of representative tasks repeatedly to capture variance, gate deploys on success rate, and sample production failures back into the suite.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill purple">Staff · design</span> &nbsp;Design a safe agent platform for internal employees to automate workflows. <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Core: a guarded agent runtime (step/token budgets, arg validation, full trace logging). <strong>Tools</strong> as a governed registry with least-privilege scopes, schemas, and per-tool risk classification; consequential actions (write/delete/send/pay) require human-in-the-loop approval and dry-run. <strong>Safety</strong>: input/output guardrails, prompt-injection defenses on tool results, allow-lists, sandboxed code execution. <strong>Observability</strong>: every trace logged for audit + replay; cost/latency per run; alerting on loops and budget breaches. <strong>Evaluation</strong>: a task suite gating any new tool/agent in CI; staged rollout. <strong>Memory</strong>: per-user long-term memory with access controls and PII handling. Start agents on the low-autonomy end of the spectrum and increase autonomy only as eval evidence accrues. Governance and traceability are the product, not the model.</p></div></details>
+
+        <!-- ============ 11. QUIZ ============ -->
+        <h2 id="quiz">11 · Knowledge check</h2>
+
+        <div class="quiz">
+          <div class="q">1 · In ReAct, what immediately follows an "Action"?</div>
+          <label class="opt">The final answer</label>
+          <label class="opt" data-correct="true">An "Observation" — the real result of executing the tool</label>
+          <label class="opt">Another Thought, with no tool run</label>
+          <label class="opt">A reflection step, always</label>
+          <div class="explain">The loop is Thought → Action → Observation. The runtime executes the tool and feeds the real result back as the observation, which informs the next Thought.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">2 · When the model emits a tool call, who runs the tool?</div>
+          <label class="opt">The LLM executes it internally</label>
+          <label class="opt" data-correct="true">Your runtime/code executes it and returns the result to the model</label>
+          <label class="opt">The vector database</label>
+          <label class="opt">No one — it's simulated</label>
+          <div class="explain">The model only emits a structured request (tool name + args). Your code runs the tool and returns the real output. Letting the model fabricate the result is a classic failure mode.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">3 · Long-term agent memory is essentially…</div>
+          <label class="opt">A bigger context window</label>
+          <label class="opt">Fine-tuning after every task</label>
+          <label class="opt" data-correct="true">RAG over the agent's own stored past facts</label>
+          <label class="opt">The system prompt</label>
+          <div class="explain">Long-term memory stores facts in a vector DB and retrieves them when relevant — exactly the embeddings + retrieval pattern from Modules 04–06, pointed at the agent's history.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">4 · Which is the single most important guard against runaway cost?</div>
+          <label class="opt">A larger model</label>
+          <label class="opt" data-correct="true">A max-step (and token) budget with a graceful stop</label>
+          <label class="opt">Higher temperature</label>
+          <label class="opt">More tools</label>
+          <div class="explain">Each step is an LLM call. Without a step/token budget, a looping agent runs indefinitely, burning money and time. Bound it and stop gracefully.</div>
+        </div>
+
+        <!-- ============ 12. ACTIVE RECALL ============ -->
+        <h2 id="recall">12 · Active recall</h2>
+        <p>Answer first, then reveal. Re-test tomorrow and in a week.</p>
+        <details class="recall"><summary><span class="q-ico">Q</span> Describe the agent loop in one sentence. <span class="chev">›</span></summary><div class="a">An LLM repeatedly reasons about the next step, calls a tool, observes the real result, and loops until it decides it can give a final answer.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> ReAct vs plan-and-execute — one line each. <span class="chev">›</span></summary><div class="a">ReAct interleaves reason/act/observe one step at a time (adaptive). Plan-and-execute makes a full plan up front then executes it (cheaper, predictable).</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> What does a reflection step add? <span class="chev">›</span></summary><div class="a">A self-critique: the agent (or a critic) evaluates its own output ("did this work / answer the question?") and revises if not — boosting reliability on hard tasks.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> Name four agent failure modes and one guard each. <span class="chev">›</span></summary><div class="a">Loops→step budget; wrong-tool/bad-args→validation + good descriptions; cost blowup→token budget; hallucinated observations→real execution only; goal drift→re-inject goal/plan; unsafe actions→human approval. (Any four.)</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> Why not assert exact outputs when evaluating agents? <span class="chev">›</span></summary><div class="a">Agents are multi-step and non-deterministic. Measure task success, trajectory quality, tool-call correctness, efficiency, and safety instead — over repeated runs to capture variance.</div></details>
+
+        <!-- ============ 13. EXERCISES ============ -->
+        <h2 id="exercises">13 · Exercises</h2>
+        <div class="callout tip"><div class="c-ico">🟢</div><div class="c-body"><div class="c-title">Easy</div><p>Run the hand-rolled ReAct loop from §6 with calculator + weather tools. Ask a two-part question and print each Thought/Action/Observation so you can watch the loop. Confirm the step budget stops it if you remove a needed tool.</p></div></div>
+        <div class="callout warn"><div class="c-ico">🟡</div><div class="c-body"><div class="c-title">Medium</div><p>Add long-term memory (a vector store) so the agent recalls a fact stated in a previous session ("my favorite city is X") in a new session. Then add a reflection step that retries when the answer is incomplete.</p></div></div>
+        <div class="callout danger"><div class="c-ico">🔴</div><div class="c-body"><div class="c-title">Hard</div><p>Build a small agent eval suite: 10 tasks with golden outcomes. Measure task success, average steps, and tool-call correctness over 3 runs each. Inject a flaky tool (random failures) and add guards (retry-with-error, loop detection, step budget). Show the success rate improving as you add each guard.</p></div></div>
+
+        <!-- ============ 14. MINI PROJECT ============ -->
+        <h2 id="mini-project">14 · Mini project — "SQL Analyst Agent (v0)"</h2>
+        <div class="card">
+          <p><strong>Goal:</strong> A ReAct agent that answers natural-language questions about a SQLite database — the seed of the SQL Agent capstone.</p>
+          <h4>Requirements</h4>
+          <ul>
+            <li>Tools: <code>list_tables()</code>, <code>get_schema(table)</code>, <code>run_sql(query)</code> (read-only!)</li>
+            <li>ReAct loop: inspect schema → write query → observe → answer with the number</li>
+            <li>Step budget + a guard that blocks any non-SELECT statement</li>
+            <li>Log the full trace (thoughts, queries, results)</li>
+          </ul>
+          <h4>Stretch</h4>
+          <ul style="margin-bottom:0"><li>Add reflection: if a query errors, feed the error back and let the agent fix it.</li><li>Add a result-sanity check ("does this answer the question?") before finalizing.</li></ul>
+        </div>
+
+        <!-- ============ 15. REAL PROJECT CONNECTION ============ -->
+        <h2 id="real-project">15 · Real project connection</h2>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Project</th><th>How agent concepts apply</th></tr></thead>
+          <tbody>
+            <tr><td><strong>SQL Analysis Agent</strong></td><td>This module <em>is</em> the core: ReAct loop over schema + query tools, with read-only guards.</td></tr>
+            <tr><td><strong>EDA Agent</strong></td><td>Tools for loading data, computing stats, plotting; reflection to refine the analysis plan.</td></tr>
+            <tr><td><strong>ElasticSearch Investigation Agent</strong></td><td>Iterative, multi-step querying of ES (Agentic RAG, Module 07) with the loop + memory here.</td></tr>
+            <tr><td><strong>Multi-Agent Plant Assistant</strong></td><td>Each specialist is an agent like this; coordination comes in Module 13.</td></tr>
+            <tr><td><strong>MCP Server</strong></td><td>MCP (Module 09) is how these tools get standardized and exposed to any agent.</td></tr>
+          </tbody>
+        </table></div>
+
+        <div class="complete-bar">
+          <div><strong style="font-size:15px">Finished Module 08?</strong><p style="margin:2px 0 0;font-size:13.5px;color:var(--text-muted)">You understand the agent loop. Next: how tools get standardized — MCP.</p></div>
+          <button class="btn" data-complete>Mark module complete</button>
+        </div>
+
+        <div class="page-nav">
+          <a href="07_advanced_rag.html"><div class="dir">← Previous</div><div class="ttl">07 · Advanced RAG</div></a>
+          <a class="next" href="09_mcp.html"><div class="dir">Next →</div><div class="ttl">09 · Model Context Protocol</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

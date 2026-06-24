@@ -1,0 +1,498 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>12 · LangGraph — GenAI Mastery</title>
+<meta name="description" content="LangGraph from first principles: state, nodes, edges, conditional routing, parallel execution, cycles, checkpointing, and human-in-the-loop for building reliable stateful agents.">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body data-page="12">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <div class="brand-mark">G</div>
+        <div class="brand-text"><strong>GenAI Mastery</strong><span>DS → Senior GenAI Engineer</span></div>
+      </a>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search modules…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Frameworks / <b>12 · LangGraph</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Module 12 · Frameworks track</div>
+        <h1>LangGraph</h1>
+        <p class="lead">LCEL chains (Module 10) are acyclic — they flow one way, start to finish. But real agents (Module 08) <em>loop</em>: reason, act, observe, and come back. They branch, run steps in parallel, pause for human approval, and need to remember where they were if they crash. <strong>LangGraph</strong> models your agent as a <strong>state machine</strong> — a graph of nodes and edges over shared state — giving you the control, durability, and human-in-the-loop that production agents demand.</p>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~65 min read</span>
+          <span class="pill">Difficulty · Advanced</span>
+          <span class="pill purple">Prereq · Modules 08, 10</span>
+        </div>
+
+        <!-- ============ 1. EXECUTIVE SUMMARY ============ -->
+        <h2 id="summary">1 · Executive summary</h2>
+        <p><strong>LangGraph</strong> is a library for building stateful, cyclic LLM applications as <strong>graphs</strong>. You define a shared <strong>State</strong> (a typed object), <strong>Nodes</strong> (functions that read state and return updates), and <strong>Edges</strong> (which node runs next — fixed or <strong>conditional</strong>). The graph can contain <strong>cycles</strong> (the agent loop), run nodes in <strong>parallel</strong>, persist progress via <strong>checkpointing</strong>, and <strong>pause for human input</strong>. It's the production-grade orchestration layer for everything in Module 08.</p>
+        <div class="grid grid-3">
+          <div class="card" data-reveal><span class="ico">❓</span><h4>Why it exists</h4><p>Agent loops, branching, retries, parallelism, and human approval can't be expressed as a DAG. LangGraph adds cycles, state, and durability.</p></div>
+          <div class="card" data-reveal><span class="ico">🔧</span><h4>Problem it solves</h4><p>Reliable control flow for agents: explicit state, conditional routing, checkpoint/resume, and human-in-the-loop — instead of an opaque while-loop.</p></div>
+          <div class="card" data-reveal><span class="ico">🌐</span><h4>Where it fits</h4><p>The orchestration engine. Wraps LLM/tool nodes (08), consumes retrievers (10/11), and underpins multi-agent systems (13).</p></div>
+        </div>
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The one idea to remember</div>
+          <p><strong>An agent is a state machine: State + Nodes + Edges.</strong> Nodes mutate shared state; edges decide the path; cycles enable loops; checkpoints make it durable and pausable. You design the control flow explicitly instead of hoping a while-loop behaves.</p></div>
+        </div>
+
+        <!-- ============ 2. FIRST PRINCIPLES ============ -->
+        <h2 id="first-principles">2 · First-principles breakdown</h2>
+
+        <h3>What — a flowchart your agent actually executes</h3>
+        <p>You've drawn agent flowcharts: "call the model → if it wants a tool, run it → loop back → else finish." LangGraph lets you <em>build that exact flowchart in code and run it</em>. Boxes are <strong>nodes</strong> (do something), arrows are <strong>edges</strong> (go somewhere next), diamonds are <strong>conditional edges</strong> (branch on a condition). The data passed along the arrows is the <strong>state</strong>.</p>
+
+        <div class="callout note"><div class="c-ico">📦</div><div class="c-body"><div class="c-title">State is the spine</div>
+        <p>Every node receives the current <strong>State</strong> and returns a partial update. LangGraph merges updates into the state via <strong>reducers</strong> (e.g. "append to the messages list" vs "overwrite this field"). The whole run is just: start state → node updates state → edge picks next node → repeat until END.</p></div></div>
+
+        <h3>Why — control, durability, and trust</h3>
+        <p>A hand-rolled agent loop (Module 08) works but is opaque: hard to add branching, impossible to pause/resume, and a crash loses everything. LangGraph makes the control flow <strong>explicit</strong> (you can see and test every path), <strong>durable</strong> (checkpoints let it resume after a crash or a long-running tool), and <strong>safe</strong> (it can stop at a node and wait for a human to approve before continuing). Those three are exactly what separates a demo agent from a production one.</p>
+
+        <h3>How — the build recipe</h3>
+        <div class="timeline">
+          <div class="step"><h4>1 · Define State</h4><p>A <code>TypedDict</code> (often with reducers) describing everything the graph tracks.</p></div>
+          <div class="step"><h4>2 · Write nodes</h4><p>Functions <code>(state) → partial state update</code>. Each does one thing: call the LLM, run a tool, retrieve, etc.</p></div>
+          <div class="step"><h4>3 · Wire edges</h4><p>Fixed edges (<code>A → B</code>) and conditional edges (a router function picks the next node).</p></div>
+          <div class="step"><h4>4 · Compile</h4><p><code>graph.compile(checkpointer=...)</code> → a runnable, durable app.</p></div>
+          <div class="step"><h4>5 · Invoke/stream</h4><p>Run with a thread id; state persists per thread for memory and resume.</p></div>
+        </div>
+
+        <!-- ============ 3. VISUAL ARCHITECTURE ============ -->
+        <h2 id="architecture">3 · Visual architecture</h2>
+
+        <h3>The canonical agent graph (with a cycle)</h3>
+        <div class="diagram">
+          <svg viewBox="0 0 560 320" width="540" role="img" aria-label="LangGraph agent graph">
+            <defs><marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="var(--text-muted)"/></marker>
+            <marker id="arrowG" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="var(--accent)"/></marker></defs>
+            <!-- START -->
+            <circle cx="270" cy="35" r="18" fill="var(--green-soft)" stroke="var(--green)"/><text class="flow-sub" x="270" y="40" text-anchor="middle" style="fill:var(--green);font-weight:700">START</text>
+            <!-- agent node -->
+            <rect class="flow-node-accent" x="200" y="100" width="140" height="50" rx="10"/><text class="flow-label" x="270" y="122" text-anchor="middle">agent (LLM)</text><text class="flow-sub" x="270" y="139" text-anchor="middle">reason / decide</text>
+            <!-- conditional diamond -->
+            <path d="M270,175 L320,205 L270,235 L220,205 Z" fill="var(--amber-soft)" stroke="var(--amber)"/><text class="flow-sub" x="270" y="209" text-anchor="middle" style="fill:var(--amber);font-weight:700">tool?</text>
+            <!-- tools node -->
+            <rect class="flow-node" x="380" y="180" width="140" height="50" rx="10"/><text class="flow-label" x="450" y="202" text-anchor="middle">tools</text><text class="flow-sub" x="450" y="219" text-anchor="middle">execute call</text>
+            <!-- END -->
+            <circle cx="270" cy="285" r="18" fill="var(--red-soft)" stroke="var(--red)"/><text class="flow-sub" x="270" y="290" text-anchor="middle" style="fill:var(--red);font-weight:700">END</text>
+            <!-- edges -->
+            <path class="flow-arrow" d="M270,53 L270,98"/>
+            <path class="flow-arrow" d="M270,150 L270,173"/>
+            <path class="flow-arrow" style="marker-end:url(#arrowG)" d="M320,205 L378,205"/>
+            <text class="flow-sub" x="350" y="195" style="fill:var(--accent)">yes</text>
+            <path class="flow-arrow" d="M270,235 L270,265"/>
+            <text class="flow-sub" x="285" y="255">no → finish</text>
+            <!-- cycle: tools back to agent -->
+            <path class="flow-arrow flow-dash" style="marker-end:url(#arrowG)" d="M450,180 C450,90 360,80 342,110"/>
+            <text class="flow-sub" x="430" y="100" style="fill:var(--accent)">loop: observe → re-reason</text>
+          </svg>
+          <div class="diagram-caption">Figure 1 · The ReAct loop as a graph: agent → conditional edge → (tools → back to agent) or → END. The dashed cycle is what LCEL can't express.</div>
+        </div>
+
+        <h3>Parallel fan-out / fan-in</h3>
+        <div class="diagram">
+          <svg viewBox="0 0 620 200" width="620" role="img" aria-label="Parallel execution">
+            <defs><marker id="arrow2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="var(--text-muted)"/></marker></defs>
+            <rect class="flow-node-accent" x="20" y="80" width="100" height="46" rx="10"/><text class="flow-label" x="70" y="108" text-anchor="middle">split</text>
+            <rect class="flow-node" x="220" y="20" width="140" height="40" rx="9"/><text class="flow-sub" x="290" y="44" text-anchor="middle" style="fill:var(--text);font-weight:600">search_web</text>
+            <rect class="flow-node" x="220" y="83" width="140" height="40" rx="9"/><text class="flow-sub" x="290" y="107" text-anchor="middle" style="fill:var(--text);font-weight:600">search_docs</text>
+            <rect class="flow-node" x="220" y="146" width="140" height="40" rx="9"/><text class="flow-sub" x="290" y="170" text-anchor="middle" style="fill:var(--text);font-weight:600">query_db</text>
+            <rect class="flow-node-accent" x="460" y="80" width="140" height="46" rx="10"/><text class="flow-label" x="530" y="102" text-anchor="middle">merge</text><text class="flow-sub" x="530" y="118" text-anchor="middle">combine results</text>
+            <path class="flow-arrow" d="M120,95 L218,40"/><path class="flow-arrow" d="M120,103 L218,103"/><path class="flow-arrow" d="M120,111 L218,166"/>
+            <path class="flow-arrow" d="M360,40 L458,95"/><path class="flow-arrow" d="M360,103 L458,103"/><path class="flow-arrow" d="M360,166 L458,111"/>
+          </svg>
+          <div class="diagram-caption">Figure 2 · Multiple edges from one node fan out and run concurrently; a reducer fans them back in. Wall-clock = the slowest branch, not the sum.</div>
+        </div>
+
+        <h3>Human-in-the-loop (interrupt → approve → resume)</h3>
+        <div class="cssflow">
+          <div class="fnode accent">agent proposes action<small>e.g. "delete record 42"</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">interrupt() before tools<small>graph pauses, state checkpointed</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">human reviews &amp; approves/edits</div>
+          <div class="farrow"></div>
+          <div class="fnode accent">resume from checkpoint → execute</div>
+        </div>
+
+        <!-- ============ 4. DEEP TECHNICAL ============ -->
+        <h2 id="deep-dive">4 · Deep technical explanation</h2>
+
+        <h3>State &amp; reducers</h3>
+        <p>State is a typed schema (<code>TypedDict</code>). By default a node's return <em>overwrites</em> matching keys. For accumulating values (like a message list), you attach a <strong>reducer</strong> — e.g. <code>Annotated[list, add_messages]</code> means "append, don't replace." Reducers are also what merge parallel branches deterministically.</p>
+
+        <h3>Nodes &amp; edges</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Concept</th><th>What it is</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Node</strong></td><td>A function <code>(state) → dict update</code>. The unit of work (LLM call, tool, retrieve).</td></tr>
+            <tr><td><strong>Normal edge</strong></td><td><code>add_edge("a", "b")</code> — always go a → b.</td></tr>
+            <tr><td><strong>Conditional edge</strong></td><td><code>add_conditional_edges("a", router_fn, {...})</code> — a function returns the next node's name based on state.</td></tr>
+            <tr><td><strong>START / END</strong></td><td>Sentinel nodes marking entry and termination.</td></tr>
+            <tr><td><strong>Cycle</strong></td><td>An edge back to an earlier node — the agent loop. Bounded by a <code>recursion_limit</code>.</td></tr>
+          </tbody>
+        </table></div>
+
+        <h3>Conditional routing — the heart of agent control</h3>
+        <p>A router is just a function of state returning a string (the next node). "Did the LLM request a tool?" → <code>"tools"</code> else <code>END</code>. "Is the answer good enough?" → <code>END</code> else <code>"refine"</code> (reflection, Module 08). This is where you encode all the agent's decision logic explicitly and testably.</p>
+
+        <h3>Checkpointing &amp; durability</h3>
+        <p>Compile with a <strong>checkpointer</strong> (in-memory for dev; SQLite/Postgres for prod) and every step's state is saved per <strong>thread_id</strong>. Consequences: (1) <strong>memory</strong> — resume a conversation by reusing the thread; (2) <strong>durability</strong> — crash mid-run and continue from the last checkpoint; (3) <strong>time-travel</strong> — inspect or fork from any past state; (4) <strong>human-in-the-loop</strong> — pause and resume hinge on persisted state.</p>
+
+        <h3>Human-in-the-loop</h3>
+        <p>Use <code>interrupt()</code> inside a node (or compile with <code>interrupt_before=["tools"]</code>) to pause the graph at a decision point. The state is checkpointed; your app surfaces the proposed action to a human; on approval you <code>resume</code> the graph. This is the production mechanism for the "unsafe actions need approval" guard from Module 08.</p>
+
+        <h3>Tradeoffs &amp; limitations</h3>
+        <div class="grid grid-2">
+          <div class="card"><h4>Strengths</h4><ul style="margin-bottom:0"><li>Explicit, testable control flow</li><li>Cycles, branching, parallelism</li><li>Durable checkpoint/resume + memory</li><li>First-class human-in-the-loop</li><li>Streaming of state/events</li></ul></div>
+          <div class="card"><h4>Limits</h4><ul style="margin-bottom:0"><li>More boilerplate than a quick chain</li><li>Steeper learning curve (state/reducers)</li><li>Overkill for simple acyclic pipelines (use LCEL)</li><li>You must still bound loops (recursion_limit)</li></ul></div>
+        </div>
+
+        <!-- ============ 5. INTERACTIVE ============ -->
+        <h2 id="interactive">5 · Interactive: walk the graph</h2>
+        <p>Trace a run through the agent graph — including the cycle and a human approval pause.</p>
+        <div class="demo" data-stepdemo>
+          <div class="demo-title"><span class="badge">DEMO</span> Graph execution trace</div>
+          <div class="demo-stage" style="flex-direction:column;align-items:stretch;gap:8px">
+            <span class="chip" style="text-align:left">START → state = {messages:[user q]}</span>
+            <span class="chip vec" style="text-align:left">node: agent → LLM requests run_sql tool</span>
+            <span class="chip" style="text-align:left">conditional edge: tool? → yes → "tools"</span>
+            <span class="chip tok" style="text-align:left">⏸ interrupt_before tools → human approves query</span>
+            <span class="chip vec" style="text-align:left">node: tools → execute → observation into state</span>
+            <span class="chip" style="text-align:left">edge: tools → agent (cycle)</span>
+            <span class="chip" style="text-align:left">conditional edge: tool? → no → END</span>
+            <span class="chip" style="text-align:left;font-weight:700;background:var(--green-soft);color:var(--green)">✅ final answer from accumulated state</span>
+          </div>
+          <div class="demo-stage" style="margin-top:14px">
+            <button class="btn" data-run>▶ Run graph</button>
+            <button class="btn ghost sm" data-reset>Reset</button>
+          </div>
+          <p style="font-size:12.5px;color:var(--text-muted);margin:14px 0 0">Every transition is explicit and inspectable. The pause at <code>interrupt_before</code> is durable — the graph could wait minutes or hours for approval, resuming from the exact checkpoint.</p>
+        </div>
+
+        <!-- ============ 6. PYTHON ============ -->
+        <h2 id="python">6 · Practical Python</h2>
+
+        <h3>Minimal — state, nodes, a conditional edge</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> graph_minimal.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">from</span> typing <span class="tok-kw">import</span> Annotated, TypedDict
+<span class="tok-kw">from</span> langgraph.graph <span class="tok-kw">import</span> StateGraph, START, END
+<span class="tok-kw">from</span> langgraph.graph.message <span class="tok-kw">import</span> add_messages
+
+<span class="tok-kw">class</span> <span class="tok-cls">State</span>(TypedDict):
+    messages: Annotated[<span class="tok-cls">list</span>, add_messages]   <span class="tok-com"># reducer = append, not overwrite</span>
+
+<span class="tok-kw">def</span> <span class="tok-fn">agent</span>(state: State):
+    last = state[<span class="tok-str">"messages"</span>][-<span class="tok-num">1</span>].content
+    reply = <span class="tok-str">f"Echo: {last}"</span>                    <span class="tok-com"># pretend LLM call</span>
+    <span class="tok-kw">return</span> {<span class="tok-str">"messages"</span>: [{<span class="tok-str">"role"</span>: <span class="tok-str">"assistant"</span>, <span class="tok-str">"content"</span>: reply}]}
+
+<span class="tok-kw">def</span> <span class="tok-fn">route</span>(state: State):              <span class="tok-com"># conditional edge fn → next node name</span>
+    <span class="tok-kw">return</span> END <span class="tok-kw">if</span> <span class="tok-str">"bye"</span> <span class="tok-kw">in</span> state[<span class="tok-str">"messages"</span>][-<span class="tok-num">1</span>].content.<span class="tok-fn">lower</span>() <span class="tok-kw">else</span> <span class="tok-str">"agent"</span>
+
+g = <span class="tok-fn">StateGraph</span>(State)
+g.<span class="tok-fn">add_node</span>(<span class="tok-str">"agent"</span>, agent)
+g.<span class="tok-fn">add_edge</span>(START, <span class="tok-str">"agent"</span>)
+g.<span class="tok-fn">add_conditional_edges</span>(<span class="tok-str">"agent"</span>, route, {<span class="tok-str">"agent"</span>: <span class="tok-str">"agent"</span>, END: END})
+app = g.<span class="tok-fn">compile</span>()
+<span class="tok-fn">print</span>(app.<span class="tok-fn">invoke</span>({<span class="tok-str">"messages"</span>: [{<span class="tok-str">"role"</span>: <span class="tok-str">"user"</span>, <span class="tok-str">"content"</span>: <span class="tok-str">"hi"</span>}]}))</code></pre>
+        </div>
+
+        <h3>Intermediate — a real ReAct agent with tools &amp; memory</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> react_graph.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">from</span> typing <span class="tok-kw">import</span> Annotated, TypedDict
+<span class="tok-kw">from</span> langgraph.graph <span class="tok-kw">import</span> StateGraph, START, END
+<span class="tok-kw">from</span> langgraph.graph.message <span class="tok-kw">import</span> add_messages
+<span class="tok-kw">from</span> langgraph.prebuilt <span class="tok-kw">import</span> ToolNode
+<span class="tok-kw">from</span> langgraph.checkpoint.memory <span class="tok-kw">import</span> MemorySaver
+<span class="tok-kw">from</span> langchain_openai <span class="tok-kw">import</span> ChatOpenAI
+<span class="tok-kw">from</span> langchain_core.tools <span class="tok-kw">import</span> tool
+
+<span class="tok-dec">@tool</span>
+<span class="tok-kw">def</span> <span class="tok-fn">get_weather</span>(city: <span class="tok-cls">str</span>) -> <span class="tok-cls">str</span>:
+    <span class="tok-str">"""Current weather for a city."""</span>
+    <span class="tok-kw">return</span> <span class="tok-str">f"{city}: 22°C clear"</span>
+
+tools = [get_weather]
+model = <span class="tok-fn">ChatOpenAI</span>(model=<span class="tok-str">"gpt-4o-mini"</span>, temperature=<span class="tok-num">0</span>).<span class="tok-fn">bind_tools</span>(tools)
+
+<span class="tok-kw">class</span> <span class="tok-cls">State</span>(TypedDict):
+    messages: Annotated[<span class="tok-cls">list</span>, add_messages]
+
+<span class="tok-kw">def</span> <span class="tok-fn">agent</span>(state): <span class="tok-kw">return</span> {<span class="tok-str">"messages"</span>: [model.<span class="tok-fn">invoke</span>(state[<span class="tok-str">"messages"</span>])]}
+
+<span class="tok-kw">def</span> <span class="tok-fn">should_continue</span>(state):          <span class="tok-com"># conditional routing</span>
+    <span class="tok-kw">return</span> <span class="tok-str">"tools"</span> <span class="tok-kw">if</span> state[<span class="tok-str">"messages"</span>][-<span class="tok-num">1</span>].tool_calls <span class="tok-kw">else</span> END
+
+g = <span class="tok-fn">StateGraph</span>(State)
+g.<span class="tok-fn">add_node</span>(<span class="tok-str">"agent"</span>, agent)
+g.<span class="tok-fn">add_node</span>(<span class="tok-str">"tools"</span>, <span class="tok-fn">ToolNode</span>(tools))      <span class="tok-com"># prebuilt tool executor</span>
+g.<span class="tok-fn">add_edge</span>(START, <span class="tok-str">"agent"</span>)
+g.<span class="tok-fn">add_conditional_edges</span>(<span class="tok-str">"agent"</span>, should_continue, [<span class="tok-str">"tools"</span>, END])
+g.<span class="tok-fn">add_edge</span>(<span class="tok-str">"tools"</span>, <span class="tok-str">"agent"</span>)            <span class="tok-com"># the cycle!</span>
+
+app = g.<span class="tok-fn">compile</span>(checkpointer=<span class="tok-fn">MemorySaver</span>())   <span class="tok-com"># durable + memory</span>
+cfg = {<span class="tok-str">"configurable"</span>: {<span class="tok-str">"thread_id"</span>: <span class="tok-str">"u1"</span>}}    <span class="tok-com"># per-thread state</span>
+<span class="tok-kw">for</span> ev <span class="tok-kw">in</span> app.<span class="tok-fn">stream</span>({<span class="tok-str">"messages"</span>: [(<span class="tok-str">"user"</span>, <span class="tok-str">"weather in Oslo?"</span>)]}, cfg):
+    <span class="tok-fn">print</span>(ev)</code></pre>
+        </div>
+
+        <h3>Intermediate+ — human-in-the-loop &amp; parallel fan-out</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> hitl_parallel.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-com"># --- Human-in-the-loop: pause before the tools node ---</span>
+app = g.<span class="tok-fn">compile</span>(checkpointer=<span class="tok-fn">MemorySaver</span>(), interrupt_before=[<span class="tok-str">"tools"</span>])
+cfg = {<span class="tok-str">"configurable"</span>: {<span class="tok-str">"thread_id"</span>: <span class="tok-str">"t1"</span>}}
+
+app.<span class="tok-fn">invoke</span>({<span class="tok-str">"messages"</span>: [(<span class="tok-str">"user"</span>, <span class="tok-str">"delete record 42"</span>)]}, cfg)   <span class="tok-com"># runs, then PAUSES</span>
+state = app.<span class="tok-fn">get_state</span>(cfg)
+<span class="tok-fn">print</span>(<span class="tok-str">"proposed:"</span>, state.values[<span class="tok-str">"messages"</span>][-<span class="tok-num">1</span>].tool_calls)   <span class="tok-com"># show human</span>
+<span class="tok-com"># ... human approves ...</span>
+app.<span class="tok-fn">invoke</span>(<span class="tok-kw">None</span>, cfg)                       <span class="tok-com"># resume from checkpoint → executes</span>
+
+<span class="tok-com"># --- Parallel fan-out: 3 edges from "split" run concurrently ---</span>
+g2 = <span class="tok-fn">StateGraph</span>(State)
+<span class="tok-kw">for</span> n <span class="tok-kw">in</span> [<span class="tok-str">"split"</span>, <span class="tok-str">"web"</span>, <span class="tok-str">"docs"</span>, <span class="tok-str">"db"</span>, <span class="tok-str">"merge"</span>]:
+    g2.<span class="tok-fn">add_node</span>(n, globals()[n] <span class="tok-kw">if</span> n <span class="tok-kw">in</span> globals() <span class="tok-kw">else</span> (<span class="tok-kw">lambda</span> s: s))
+g2.<span class="tok-fn">add_edge</span>(START, <span class="tok-str">"split"</span>)
+<span class="tok-kw">for</span> b <span class="tok-kw">in</span> [<span class="tok-str">"web"</span>, <span class="tok-str">"docs"</span>, <span class="tok-str">"db"</span>]:
+    g2.<span class="tok-fn">add_edge</span>(<span class="tok-str">"split"</span>, b)            <span class="tok-com"># fan-out (parallel)</span>
+    g2.<span class="tok-fn">add_edge</span>(b, <span class="tok-str">"merge"</span>)            <span class="tok-com"># fan-in (reducer merges)</span>
+g2.<span class="tok-fn">add_edge</span>(<span class="tok-str">"merge"</span>, END)</code></pre>
+        </div>
+
+        <h3>Production — durable graph with Postgres checkpointing &amp; recursion guard</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> prod_graph.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">from</span> langgraph.checkpoint.postgres <span class="tok-kw">import</span> PostgresSaver
+<span class="tok-kw">from</span> fastapi <span class="tok-kw">import</span> FastAPI
+<span class="tok-kw">from</span> pydantic <span class="tok-kw">import</span> BaseModel
+
+<span class="tok-com"># Durable checkpointer → survives restarts, enables resume + audit.</span>
+checkpointer = PostgresSaver.<span class="tok-fn">from_conn_string</span>(<span class="tok-str">"postgresql://localhost/agents"</span>)
+checkpointer.<span class="tok-fn">setup</span>()
+app_graph = g.<span class="tok-fn">compile</span>(checkpointer=checkpointer,
+                       interrupt_before=[<span class="tok-str">"tools"</span>])     <span class="tok-com"># HITL for risky tools</span>
+
+api = <span class="tok-fn">FastAPI</span>()
+<span class="tok-kw">class</span> <span class="tok-cls">Msg</span>(BaseModel): text: <span class="tok-cls">str</span>; thread: <span class="tok-cls">str</span>
+
+<span class="tok-dec">@api.post</span>(<span class="tok-str">"/chat"</span>)
+<span class="tok-kw">def</span> <span class="tok-fn">chat</span>(m: Msg):
+    cfg = {<span class="tok-str">"configurable"</span>: {<span class="tok-str">"thread_id"</span>: m.thread},
+           <span class="tok-str">"recursion_limit"</span>: <span class="tok-num">25</span>}             <span class="tok-com"># bound the cycle (Module 08 guard)</span>
+    result = app_graph.<span class="tok-fn">invoke</span>({<span class="tok-str">"messages"</span>: [(<span class="tok-str">"user"</span>, m.text)]}, cfg)
+    snap = app_graph.<span class="tok-fn">get_state</span>(cfg)
+    pending = snap.next                              <span class="tok-com"># non-empty ⇒ paused for approval</span>
+    <span class="tok-kw">return</span> {<span class="tok-str">"messages"</span>: result[<span class="tok-str">"messages"</span>][-<span class="tok-num">1</span>].content,
+            <span class="tok-str">"awaiting_approval"</span>: <span class="tok-fn">bool</span>(pending)}
+
+<span class="tok-dec">@api.post</span>(<span class="tok-str">"/approve"</span>)
+<span class="tok-kw">def</span> <span class="tok-fn">approve</span>(thread: <span class="tok-cls">str</span>):
+    cfg = {<span class="tok-str">"configurable"</span>: {<span class="tok-str">"thread_id"</span>: thread}}
+    <span class="tok-kw">return</span> {<span class="tok-str">"resumed"</span>: app_graph.<span class="tok-fn">invoke</span>(<span class="tok-kw">None</span>, cfg)}   <span class="tok-com"># continue from checkpoint</span></code></pre>
+        </div>
+        <div class="callout warn"><div class="c-ico">🛡️</div><div class="c-body"><p>Every Module 08 agent guard has a clean home here: <code>recursion_limit</code> bounds loops; <code>interrupt_before</code> + Postgres checkpoints give durable human approval and audit; conditional edges make every decision explicit and testable. <strong>LangGraph turns the opaque while-loop into a system you can reason about.</strong></p></div></div>
+
+        <!-- ============ 7. OLLAMA ============ -->
+        <h2 id="ollama">7 · Ollama implementation</h2>
+        <p>LangGraph orchestrates any model — point the agent node at a local model for a fully offline stateful agent.</p>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> local_graph.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">from</span> langchain_ollama <span class="tok-kw">import</span> ChatOllama
+<span class="tok-kw">from</span> langgraph.prebuilt <span class="tok-kw">import</span> create_react_agent
+<span class="tok-kw">from</span> langchain_core.tools <span class="tok-kw">import</span> tool
+
+<span class="tok-dec">@tool</span>
+<span class="tok-kw">def</span> <span class="tok-fn">inventory</span>(item: <span class="tok-cls">str</span>) -> <span class="tok-cls">str</span>:
+    <span class="tok-str">"""Stock count for an item."""</span>
+    <span class="tok-kw">return</span> <span class="tok-str">f"{item}: 42 units"</span>
+
+<span class="tok-com"># Prebuilt ReAct agent graph backed by a LOCAL model — offline + stateful</span>
+model = <span class="tok-fn">ChatOllama</span>(model=<span class="tok-str">"qwen2.5"</span>, temperature=<span class="tok-num">0</span>)
+agent = <span class="tok-fn">create_react_agent</span>(model, tools=[inventory])
+
+<span class="tok-kw">for</span> ev <span class="tok-kw">in</span> agent.<span class="tok-fn">stream</span>({<span class="tok-str">"messages"</span>: [(<span class="tok-str">"user"</span>, <span class="tok-str">"how many pumps in stock?"</span>)]}):
+    <span class="tok-fn">print</span>(ev)</code></pre>
+        </div>
+        <div class="callout note"><div class="c-ico">⚙️</div><div class="c-body"><p><code>create_react_agent</code> is the prebuilt version of the graph you wired by hand in §6 — great for getting started. Build the graph explicitly when you need custom routing, parallelism, or HITL. Local models flail more (Module 08), so keep <code>recursion_limit</code> tight and tools well-described.</p></div></div>
+
+        <!-- ============ 8. INDUSTRY ============ -->
+        <h2 id="industry">8 · Industry perspective</h2>
+        <div class="grid grid-2">
+          <div class="card"><h4>🚀 Startups</h4><p>Start with <code>create_react_agent</code> for speed; graduate to an explicit graph when you need approval gates, branching, or parallel retrieval. The checkpointer gives you durable chat memory almost for free.</p></div>
+          <div class="card"><h4>🏢 Enterprises</h4><p>Value the explicit, auditable control flow, Postgres-checkpointed durability, and human-in-the-loop for consequential actions. The graph <em>is</em> the spec — reviewable, testable, and compliant. LangGraph Platform adds deployment/persistence at scale.</p></div>
+        </div>
+        <h3>When to use what</h3>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Need</th><th>Reach for</th></tr></thead>
+          <tbody>
+            <tr><td>One-way prompt→model→parse pipeline</td><td>LCEL (Module 10)</td></tr>
+            <tr><td>Tuned retrieval over your data</td><td>LlamaIndex (Module 11) — as a node/tool</td></tr>
+            <tr><td>Loops, branching, parallel, HITL, durability</td><td><strong>LangGraph</strong></td></tr>
+            <tr><td>Teams of cooperating agents</td><td>LangGraph multi-agent / CrewAI (Module 13)</td></tr>
+          </tbody>
+        </table></div>
+        <p><strong>Common production challenges:</strong> unbounded cycles (set recursion_limit), state schema drift, choosing the right reducer for parallel merges, checkpoint storage growth, and designing resumable HITL UX.</p>
+
+        <!-- ============ 9. MISTAKES ============ -->
+        <h2 id="mistakes">9 · Top mistakes engineers make</h2>
+        <div class="grid grid-2">
+          <div class="card"><h4>❌ No recursion limit</h4><p>A cyclic graph can loop forever. Always set <code>recursion_limit</code> (and add reflection/escalation).</p></div>
+          <div class="card"><h4>❌ Wrong reducer</h4><p>Overwriting where you meant to append (or vice versa) corrupts state — especially with parallel branches. Choose reducers deliberately.</p></div>
+          <div class="card"><h4>❌ Using LangGraph for a simple chain</h4><p>If there's no loop/branch/state, LCEL is simpler. Don't add a state machine you don't need.</p></div>
+          <div class="card"><h4>❌ In-memory checkpointer in prod</h4><p>State vanishes on restart. Use SQLite/Postgres for durability, resume, and audit.</p></div>
+          <div class="card"><h4>❌ Skipping human-in-the-loop for risky tools</h4><p><code>interrupt_before</code> on destructive nodes is the safety mechanism. Use it.</p></div>
+          <div class="card"><h4>❌ Hiding logic in nodes instead of edges</h4><p>Routing decisions belong in conditional edges (explicit, testable), not buried inside node side effects.</p></div>
+        </div>
+
+        <!-- ============ 10. INTERVIEW ============ -->
+        <h2 id="interview">10 · Interview preparation</h2>
+
+        <details class="collapse"><summary><span class="pill green">Beginner</span> &nbsp;What is LangGraph and why not just use LCEL? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>LangGraph models LLM apps as stateful graphs (state + nodes + edges) that support cycles, branching, parallelism, durability, and human-in-the-loop. LCEL composes acyclic pipelines and can't express loops or pause/resume. Agents inherently loop and branch, so they need a graph, not a DAG.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill green">Beginner</span> &nbsp;What are nodes and edges? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>A node is a function that takes the current state and returns a partial update (the unit of work — an LLM call, a tool, a retrieval). An edge connects nodes: a normal edge always goes A→B; a conditional edge runs a router function that returns the next node's name based on state. START and END are sentinels.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill blue">Intermediate</span> &nbsp;What is a reducer and why does it matter? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>A reducer defines how a node's returned value merges into existing state. By default keys are overwritten; for accumulating fields (like a message list) you use a reducer such as <code>add_messages</code> to append. Reducers are also essential for deterministically merging the outputs of parallel branches — without the right reducer, concurrent updates clobber each other.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill blue">Intermediate</span> &nbsp;How does checkpointing enable memory and human-in-the-loop? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>A checkpointer persists state after each step, keyed by thread_id. Memory: reuse a thread to continue a conversation with full prior state. Human-in-the-loop: <code>interrupt_before</code> a node pauses the graph and checkpoints state; your app shows the proposed action to a human; calling invoke with <code>None</code> on the same thread resumes from that exact checkpoint. Same mechanism enables crash-resume and time-travel debugging.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill amber">Senior</span> &nbsp;Design an agent that must get human approval before any write action. <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Separate read tools from write tools into different nodes (or route by tool risk). Compile with a durable checkpointer and <code>interrupt_before=["write_tools"]</code>. Flow: agent proposes → conditional edge routes a write to the write node → graph pauses and checkpoints → your UI surfaces the proposed call (with diff/dry-run) → human approves/edits/rejects → resume from checkpoint to execute, or inject a rejection message and loop back to the agent. Bound the loop with recursion_limit, log every state transition for audit, and store checkpoints in Postgres so approvals can happen asynchronously (minutes/hours later) and survive restarts.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill amber">Senior</span> &nbsp;How do you run retrieval from three sources concurrently and merge? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>From a single "split" node, add edges to three retrieval nodes (web/docs/db); LangGraph runs nodes with no dependency between them concurrently. Each writes to a state field with an appropriate reducer (e.g. a list that accumulates results) so their outputs merge deterministically at a downstream "merge" node, which all three edge into. Wall-clock becomes the slowest branch, not the sum. Guard each branch with its own error handling so one failure doesn't sink the merge.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill purple">Staff · design</span> &nbsp;Design a durable, multi-step research agent platform on LangGraph. <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Model each workflow as an explicit graph: planner node → parallel retrieval/tool nodes (fan-out with reducers) → synthesis node → reflection node (conditional edge loops back if quality is low). Compile with a <strong>Postgres checkpointer</strong> for durability, resume, and audit; key runs by thread_id for memory and multi-session continuation. Add <code>interrupt_before</code> on consequential nodes for human approval; bound cycles with recursion_limit and step/token budgets (Module 08). Wrap external tools as MCP servers (Module 09) and retrievers as LlamaIndex query engines (Module 11). Add tracing/observability (Module 14) over the event stream, an eval suite over graph trajectories gating deploys, and per-tenant state isolation. Stream state/events to the UI for transparency. The graph is the auditable spec; durability + HITL + explicit routing are what make it production-grade.</p></div></details>
+
+        <!-- ============ 11. QUIZ ============ -->
+        <h2 id="quiz">11 · Knowledge check</h2>
+
+        <div class="quiz">
+          <div class="q">1 · Why can't an LCEL chain implement a ReAct agent loop?</div>
+          <label class="opt">LCEL is too slow</label>
+          <label class="opt" data-correct="true">LCEL composes an acyclic DAG; the agent loop needs a cycle (tools → back to agent)</label>
+          <label class="opt">LCEL can't call models</label>
+          <label class="opt">LCEL doesn't support tools</label>
+          <div class="explain">The ReAct loop revisits the agent node after each tool call — a cycle. LCEL pipelines are one-directional DAGs, so cyclic control flow needs LangGraph.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">2 · A node returns <code>{"messages": [new_msg]}</code> and the list grows instead of being replaced. Why?</div>
+          <label class="opt">A bug</label>
+          <label class="opt" data-correct="true">The state field uses an append reducer (e.g. add_messages)</label>
+          <label class="opt">LangGraph always appends everything</label>
+          <label class="opt">The checkpointer did it</label>
+          <div class="explain">Reducers define merge behavior. <code>Annotated[list, add_messages]</code> appends returns rather than overwriting — essential for conversation state and parallel merges.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">3 · What does <code>interrupt_before=["tools"]</code> do?</div>
+          <label class="opt">Skips the tools node</label>
+          <label class="opt">Runs tools twice</label>
+          <label class="opt" data-correct="true">Pauses the graph (checkpointing state) before tools execute, enabling human approval</label>
+          <label class="opt">Disables checkpointing</label>
+          <div class="explain">It's the human-in-the-loop mechanism: the graph halts before the tools node, persists state, and resumes from that checkpoint once approved.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">4 · Which is essential to prevent an infinite agent loop?</div>
+          <label class="opt">A bigger model</label>
+          <label class="opt">More tools</label>
+          <label class="opt" data-correct="true">A recursion_limit (plus reflection/escalation)</label>
+          <label class="opt">Higher temperature</label>
+          <div class="explain">Cyclic graphs can loop forever. recursion_limit bounds the number of steps; combine with reflection or escalation for graceful termination.</div>
+        </div>
+
+        <!-- ============ 12. ACTIVE RECALL ============ -->
+        <h2 id="recall">12 · Active recall</h2>
+        <p>Answer first, then reveal. Re-test tomorrow and in a week.</p>
+        <details class="recall"><summary><span class="q-ico">Q</span> Name the three core LangGraph building blocks. <span class="chev">›</span></summary><div class="a">State (typed shared data), Nodes (functions that update state), Edges (which node runs next — normal or conditional). Cycles + checkpointing build on these.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> What is a conditional edge? <span class="chev">›</span></summary><div class="a">An edge whose target is decided at runtime by a router function of the current state, returning the next node's name (e.g. "tools" vs END). It's where agent decision logic lives explicitly.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> List the four things checkpointing enables. <span class="chev">›</span></summary><div class="a">Memory (resume a thread), durability (crash-resume), time-travel (inspect/fork past states), and human-in-the-loop (pause/resume).</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> How do you run nodes in parallel and merge them safely? <span class="chev">›</span></summary><div class="a">Add multiple edges from one node (fan-out → concurrent execution); have branches write to a state field with an appropriate reducer; converge their edges on a merge node (fan-in).</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> When do you use LangGraph instead of LCEL? <span class="chev">›</span></summary><div class="a">When you need cycles (agent loops), conditional branching, parallelism, durable state/resume, or human-in-the-loop. For one-way acyclic pipelines, LCEL is simpler.</div></details>
+
+        <!-- ============ 13. EXERCISES ============ -->
+        <h2 id="exercises">13 · Exercises</h2>
+        <div class="callout tip"><div class="c-ico">🟢</div><div class="c-body"><div class="c-title">Easy</div><p>Build the minimal graph from §6. Add a second node and a conditional edge that routes to END when the message contains "stop". Print each event from <code>.stream()</code> to watch the path.</p></div></div>
+        <div class="callout warn"><div class="c-ico">🟡</div><div class="c-body"><div class="c-title">Medium</div><p>Build the ReAct graph with a tool and a <code>MemorySaver</code> checkpointer. Run two turns on the same thread_id and confirm it remembers context. Add <code>interrupt_before=["tools"]</code>, inspect the paused state, and resume.</p></div></div>
+        <div class="callout danger"><div class="c-ico">🔴</div><div class="c-body"><div class="c-title">Hard</div><p>Build a research graph: a planner node, three parallel retrieval nodes (web/docs/db) with a list reducer, a synthesis node, and a reflection node whose conditional edge loops back to synthesis if quality is low (bounded by recursion_limit). Use a Postgres checkpointer and add a human-approval interrupt before any external write. Stream state to a simple UI/console.</p></div></div>
+
+        <!-- ============ 14. MINI PROJECT ============ -->
+        <h2 id="mini-project">14 · Mini project — "Approval-Gated SQL Agent"</h2>
+        <div class="card">
+          <p><strong>Goal:</strong> Turn the Module 08 SQL agent into a durable LangGraph with human approval before any query runs — production-shaped.</p>
+          <h4>Requirements</h4>
+          <ul>
+            <li>State with a message list (add_messages reducer)</li>
+            <li>Nodes: <code>agent</code> (LLM), <code>tools</code> (schema + run_sql), conditional routing on tool calls</li>
+            <li><code>interrupt_before=["tools"]</code> + a durable checkpointer; show the proposed SQL for approval</li>
+            <li><code>recursion_limit</code> guard; expose <code>/chat</code> and <code>/approve</code> via FastAPI</li>
+          </ul>
+          <h4>Stretch</h4>
+          <ul style="margin-bottom:0"><li>Add a reflection node that retries on SQL errors (loop back to agent).</li><li>Add parallel retrieval of table schemas before query generation.</li></ul>
+        </div>
+
+        <!-- ============ 15. REAL PROJECT CONNECTION ============ -->
+        <h2 id="real-project">15 · Real project connection</h2>
+        <div class="table-wrap"><table>
+          <thead><tr><th>Project</th><th>How LangGraph applies</th></tr></thead>
+          <tbody>
+            <tr><td><strong>SQL Analysis Agent</strong></td><td>Explicit graph: agent ↔ tools cycle, approval interrupt before queries, durable state.</td></tr>
+            <tr><td><strong>EDA Agent</strong></td><td>Plan → parallel analysis nodes → synthesize → reflect loop; checkpointed long-running runs.</td></tr>
+            <tr><td><strong>ElasticSearch Investigation Agent</strong></td><td>Iterative Agentic-RAG cycle (Module 07) with conditional "need more evidence?" routing.</td></tr>
+            <tr><td><strong>Multi-Agent Plant Assistant</strong></td><td>Supervisor graph routing to specialist agents (Module 13) — multi-agent as nodes.</td></tr>
+            <tr><td><strong>Enterprise Platform</strong></td><td>Durable, auditable, HITL-gated workflows with Postgres checkpointing and tracing.</td></tr>
+          </tbody>
+        </table></div>
+
+        <div class="complete-bar">
+          <div><strong style="font-size:15px">Finished Module 12?</strong><p style="margin:2px 0 0;font-size:13.5px;color:var(--text-muted)">You can orchestrate durable, controllable agents. Next: teams of them.</p></div>
+          <button class="btn" data-complete>Mark module complete</button>
+        </div>
+
+        <div class="page-nav">
+          <a href="11_llamaindex.html"><div class="dir">← Previous</div><div class="ttl">11 · LlamaIndex</div></a>
+          <a class="next" href="13_multi_agents.html"><div class="dir">Next →</div><div class="ttl">13 · Multi-Agent Systems</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>

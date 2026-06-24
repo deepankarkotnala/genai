@@ -1,0 +1,484 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>01 · Foundations of LLMs — GenAI Mastery</title>
+<meta name="description" content="First-principles foundations of Large Language Models: next-token prediction, tokenization, context windows, decoding, temperature, and where LLMs fit in the GenAI stack.">
+<link rel="stylesheet" href="../assets/styles.css">
+</head>
+<body data-page="01">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <div class="brand-mark">G</div>
+        <div class="brand-text"><strong>GenAI Mastery</strong><span>DS → Senior GenAI Engineer</span></div>
+      </a>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search modules…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Foundations / <b>01 · Foundations of LLMs</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Module 01 · Foundations track</div>
+        <h1>Foundations of Large Language Models</h1>
+        <p class="lead">Before you build RAG pipelines or multi-agent systems, you need an unshakable mental model of what an LLM actually <em>is</em>: a probabilistic next-token predictor wrapped around a transformer. Everything else in this course is a technique for steering, grounding, or orchestrating this one primitive.</p>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~50 min read</span>
+          <span class="pill">Difficulty · Beginner→Intermediate</span>
+          <span class="pill purple">Prereq · Python, basic ML</span>
+        </div>
+
+        <!-- ============ 1. EXECUTIVE SUMMARY ============ -->
+        <h2 id="summary">1 · Executive summary</h2>
+        <p>A <strong>Large Language Model (LLM)</strong> is a neural network trained on a vast corpus of text to do one deceptively simple thing: <strong>given a sequence of tokens, predict the probability distribution of the next token</strong>. That's it. Chat, summarization, code generation, reasoning, tool-calling — all of it emerges from repeatedly sampling the next token.</p>
+        <div class="grid grid-3">
+          <div class="card" data-reveal><span class="ico">❓</span><h4>Why it exists</h4><p>To capture the statistical structure of human language and knowledge in a single differentiable function you can query in natural language.</p></div>
+          <div class="card" data-reveal><span class="ico">🔧</span><h4>Problem it solves</h4><p>One model replaces thousands of bespoke NLP pipelines (classification, extraction, generation) with a single promptable interface.</p></div>
+          <div class="card" data-reveal><span class="ico">🌐</span><h4>Where it fits</h4><p>The LLM is the <em>reasoning core</em>. Embeddings, vector DBs, RAG, and agents exist to feed it the right context and act on its output.</p></div>
+        </div>
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The one sentence to remember</div>
+          <p>An LLM is a function <code>f(tokens) → probability over next token</code>. Generation is calling that function in a loop. Every advanced technique in GenAI is about <em>what you put into the tokens</em> and <em>what you do with the output</em>.</p></div>
+        </div>
+
+        <!-- ============ 2. FIRST PRINCIPLES ============ -->
+        <h2 id="first-principles">2 · First-principles breakdown</h2>
+
+        <h3>What — the autocomplete that learned to reason</h3>
+        <p>Imagine the world's most sophisticated phone autocomplete. You give it <em>"The capital of France is"</em> and it confidently suggests <em>"Paris"</em>. Now scale that intuition up by a trillion: train on most of the public internet, books, and code, with a network large enough to compress patterns about grammar, facts, logic, and style. The result isn't a database — it's a <strong>compressed, probabilistic model of how text tends to continue</strong>.</p>
+        <p>Crucially, the model has <strong>no memory between calls</strong> and <strong>no concept of truth</strong>. It produces the most <em>statistically plausible</em> continuation given its training. When plausible and true diverge, you get a <span class="pill amber">hallucination</span> — a central theme we'll fix with RAG in later modules.</p>
+
+        <h3>Why — emergence from scale</h3>
+        <p>Why does "predict the next word" produce something that can write code or pass exams? Because to predict the next token <em>well</em> across billions of diverse examples, the network is forced to learn the underlying structure: syntax, semantics, world facts, and reasoning shortcuts. Capabilities like in-context learning and chain-of-thought <strong>emerge</strong> once the model and data are large enough — they were never explicitly programmed.</p>
+
+        <h3>How — the generation loop</h3>
+        <p>Text generation is autoregressive: the model predicts one token, appends it to the input, and repeats. The expensive forward pass through the transformer happens <em>once per token</em>.</p>
+        <div class="cssflow">
+          <div class="fnode accent">Your prompt (text)<small>"Explain RAG in one line"</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">Tokenizer<small>text → token IDs</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">Transformer forward pass<small>→ logits over vocabulary</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">Sampling (temperature, top-p)<small>pick the next token</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">Append token → loop until stop<small>repeat per token</small></div>
+          <div class="farrow"></div>
+          <div class="fnode accent">Detokenize → answer</div>
+        </div>
+
+        <div class="callout note">
+          <div class="c-ico">📐</div>
+          <div class="c-body"><div class="c-title">Feynman check</div>
+          <p>If you can't explain to a colleague why generating a 500-token answer costs roughly 500 forward passes (and why that makes long outputs slow and expensive), re-read the loop above before moving on.</p></div>
+        </div>
+
+        <!-- ============ 3. VISUAL ARCHITECTURE ============ -->
+        <h2 id="architecture">3 · Visual architecture</h2>
+        <p>Here is the full inference pipeline as a single animated diagram. The dashed arrow is the autoregressive feedback loop — the heart of generation.</p>
+        <div class="diagram">
+          <svg viewBox="0 0 760 300" width="760" role="img" aria-label="LLM inference pipeline">
+            <defs>
+              <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L8,3 L0,6 Z" fill="var(--text-muted)"/>
+              </marker>
+            </defs>
+            <!-- nodes -->
+            <g>
+              <rect class="flow-node-accent" x="20" y="120" width="120" height="60" rx="10"/>
+              <text class="flow-label" x="80" y="146" text-anchor="middle">Prompt</text>
+              <text class="flow-sub" x="80" y="164" text-anchor="middle">raw text</text>
+            </g>
+            <g>
+              <rect class="flow-node" x="180" y="120" width="120" height="60" rx="10"/>
+              <text class="flow-label" x="240" y="146" text-anchor="middle">Tokenizer</text>
+              <text class="flow-sub" x="240" y="164" text-anchor="middle">→ token IDs</text>
+            </g>
+            <g>
+              <rect class="flow-node" x="340" y="100" width="150" height="100" rx="10"/>
+              <text class="flow-label" x="415" y="140" text-anchor="middle">Transformer</text>
+              <text class="flow-sub" x="415" y="158" text-anchor="middle">N decoder layers</text>
+              <text class="flow-sub" x="415" y="174" text-anchor="middle">→ logits</text>
+            </g>
+            <g>
+              <rect class="flow-node" x="530" y="120" width="120" height="60" rx="10"/>
+              <text class="flow-label" x="590" y="146" text-anchor="middle">Sampling</text>
+              <text class="flow-sub" x="590" y="164" text-anchor="middle">temp · top-p</text>
+            </g>
+            <g>
+              <rect class="flow-node-accent" x="660" y="120" width="80" height="60" rx="10"/>
+              <text class="flow-label" x="700" y="146" text-anchor="middle">Token</text>
+              <text class="flow-sub" x="700" y="164" text-anchor="middle">output</text>
+            </g>
+            <!-- arrows -->
+            <path class="flow-arrow" d="M140,150 L178,150"/>
+            <path class="flow-arrow" d="M300,150 L338,150"/>
+            <path class="flow-arrow" d="M490,150 L528,150"/>
+            <path class="flow-arrow" d="M650,150 L658,150"/>
+            <!-- feedback loop -->
+            <path class="flow-arrow flow-dash" d="M700,120 C700,40 240,40 240,118"/>
+            <text class="flow-sub" x="470" y="32" text-anchor="middle">autoregressive feedback — append token, predict again</text>
+          </svg>
+          <div class="diagram-caption">Figure 1 · One forward pass produces one token. The dashed loop repeats until a stop condition.</div>
+        </div>
+
+        <!-- ============ 4. DEEP TECHNICAL ============ -->
+        <h2 id="deep-dive">4 · Deep technical explanation</h2>
+
+        <h3>Tokenization — the model never sees characters</h3>
+        <p>Models operate on <strong>tokens</strong>, not words or characters. Modern LLMs use <strong>Byte-Pair Encoding (BPE)</strong> or similar subword schemes: common words become a single token, rare words split into pieces. A rough rule: <strong>1 token ≈ 4 characters ≈ 0.75 words</strong> in English.</p>
+        <div class="callout warn">
+          <div class="c-ico">⚠️</div>
+          <div class="c-body"><div class="c-title">Why this matters in production</div>
+          <p>Pricing, latency, and context limits are all measured in tokens — not words. Non-English text and code often tokenize less efficiently (more tokens per character), inflating cost. Always estimate with a real tokenizer, never by counting words.</p></div>
+        </div>
+
+        <h3>Logits, softmax, and the probability distribution</h3>
+        <p>The final transformer layer outputs a <strong>logit</strong> (raw score) for every token in the vocabulary (often 100k+ tokens). A <code>softmax</code> turns these into a probability distribution that sums to 1. Decoding is how we pick from that distribution.</p>
+
+        <h3>Decoding strategies & the temperature dial</h3>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Strategy</th><th>How it picks</th><th>Use when</th></tr></thead>
+            <tbody>
+              <tr><td><strong>Greedy</strong></td><td>Always the highest-probability token</td><td>Deterministic extraction, structured output</td></tr>
+              <tr><td><strong>Temperature</strong></td><td>Scales logits before softmax. Low = sharp/safe, high = flat/creative</td><td>0.0–0.3 for facts & code; 0.7–1.0 for ideation</td></tr>
+              <tr><td><strong>Top-k</strong></td><td>Sample only from the k most likely tokens</td><td>Cap the tail of nonsense tokens</td></tr>
+              <tr><td><strong>Top-p (nucleus)</strong></td><td>Sample from smallest set whose cumulative prob ≥ p</td><td>The modern default; adapts to confidence</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <h3>The context window & the KV cache</h3>
+        <p>The <strong>context window</strong> is the maximum number of tokens (prompt + generated output) the model can attend to at once — 8k, 128k, 200k, or 1M depending on the model. Two consequences every senior engineer internalizes:</p>
+        <ul>
+          <li><strong>Cost & latency grow with context.</strong> Attention is roughly quadratic in sequence length; a 100k-token prompt is dramatically more expensive than 2k.</li>
+          <li><strong>The KV cache</strong> stores the keys/values of already-processed tokens so each new token only attends to cached state instead of recomputing everything — this is what makes generation feasible, and what consumes GPU memory in local deployment (Module 03).</li>
+        </ul>
+
+        <h3>Training stages — why a model "follows instructions"</h3>
+        <div class="timeline">
+          <div class="step"><h4>1 · Pre-training</h4><p>Self-supervised next-token prediction on trillions of tokens. Produces a <em>base model</em> that completes text but doesn't reliably follow instructions.</p></div>
+          <div class="step"><h4>2 · Supervised fine-tuning (SFT)</h4><p>Train on curated instruction→response pairs so the model learns the "assistant" format.</p></div>
+          <div class="step"><h4>3 · Preference alignment (RLHF / DPO)</h4><p>Optimize toward responses humans prefer, improving helpfulness, harmlessness, and honesty.</p></div>
+        </div>
+
+        <h3>Tradeoffs & limitations</h3>
+        <div class="grid grid-2">
+          <div class="card"><h4>Strengths</h4><ul style="margin-bottom:0"><li>Zero/few-shot generalization</li><li>Natural-language interface</li><li>Strong on synthesis & style</li></ul></div>
+          <div class="card"><h4>Hard limits</h4><ul style="margin-bottom:0"><li>Hallucinates plausible falsehoods</li><li>Knowledge frozen at training cutoff</li><li>No native access to private/live data → <strong>RAG</strong></li><li>Stateless between calls → <strong>memory/agents</strong></li></ul></div>
+        </div>
+
+        <!-- ============ 5. INTERACTIVE ============ -->
+        <h2 id="interactive">5 · Interactive: watch generation happen</h2>
+        <p>Click through a single decoding step. The model produces a distribution; sampling picks one token; the loop repeats.</p>
+        <div class="demo" data-stepdemo>
+          <div class="demo-title"><span class="badge">DEMO</span> Next-token prediction for "The capital of France is ___"</div>
+          <p style="font-size:13.5px;margin-bottom:6px">Candidate distribution from the model (illustrative):</p>
+          <div class="demo-stage">
+            <span class="chip vec">Paris &nbsp;0.91</span>
+            <span class="chip">Lyon &nbsp;0.03</span>
+            <span class="chip">a &nbsp;0.02</span>
+            <span class="chip">the &nbsp;0.01</span>
+            <span class="chip">located &nbsp;0.01</span>
+          </div>
+          <div class="demo-stage" style="margin-top:18px">
+            <button class="btn" data-run>▶ Sample next token</button>
+            <button class="btn ghost sm" data-reset>Reset</button>
+          </div>
+          <div class="demo-stage" style="margin-top:14px">
+            <span class="chip tok">The</span><span class="chip arrow">→</span>
+            <span class="chip tok">capital</span><span class="chip arrow">→</span>
+            <span class="chip tok">of</span><span class="chip arrow">→</span>
+            <span class="chip tok">France</span><span class="chip arrow">→</span>
+            <span class="chip tok">is</span><span class="chip arrow">→</span>
+            <span class="chip vec" style="font-weight:700">Paris ✓</span>
+          </div>
+          <p style="font-size:12.5px;color:var(--text-muted);margin:14px 0 0">With temperature ≈ 0, "Paris" (0.91) wins every time. Crank temperature up and lower-probability tokens occasionally win — that's "creativity" and also where hallucinations creep in.</p>
+        </div>
+
+        <!-- ============ 6. PYTHON ============ -->
+        <h2 id="python">6 · Practical Python</h2>
+
+        <h3>Minimal — call an LLM &amp; inspect tokens</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> minimal.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-com"># Provider-agnostic call. Swap the client for OpenAI, Anthropic, or local Ollama.</span>
+<span class="tok-kw">from</span> anthropic <span class="tok-kw">import</span> Anthropic
+
+client = <span class="tok-fn">Anthropic</span>()  <span class="tok-com"># reads ANTHROPIC_API_KEY from env</span>
+
+resp = client.messages.<span class="tok-fn">create</span>(
+    model=<span class="tok-str">"claude-sonnet-4-6"</span>,
+    max_tokens=<span class="tok-num">200</span>,
+    temperature=<span class="tok-num">0</span>,            <span class="tok-com"># deterministic — best for facts</span>
+    messages=[{<span class="tok-str">"role"</span>: <span class="tok-str">"user"</span>, <span class="tok-str">"content"</span>: <span class="tok-str">"Explain RAG in one sentence."</span>}],
+)
+<span class="tok-fn">print</span>(resp.content[<span class="tok-num">0</span>].text)
+<span class="tok-fn">print</span>(<span class="tok-str">"input tokens:"</span>, resp.usage.input_tokens,
+      <span class="tok-str">"output tokens:"</span>, resp.usage.output_tokens)</code></pre>
+        </div>
+
+        <h3>Intermediate — count tokens &amp; estimate cost before you call</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> estimate.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-com"># tiktoken works for OpenAI-family tokenization; use it as a fast estimator.</span>
+<span class="tok-kw">import</span> tiktoken
+
+enc = tiktoken.<span class="tok-fn">get_encoding</span>(<span class="tok-str">"cl100k_base"</span>)
+
+<span class="tok-kw">def</span> <span class="tok-fn">estimate_cost</span>(prompt: <span class="tok-cls">str</span>, expected_out: <span class="tok-cls">int</span> = <span class="tok-num">300</span>,
+                  in_per_mtok=<span class="tok-num">3.0</span>, out_per_mtok=<span class="tok-num">15.0</span>) -> <span class="tok-cls">dict</span>:
+    n_in = <span class="tok-fn">len</span>(enc.<span class="tok-fn">encode</span>(prompt))
+    cost = (n_in / <span class="tok-num">1e6</span>) * in_per_mtok + (expected_out / <span class="tok-num">1e6</span>) * out_per_mtok
+    <span class="tok-kw">return</span> {<span class="tok-str">"input_tokens"</span>: n_in, <span class="tok-str">"est_usd"</span>: <span class="tok-fn">round</span>(cost, <span class="tok-num">5</span>)}
+
+<span class="tok-fn">print</span>(<span class="tok-fn">estimate_cost</span>(<span class="tok-str">"Summarize this 2-page contract..."</span> * <span class="tok-num">50</span>))
+<span class="tok-com"># {'input_tokens': 750, 'est_usd': 0.00675}</span></code></pre>
+        </div>
+
+        <h3>Production — a resilient client with retries, streaming &amp; logging</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> llm_client.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">import</span> time, logging
+<span class="tok-kw">from</span> anthropic <span class="tok-kw">import</span> Anthropic, APIStatusError, APIConnectionError
+
+log = logging.<span class="tok-fn">getLogger</span>(<span class="tok-str">"llm"</span>)
+
+<span class="tok-kw">class</span> <span class="tok-cls">LLMClient</span>:
+    <span class="tok-str">"""Thin production wrapper: retries, timeout, token accounting, streaming."""</span>
+    <span class="tok-kw">def</span> <span class="tok-fn">__init__</span>(self, model=<span class="tok-str">"claude-sonnet-4-6"</span>, max_retries=<span class="tok-num">3</span>):
+        self.client = <span class="tok-fn">Anthropic</span>(timeout=<span class="tok-num">30</span>)
+        self.model, self.max_retries = model, max_retries
+
+    <span class="tok-kw">def</span> <span class="tok-fn">complete</span>(self, prompt, *, temperature=<span class="tok-num">0</span>, max_tokens=<span class="tok-num">1024</span>):
+        <span class="tok-kw">for</span> attempt <span class="tok-kw">in</span> <span class="tok-fn">range</span>(self.max_retries):
+            <span class="tok-kw">try</span>:
+                t0 = time.<span class="tok-fn">perf_counter</span>()
+                r = self.client.messages.<span class="tok-fn">create</span>(
+                    model=self.model, max_tokens=max_tokens, temperature=temperature,
+                    messages=[{<span class="tok-str">"role"</span>: <span class="tok-str">"user"</span>, <span class="tok-str">"content"</span>: prompt}],
+                )
+                log.<span class="tok-fn">info</span>(<span class="tok-str">"llm.ok"</span>, extra={
+                    <span class="tok-str">"latency_ms"</span>: <span class="tok-fn">int</span>((time.<span class="tok-fn">perf_counter</span>()-t0)*<span class="tok-num">1000</span>),
+                    <span class="tok-str">"in_tok"</span>: r.usage.input_tokens, <span class="tok-str">"out_tok"</span>: r.usage.output_tokens})
+                <span class="tok-kw">return</span> r.content[<span class="tok-num">0</span>].text
+            <span class="tok-kw">except</span> (APIStatusError, APIConnectionError) <span class="tok-kw">as</span> e:
+                wait = <span class="tok-num">2</span> ** attempt          <span class="tok-com"># exponential backoff</span>
+                log.<span class="tok-fn">warning</span>(<span class="tok-str">f"retry {attempt} after {wait}s: {e}"</span>)
+                time.<span class="tok-fn">sleep</span>(wait)
+        <span class="tok-kw">raise</span> <span class="tok-fn">RuntimeError</span>(<span class="tok-str">"LLM unavailable after retries"</span>)
+
+    <span class="tok-kw">def</span> <span class="tok-fn">stream</span>(self, prompt, **kw):           <span class="tok-com"># token-by-token for responsive UIs</span>
+        <span class="tok-kw">with</span> self.client.messages.<span class="tok-fn">stream</span>(
+            model=self.model, max_tokens=kw.<span class="tok-fn">get</span>(<span class="tok-str">"max_tokens"</span>, <span class="tok-num">1024</span>),
+            messages=[{<span class="tok-str">"role"</span>: <span class="tok-str">"user"</span>, <span class="tok-str">"content"</span>: prompt}]) <span class="tok-kw">as</span> s:
+            <span class="tok-kw">for</span> text <span class="tok-kw">in</span> s.text_stream:
+                <span class="tok-kw">yield</span> text</code></pre>
+        </div>
+        <div class="callout note"><div class="c-ico">📌</div><div class="c-body"><p>This <code>LLMClient</code> is the seed of the production patterns in <a href="14_production_genai.html">Module 14</a>. Notice the three pillars already present: <strong>retries</strong>, <strong>token accounting</strong>, and <strong>streaming</strong>.</p></div></div>
+
+        <!-- ============ 7. OLLAMA ============ -->
+        <h2 id="ollama">7 · Ollama implementation</h2>
+        <p>You don't need a cloud API to learn. <strong>Ollama</strong> runs open models locally with a one-line install and an OpenAI-compatible API. We cover it deeply in <a href="03_local_llms.html">Module 03</a>; here's the foundational loop.</p>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> setup.sh</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-com"># 1. Install (macOS/Linux/Windows) from ollama.com, then:</span>
+ollama pull llama3.2        <span class="tok-com"># Meta Llama — great general default</span>
+ollama pull qwen2.5         <span class="tok-com"># Qwen — strong reasoning & multilingual</span>
+ollama pull gemma2          <span class="tok-com"># Google Gemma — small & efficient</span>
+
+<span class="tok-com"># 2. Chat from the terminal</span>
+ollama run llama3.2 <span class="tok-str">"Explain next-token prediction in 2 lines"</span>
+
+<span class="tok-com"># 3. Serve an HTTP API on localhost:11434 (auto-started)</span>
+ollama serve</code></pre>
+        </div>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> local_llm.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-com"># Ollama exposes an OpenAI-compatible endpoint — reuse familiar tooling.</span>
+<span class="tok-kw">from</span> openai <span class="tok-kw">import</span> OpenAI
+
+local = <span class="tok-fn">OpenAI</span>(base_url=<span class="tok-str">"http://localhost:11434/v1"</span>, api_key=<span class="tok-str">"ollama"</span>)
+
+resp = local.chat.completions.<span class="tok-fn">create</span>(
+    model=<span class="tok-str">"qwen2.5"</span>,
+    temperature=<span class="tok-num">0.2</span>,
+    messages=[{<span class="tok-str">"role"</span>: <span class="tok-str">"user"</span>, <span class="tok-str">"content"</span>: <span class="tok-str">"What is a context window?"</span>}],
+)
+<span class="tok-fn">print</span>(resp.choices[<span class="tok-num">0</span>].message.content)</code></pre>
+        </div>
+        <div class="diagram">
+          <svg viewBox="0 0 620 180" width="620" role="img" aria-label="Ollama local architecture">
+            <defs><marker id="arrow2" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L8,3 L0,6 Z" fill="var(--text-muted)"/></marker></defs>
+            <rect class="flow-node-accent" x="20" y="65" width="140" height="55" rx="10"/><text class="flow-label" x="90" y="90" text-anchor="middle">Your Python app</text><text class="flow-sub" x="90" y="107" text-anchor="middle">OpenAI SDK</text>
+            <rect class="flow-node" x="240" y="65" width="150" height="55" rx="10"/><text class="flow-label" x="315" y="90" text-anchor="middle">Ollama server</text><text class="flow-sub" x="315" y="107" text-anchor="middle">:11434</text>
+            <rect class="flow-node" x="470" y="55" width="130" height="75" rx="10"/><text class="flow-label" x="535" y="84" text-anchor="middle">GPU / CPU</text><text class="flow-sub" x="535" y="101" text-anchor="middle">quantized model</text><text class="flow-sub" x="535" y="116" text-anchor="middle">in VRAM/RAM</text>
+            <path style="stroke:var(--text-muted);stroke-width:2;fill:none;marker-end:url(#arrow2)" d="M160,92 L238,92"/>
+            <path style="stroke:var(--text-muted);stroke-width:2;fill:none;marker-end:url(#arrow2)" d="M390,92 L468,92"/>
+          </svg>
+          <div class="diagram-caption">Figure 2 · Ollama runs entirely on your machine — private, offline, zero per-token cost.</div>
+        </div>
+
+        <!-- ============ 8. INDUSTRY ============ -->
+        <h2 id="industry">8 · Industry perspective</h2>
+        <div class="grid grid-2">
+          <div class="card"><h4>🚀 Startups</h4><p>Start with a hosted frontier model (fastest path to product). Optimize cost later via prompt caching, smaller models for easy tasks, and routing. Speed-to-market beats infra ownership early.</p></div>
+          <div class="card"><h4>🏢 Enterprises</h4><p>Care about data residency, audit, and SLAs. Often run models in a VPC, behind a gateway that adds auth, logging, PII redaction, and cost controls. Local/open models (Module 03) appear where data can't leave the perimeter.</p></div>
+        </div>
+        <h3>The canonical production architecture</h3>
+        <div class="cssflow">
+          <div class="fnode accent">Client / app</div><div class="farrow"></div>
+          <div class="fnode">API gateway<small>auth · rate limit · logging</small></div><div class="farrow"></div>
+          <div class="fnode">LLM orchestration layer<small>prompts · retries · routing · RAG</small></div><div class="farrow"></div>
+          <div class="fnode">Model(s)<small>hosted &amp;/or local</small></div>
+        </div>
+        <p><strong>Common production challenges:</strong> non-determinism breaks classic testing; latency spikes on long contexts; cost scales with usage in surprising ways; and prompt changes silently regress behavior. Every one of these gets a dedicated treatment in <a href="14_production_genai.html">Module 14</a>.</p>
+
+        <!-- ============ 9. MISTAKES ============ -->
+        <h2 id="mistakes">9 · Top mistakes engineers make</h2>
+        <div class="grid grid-2">
+          <div class="card"><h4>❌ Treating the LLM as a database</h4><p>It recalls <em>patterns</em>, not facts. For anything that must be correct or current, retrieve it and put it in context (RAG).</p></div>
+          <div class="card"><h4>❌ Counting words instead of tokens</h4><p>Cost, latency and limits are token-based. Always estimate with a real tokenizer.</p></div>
+          <div class="card"><h4>❌ Using temperature &gt; 0 for extraction</h4><p>Structured output and classification want determinism. Set temperature to 0.</p></div>
+          <div class="card"><h4>❌ Ignoring the context-cost curve</h4><p>Stuffing 100k tokens "to be safe" multiplies cost and latency and can <em>hurt</em> accuracy (lost-in-the-middle). Retrieve precisely.</p></div>
+          <div class="card"><h4>❌ No retries or timeouts</h4><p>LLM APIs fail transiently. Production code needs backoff, timeouts, and graceful degradation.</p></div>
+          <div class="card"><h4>❌ Assuming determinism</h4><p>Even at temperature 0, hardware/batching can introduce tiny variations. Test behaviors, not exact strings.</p></div>
+        </div>
+
+        <!-- ============ 10. INTERVIEW ============ -->
+        <h2 id="interview">10 · Interview preparation</h2>
+
+        <details class="collapse"><summary><span class="pill green">Beginner</span> &nbsp;What is an LLM, in one sentence? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>A neural network (transformer) trained to predict the next token in a sequence; by sampling tokens repeatedly it generates coherent text. It models the statistical structure of language, not a database of facts.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill green">Beginner</span> &nbsp;What is a token and why use tokens instead of words? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>A token is a subword unit produced by a tokenizer (e.g., BPE). Subwords give a fixed-size vocabulary that handles any word — common words are one token, rare/novel words split into pieces — avoiding both a huge word vocabulary and a too-granular character model.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill blue">Intermediate</span> &nbsp;Explain temperature, top-k, and top-p. <span class="chev">›</span></summary>
+        <div class="collapse-body"><p><strong>Temperature</strong> scales logits before softmax — lower sharpens toward the top token, higher flattens for diversity. <strong>Top-k</strong> restricts sampling to the k highest-probability tokens. <strong>Top-p (nucleus)</strong> restricts to the smallest set whose cumulative probability ≥ p, adapting to model confidence. Use temperature 0 for deterministic tasks; top-p ≈ 0.9 with moderate temperature for natural generation.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill blue">Intermediate</span> &nbsp;Why is generating long outputs slow and expensive? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Generation is autoregressive — one transformer forward pass per output token. Output cost grows linearly with tokens generated, and attention cost grows with total sequence length. The KV cache avoids recomputing past tokens but consumes memory proportional to context length.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill amber">Senior</span> &nbsp;A model gives confidently wrong answers about your internal docs. Diagnose and fix. <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>The model has no knowledge of private data — it's hallucinating plausible text. Fix by <strong>grounding</strong>: retrieve relevant internal documents and inject them into context (RAG, Modules 6–7), instruct the model to answer only from provided context and cite sources, and add an evaluation harness to measure faithfulness. Lower temperature and add a "say 'I don't know'" instruction to reduce fabrication.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill amber">Senior</span> &nbsp;How do you make LLM features testable in CI given non-determinism? <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Pin temperature to 0; assert on <em>properties</em> not exact strings (schema validity, presence of required fields, no PII, factuality against references); use an LLM-as-judge or rubric eval for open-ended outputs; snapshot-test prompts and version them; run a golden-dataset eval on every prompt change to catch regressions.</p></div></details>
+
+        <details class="collapse"><summary><span class="pill purple">Staff · design</span> &nbsp;Design a multi-tenant LLM gateway for an enterprise. <span class="chev">›</span></summary>
+        <div class="collapse-body"><p>Single entry point that all teams call. Responsibilities: <strong>auth &amp; tenancy</strong> (API keys per team, quotas), <strong>routing</strong> (model selection by task/cost, fallback chains), <strong>safety</strong> (PII redaction, input/output guardrails), <strong>observability</strong> (per-tenant token/cost metrics, tracing, prompt logging with retention policy), <strong>resilience</strong> (retries, circuit breakers, caching of identical/cacheable prompts), and <strong>cost control</strong> (budgets, alerts). Keep it stateless and horizontally scalable; push prompt templates to a versioned registry. This is the spine of the <a href="15_capstone_projects.html">Enterprise GenAI Platform</a> capstone.</p></div></details>
+
+        <!-- ============ 11. QUIZ ============ -->
+        <h2 id="quiz">11 · Knowledge check</h2>
+
+        <div class="quiz">
+          <div class="q">1 · What does an LLM fundamentally compute on each forward pass?</div>
+          <label class="opt" data-correct="true">A probability distribution over the next token</label>
+          <label class="opt">The single correct answer to the prompt</label>
+          <label class="opt">A database lookup of stored facts</label>
+          <label class="opt">An embedding of the entire document</label>
+          <div class="explain">An LLM outputs logits → softmax → a probability distribution over the vocabulary for the next token. Sampling then selects one token; the loop repeats.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">2 · You're extracting structured fields from invoices. Which temperature?</div>
+          <label class="opt" data-correct="true">0 — you want deterministic, repeatable output</label>
+          <label class="opt">0.7 — for natural-sounding results</label>
+          <label class="opt">1.0 — to explore variations</label>
+          <label class="opt">Temperature doesn't affect extraction</label>
+          <div class="explain">Extraction is a precision task. Temperature 0 (greedy) gives the most consistent, repeatable structured output and minimizes fabrication.</div>
+        </div>
+
+        <div class="quiz">
+          <div class="q">3 · Why might a 120k-token prompt reduce accuracy, not just cost?</div>
+          <label class="opt">Tokens beyond 100k are ignored entirely</label>
+          <label class="opt" data-correct="true">"Lost-in-the-middle" — models attend less reliably to information buried in very long contexts</label>
+          <label class="opt">The softmax overflows</label>
+          <label class="opt">It can't — more context is always better</label>
+          <div class="explain">Long contexts increase cost and latency, and empirically models retrieve facts in the middle of very long contexts less reliably. Precise retrieval beats stuffing.</div>
+        </div>
+
+        <!-- ============ 12. ACTIVE RECALL ============ -->
+        <h2 id="recall">12 · Active recall</h2>
+        <p>Answer in your head first, then reveal. Revisit these tomorrow and in a week (spaced repetition).</p>
+        <details class="recall"><summary><span class="q-ico">Q</span> Describe the autoregressive generation loop in one sentence. <span class="chev">›</span></summary><div class="a">The model predicts a distribution for the next token, samples one, appends it to the input, and repeats the forward pass until a stop token or max-length is reached.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> What is the rough token-to-word ratio in English? <span class="chev">›</span></summary><div class="a">About 1 token ≈ 0.75 words (≈ 4 characters). Code and non-English text typically use more tokens per character.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> What does the KV cache store and why? <span class="chev">›</span></summary><div class="a">The keys and values of already-processed tokens, so each new token attends to cached state instead of recomputing the whole sequence — trading GPU memory for speed.</div></details>
+        <details class="recall"><summary><span class="q-ico">Q</span> Name the three training stages that turn raw text prediction into a helpful assistant. <span class="chev">›</span></summary><div class="a">Pre-training (next-token prediction) → Supervised fine-tuning (instruction pairs) → Preference alignment (RLHF/DPO).</div></details>
+
+        <!-- ============ 13. EXERCISES ============ -->
+        <h2 id="exercises">13 · Exercises</h2>
+        <div class="callout tip"><div class="c-ico">🟢</div><div class="c-body"><div class="c-title">Easy</div><p>Install Ollama, pull <code>llama3.2</code>, and ask it the same factual question at temperature 0 and temperature 1.0 (via the API). Record how the answers differ.</p></div></div>
+        <div class="callout warn"><div class="c-ico">🟡</div><div class="c-body"><div class="c-title">Medium</div><p>Write a function that takes a string and returns input token count and estimated USD cost for three different price tiers. Use it to compare the cost of summarizing a 10-page vs. 100-page document.</p></div></div>
+        <div class="callout danger"><div class="c-ico">🔴</div><div class="c-body"><div class="c-title">Hard</div><p>Extend the production <code>LLMClient</code> with: (1) a simple in-memory cache keyed by a hash of (model, prompt, temperature), (2) a per-minute rate limiter, and (3) structured JSON logging of every call. Verify retries fire by pointing it at an unreachable host.</p></div></div>
+
+        <!-- ============ 14. MINI PROJECT ============ -->
+        <h2 id="mini-project">14 · Mini project — "LLM Playground" CLI</h2>
+        <div class="card">
+          <p><strong>Goal:</strong> Build a small terminal app that lets you chat with either a hosted model or a local Ollama model, with live token + cost accounting.</p>
+          <h4>Requirements</h4>
+          <ul>
+            <li>Flag to switch backend: <code>--backend ollama|hosted</code></li>
+            <li>Streams the response token-by-token to the terminal</li>
+            <li>After each turn, prints input/output tokens and running session cost</li>
+            <li>Supports a <code>--temperature</code> flag and a <code>/reset</code> command</li>
+          </ul>
+          <h4>Stretch</h4>
+          <ul style="margin-bottom:0"><li>Add a <code>/tokens "text"</code> command that shows how the text tokenizes.</li><li>Persist the session transcript to a JSONL file for later evaluation (foreshadows Module 14).</li></ul>
+        </div>
+
+        <!-- ============ 15. REAL PROJECT CONNECTION ============ -->
+        <h2 id="real-project">15 · Real project connection</h2>
+        <p>This module is the bedrock under every capstone. Here's exactly where the LLM primitive shows up:</p>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th>Project</th><th>Where foundations apply</th></tr></thead>
+            <tbody>
+              <tr><td><strong>PDF RAG</strong></td><td>The LLM is the generation step — you control its temperature, token budget, and grounding instructions.</td></tr>
+              <tr><td><strong>EDA Agent</strong></td><td>The agent loop is just the generation loop plus tool calls; understanding token cost shapes how much data you feed per step.</td></tr>
+              <tr><td><strong>SQL Agent</strong></td><td>Temperature 0 + strict prompting to produce deterministic, valid SQL; retries handle transient failures.</td></tr>
+              <tr><td><strong>ElasticSearch Agent</strong></td><td>Token accounting decides how many retrieved hits you can afford to put in context.</td></tr>
+              <tr><td><strong>MCP Server</strong></td><td>The client LLM consumes your MCP tools — its context window bounds how many tools/results fit.</td></tr>
+            </tbody>
+          </table>
+        </div>
+
+        <div class="complete-bar">
+          <div><strong style="font-size:15px">Finished Module 01?</strong><p style="margin:2px 0 0;font-size:13.5px;color:var(--text-muted)">Mark it complete to track your progress across the curriculum.</p></div>
+          <button class="btn" data-complete>Mark module complete</button>
+        </div>
+
+        <div class="page-nav">
+          <a href="../index.html"><div class="dir">← Back</div><div class="ttl">Overview</div></a>
+          <a class="next" href="02_transformers.html"><div class="dir">Next →</div><div class="ttl">02 · Transformers Deep Dive</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+<script src="../assets/app.js"></script>
+</body>
+</html>
