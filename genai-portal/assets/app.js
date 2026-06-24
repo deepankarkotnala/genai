@@ -71,8 +71,12 @@
     setDone(d); return d.includes(id);
   }
 
-  /* ---------- Build sidebar ---------- */
+  /* ---------- Build sidebar ----------
+     The unified sidebar is now owned by sitenav.js (shared across the whole
+     site). When it is present we skip app.js's own module-only sidebar so the
+     two don't fight over .nav. Kept as a fallback for any page without sitenav. */
   function buildSidebar() {
+    if (window.SiteNav) return;                       // unified nav present → it owns .nav
     const nav = document.querySelector(".nav");
     if (!nav) return;
     const cur = document.body.getAttribute("data-page") || "";
@@ -89,8 +93,10 @@
     nav.innerHTML = html;
   }
 
-  /* ---------- Search ---------- */
+  /* ---------- Search ----------
+     sitenav.js provides cross-site search; defer to it when present. */
   function setupSearch() {
+    if (window.SiteNav) return;                       // unified search present
     const input = document.querySelector("[data-search]");
     const out = document.querySelector(".search-results");
     if (!input || !out) return;
@@ -207,12 +213,17 @@
     document.querySelectorAll("[data-progress-count]").forEach(el => el.textContent = `${done} / ${total} modules`);
   }
 
-  /* ---------- Mobile nav ---------- */
+  /* ---------- Mobile nav ----------
+     The ☰ button itself is wired by sitenav.js (it collapses the sidebar on
+     desktop and opens the drawer on mobile). Here we only handle the backdrop
+     and closing the drawer when a nav link is clicked. When sitenav is present
+     it owns the menu button entirely. */
   function setupMobileNav() {
     const app = document.querySelector(".app");
+    if (!app) return;
     const menu = document.querySelector(".menu-btn");
     const backdrop = document.querySelector(".backdrop");
-    if (menu) menu.addEventListener("click", () => app.classList.toggle("nav-open"));
+    if (menu && !window.SiteNav) menu.addEventListener("click", () => app.classList.toggle("nav-open"));
     if (backdrop) backdrop.addEventListener("click", () => app.classList.remove("nav-open"));
     document.querySelectorAll(".nav a").forEach(a => a.addEventListener("click", () => app.classList.remove("nav-open")));
   }
@@ -316,6 +327,26 @@
     host.innerHTML = html;
   }
 
+  /* ---------- Hub-home links (iframe-aware) ----------
+     Single-topic pages (langfuse, guardrails, memory, langgraph, claude-agent,
+     hermes, rag-deep-dive) are shown inside the hub's iframe. Their "Hub home"
+     links point at the sibling index.html — but following that *inside* the
+     iframe would load the whole hub nested inside itself. So when we're in an
+     iframe, ask the parent hub to switch to its Home tab instead. When loaded
+     directly (not iframed), the link navigates normally. Module pages use
+     ../index.html and are never iframed, so this leaves them untouched. */
+  function setupHubHome() {
+    var inIframe = window.parent !== window.self;
+    if (!inIframe) return;                       // direct load → normal navigation
+    document.addEventListener("click", function (e) {
+      var a = e.target.closest ? e.target.closest("a[href='index.html']") : null;
+      if (!a) return;
+      e.preventDefault();
+      try { window.parent.postMessage({ type: "genai-hub-home" }, "*"); }
+      catch (err) { location.href = "index.html"; }
+    });
+  }
+
   /* ---------- Init ---------- */
   document.addEventListener("DOMContentLoaded", () => {
     setupTheme();
@@ -329,5 +360,6 @@
     setupMobileNav();
     setupDemos();
     setupReveal();
+    setupHubHome();
   });
 })();

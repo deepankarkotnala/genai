@@ -7,6 +7,10 @@
    ========================================================================= */
 (function () {
   function build() {
+    // The unified sidebar (sitenav.js) now owns .nav across the whole site, so
+    // this page's section list moves to the right-rail TOC instead. If sitenav
+    // is present, don't overwrite the shared sidebar.
+    if (window.SiteNav) return;
     var content = document.querySelector(".content");
     var nav = document.querySelector(".nav");
     if (!content || !nav) return;

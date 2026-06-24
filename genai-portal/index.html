@@ -4,214 +4,22 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>GenAI Learning Hub — Mastery · Agents · RAG/MCP</title>
-<meta name="description" content="A unified portal bringing together the GenAI Mastery curriculum, the AI Agents course, and the hands-on RAG/MCP/LLM guide.">
+<meta name="description" content="A unified hub bringing together the GenAI Mastery curriculum, the AI Agents course, the hands-on RAG/MCP/LLM guide, and focused deep-dive topics.">
 <link rel="stylesheet" href="assets/styles.css">
-<style>
-  /* ---- Top-level tab bar (shared chrome above all three portals) ---- */
-  .hub-tabs{
-    position:sticky; top:0; z-index:50;
-    display:flex; gap:4px; align-items:center;
-    padding:8px 16px;
-    background:var(--bg, #fff);
-    border-bottom:1px solid var(--border, #e3e3e8);
-    backdrop-filter:saturate(1.4) blur(8px);
-    -webkit-backdrop-filter:saturate(1.4) blur(8px);
-    overflow-x:auto;
-  }
-  .hub-brand{
-    display:flex; align-items:center; gap:10px;
-    font-weight:700; font-size:14px; letter-spacing:-.01em;
-    padding-right:14px; margin-right:6px;
-    border-right:1px solid var(--border, #e3e3e8);
-    white-space:nowrap; color:var(--text, #1d1d1f);
-  }
-  .hub-brand .mk{
-    width:26px; height:26px; border-radius:8px;
-    display:grid; place-items:center; color:#fff; font-weight:800; font-size:14px;
-    background:linear-gradient(135deg,#6e56cf,#0071e3);
-  }
-  .hub-tab{
-    appearance:none; border:1px solid transparent; cursor:pointer;
-    background:transparent; color:var(--text-muted, #6e6e73);
-    font:600 14px/1 inherit; letter-spacing:-.01em;
-    padding:9px 16px; border-radius:999px; white-space:nowrap;
-    transition:background .15s ease, color .15s ease, border-color .15s ease;
-  }
-  .hub-tab:hover{ color:var(--text, #1d1d1f); background:rgba(110,86,207,.08); }
-  .hub-tab[aria-selected="true"]{
-    color:#fff;
-    background:linear-gradient(135deg,#6e56cf,#0071e3);
-    border-color:transparent;
-    box-shadow:0 4px 14px -6px rgba(110,86,207,.6);
-  }
-  .hub-tab .em{ margin-right:7px; }
-
-  /* ---- "Start here" reading-order list (home screen) ---- */
-  .readmap{
-    border:1px solid var(--border, #e7e5e1); border-radius:16px;
-    background:linear-gradient(135deg, var(--accent-soft, rgba(217,119,87,.12)), transparent);
-    padding:22px 24px; margin:24px 0;
-  }
-  .readmap > .rm-head{ display:flex; align-items:center; gap:10px; margin:0 0 4px; }
-  .readmap .rm-head .ico{ font-size:20px; }
-  .readmap .rm-head strong{ font-size:16px; letter-spacing:-.01em; }
-  .readmap > p.rm-sub{ margin:0 0 16px; font-size:13.5px; color:var(--text-muted, #82827c); }
-  .readmap ol{ list-style:none; counter-reset:rm; margin:0; padding:0; }
-  .readmap li{ counter-increment:rm; position:relative; padding:0 0 0 44px; margin:0 0 10px; }
-  .readmap li:last-child{ margin-bottom:0; }
-  .readmap li::before{
-    content:counter(rm); position:absolute; left:0; top:2px;
-    width:28px; height:28px; border-radius:50%;
-    background:var(--accent, #d97757); color:#fff; font-weight:700; font-size:13px;
-    display:flex; align-items:center; justify-content:center; font-family:var(--font-mono, monospace);
-  }
-  .readmap a.rm-link{
-    display:block; padding:9px 13px; border-radius:10px;
-    border:1px solid var(--border, #e7e5e1); background:var(--bg-elevated, #fff);
-    text-decoration:none; transition:border-color .15s, transform .12s, box-shadow .15s;
-  }
-  .readmap a.rm-link:hover{ border-color:var(--accent, #d97757); transform:translateX(2px);
-    box-shadow:var(--shadow-sm, 0 1px 3px rgba(0,0,0,.06)); text-decoration:none; }
-  .readmap .rm-ttl{ font-weight:650; color:var(--text, #1a1a1a); font-size:14.5px; }
-  .readmap .rm-ttl .tag{ font-size:10.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase;
-    color:var(--accent, #d97757); background:var(--accent-soft, rgba(217,119,87,.12));
-    border-radius:5px; padding:1px 6px; margin-left:8px; vertical-align:1px; }
-  .readmap .rm-why{ display:block; font-size:12.5px; color:var(--text-secondary, #51514d); margin-top:2px; }
-
-  /* ---- Panels ---- */
-  .hub-panel{ display:none; }
-  .hub-panel[data-active="true"]{ display:block; }
-
-  /* iframe panels fill the viewport beneath the tab bar.
-     dvh = dynamic viewport height: on mobile this excludes the address bar,
-     preventing the iframe from being cut off / double-scrolling. Falls back
-     to vh on desktop where the two are identical. */
-  .hub-frame-wrap{ height:calc(100vh - 47px); height:calc(100dvh - 47px); width:100%; }
-  .hub-frame-wrap iframe{
-    display:block; width:100%; height:100%; border:0; background:var(--bg,#fff);
-  }
-
-  /* ---- Mobile-only chrome (hidden on desktop) ---- */
-  .hub-mobilebar{ display:none; }              /* slim top bar: brand · current tab · ☰  */
-  .hub-menu-btn{ display:none; }               /* the ☰ toggle */
-  .hub-drawer-backdrop{ display:none; }        /* dimmer behind the drawer */
-
-  /* ---- Mobile (phones / small tablets) ---- */
-  @media (max-width:860px){
-    /* Replace the horizontal pill bar with a slim header + a right slide-in drawer.
-       Desktop layout above is completely untouched — all of this lives in the media query. */
-
-    /* slim sticky header: logo · active-tab name · hamburger */
-    .hub-mobilebar{
-      display:flex; align-items:center; gap:10px;
-      position:sticky; top:0; z-index:60; height:52px;
-      padding:0 14px;
-      background:var(--bg, #fff);
-      border-bottom:1px solid var(--border, #e3e3e8);
-      backdrop-filter:saturate(1.4) blur(8px); -webkit-backdrop-filter:saturate(1.4) blur(8px);
-    }
-    .hub-mobilebar .mk{
-      width:28px; height:28px; border-radius:8px; flex:none;
-      display:grid; place-items:center; color:#fff; font-weight:800; font-size:15px;
-      background:linear-gradient(135deg,#6e56cf,#0071e3);
-    }
-    .hub-mobilebar .cur{
-      flex:1; min-width:0; font-weight:700; font-size:15px; letter-spacing:-.01em;
-      color:var(--text, #1d1d1f); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-    }
-    .hub-menu-btn{
-      display:grid; place-items:center; flex:none;
-      width:42px; height:42px; border-radius:10px; cursor:pointer;
-      border:1px solid var(--border, #e3e3e8); background:var(--bg, #fff);
-      color:var(--text, #1d1d1f);
-    }
-    .hub-menu-btn:active{ background:rgba(110,86,207,.10); }
-
-    /* turn the existing tablist into a right-hand drawer */
-    .hub-tabs{
-      position:fixed; top:0; right:0; bottom:0; left:auto;
-      width:min(82vw, 320px); height:100dvh;
-      flex-direction:column; align-items:stretch; gap:6px;
-      padding:18px 14px; overflow-y:auto;
-      border-bottom:0; border-left:1px solid var(--border, #e3e3e8);
-      box-shadow:-12px 0 40px rgba(0,0,0,.22);
-      transform:translateX(100%); transition:transform .26s ease;
-      z-index:70;
-    }
-    body.hub-nav-open .hub-tabs{ transform:translateX(0); }
-
-    /* drawer header (brand) sits at the top of the panel */
-    .hub-brand{
-      display:flex; padding:4px 8px 14px; margin:0 0 6px;
-      border-right:0; border-bottom:1px solid var(--border, #e3e3e8);
-    }
-    .hub-brand span{ display:inline; }          /* show full wordmark inside the drawer */
-
-    /* each tab becomes a full-width stacked row (icon + label) */
-    .hub-tab{
-      width:100%; text-align:left; border-radius:12px;
-      padding:14px 14px; font-size:15.5px; white-space:normal;
-      display:flex; align-items:center;
-    }
-    .hub-tab .em{ margin-right:12px; font-size:18px; }
-    .hub-tab[aria-selected="true"]{ box-shadow:none; }
-
-    /* backdrop */
-    .hub-drawer-backdrop{
-      display:block; position:fixed; inset:0; z-index:65;
-      background:rgba(0,0,0,.42); opacity:0; pointer-events:none;
-      transition:opacity .26s ease;
-    }
-    body.hub-nav-open .hub-drawer-backdrop{ opacity:1; pointer-events:auto; }
-
-    /* the iframe panels now sit under the 52px mobile header (not the old 47px bar) */
-    .hub-frame-wrap{ height:calc(100dvh - 52px); }
-    /* inline GenAI-Mastery panel: its own sticky topbar + slide-in sidebar must
-       clear the hub's 52px mobile header so the module hamburger stays tappable. */
-    #panel-mastery .topbar{ top:52px; }
-    #panel-mastery .sidebar{ top:52px; height:calc(100dvh - 52px); }
-  }
-</style>
 </head>
 <body data-page="00">
-
-<!-- ===================== MOBILE HEADER (hidden on desktop) ===================== -->
-<div class="hub-mobilebar">
-  <span class="mk">G</span>
-  <span class="cur" data-current-tab>GenAI Mastery</span>
-  <button class="hub-menu-btn" aria-label="Open navigation" aria-expanded="false" data-hub-menu>
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
-  </button>
-</div>
-<div class="hub-drawer-backdrop" data-hub-backdrop></div>
-
-<!-- ===================== TOP-LEVEL TAB BAR (becomes a right drawer on mobile) ===================== -->
-<div class="hub-tabs" role="tablist" aria-label="Learning portals">
-  <div class="hub-brand"><span class="mk">G</span><span>GenAI Learning Hub</span></div>
-  <button class="hub-tab" role="tab" id="tab-mastery"  aria-controls="panel-mastery"  aria-selected="true"><span class="em">🎓</span>GenAI Mastery</button>
-  <button class="hub-tab" role="tab" id="tab-agents"   aria-controls="panel-agents"   aria-selected="false"><span class="em">🤖</span>Understanding AI Agents</button>
-  <button class="hub-tab" role="tab" id="tab-ragmcp"   aria-controls="panel-ragmcp"   aria-selected="false"><span class="em">🔌</span>RAG · MCP · Agents · LLMs</button>
-  <button class="hub-tab" role="tab" id="tab-ragdeep"  aria-controls="panel-ragdeep"  aria-selected="false"><span class="em">📚</span>RAG, End-to-End</button>
-  <button class="hub-tab" role="tab" id="tab-langfuse" aria-controls="panel-langfuse" aria-selected="false"><span class="em">📡</span>Langfuse</button>
-  <button class="hub-tab" role="tab" id="tab-guardrails" aria-controls="panel-guardrails" aria-selected="false"><span class="em">🛡️</span>Guardrails</button>
-  <button class="hub-tab" role="tab" id="tab-memory"   aria-controls="panel-memory"   aria-selected="false"><span class="em">🧠</span>Memory</button>
-  <button class="hub-tab" role="tab" id="tab-langgraph" aria-controls="panel-langgraph" aria-selected="false"><span class="em">🕸️</span>LangGraph</button>
-  <button class="hub-tab" role="tab" id="tab-claudeagent" aria-controls="panel-claudeagent" aria-selected="false"><span class="em">🤖</span>Claude Agent</button>
-  <button class="hub-tab" role="tab" id="tab-hermes"    aria-controls="panel-hermes"    aria-selected="false"><span class="em">🔱</span>Hermes</button>
-</div>
-
-<!-- ===================== TAB 1 — GenAI Mastery (original content, inline) ===================== -->
-<div class="hub-panel" id="panel-mastery" role="tabpanel" aria-labelledby="tab-mastery" data-active="true">
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
-      <div class="brand-mark">G</div>
-      <div class="brand-text"><strong>GenAI Mastery</strong><span>DS → Senior GenAI Engineer</span></div>
+      <a href="index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <div class="brand-mark">G</div>
+        <div class="brand-text"><strong>GenAI Learning Hub</strong><span>Mastery · Agents · RAG/MCP</span></div>
+      </a>
     </div>
     <div class="search-wrap">
       <div class="search-box">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-        <input type="text" data-search placeholder="Search modules…  ( / )">
+        <input type="text" data-search placeholder="Search everything…  ( / )">
       </div>
       <div class="search-results"></div>
     </div>
@@ -224,7 +32,7 @@
       <button class="icon-btn menu-btn" aria-label="Menu">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
       </button>
-      <div class="crumbs"><b>Overview</b></div>
+      <div class="crumbs"><b>Home — GenAI Learning Hub</b></div>
       <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
     </header>
 
@@ -233,7 +41,7 @@
         <div class="hero">
           <div class="eyebrow"><span class="dot"></span> The complete curriculum</div>
           <h1>From Data Scientist to <span class="grad">Senior GenAI Engineer</span></h1>
-          <p class="lead">A first-principles, hands-on path through LLMs, Transformers, Embeddings, Vector DBs, RAG, Agents, MCP, LangGraph, CrewAI and Production GenAI — designed for engineers who already know Python, ML, FastAPI and Docker.</p>
+          <p class="lead">A first-principles, hands-on path through LLMs, Transformers, Embeddings, Vector DBs, RAG, Agents, MCP, LangGraph, CrewAI and Production GenAI — designed for engineers who already know Python, ML, FastAPI and Docker. Everything lives in one place now: use the grouped sidebar to move between the curriculum, the courses and the deep dives.</p>
           <div class="meta-row" style="justify-content:center">
             <span class="pill">15 modules</span>
             <span class="pill">10 capstone projects</span>
@@ -242,10 +50,10 @@
           </div>
         </div>
 
-        <!-- ===== Start-here reading order (spans all hub tabs + modules) ===== -->
+        <!-- ===== Start-here reading order (spans every section of the hub) ===== -->
         <div class="readmap">
           <div class="rm-head"><span class="ico">🧭</span><strong>Start here — recommended reading order</strong></div>
-          <p class="rm-sub">New to this? Read in this order — each step builds on the one before. Links open the right tab or module automatically.</p>
+          <p class="rm-sub">New to this? Read in this order — each step builds on the one before. Every link opens the right page; use the sidebar to jump between sections anytime.</p>
           <ol>
             <li>
               <a class="rm-link" href="modules/01_foundations.html">
@@ -254,8 +62,8 @@
               </a>
             </li>
             <li>
-              <a class="rm-link" href="#memory" data-goto-tab="tab-memory">
-                <span class="rm-ttl">Memory in LLMs <span class="tag">Tab</span></span>
+              <a class="rm-link" href="memory.html">
+                <span class="rm-ttl">Memory in LLMs <span class="tag">Deep Dive</span></span>
                 <span class="rm-why">Why the model is stateless and how the context window works — the mental model behind chat history, RAG and agents.</span>
               </a>
             </li>
@@ -272,50 +80,50 @@
               </a>
             </li>
             <li>
-              <a class="rm-link" href="#ragdeep" data-goto-tab="tab-ragdeep">
-                <span class="rm-ttl">RAG, End-to-End <span class="tag">Tab</span></span>
+              <a class="rm-link" href="rag-deep-dive.html">
+                <span class="rm-ttl">RAG, End-to-End <span class="tag">Deep Dive</span></span>
                 <span class="rm-why">The full production pipeline — chunking strategies, hybrid retrieval, reranking, evaluation. The panoramic view.</span>
               </a>
             </li>
             <li>
-              <a class="rm-link" href="#agents" data-goto-tab="tab-agents">
-                <span class="rm-ttl">Understanding AI Agents <span class="tag">Tab</span></span>
+              <a class="rm-link" href="../teach-agents/index.html">
+                <span class="rm-ttl">Understanding AI Agents <span class="tag">Course</span></span>
                 <span class="rm-why">When an LLM stops just talking and starts <em>doing</em> — the agent loop, tools and orchestration.</span>
               </a>
             </li>
             <li>
-              <a class="rm-link" href="#claudeagent" data-goto-tab="tab-claudeagent">
-                <span class="rm-ttl">How a Claude Agent Works <span class="tag">Tab</span></span>
+              <a class="rm-link" href="claude-agent.html">
+                <span class="rm-ttl">How a Claude Agent Works <span class="tag">Deep Dive</span></span>
                 <span class="rm-why">The agent loop made concrete on Claude — tools, the tool runner, the Agent SDK, context &amp; safety.</span>
               </a>
             </li>
             <li>
-              <a class="rm-link" href="#ragmcp" data-goto-tab="tab-ragmcp">
-                <span class="rm-ttl">RAG · MCP · Agents · LLMs <span class="tag">Tab</span></span>
+              <a class="rm-link" href="../learn-rag-mcp/index.html">
+                <span class="rm-ttl">RAG · MCP · Agents · LLMs <span class="tag">Guide</span></span>
                 <span class="rm-why">A hands-on, build-it guide that ties LLMs, RAG, agents and MCP together with runnable projects.</span>
               </a>
             </li>
             <li>
-              <a class="rm-link" href="#guardrails" data-goto-tab="tab-guardrails">
-                <span class="rm-ttl">Guardrails <span class="tag">Tab</span></span>
+              <a class="rm-link" href="guardrails.html">
+                <span class="rm-ttl">Guardrails <span class="tag">Deep Dive</span></span>
                 <span class="rm-why">The rules an answer must pass before it ships — scope, safety, no leaking secrets or PII, no hallucination.</span>
               </a>
             </li>
             <li>
-              <a class="rm-link" href="#langfuse" data-goto-tab="tab-langfuse">
-                <span class="rm-ttl">Langfuse — Observability <span class="tag">Tab</span></span>
+              <a class="rm-link" href="langfuse.html">
+                <span class="rm-ttl">Langfuse — Observability <span class="tag">Deep Dive</span></span>
                 <span class="rm-why">Once it's running, how you debug and measure it: traces, cost, latency and quality scores.</span>
               </a>
             </li>
             <li>
-              <a class="rm-link" href="#langgraph" data-goto-tab="tab-langgraph">
-                <span class="rm-ttl">LangGraph &amp; its components <span class="tag">Tab</span></span>
+              <a class="rm-link" href="langgraph.html">
+                <span class="rm-ttl">LangGraph &amp; its components <span class="tag">Deep Dive</span></span>
                 <span class="rm-why">Build agents as stateful graphs — state, nodes, edges, the checkpointer and human-in-the-loop. The structure behind a real agent.</span>
               </a>
             </li>
             <li>
-              <a class="rm-link" href="#hermes" data-goto-tab="tab-hermes">
-                <span class="rm-ttl">Hermes — open local models <span class="tag">Tab · optional</span></span>
+              <a class="rm-link" href="hermes.html">
+                <span class="rm-ttl">Hermes — open local models <span class="tag">Deep Dive · optional</span></span>
                 <span class="rm-why">Run a capable, free, private agent brain on your own hardware — open function-calling models via Ollama.</span>
               </a>
             </li>
@@ -337,7 +145,16 @@
           <p style="margin:0;font-size:13px;color:var(--text-muted)"><span data-progress-count>0 / 15 modules</span> finished — progress is saved in your browser.</p>
         </div>
 
-        <h2 id="how">How to use this portal</h2>
+        <h2 id="sections">What's in the hub</h2>
+        <p>Four sections, each kept distinct in the sidebar. Start anywhere — the reading order above threads them together.</p>
+        <div class="grid grid-2">
+          <a class="card hover" data-reveal href="modules/01_foundations.html"><span class="ico">🎓</span><h4>GenAI Mastery</h4><p>The 15-module first-principles curriculum, from LLM foundations to production GenAI, across five tracks.</p></a>
+          <a class="card hover" data-reveal href="../teach-agents/index.html"><span class="ico">🤖</span><h4>Understanding AI Agents</h4><p>A short, hands-on course on the agent loop, tools and orchestration — grounded in real EnM scenarios.</p></a>
+          <a class="card hover" data-reveal href="../learn-rag-mcp/index.html"><span class="ico">🔌</span><h4>RAG · MCP · Agents · LLMs</h4><p>A build-it guide that ties the concepts together with runnable RAG, PDF-Q&amp;A and local-agent projects.</p></a>
+          <a class="card hover" data-reveal href="rag-deep-dive.html"><span class="ico">📚</span><h4>Deep Dives</h4><p>Focused topic guides: RAG end-to-end, Langfuse, Guardrails, Memory, LangGraph, Claude Agent and Hermes.</p></a>
+        </div>
+
+        <h2 id="how">How to use this hub</h2>
         <div class="grid grid-3">
           <div class="card" data-reveal><span class="ico">🎯</span><h4>Read top-to-bottom</h4><p>Each module follows the same 15-part structure: summary → first principles → diagrams → deep dive → practice.</p></div>
           <div class="card" data-reveal><span class="ico">⚡</span><h4>Run the code</h4><p>Every snippet is complete and copy-pasteable. Minimal → intermediate → production for each concept.</p></div>
@@ -366,182 +183,21 @@
     </div>
   </div>
 </div>
-</div>
 
-<!-- ===================== TAB 2 — Understanding AI Agents (teach-agents) ===================== -->
-<div class="hub-panel" id="panel-agents" role="tabpanel" aria-labelledby="tab-agents" data-active="false">
-  <div class="hub-frame-wrap">
-    <iframe data-src="../teach-agents/index.html" title="Understanding AI Agents" loading="lazy"></iframe>
-  </div>
-</div>
-
-<!-- ===================== TAB 3 — RAG · MCP · Agents · LLMs (learn-rag-mcp) ===================== -->
-<div class="hub-panel" id="panel-ragmcp" role="tabpanel" aria-labelledby="tab-ragmcp" data-active="false">
-  <div class="hub-frame-wrap">
-    <iframe data-src="../learn-rag-mcp/index.html" title="RAG · MCP · Agents · LLMs guide" loading="lazy"></iframe>
-  </div>
-</div>
-
-<!-- ===================== TAB 4 — RAG, End-to-End (rag-deep-dive.html) ===================== -->
-<div class="hub-panel" id="panel-ragdeep" role="tabpanel" aria-labelledby="tab-ragdeep" data-active="false">
-  <div class="hub-frame-wrap">
-    <iframe data-src="rag-deep-dive.html" title="RAG, End-to-End — the complete pipeline" loading="lazy"></iframe>
-  </div>
-</div>
-
-<!-- ===================== TAB 5 — Langfuse (langfuse.html) ===================== -->
-<div class="hub-panel" id="panel-langfuse" role="tabpanel" aria-labelledby="tab-langfuse" data-active="false">
-  <div class="hub-frame-wrap">
-    <iframe data-src="langfuse.html" title="Langfuse — LLM observability, end-to-end" loading="lazy"></iframe>
-  </div>
-</div>
-
-<!-- ===================== TAB 6 — Guardrails (guardrails.html) ===================== -->
-<div class="hub-panel" id="panel-guardrails" role="tabpanel" aria-labelledby="tab-guardrails" data-active="false">
-  <div class="hub-frame-wrap">
-    <iframe data-src="guardrails.html" title="LLM Guardrails — rules before an answer" loading="lazy"></iframe>
-  </div>
-</div>
-
-<!-- ===================== TAB 7 — Memory (memory.html) ===================== -->
-<div class="hub-panel" id="panel-memory" role="tabpanel" aria-labelledby="tab-memory" data-active="false">
-  <div class="hub-frame-wrap">
-    <iframe data-src="memory.html" title="Memory in LLMs — how it's managed and used" loading="lazy"></iframe>
-  </div>
-</div>
-
-<!-- ===================== TAB 8 — LangGraph (langgraph.html) ===================== -->
-<div class="hub-panel" id="panel-langgraph" role="tabpanel" aria-labelledby="tab-langgraph" data-active="false">
-  <div class="hub-frame-wrap">
-    <iframe data-src="langgraph.html" title="LangGraph & its components — stateful agent graphs" loading="lazy"></iframe>
-  </div>
-</div>
-
-<!-- ===================== TAB 9 — Claude Agent (claude-agent.html) ===================== -->
-<div class="hub-panel" id="panel-claudeagent" role="tabpanel" aria-labelledby="tab-claudeagent" data-active="false">
-  <div class="hub-frame-wrap">
-    <iframe data-src="claude-agent.html" title="How a Claude agent works — the Agent SDK & loop" loading="lazy"></iframe>
-  </div>
-</div>
-
-<!-- ===================== TAB 10 — Hermes (hermes.html) ===================== -->
-<div class="hub-panel" id="panel-hermes" role="tabpanel" aria-labelledby="tab-hermes" data-active="false">
-  <div class="hub-frame-wrap">
-    <iframe data-src="hermes.html" title="Hermes (Nous Research) — open function-calling models" loading="lazy"></iframe>
-  </div>
-</div>
-
-<!-- ===================== TAB CONTROLLER ===================== -->
-<script>
-(function(){
-  var tabs   = Array.prototype.slice.call(document.querySelectorAll('.hub-tab'));
-  var panels = {
-    'tab-mastery':'panel-mastery',
-    'tab-agents' :'panel-agents',
-    'tab-ragmcp' :'panel-ragmcp',
-    'tab-ragdeep':'panel-ragdeep',
-    'tab-langfuse':'panel-langfuse',
-    'tab-guardrails':'panel-guardrails',
-    'tab-memory':'panel-memory',
-    'tab-langgraph':'panel-langgraph',
-    'tab-claudeagent':'panel-claudeagent',
-    'tab-hermes':'panel-hermes'
-  };
-
-  // Short labels for the mobile header (the full button text can be long).
-  var SHORT = {
-    'tab-mastery':'GenAI Mastery',
-    'tab-agents' :'Understanding AI Agents',
-    'tab-ragmcp' :'RAG · MCP · Agents · LLMs',
-    'tab-ragdeep':'RAG, End-to-End',
-    'tab-langfuse':'Langfuse',
-    'tab-guardrails':'Guardrails',
-    'tab-memory':'Memory',
-    'tab-langgraph':'LangGraph',
-    'tab-claudeagent':'Claude Agent',
-    'tab-hermes':'Hermes'
-  };
-  var curLabel = document.querySelector('[data-current-tab]');
-
-  /* ---- Mobile right-drawer open/close ---- */
-  function setDrawer(open){
-    document.body.classList.toggle('hub-nav-open', open);
-    var btn = document.querySelector('[data-hub-menu]');
-    if(btn) btn.setAttribute('aria-expanded', open ? 'true':'false');
-  }
-
-  function activate(tabId, push){
-    tabs.forEach(function(t){ t.setAttribute('aria-selected', t.id === tabId ? 'true':'false'); });
-    Object.keys(panels).forEach(function(tid){
-      var panel = document.getElementById(panels[tid]);
-      var on = (tid === tabId);
-      panel.setAttribute('data-active', on ? 'true':'false');
-      if(on){
-        // Lazily load iframe content the first time its tab is opened.
-        var fr = panel.querySelector('iframe[data-src]');
-        if(fr && !fr.getAttribute('src')) fr.setAttribute('src', fr.getAttribute('data-src'));
-      }
-    });
-    if(curLabel && SHORT[tabId]) curLabel.textContent = SHORT[tabId];   // reflect in mobile header
-    setDrawer(false);                                                   // close drawer after choosing
-    if(push){
-      try{ history.replaceState(null, '', '#' + tabId.replace('tab-','')); }catch(e){}
-    }
-  }
-
-  tabs.forEach(function(t){
-    t.addEventListener('click', function(){ activate(t.id, true); });
-  });
-
-  // "Start here" reading-order links that point to another tab.
-  document.querySelectorAll('[data-goto-tab]').forEach(function(a){
-    a.addEventListener('click', function(e){
-      var target = a.getAttribute('data-goto-tab');
-      if(panels[target]){ e.preventDefault(); activate(target, true); window.scrollTo(0, 0); }
-    });
-  });
-
-  // hamburger + backdrop wiring
-  var menuBtn = document.querySelector('[data-hub-menu]');
-  var backdrop = document.querySelector('[data-hub-backdrop]');
-  if(menuBtn) menuBtn.addEventListener('click', function(){ setDrawer(!document.body.classList.contains('hub-nav-open')); });
-  if(backdrop) backdrop.addEventListener('click', function(){ setDrawer(false); });
-  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') setDrawer(false); });
-
-  // A "Home" button inside any tab's iframe posts this message → switch to home tab.
-  window.addEventListener('message', function(e){
-    if(e && e.data && e.data.type === 'genai-hub-home'){ activate('tab-mastery', true); window.scrollTo(0,0); }
-  });
-
-  // Honor deep-link hash (#agents / #ragmcp / #mastery) on load.
-  var initial = (location.hash || '').replace('#','');
-  var initId = 'tab-' + initial;
-  activate(panels[initId] ? initId : 'tab-mastery', false);
-})();
-</script>
-
-<!-- ===================== TAB 1 app logic (unchanged) ===================== -->
 <script src="assets/app.js"></script>
+<script src="assets/sitenav.js"></script>
+<script src="assets/enhance.js"></script>
 <script>
-  // The app.js registry uses bare filenames; on the index (root) prepend modules/ for navigation.
+  // The module grid (built by app.js with bare filenames) links to modules/ from the root.
   (function(){
     function fix(){
-      document.querySelectorAll('#panel-mastery .nav a').forEach(a=>{
-        const h=a.getAttribute('href');
-        if(h && h!=='index.html' && !h.startsWith('modules/')) a.setAttribute('href','modules/'+h);
-      });
-      document.querySelectorAll('#panel-mastery .search-results a').forEach(a=>{
-        const h=a.getAttribute('href');
-        if(h && !h.startsWith('modules/') && h!=='index.html') a.setAttribute('href','modules/'+h);
-      });
-      document.querySelectorAll('#panel-mastery [data-module-grid] a').forEach(a=>{
-        const h=a.getAttribute('href');
-        if(h && !h.startsWith('modules/')) a.setAttribute('href','modules/'+h);
+      document.querySelectorAll('[data-module-grid] a').forEach(function(a){
+        var h=a.getAttribute('href');
+        if(h && h!=='index.html' && h.indexOf('modules/')!==0 && h.indexOf('/')===-1) a.setAttribute('href','modules/'+h);
       });
     }
-    document.addEventListener('DOMContentLoaded', ()=>{ setTimeout(fix,0);
-      const inp=document.querySelector('#panel-mastery [data-search]'); if(inp) inp.addEventListener('input',()=>setTimeout(fix,0));
-    });
+    if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',function(){setTimeout(fix,0);});
+    else setTimeout(fix,0);
   })();
 </script>
 </body>

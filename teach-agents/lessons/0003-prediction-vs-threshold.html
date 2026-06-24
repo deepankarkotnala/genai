@@ -1,102 +1,162 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
 <meta charset="utf-8">
-<title>Lesson 3 — Prediction vs. Threshold</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="../assets/style.css">
-<script defer src="../assets/sidenav.js"></script>
+<title>Lesson 3 · Prediction vs. threshold — Understanding AI Agents</title>
+<meta name="description" content="Why a z-score is blind to slow trends, the difference between threshold detection and forecasting, and a line-by-line read of a least-squares forecasting tool.">
+<link rel="stylesheet" href="../../genai-portal/assets/styles.css">
+</head>
+<body data-page="ta-03">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <div class="brand-mark">A</div>
+        <div class="brand-text"><strong>Understanding AI Agents</strong><span>Agent Literacy course</span></div>
+      </a>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search the course…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
 
-<p class="kicker">Lesson 3 · Concept + Hands-on</p>
-<h1>Why "looking back" isn't enough</h1>
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Understanding AI Agents / <b>Lesson 3 · Prediction vs. threshold</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
 
-<div class="lesson-meta">
-  <span><b>Reading time:</b> ~20 min (plus hands-on)</span>
-  <span><b>Type:</b> Concept + runnable code</span>
-  <span><b>Prerequisite:</b> Lessons 1–2</span>
-  <span><b>File:</b> code/forecast_tool.py</span>
-</div>
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Lesson 3 · Concept + Hands-on</div>
+        <h1>Why "looking back" isn't enough</h1>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~20 min (plus hands-on)</span>
+          <span class="pill">Type · Concept + runnable code</span>
+          <span class="pill purple">Prereq · Lessons 1–2</span>
+          <span class="pill">File · code/forecast_tool.py</span>
+        </div>
 
-<div class="objectives">
-  <h3>By the end of this lesson you will be able to</h3>
-  <ul>
-    <li>Explain <em>why</em> the Lesson-2 agent missed the slow temperature rise.</li>
-    <li>State the difference between <strong>threshold detection</strong> and <strong>forecasting</strong>.</li>
-    <li>Read a forecasting tool line by line and understand the least-squares trend it fits.</li>
-    <li>Connect this to the EnM phrase "predict … in what time-frame," and explain why it's classical math.</li>
-  </ul>
-</div>
+        <div class="callout key">
+          <div class="c-ico">🎯</div>
+          <div class="c-body"><div class="c-title">By the end of this lesson you will be able to</div>
+          <ul>
+            <li>Explain <em>why</em> the Lesson-2 agent missed the slow temperature rise.</li>
+            <li>State the difference between <strong>threshold detection</strong> and <strong>forecasting</strong>.</li>
+            <li>Read a forecasting tool line by line and understand the least-squares trend it fits.</li>
+            <li>Connect this to the EnM phrase "predict … in what time-frame," and explain why it's classical math.</li>
+          </ul></div>
+        </div>
 
-<div class="toc">
-  <h3>In this lesson</h3>
-  <ol>
-    <li><a href="#bug">The "bug" that's actually a lesson</a></li>
-    <li><a href="#why">Why a z-score hides a slow ramp</a></li>
-    <li><a href="#two">Two fundamentally different questions</a></li>
-    <li><a href="#run">Hands-on — run the forecaster</a></li>
-    <li><a href="#walkthrough">Walkthrough of forecast_tool.py</a></li>
-    <li><a href="#realworld">What real systems use instead</a></li>
-    <li><a href="#exercises">Try it yourself</a></li>
-    <li><a href="#checks">Check yourself</a></li>
-  </ol>
-</div>
+        <h2 id="bug">1 · The "bug" that's actually a lesson</h2>
+        <p>In Lesson 2 the agent confidently flagged the vibration <em>spike</em> — but said nothing about the
+        reactor temperature, even though, in our data, the temperature climbs steadily the whole time, heading
+        toward a dangerous level. A reliability engineer would care far more about the slow climb (it predicts a
+        real failure) than the brief vibration blip. So why did the agent miss it?</p>
+        <p>The agent didn't fail. Its <strong>tool</strong> did. <code>detect_anomalies</code> uses a z-score, and a
+        z-score is structurally blind to slow trends. Understanding exactly why teaches a concept that sits at the
+        heart of EnM scenario #2.</p>
 
-<h2 id="bug">1. The "bug" that's actually a lesson</h2>
-<p>In Lesson 2 the agent confidently flagged the vibration <em>spike</em> — but said nothing about the
-reactor temperature, even though, in our data, the temperature climbs steadily the whole time, heading
-toward a dangerous level. A reliability engineer would care far more about the slow climb (it predicts a
-real failure) than the brief vibration blip. So why did the agent miss it?</p>
-<p>The agent didn't fail. Its <strong>tool</strong> did. <code>detect_anomalies</code> uses a z-score, and a
-z-score is structurally blind to slow trends. Understanding exactly why teaches a concept that sits at the
-heart of EnM scenario #2.</p>
+        <div class="diagram draw-anim">
+          <svg viewBox="0 0 640 300" width="100%" style="max-width:640px" xmlns="http://www.w3.org/2000/svg" fill="none">
+            <!-- THRESHOLD panel: backward-looking, catches spike, misses ramp -->
+            <text x="150" y="28" text-anchor="middle" class="flow-label" fill="var(--text)" font-weight="700" font-size="15">THRESHOLD (z-score)</text>
+            <text x="150" y="46" text-anchor="middle" class="flow-sub" fill="var(--text-muted)" font-size="11">backward-looking · catches spikes</text>
+            <rect x="20" y="60" width="260" height="170" rx="10" fill="var(--bg-elevated)" stroke="var(--border-strong)"/>
+            <!-- spike series -->
+            <path d="M40 200 L80 198 L120 195 L160 100 L200 196 L240 198 L260 197" class="ln flow-arrow" stroke="var(--accent)" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>
+            <circle cx="160" cy="100" r="5" fill="var(--accent)"/>
+            <text x="160" y="86" text-anchor="middle" class="flow-sub" fill="var(--accent)" font-size="10" font-weight="700">CAUGHT ✓</text>
+            <!-- slow ramp hidden -->
+            <path d="M40 210 L260 165" class="ln flow-arrow" stroke="var(--text-muted)" stroke-width="2" stroke-dasharray="5 4"/>
+            <text x="150" y="222" text-anchor="middle" class="flow-sub" fill="var(--text-muted)" font-size="10">slow ramp → missed ✗</text>
 
-<h2 id="why">2. Why a z-score hides a slow ramp</h2>
-<p>Recall what a z-score asks: <em>"How far is this single reading from the average of all the readings?"</em>
-That works beautifully for a sudden spike — one point leaps far from a stable average. But think about what
-happens with a <strong>gradual ramp</strong>:</p>
+            <!-- FORECAST panel: forward-looking, catches ramp -->
+            <text x="490" y="28" text-anchor="middle" class="flow-label" fill="var(--text)" font-weight="700" font-size="15">FORECAST (trend)</text>
+            <text x="490" y="46" text-anchor="middle" class="flow-sub" fill="var(--text-muted)" font-size="11">forward-looking · catches slow ramps</text>
+            <rect x="360" y="60" width="260" height="170" rx="10" fill="var(--bg-elevated)" stroke="var(--border-strong)"/>
+            <!-- limit line -->
+            <path d="M380 95 L600 95" stroke="var(--border-strong)" stroke-width="1.5" stroke-dasharray="4 4"/>
+            <text x="592" y="90" text-anchor="end" class="flow-sub" fill="var(--text-muted)" font-size="10">limit</text>
+            <!-- observed ramp -->
+            <path d="M380 205 L520 150" class="ln flow-arrow" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>
+            <!-- extrapolation -->
+            <path d="M520 150 L600 118" class="ln flow-arrow" stroke="var(--accent)" stroke-width="2.5" stroke-dasharray="6 5" stroke-linecap="round"/>
+            <circle cx="600" cy="118" r="5" fill="var(--accent)"/>
+            <text x="490" y="222" text-anchor="middle" class="flow-sub" fill="var(--accent)" font-size="10" font-weight="700">breach in ~13 steps ✓</text>
+          </svg>
+          <div class="diagram-caption">Same data, two questions. Thresholding catches the spike but is blind to the slow climb; forecasting projects the trend forward and predicts <em>when</em> the limit is crossed.</div>
+        </div>
 
-<ul class="steps">
-  <li><strong>The average rises with the data.</strong> If every reading is a bit higher than the last, the
-      mean is dragged upward too. So a high late reading isn't far from the (now also high) average.</li>
-  <li><strong>The spread widens.</strong> A long climb means the values range widely from start to end, so
-      the standard deviation is large. A large σ makes <em>every</em> z-score smaller — because z divides by σ.</li>
-  <li><strong>The anomaly hides inside its own trend.</strong> The rising values look "normal" relative to a
-      window that is itself rising. No single point is dramatically far from the inflated average, so no z
-      crosses the threshold. The danger is real, but the detector is looking at the wrong thing.</li>
-</ul>
+        <h2 id="why">2 · Why a z-score hides a slow ramp</h2>
+        <p>Recall what a z-score asks: <em>"How far is this single reading from the average of all the readings?"</em>
+        That works beautifully for a sudden spike — one point leaps far from a stable average. But think about what
+        happens with a <strong>gradual ramp</strong>:</p>
 
-<div class="warn-box">
-  <span class="label">The core limitation</span>
-  Threshold detection looks <strong>backward</strong> and asks "is anything abnormal <em>right now</em>?"
-  It only fires once you are <em>already</em> in trouble. For a creeping failure, "already in trouble" can be
-  too late.
-</div>
+        <div class="timeline">
+          <div class="step"><h4>The average rises with the data.</h4><p>If every reading is a bit higher than the last, the
+              mean is dragged upward too. So a high late reading isn't far from the (now also high) average.</p></div>
+          <div class="step"><h4>The spread widens.</h4><p>A long climb means the values range widely from start to end, so
+              the standard deviation is large. A large σ makes <em>every</em> z-score smaller — because z divides by σ.</p></div>
+          <div class="step"><h4>The anomaly hides inside its own trend.</h4><p>The rising values look "normal" relative to a
+              window that is itself rising. No single point is dramatically far from the inflated average, so no z
+              crosses the threshold. The danger is real, but the detector is looking at the wrong thing.</p></div>
+        </div>
 
-<p>This is precisely the distinction the EnM spreadsheet draws for scenario #2. It does <em>not</em> ask for
-spike detection. It asks the Anomaly agent to <em>"do a time-series prediction/extrapolation and predict if
-an anomaly is going to happen and if yes, in what time-frame."</em> That is <strong>forecasting</strong> —
-looking forward — not thresholding.</p>
+        <div class="callout warn">
+          <div class="c-ico">⚠️</div>
+          <div class="c-body"><div class="c-title">The core limitation</div>
+          <p>Threshold detection looks <strong>backward</strong> and asks "is anything abnormal <em>right now</em>?"
+          It only fires once you are <em>already</em> in trouble. For a creeping failure, "already in trouble" can be
+          too late.</p></div>
+        </div>
 
-<h2 id="two">3. Two fundamentally different questions</h2>
-<table>
-  <tr><th></th><th>Threshold detection</th><th>Forecasting</th></tr>
-  <tr><td>The question it answers</td><td>"Is this reading abnormal <em>now</em>?"</td><td>"Where is this trend <em>heading</em>?"</td></tr>
-  <tr><td>Direction in time</td><td>Backward-looking</td><td>Forward-looking</td></tr>
-  <tr><td>What it catches well</td><td>Spikes, sudden step changes</td><td>Slow drifts, gradual ramps</td></tr>
-  <tr><td>What it misses</td><td>Creeping trends</td><td>Sudden one-off spikes</td></tr>
-  <tr><td>Typical output</td><td>"3 points exceeded 3σ"</td><td>"breach in ~13 steps"</td></tr>
-  <tr><td>EnM phrase</td><td>tag monitoring</td><td>"predict … in what time-frame"</td></tr>
-</table>
+        <p>This is precisely the distinction the EnM spreadsheet draws for scenario #2. It does <em>not</em> ask for
+        spike detection. It asks the Anomaly agent to <em>"do a time-series prediction/extrapolation and predict if
+        an anomaly is going to happen and if yes, in what time-frame."</em> That is <strong>forecasting</strong> —
+        looking forward — not thresholding.</p>
 
-<div class="plain">
-  <span class="label">In plain English</span>
-  Thresholding is a smoke alarm — it goes off once there's smoke. Forecasting is noticing the pan is heating
-  up and predicting it'll smoke in five minutes. A serious reliability system needs <em>both</em>: they catch
-  different kinds of trouble.
-</div>
+        <h2 id="two">3 · Two fundamentally different questions</h2>
+        <div class="table-wrap">
+        <table>
+          <tr><th></th><th>Threshold detection</th><th>Forecasting</th></tr>
+          <tr><td>The question it answers</td><td>"Is this reading abnormal <em>now</em>?"</td><td>"Where is this trend <em>heading</em>?"</td></tr>
+          <tr><td>Direction in time</td><td>Backward-looking</td><td>Forward-looking</td></tr>
+          <tr><td>What it catches well</td><td>Spikes, sudden step changes</td><td>Slow drifts, gradual ramps</td></tr>
+          <tr><td>What it misses</td><td>Creeping trends</td><td>Sudden one-off spikes</td></tr>
+          <tr><td>Typical output</td><td>"3 points exceeded 3σ"</td><td>"breach in ~13 steps"</td></tr>
+          <tr><td>EnM phrase</td><td>tag monitoring</td><td>"predict … in what time-frame"</td></tr>
+        </table>
+        </div>
 
-<h2 id="run">4. Hands-on — run the forecaster</h2>
-<pre><code>cd teach-agents/code
+        <div class="callout tip">
+          <div class="c-ico">✅</div>
+          <div class="c-body"><div class="c-title">In plain English</div>
+          <p>Thresholding is a smoke alarm — it goes off once there's smoke. Forecasting is noticing the pan is heating
+          up and predicting it'll smoke in five minutes. A serious reliability system needs <em>both</em>: they catch
+          different kinds of trouble.</p></div>
+        </div>
+
+        <h2 id="run">4 · Hands-on — run the forecaster</h2>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> bash</span><button class="copy-btn">Copy</button></div>
+          <pre><code>cd teach-agents/code
 python forecast_tool.py</code></pre>
-<p>Output:</p>
-<pre><code>Threshold detection looks backward. Forecasting looks forward:
+        </div>
+        <p>Output:</p>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> output</span><button class="copy-btn">Copy</button></div>
+          <pre><code>Threshold detection looks backward. Forecasting looks forward:
 
   current_value      386.51
   limit              420
@@ -104,140 +164,191 @@ python forecast_tool.py</code></pre>
   forecast           rising
   steps_until_breach 13
   verdict            Predicted to breach 420 in ~13 steps</code></pre>
-<p>Where the z-score said nothing, the forecaster says something actionable: the temperature is rising about
-2.7 units per step and, if nothing changes, will cross the 420 safe limit in about 13 steps. That "in ~13
-steps" <em>is</em> the EnM "time-frame."</p>
+        </div>
+        <p>Where the z-score said nothing, the forecaster says something actionable: the temperature is rising about
+        2.7 units per step and, if nothing changes, will cross the 420 safe limit in about 13 steps. That "in ~13
+        steps" <em>is</em> the EnM "time-frame."</p>
 
-<h2 id="walkthrough">5. Walkthrough of forecast_tool.py</h2>
-<p>Open <a href="../code/forecast_tool.py">code/forecast_tool.py</a>. The whole forecaster is two functions:
-fit a line, then extrapolate it.</p>
+        <h2 id="walkthrough">5 · Walkthrough of forecast_tool.py</h2>
+        <p>Open <a href="../code/forecast_tool.py">code/forecast_tool.py</a>. The whole forecaster is two functions:
+        fit a line, then extrapolate it.</p>
 
-<div class="annotated">
-<pre><code>def _linear_fit(ys):
-    """Least-squares slope & intercept for y vs. index 0..n-1."""
-    n = len(ys)
-    xs = list(range(n))
-    mx = statistics.mean(xs); my = statistics.mean(ys)
-    denom = sum((x - mx) ** 2 for x in xs) or 1e-9
-    slope = sum((x - mx) * (y - my) for x, y in zip(xs, ys)) / denom
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> python</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">def</span> <span class="tok-fn">_linear_fit</span>(ys):
+    <span class="tok-str">"""Least-squares slope &amp; intercept for y vs. index 0..n-1."""</span>
+    n = <span class="tok-fn">len</span>(ys)
+    xs = <span class="tok-fn">list</span>(<span class="tok-fn">range</span>(n))
+    mx = statistics.<span class="tok-fn">mean</span>(xs); my = statistics.<span class="tok-fn">mean</span>(ys)
+    denom = <span class="tok-fn">sum</span>((x - mx) ** <span class="tok-num">2</span> <span class="tok-kw">for</span> x <span class="tok-kw">in</span> xs) <span class="tok-kw">or</span> <span class="tok-num">1e-9</span>
+    slope = <span class="tok-fn">sum</span>((x - mx) * (y - my) <span class="tok-kw">for</span> x, y <span class="tok-kw">in</span> <span class="tok-fn">zip</span>(xs, ys)) / denom
     intercept = my - slope * mx
-    return slope, intercept</code></pre>
-<ol class="annot-list">
-  <li>This fits a straight line to a sequence of values using <strong>least-squares regression</strong> — the
-      standard way to find the line that best follows a set of points. <code>xs</code> is just the position
-      index 0, 1, 2, …; <code>ys</code> are the readings.</li>
-  <li><code>slope</code> tells you how fast the value is changing per step (positive = rising). <code>intercept</code>
-      is where the line starts. Together they define a line you can extend into the future. <strong>This is
-      ordinary statistics — no AI, no ML framework, pure standard-library Python.</strong></li>
-</ol>
-</div>
+    <span class="tok-kw">return</span> slope, intercept</code></pre>
+        </div>
+        <ol>
+          <li>This fits a straight line to a sequence of values using <strong>least-squares regression</strong> — the
+              standard way to find the line that best follows a set of points. <code>xs</code> is just the position
+              index 0, 1, 2, …; <code>ys</code> are the readings.</li>
+          <li><code>slope</code> tells you how fast the value is changing per step (positive = rising). <code>intercept</code>
+              is where the line starts. Together they define a line you can extend into the future. <strong>This is
+              ordinary statistics — no AI, no ML framework, pure standard-library Python.</strong></li>
+        </ol>
 
-<div class="annotated">
-<pre><code>def forecast_breach(tag, limit, window=15, horizon=20):
-    rows = load_data()
-    ys = [float(r[tag]) for r in rows][-window:]
-    slope, intercept = _linear_fit(ys)
-    current = ys[-1]; last_idx = len(ys) - 1
-    steps_to_breach = None
-    if slope > 0:
-        for k in range(1, horizon + 1):
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> python</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">def</span> <span class="tok-fn">forecast_breach</span>(tag, limit, window=<span class="tok-num">15</span>, horizon=<span class="tok-num">20</span>):
+    rows = <span class="tok-fn">load_data</span>()
+    ys = [<span class="tok-fn">float</span>(r[tag]) <span class="tok-kw">for</span> r <span class="tok-kw">in</span> rows][-window:]
+    slope, intercept = <span class="tok-fn">_linear_fit</span>(ys)
+    current = ys[-<span class="tok-num">1</span>]; last_idx = <span class="tok-fn">len</span>(ys) - <span class="tok-num">1</span>
+    steps_to_breach = <span class="tok-kw">None</span>
+    <span class="tok-kw">if</span> slope &gt; <span class="tok-num">0</span>:
+        <span class="tok-kw">for</span> k <span class="tok-kw">in</span> <span class="tok-fn">range</span>(<span class="tok-num">1</span>, horizon + <span class="tok-num">1</span>):
             projected = slope * (last_idx + k) + intercept
-            if projected >= limit:
-                steps_to_breach = k; break
-    return {"trend_per_step": round(slope, 3),
-            "forecast": "rising"/"falling"/"stable",
-            "steps_until_breach": steps_to_breach, "verdict": "..."}</code></pre>
-<ol class="annot-list">
-  <li>This is the actual <strong>tool</strong> an agent would call. <code>[-window:]</code> takes only the
-      <em>last 15</em> readings — recent history is more relevant for a forecast than ancient data. (Try
-      changing <code>window</code> in the exercises to feel why this matters.)</li>
-  <li>It fits the trend line to those 15 points, then — if the trend is rising — <strong>extrapolates</strong>
-      forward step by step (the <code>for k</code> loop), projecting where the line will be 1, 2, 3, … steps
-      ahead.</li>
-  <li>As soon as a projected value reaches the <code>limit</code>, it records <em>how many steps away</em>
-      that breach is (<code>steps_to_breach = k</code>) and stops. If nothing breaches within the
-      <code>horizon</code> (20 steps), it returns <code>None</code> — "no breach forecast."</li>
-  <li>It returns a structured result — slope, a human label ("rising"/"stable"), the steps-to-breach, and a
-      plain-English verdict. Just like Lesson 2's tools, the output is structured so an agent can read the
-      fields and reason about them.</li>
-</ol>
+            <span class="tok-kw">if</span> projected &gt;= limit:
+                steps_to_breach = k; <span class="tok-kw">break</span>
+    <span class="tok-kw">return</span> {<span class="tok-str">"trend_per_step"</span>: <span class="tok-fn">round</span>(slope, <span class="tok-num">3</span>),
+            <span class="tok-str">"forecast"</span>: <span class="tok-str">"rising"</span>/<span class="tok-str">"falling"</span>/<span class="tok-str">"stable"</span>,
+            <span class="tok-str">"steps_until_breach"</span>: steps_to_breach, <span class="tok-str">"verdict"</span>: <span class="tok-str">"..."</span>}</code></pre>
+        </div>
+        <ol>
+          <li>This is the actual <strong>tool</strong> an agent would call. <code>[-window:]</code> takes only the
+              <em>last 15</em> readings — recent history is more relevant for a forecast than ancient data. (Try
+              changing <code>window</code> in the exercises to feel why this matters.)</li>
+          <li>It fits the trend line to those 15 points, then — if the trend is rising — <strong>extrapolates</strong>
+              forward step by step (the <code>for k</code> loop), projecting where the line will be 1, 2, 3, … steps
+              ahead.</li>
+          <li>As soon as a projected value reaches the <code>limit</code>, it records <em>how many steps away</em>
+              that breach is (<code>steps_to_breach = k</code>) and stops. If nothing breaches within the
+              <code>horizon</code> (20 steps), it returns <code>None</code> — "no breach forecast."</li>
+          <li>It returns a structured result — slope, a human label ("rising"/"stable"), the steps-to-breach, and a
+              plain-English verdict. Just like Lesson 2's tools, the output is structured so an agent can read the
+              fields and reason about them.</li>
+        </ol>
+
+        <div class="cssflow">
+          <div class="fnode">History<small>last 15 readings of the tag</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">Fit trend line<small>least-squares slope &amp; intercept</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">Extrapolate<small>project 1, 2, 3 … steps ahead</small></div>
+          <div class="farrow"></div>
+          <div class="fnode accent">Compare to limit<small>find the first projected breach</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">Report time-frame<small>"breach in ~13 steps"</small></div>
+        </div>
+
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The EnM nuance, again</div>
+          <p>This "predictive agent" is ~25 lines of classical math wrapped as a tool. There is no language model
+          anywhere in it. In a full system, the LLM's job is to <em>decide when to call this tool</em> and
+          <em>explain the result</em> to an engineer — not to do the forecasting itself. Every EnM "predictive
+          agent" follows this pattern: history in → projection out → compare to a limit → report a time-frame.</p></div>
+        </div>
+
+        <h2 id="realworld">6 · What real systems use instead</h2>
+        <p>A straight-line fit is the simplest possible forecaster, chosen here so the code is fully readable. Real
+        reliability systems use richer methods:</p>
+        <div class="table-wrap">
+        <table>
+          <tr><th>Method</th><th>Good for</th><th>EnM connection</th></tr>
+          <tr><td>Exponential smoothing</td><td>Recent-weighted trends, gentle noise</td><td>The xlsx literally says "exponential smoothening"</td></tr>
+          <tr><td>ARIMA</td><td>Trends + seasonality in time series</td><td>Classic process-data forecasting</td></tr>
+          <tr><td>Learned ML models (LSTM, gradient boosting)</td><td>Complex, multi-tag patterns</td><td>"time-series prediction" at scale</td></tr>
+        </table>
+        </div>
+        <p>The <em>shape</em> is identical regardless of method: take history, project forward, compare to a limit,
+        report a time-frame. Swapping the simple line fit for ARIMA changes the accuracy, not the architecture — the
+        tool's inputs and outputs stay the same, so the agent around it doesn't change at all. (That's the same
+        "swappable part behind a clean seam" idea you saw with the brain in Lesson 2.)</p>
+
+        <h2 id="exercises">7 · Try it yourself</h2>
+        <div class="table-wrap">
+        <table>
+          <tr><th>Change</th><th>What you'll learn</th></tr>
+          <tr><td>Shrink <code>window</code> from 15 to 5</td><td>Short windows are jumpier and more sensitive to noise; how much history you trust is a real design knob.</td></tr>
+          <tr><td>Lower <code>limit</code> from 420 to 400</td><td>The forecast breach time shrinks — the "time-frame" depends entirely on the safety limit you set.</td></tr>
+          <tr><td>Call <code>forecast_breach("V401_vibration", 4.0)</code></td><td>A spiky tag has a near-zero <em>trend</em>, so forecasting says little about it — proving thresholding and forecasting are complementary, not rivals.</td></tr>
+          <tr><td>Print the <code>slope</code> for each tag</td><td>Which tags are drifting vs. stable — the first thing a reliability engineer wants to know.</td></tr>
+        </table>
+        </div>
+
+        <div class="callout key">
+          <div class="c-ico">🎯</div>
+          <div class="c-body"><div class="c-title">Recap</div>
+          <ul>
+            <li>The Lesson-2 agent missed the temperature ramp because a <strong>z-score is blind to slow trends</strong> (the rising mean and σ hide them).</li>
+            <li><strong>Thresholding looks backward</strong> ("abnormal now?"); <strong>forecasting looks forward</strong> ("heading where, and when does it breach?").</li>
+            <li>EnM #2 explicitly asks for forecasting — "predict … in what time-frame."</li>
+            <li>The forecaster is a <strong>least-squares trend line + extrapolation</strong> — classical math wrapped as a tool, no LLM.</li>
+            <li>Real systems use ARIMA / exponential smoothing / ML, but the tool's <em>shape</em> (history → projection → time-frame) is unchanged.</li>
+          </ul></div>
+        </div>
+
+        <h2 id="checks">8 · Check yourself</h2>
+        <div class="quiz">
+          <div class="q">Why did the z-score miss the slow temperature ramp?</div>
+          <button class="opt">The data was missing for those rows</button>
+          <button class="opt" data-correct="true">The ramp inflated the mean and stddev, so rising values still looked 'normal'</button>
+          <button class="opt">Temperature can't be measured with z-scores</button>
+          <button class="opt">The threshold was set to zero</button>
+          <div class="explain">Exactly — a rising window inflates mean and σ, hiding the ramp.</div>
+        </div>
+        <div class="quiz">
+          <div class="q">Which approach can tell you 'this will breach the limit in ~13 steps'?</div>
+          <button class="opt">Threshold detection (z-score)</button>
+          <button class="opt" data-correct="true">Forecasting (trend extrapolation)</button>
+          <button class="opt">A bigger language model</button>
+          <button class="opt">A longer system prompt</button>
+          <div class="explain">Right — forecasting projects the trend forward to a limit.</div>
+        </div>
+        <div class="quiz">
+          <div class="q">What technique does forecast_tool.py use to find the trend?</div>
+          <button class="opt">A neural network</button>
+          <button class="opt">The language model's intuition</button>
+          <button class="opt" data-correct="true">A least-squares straight-line fit</button>
+          <button class="opt">Random sampling</button>
+          <div class="explain">Correct — it's least-squares statistics, wrapped as a tool.</div>
+        </div>
+
+        <div class="callout note">
+          <div class="c-ico">💬</div>
+          <div class="c-body"><div class="c-title">Ask me anything</div>
+          <p>Want to see exponential smoothing instead of a line fit, or how an agent <em>decides</em> whether to use
+          detect vs. forecast? Ask me — that decision is the bridge to Lesson 4's orchestration.</p></div>
+        </div>
+
+        <div class="page-nav">
+          <a href="0002-run-your-first-agent.html"><div class="dir">← Previous</div><div class="ttl">Lesson 2 · Run your first agent</div></a>
+          <a class="next" href="0004-orchestration.html"><div class="dir">Next up →</div><div class="ttl">Lesson 4 · Orchestration</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
 </div>
 
-<div class="key">
-  <span class="label">The EnM nuance, again</span>
-  This "predictive agent" is ~25 lines of classical math wrapped as a tool. There is no language model
-  anywhere in it. In a full system, the LLM's job is to <em>decide when to call this tool</em> and
-  <em>explain the result</em> to an engineer — not to do the forecasting itself. Every EnM "predictive
-  agent" follows this pattern: history in → projection out → compare to a limit → report a time-frame.
-</div>
-
-<h2 id="realworld">6. What real systems use instead</h2>
-<p>A straight-line fit is the simplest possible forecaster, chosen here so the code is fully readable. Real
-reliability systems use richer methods:</p>
-<table>
-  <tr><th>Method</th><th>Good for</th><th>EnM connection</th></tr>
-  <tr><td>Exponential smoothing</td><td>Recent-weighted trends, gentle noise</td><td>The xlsx literally says "exponential smoothening"</td></tr>
-  <tr><td>ARIMA</td><td>Trends + seasonality in time series</td><td>Classic process-data forecasting</td></tr>
-  <tr><td>Learned ML models (LSTM, gradient boosting)</td><td>Complex, multi-tag patterns</td><td>"time-series prediction" at scale</td></tr>
-</table>
-<p>The <em>shape</em> is identical regardless of method: take history, project forward, compare to a limit,
-report a time-frame. Swapping the simple line fit for ARIMA changes the accuracy, not the architecture — the
-tool's inputs and outputs stay the same, so the agent around it doesn't change at all. (That's the same
-"swappable part behind a clean seam" idea you saw with the brain in Lesson 2.)</p>
-
-<h2 id="exercises">7. Try it yourself</h2>
-<table>
-  <tr><th>Change</th><th>What you'll learn</th></tr>
-  <tr><td>Shrink <code>window</code> from 15 to 5</td><td>Short windows are jumpier and more sensitive to noise; how much history you trust is a real design knob.</td></tr>
-  <tr><td>Lower <code>limit</code> from 420 to 400</td><td>The forecast breach time shrinks — the "time-frame" depends entirely on the safety limit you set.</td></tr>
-  <tr><td>Call <code>forecast_breach("V401_vibration", 4.0)</code></td><td>A spiky tag has a near-zero <em>trend</em>, so forecasting says little about it — proving thresholding and forecasting are complementary, not rivals.</td></tr>
-  <tr><td>Print the <code>slope</code> for each tag</td><td>Which tags are drifting vs. stable — the first thing a reliability engineer wants to know.</td></tr>
-</table>
-
-<div class="recap">
-  <h3>Recap</h3>
-  <ul>
-    <li>The Lesson-2 agent missed the temperature ramp because a <strong>z-score is blind to slow trends</strong> (the rising mean and σ hide them).</li>
-    <li><strong>Thresholding looks backward</strong> ("abnormal now?"); <strong>forecasting looks forward</strong> ("heading where, and when does it breach?").</li>
-    <li>EnM #2 explicitly asks for forecasting — "predict … in what time-frame."</li>
-    <li>The forecaster is a <strong>least-squares trend line + extrapolation</strong> — classical math wrapped as a tool, no LLM.</li>
-    <li>Real systems use ARIMA / exponential smoothing / ML, but the tool's <em>shape</em> (history → projection → time-frame) is unchanged.</li>
-  </ul>
-</div>
-
-<h2 id="checks">8. Check yourself</h2>
-<div class="quiz" data-good="Exactly — a rising window inflates mean and σ, hiding the ramp." data-bad="Re-read Section 2.">
-  <div class="q">Why did the z-score miss the slow temperature ramp?</div>
-  <button class="opt">The data was missing for those rows</button>
-  <button class="opt" data-correct="1">The ramp inflated the mean and stddev, so rising values still looked 'normal'</button>
-  <button class="opt">Temperature can't be measured with z-scores</button>
-  <button class="opt">The threshold was set to zero</button>
-  <div class="feedback"></div>
-</div>
-<div class="quiz" data-good="Right — forecasting projects the trend forward to a limit." data-bad="Re-read Section 3.">
-  <div class="q">Which approach can tell you 'this will breach the limit in ~13 steps'?</div>
-  <button class="opt">Threshold detection (z-score)</button>
-  <button class="opt" data-correct="1">Forecasting (trend extrapolation)</button>
-  <button class="opt">A bigger language model</button>
-  <button class="opt">A longer system prompt</button>
-  <div class="feedback"></div>
-</div>
-<div class="quiz" data-good="Correct — it's least-squares statistics, wrapped as a tool." data-bad="Re-read Section 5.">
-  <div class="q">What technique does forecast_tool.py use to find the trend?</div>
-  <button class="opt">A neural network</button>
-  <button class="opt">The language model's intuition</button>
-  <button class="opt" data-correct="1">A least-squares straight-line fit</button>
-  <button class="opt">Random sampling</button>
-  <div class="feedback"></div>
-</div>
-
-<div class="ask">
-  💬 Want to see exponential smoothing instead of a line fit, or how an agent <em>decides</em> whether to use
-  detect vs. forecast? Ask me — that decision is the bridge to Lesson 4's orchestration.
-</div>
-
-<div class="nav">
-  <a href="0002-run-your-first-agent.html">← Lesson 2</a>
-  <a href="0004-orchestration.html">Lesson 4 →</a>
-</div>
-<script src="../assets/quiz.js"></script>
+<script>
+window.PORTAL = {
+  homeHref: "../../genai-portal/index.html",
+  navLabel: "The course",
+  here: "lessons/0003-prediction-vs-threshold.html",
+  base: "../",
+  pages: [
+    { file: "index.html",                              title: "Course index",          num: "✦", kw: "overview start home index agents course" },
+    { file: "lessons/0001-what-is-an-agent.html",      title: "What is an agent?",     num: "01", kw: "agent definition loop tools chatbot" },
+    { file: "lessons/0002-run-your-first-agent.html",  title: "Run your first agent",  num: "02", kw: "run agent python gemini hands-on first" },
+    { file: "lessons/0003-prediction-vs-threshold.html", title: "Prediction vs. threshold", num: "03", kw: "prediction threshold forecast z-score anomaly" },
+    { file: "lessons/0004-orchestration.html",         title: "Orchestration",         num: "04", kw: "orchestration chain anomaly rca remediation multi-agent" },
+    { file: "lessons/0005-workflow-vs-agent.html",     title: "Workflow vs. agent",    num: "05", kw: "workflow autonomous agent shape decide" },
+    { file: "lessons/0006-mapping-any-enm-row.html",   title: "Mapping any EnM row",   num: "06", kw: "mapping enm row decompose capstone method" },
+    { file: "reference/agent-glossary.html",           title: "Agent glossary",        num: "📖", kw: "glossary reference terms lookup" }
+  ]
+};
+</script>
+<script src="../../genai-portal/assets/sitenav.js"></script>
+<script src="../../genai-portal/assets/portal-page.js"></script>
+<script src="../../genai-portal/assets/enhance.js"></script>
+</body>
+</html>

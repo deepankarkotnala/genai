@@ -1,59 +1,79 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
 <meta charset="utf-8">
-<title>Lesson 2 — Run Your First Agent (Live)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="../assets/style.css">
-<script defer src="../assets/sidenav.js"></script>
+<title>Lesson 2 · Run your first agent — Understanding AI Agents</title>
+<meta name="description" content="Run a real agent on your machine, read its loop output line by line, get a free LLM key, and learn the key idea: the loop is fixed, the brain is swappable.">
+<link rel="stylesheet" href="../../genai-portal/assets/styles.css">
+</head>
+<body data-page="ta-02">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <div class="brand-mark">A</div>
+        <div class="brand-text"><strong>Understanding AI Agents</strong><span>Agent Literacy course</span></div>
+      </a>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search the course…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
 
-<p class="kicker">Lesson 2 · Hands-on</p>
-<h1>Run your first agent — live, for free</h1>
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Understanding AI Agents / <b>Lesson 2 · Run your first agent</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
 
-<div class="lesson-meta">
-  <span><b>Reading time:</b> ~25 min (plus hands-on)</span>
-  <span><b>Type:</b> Hands-on — you run real code</span>
-  <span><b>Prerequisite:</b> Lesson 1</span>
-  <span><b>File:</b> code/agent.py</span>
-</div>
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Lesson 2 · Hands-on</div>
+        <h1>Run your first agent — live, for free</h1>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~25 min (plus hands-on)</span>
+          <span class="pill">Type · Hands-on — you run real code</span>
+          <span class="pill purple">Prereq · Lesson 1</span>
+          <span class="pill">File · code/agent.py</span>
+        </div>
 
-<div class="objectives">
-  <h3>By the end of this lesson you will be able to</h3>
-  <ul>
-    <li>Run a real agent on your machine and read its loop output line by line.</li>
-    <li>Get a <strong>free</strong> LLM key and swap the fake "brain" for a real one.</li>
-    <li>Read every part of <code>agent.py</code> and say what it does and why.</li>
-    <li>Explain the single most important architectural idea: <em>the loop is fixed; the brain is swappable.</em></li>
-    <li>Modify the agent (new tool, new prompt) and predict the effect before you run it.</li>
-  </ul>
-</div>
+        <div class="callout key">
+          <div class="c-ico">🎯</div>
+          <div class="c-body"><div class="c-title">By the end of this lesson you will be able to</div>
+          <ul>
+            <li>Run a real agent on your machine and read its loop output line by line.</li>
+            <li>Get a <strong>free</strong> LLM key and swap the fake "brain" for a real one.</li>
+            <li>Read every part of <code>agent.py</code> and say what it does and why.</li>
+            <li>Explain the single most important architectural idea: <em>the loop is fixed; the brain is swappable.</em></li>
+            <li>Modify the agent (new tool, new prompt) and predict the effect before you run it.</li>
+          </ul></div>
+        </div>
 
-<div class="toc">
-  <h3>In this lesson</h3>
-  <ol>
-    <li><a href="#run">Step 1 — Run it with no key (watch the loop)</a></li>
-    <li><a href="#read-output">Reading the output, line by line</a></li>
-    <li><a href="#walkthrough">A full walkthrough of agent.py</a></li>
-    <li><a href="#key">Step 2 — Get a free LLM key and go live</a></li>
-    <li><a href="#swap">Step 3 — How the brain swap works</a></li>
-    <li><a href="#realtools">From hand-parsed JSON to real tool calling</a></li>
-    <li><a href="#exercises">Try it yourself</a></li>
-    <li><a href="#checks">Check yourself</a></li>
-  </ol>
-</div>
-
-<h2 id="run">1. Step 1 — Run it with no key (watch the loop)</h2>
-<p>Lesson 1 was all reading. Now you make an agent actually run. The good news: it works
-<strong>immediately, with no API key</strong>, because it ships with a fake "offline brain" so you can see
-the loop turn before dealing with any setup. Open a terminal and run:</p>
-<pre><code>cd teach-agents/code
+        <h2 id="run">1 · Step 1 — Run it with no key (watch the loop)</h2>
+        <p>Lesson 1 was all reading. Now you make an agent actually run. The good news: it works <strong>immediately, with no API key</strong>, because it ships with a fake "offline brain" so you can see the loop turn before dealing with any setup. Open a terminal and run:</p>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> bash</span><button class="copy-btn">Copy</button></div>
+          <pre><code>cd teach-agents/code
 python agent.py</code></pre>
+        </div>
 
-<p>If Python is installed you'll see output within a second. If you get <code>python: command not found</code>,
-install Python 3 first (any 3.9+), then re-run. You don't need to install anything else yet — the offline
-brain uses only the standard library.</p>
+        <p>If Python is installed you'll see output within a second. If you get <code>python: command not found</code>, install Python 3 first (any 3.9+), then re-run. You don't need to install anything else yet — the offline brain uses only the standard library.</p>
 
-<h2 id="read-output">2. Reading the output, line by line</h2>
-<p>You'll see something like this. Every block is one turn of the <strong>agent loop</strong> from Lesson 1.
-Let's decode it.</p>
-<pre><code>[brain] No GEMINI_API_KEY found -> using OFFLINE fallback brain.
+        <h2 id="read-output">2 · Reading the output, line by line</h2>
+        <p>You'll see something like this. Every block is one turn of the <strong>agent loop</strong> from Lesson 1. Let's decode it.</p>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> output</span><button class="copy-btn">Copy</button></div>
+          <pre><code>[brain] No GEMINI_API_KEY found -> using OFFLINE fallback brain.
 
 --- STEP 1 ---
   REASON  -> {'action': 'list_tags'}
@@ -70,39 +90,42 @@ Let's decode it.</p>
 === AGENT REPORT ===
 Anomalies detected:
 - V401_vibration: 3 anomaly point(s); worst z=4.4 at 2026-06-23T10:40</code></pre>
+        </div>
 
-<ul>
-  <li><strong>REASON</strong> is the <em>Reason</em> stage of the loop — the brain deciding the next action.
-      Here, at step 1, it decides it must first discover what sensors exist (<code>list_tags</code>).</li>
-  <li><strong>ACT</strong> is the <em>Act</em> stage — the tool actually being called.</li>
-  <li><strong>OBSERVE</strong> is the <em>Observe</em> stage — the tool's result, which is added to the
-      history and fed into the next REASON.</li>
-  <li>The cycle repeats: having listed the tags, it inspects each one with <code>detect_anomalies</code>,
-      and when every tag has been checked it emits a <strong>finish</strong> action with a written report.</li>
-</ul>
+        <ul>
+          <li><strong>REASON</strong> is the <em>Reason</em> stage of the loop — the brain deciding the next action. Here, at step 1, it decides it must first discover what sensors exist (<code>list_tags</code>).</li>
+          <li><strong>ACT</strong> is the <em>Act</em> stage — the tool actually being called.</li>
+          <li><strong>OBSERVE</strong> is the <em>Observe</em> stage — the tool's result, which is added to the history and fed into the next REASON.</li>
+          <li>The cycle repeats: having listed the tags, it inspects each one with <code>detect_anomalies</code>, and when every tag has been checked it emits a <strong>finish</strong> action with a written report.</li>
+        </ul>
 
-<div class="key">
-  <span class="label">What you're looking at</span>
-  This printout <em>is</em> the agent loop made visible. There is no magic underneath — just look → think →
-  do → look again, repeated, with the result of each tool call informing the next decision.
-</div>
+        <div class="cssflow">
+          <div class="fnode">REASON<small>brain picks the next action (JSON)</small></div>
+          <div class="farrow"></div>
+          <div class="fnode accent">ACT<small>the chosen tool is called</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">OBSERVE<small>result appended to history ↩ back to REASON</small></div>
+        </div>
 
-<div class="note">
-  <span class="label">A deliberate imperfection (we'll fix it in Lesson 3)</span>
-  Notice the agent flags the <strong>vibration spike</strong> but says nothing about the reactor temperature
-  — even though, in the data, the temperature is slowly climbing toward danger. That's not a bug in the
-  agent; it's a limitation of the <em>tool</em> it used (a z-score). Hold that thought — it's the entire
-  subject of Lesson 3.
-</div>
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">What you're looking at</div>
+          <p>This printout <em>is</em> the agent loop made visible. There is no magic underneath — just look → think → do → look again, repeated, with the result of each tool call informing the next decision.</p></div>
+        </div>
 
-<h2 id="walkthrough">3. A full walkthrough of agent.py</h2>
-<p>Now we read the whole program. It's about 130 lines and divides into four parts: <strong>tools</strong>,
-<strong>the brain</strong>, <strong>the loop</strong>, and a tiny entry point. Open
-<a href="../code/agent.py">code/agent.py</a> alongside this.</p>
+        <div class="callout note">
+          <div class="c-ico">🧭</div>
+          <div class="c-body"><div class="c-title">A deliberate imperfection (we'll fix it in Lesson 3)</div>
+          <p>Notice the agent flags the <strong>vibration spike</strong> but says nothing about the reactor temperature — even though, in the data, the temperature is slowly climbing toward danger. That's not a bug in the agent; it's a limitation of the <em>tool</em> it used (a z-score). Hold that thought — it's the entire subject of Lesson 3.</p></div>
+        </div>
 
-<h3>3a. The tools — what the agent can <em>do</em></h3>
-<div class="annotated">
-<pre><code>DATA_FILE = "sensor_data.csv"
+        <h2 id="walkthrough">3 · A full walkthrough of agent.py</h2>
+        <p>Now we read the whole program. It's about 130 lines and divides into four parts: <strong>tools</strong>, <strong>the brain</strong>, <strong>the loop</strong>, and a tiny entry point. Open <a href="../code/agent.py">code/agent.py</a> alongside this.</p>
+
+        <h3>3a · The tools — what the agent can <em>do</em></h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> python</span><button class="copy-btn">Copy</button></div>
+          <pre><code>DATA_FILE = "sensor_data.csv"
 
 def load_data(path=DATA_FILE):
     with open(path, newline="") as f:
@@ -112,18 +135,15 @@ def list_tags():
     """TOOL: return the sensor tag names available."""
     rows = load_data()
     return [c for c in rows[0].keys() if c != "timestamp"]</code></pre>
-<ol class="annot-list">
-  <li><code>load_data</code> is a helper (not a tool the agent calls directly) — it reads the CSV into a list
-      of dictionaries, one per row. Because the path is <em>relative</em>, the program must be run from inside
-      <code>code/</code> — that's why the instructions always say <code>cd teach-agents/code</code> first.</li>
-  <li><code>list_tags</code> is the agent's first real <strong>tool</strong>. It returns the column names
-      (the sensor "tags") minus the timestamp column. The agent calls this when it needs to discover what
-      sensors exist — exactly what it did at STEP 1 in the output.</li>
-</ol>
-</div>
+        </div>
+        <ol>
+          <li><code>load_data</code> is a helper (not a tool the agent calls directly) — it reads the CSV into a list of dictionaries, one per row. Because the path is <em>relative</em>, the program must be run from inside <code>code/</code> — that's why the instructions always say <code>cd teach-agents/code</code> first.</li>
+          <li><code>list_tags</code> is the agent's first real <strong>tool</strong>. It returns the column names (the sensor "tags") minus the timestamp column. The agent calls this when it needs to discover what sensors exist — exactly what it did at STEP 1 in the output.</li>
+        </ol>
 
-<div class="annotated">
-<pre><code>def detect_anomalies(tag, z_threshold=3.0):
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> python</span><button class="copy-btn">Copy</button></div>
+          <pre><code>def detect_anomalies(tag, z_threshold=3.0):
     rows = load_data()
     vals = [float(r[tag]) for r in rows]
     mean = statistics.mean(vals)
@@ -135,49 +155,40 @@ def list_tags():
         if abs(z) >= z_threshold:
             hits.append({"timestamp": r["timestamp"], "value": v, "z": round(z, 2)})
     return {"tag": tag, "mean": ..., "anomaly_count": len(hits), "anomalies": hits}</code></pre>
-<ol class="annot-list">
-  <li>This is the second tool — the one that does the actual anomaly math. <strong>Note that it is ordinary
-      Python statistics, not AI.</strong> This is the Lesson-1 nuance in the flesh: the "intelligence" of
-      detection is classical code; the model never does the math.</li>
-  <li>It computes the <code>mean</code> and standard deviation (<code>sd</code>) of one tag's values. The
-      <code>or 1e-9</code> guards against dividing by zero if a tag never varies.</li>
-  <li>For each reading it computes a <strong>z-score</strong>: how many standard deviations the value sits
-      from the mean. A z of 3 means "3σ from normal" — unusually far.</li>
-  <li>Any reading with <code>|z| ≥ z_threshold</code> (default 3.0) is recorded as a "hit". The tool returns
-      a structured result: the stats plus the list of anomalous points. <em>Structured output matters</em> —
-      the brain will read these fields to decide what to do next.</li>
-</ol>
-</div>
+        </div>
+        <ol>
+          <li>This is the second tool — the one that does the actual anomaly math. <strong>Note that it is ordinary Python statistics, not AI.</strong> This is the Lesson-1 nuance in the flesh: the "intelligence" of detection is classical code; the model never does the math.</li>
+          <li>It computes the <code>mean</code> and standard deviation (<code>sd</code>) of one tag's values. The <code>or 1e-9</code> guards against dividing by zero if a tag never varies.</li>
+          <li>For each reading it computes a <strong>z-score</strong>: how many standard deviations the value sits from the mean. A z of 3 means "3σ from normal" — unusually far.</li>
+          <li>Any reading with <code>|z| ≥ z_threshold</code> (default 3.0) is recorded as a "hit". The tool returns a structured result: the stats plus the list of anomalous points. <em>Structured output matters</em> — the brain will read these fields to decide what to do next.</li>
+        </ol>
 
-<div class="annotated">
-<pre><code>TOOLS = {
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> python</span><button class="copy-btn">Copy</button></div>
+          <pre><code>TOOLS = {
     "list_tags": list_tags,
     "detect_anomalies": detect_anomalies,
 }</code></pre>
-<ol class="annot-list">
-  <li>The <strong>tool registry</strong>: a dictionary mapping a tool's <em>name</em> (a string the brain can
-      emit) to the actual Python function. The loop uses this to turn the brain's decision ("call
-      <code>list_tags</code>") into a real function call. The agent can do <em>exactly</em> these two things
-      and nothing else — capability = the sum of the registry. (Lesson 1, Section 5, made concrete.)</li>
-</ol>
-</div>
+        </div>
+        <ol>
+          <li>The <strong>tool registry</strong>: a dictionary mapping a tool's <em>name</em> (a string the brain can emit) to the actual Python function. The loop uses this to turn the brain's decision ("call <code>list_tags</code>") into a real function call. The agent can do <em>exactly</em> these two things and nothing else — capability = the sum of the registry. (Lesson 1, Section 5, made concrete.)</li>
+        </ol>
 
-<h3>3b. The brain — what decides the next action</h3>
-<div class="annotated">
-<pre><code>SYSTEM_PROMPT = """You are a plant reliability agent. Goal: find anomalies ...
+        <h3>3b · The brain — what decides the next action</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> python</span><button class="copy-btn">Copy</button></div>
+          <pre><code>SYSTEM_PROMPT = """You are a plant reliability agent. Goal: find anomalies ...
 You can call tools. Respond ONLY with JSON:
-either  {"action":"list_tags"}  or  {"action":"detect_anomalies","tag":"<tag>"}
-or, when finished,  {"action":"finish","report":"<plain-english findings>"}."""</code></pre>
-<ol class="annot-list">
-  <li>The <strong>system prompt</strong> is the agent's job description (Lesson 1 glossary). It tells the
-      model its role, its goal, the exact tools available, and — crucially — the <em>format</em> it must
-      reply in (JSON with an <code>action</code> field). Constraining the output format is what lets our code
-      reliably parse the model's decision.</li>
-</ol>
-</div>
+either  {"action":"list_tags"}  or  {"action":"detect_anomalies","tag":"&lt;tag&gt;"}
+or, when finished,  {"action":"finish","report":"&lt;plain-english findings&gt;"}."""</code></pre>
+        </div>
+        <ol>
+          <li>The <strong>system prompt</strong> is the agent's job description (Lesson 1 glossary). It tells the model its role, its goal, the exact tools available, and — crucially — the <em>format</em> it must reply in (JSON with an <code>action</code> field). Constraining the output format is what lets our code reliably parse the model's decision.</li>
+        </ol>
 
-<div class="annotated">
-<pre><code>def llm_brain(history):
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> python</span><button class="copy-btn">Copy</button></div>
+          <pre><code>def llm_brain(history):
     import google.generativeai as genai
     genai.configure(api_key=os.environ["GEMINI_API_KEY"])
     model = genai.GenerativeModel("gemini-1.5-flash")
@@ -187,20 +198,16 @@ or, when finished,  {"action":"finish","report":"<plain-english findings>"}."""<
     text = resp.text.strip().strip("`")
     if text.startswith("json"): text = text[4:]
     return json.loads(text)</code></pre>
-<ol class="annot-list">
-  <li>The <strong>real brain</strong>. It builds a prompt that is the system prompt + the <em>entire history
-      so far</em> (everything the agent has done and observed). This is the <em>Perceive</em> stage: the
-      model literally "sees" the goal and all prior steps.</li>
-  <li>It sends that to Gemini and gets text back. Because the model sometimes wraps JSON in markdown fences
-      (<code>```json</code>), the next two lines strip those off.</li>
-  <li><code>json.loads(text)</code> parses the model's reply into a Python dictionary like
-      <code>{"action": "detect_anomalies", "tag": "T101..."}</code> — the decision the loop will act on.
-      <em>This is the Reason stage, performed by a real LLM.</em></li>
-</ol>
-</div>
+        </div>
+        <ol>
+          <li>The <strong>real brain</strong>. It builds a prompt that is the system prompt + the <em>entire history so far</em> (everything the agent has done and observed). This is the <em>Perceive</em> stage: the model literally "sees" the goal and all prior steps.</li>
+          <li>It sends that to Gemini and gets text back. Because the model sometimes wraps JSON in markdown fences (<code>```json</code>), the next two lines strip those off.</li>
+          <li><code>json.loads(text)</code> parses the model's reply into a Python dictionary like <code>{"action": "detect_anomalies", "tag": "T101..."}</code> — the decision the loop will act on. <em>This is the Reason stage, performed by a real LLM.</em></li>
+        </ol>
 
-<div class="annotated">
-<pre><code>def offline_brain(history):
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> python</span><button class="copy-btn">Copy</button></div>
+          <pre><code>def offline_brain(history):
     actions_taken = [h["action"] for h in history if "action" in h]
     if "list_tags" not in actions_taken:
         return {"action": "list_tags"}
@@ -210,29 +217,26 @@ or, when finished,  {"action":"finish","report":"<plain-english findings>"}."""<
         if t not in inspected:
             return {"action": "detect_anomalies", "tag": t}
     # ... summarize findings into a finish action ...</code></pre>
-<ol class="annot-list">
-  <li>The <strong>offline brain</strong> is a hard-coded substitute that follows a fixed policy: first list
-      the tags, then inspect each one not yet inspected, then finish with a summary. It is deliberately
-      "dumb" — but it produces the <em>same shape</em> of decision the real brain does, so the loop can't
-      tell the difference. That's what lets you watch the loop with zero setup.</li>
-</ol>
-</div>
+        </div>
+        <ol>
+          <li>The <strong>offline brain</strong> is a hard-coded substitute that follows a fixed policy: first list the tags, then inspect each one not yet inspected, then finish with a summary. It is deliberately "dumb" — but it produces the <em>same shape</em> of decision the real brain does, so the loop can't tell the difference. That's what lets you watch the loop with zero setup.</li>
+        </ol>
 
-<div class="annotated">
-<pre><code>def get_brain():
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> python</span><button class="copy-btn">Copy</button></div>
+          <pre><code>def get_brain():
     if os.environ.get("GEMINI_API_KEY"):
         return llm_brain      # real LLM decides each step
     return offline_brain      # hard-coded fallback policy</code></pre>
-<ol class="annot-list">
-  <li>The switch. If a key is present in the environment, use the real LLM; otherwise fall back. <em>This one
-      function is the entire difference between "toy demo" and "real agent."</em> We'll come back to it in
-      Section 5 — it's the most important idea in the file.</li>
-</ol>
-</div>
+        </div>
+        <ol>
+          <li>The switch. If a key is present in the environment, use the real LLM; otherwise fall back. <em>This one function is the entire difference between "toy demo" and "real agent."</em> We'll come back to it in Section 5 — it's the most important idea in the file.</li>
+        </ol>
 
-<h3>3c. The agent loop — the heart of everything</h3>
-<div class="annotated">
-<pre><code>def run(max_steps=12):
+        <h3>3c · The agent loop — the heart of everything</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> python</span><button class="copy-btn">Copy</button></div>
+          <pre><code>def run(max_steps=12):
     brain = get_brain()
     history = []                                  # the agent's memory
     for step in range(1, max_steps + 1):
@@ -245,144 +249,158 @@ or, when finished,  {"action":"finish","report":"<plain-english findings>"}."""<
         elif action == "detect_anomalies":
             result = TOOLS["detect_anomalies"](decision["tag"])
         history.append({"action": action, "result": result, ...})   # OBSERVE</code></pre>
-<ol class="annot-list">
-  <li><code>history = []</code> is the agent's <strong>memory</strong> — the running record of every action
-      and its result. Each loop iteration appends to it, so the brain's view grows richer every step.</li>
-  <li><code>for step in range(1, max_steps + 1)</code> is the <strong>loop</strong> itself, with a built-in
-      <strong>step limit</strong> (12). The limit is a safety net: if the brain never decides to finish, the
-      agent stops anyway instead of running forever (and, with a paid model, running up a bill).</li>
-  <li><code>decision = brain(history)</code> is <strong>Reason</strong> — ask the brain what to do next,
-      given the whole history.</li>
-  <li>The <code>if/elif</code> block is <strong>Act</strong> — it looks the chosen tool up in the registry
-      and calls it. If the brain ever asks for a tool that doesn't exist, the loop stops safely.</li>
-  <li><code>history.append(...)</code> is <strong>Observe</strong> — the result is stored, becoming part of
-      what the brain perceives next iteration. Then the loop repeats. <strong>These ~12 lines are the entire
-      definition of an agent from Lesson 1, in runnable form.</strong></li>
-</ol>
+        </div>
+        <ol>
+          <li><code>history = []</code> is the agent's <strong>memory</strong> — the running record of every action and its result. Each loop iteration appends to it, so the brain's view grows richer every step.</li>
+          <li><code>for step in range(1, max_steps + 1)</code> is the <strong>loop</strong> itself, with a built-in <strong>step limit</strong> (12). The limit is a safety net: if the brain never decides to finish, the agent stops anyway instead of running forever (and, with a paid model, running up a bill).</li>
+          <li><code>decision = brain(history)</code> is <strong>Reason</strong> — ask the brain what to do next, given the whole history.</li>
+          <li>The <code>if/elif</code> block is <strong>Act</strong> — it looks the chosen tool up in the registry and calls it. If the brain ever asks for a tool that doesn't exist, the loop stops safely.</li>
+          <li><code>history.append(...)</code> is <strong>Observe</strong> — the result is stored, becoming part of what the brain perceives next iteration. Then the loop repeats. <strong>These ~12 lines are the entire definition of an agent from Lesson 1, in runnable form.</strong></li>
+        </ol>
+
+        <div class="callout tip">
+          <div class="c-ico">✅</div>
+          <div class="c-body"><div class="c-title">In plain English</div>
+          <p><code>run()</code> is a <code>for</code> loop that, each time around, asks the brain "what now?", does it, remembers the result, and goes again — stopping when the brain says "done" or after 12 tries.</p></div>
+        </div>
+
+        <h2 id="key">4 · Step 2 — Get a free LLM key and go live</h2>
+        <p>The offline brain is fine for seeing the loop, but it can't <em>reason</em> — it just follows a script. To make the agent genuinely intelligent, plug in a real model. Google's Gemini has a generous free tier with no credit card required. Follow these steps:</p>
+
+        <div class="timeline">
+          <div class="step"><h4>Create a free API key</h4><p>Go to <a href="https://aistudio.google.com/apikey">aistudio.google.com/apikey</a>, sign in with a Google account, and click "Create API key." Copy the key somewhere safe.</p></div>
+          <div class="step"><h4>Install the SDK</h4>
+            <div class="code-block"><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> bash</span><button class="copy-btn">Copy</button></div><pre><code>pip install google-generativeai pandas</code></pre></div></div>
+          <div class="step"><h4>Set the key as an environment variable</h4><p>In PowerShell (Windows):</p>
+            <div class="code-block"><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> powershell</span><button class="copy-btn">Copy</button></div><pre><code>$env:GEMINI_API_KEY = "paste-your-key-here"</code></pre></div>
+            <p>This only lasts for the current terminal window — that's fine for learning. (To make it permanent later, add it to your system environment variables.)</p></div>
+          <div class="step"><h4>Run the agent again</h4><p>In the <em>same</em> terminal window so it can see the key:</p>
+            <div class="code-block"><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> bash</span><button class="copy-btn">Copy</button></div><pre><code>python agent.py</code></pre></div></div>
+        </div>
+
+        <p>The top line now reads <code>[brain] Using Google Gemini (live LLM).</code> A real model is now choosing which tags to inspect and writing the report in its own words. Run it a couple of times — you may notice the phrasing of the report changes, and it might inspect tags in a different order. <strong>That variability is the model reasoning, not a script executing.</strong></p>
+
+        <div class="callout warn">
+          <div class="c-ico">⚠️</div>
+          <div class="c-body"><div class="c-title">Keep your key private</div>
+          <p>Never paste an API key into a file you might share, commit to git, or send in chat. Setting it as an environment variable (as above) keeps it out of your source code. If a key ever leaks, revoke it in AI Studio and make a new one.</p></div>
+        </div>
+
+        <h2 id="swap">5 · Step 3 — How the brain swap works (the key idea)</h2>
+        <p>Re-read <code>get_brain()</code> from Section 3b. When you added the key, <strong>not a single line of the loop changed.</strong> The loop calls <code>brain(history)</code>; whether <code>brain</code> is the dumb offline policy or live Gemini is decided once, up front. Everything downstream is identical.</p>
+
+        <div class="cssflow">
+          <div class="fnode accent">The agent loop<small>fixed · never changes</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">calls brain(history)<small>one clean seam</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">offline_brain · Gemini · local model · Claude<small>swap freely behind the seam</small></div>
+        </div>
+
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The lesson inside the lesson</div>
+          <p><strong>The loop is the agent; the brain is a replaceable part.</strong> This separation is why agent code is so reusable: you can develop and debug the whole loop offline (free, fast, deterministic), then swap in any model — Gemini today, a local model tomorrow, Claude next week — without touching the structure. Good agent architecture isolates the model behind a clean seam exactly like this.</p></div>
+        </div>
+
+        <h2 id="realtools">6 · From hand-parsed JSON to real tool calling</h2>
+        <p>Our brain returns JSON that we parse by hand (<code>json.loads</code>). That's perfect for learning because you can see every moving part. But it's fragile — if the model returns slightly malformed JSON, the parse fails.</p>
+        <p>Production agents avoid this with built-in <strong>function calling</strong> (also called "tool calling"). Instead of asking the model to "please reply in JSON," you <em>declare</em> your tools to the SDK with their names, descriptions, and input types. The model then emits a <em>structured, validated</em> tool request, and the SDK routes it for you — no hand-parsing, no malformed JSON.</p>
+
+        <div class="callout note">
+          <div class="c-ico">🔧</div>
+          <div class="c-body"><div class="c-title">Function calling / tool calling</div>
+          <p>A model feature where you register tools with the SDK and the model returns a structured request to call one (with arguments the SDK validates), rather than free-form text you must parse yourself. Same agent loop; sturdier plumbing.</p></div>
+        </div>
+
+        <p>The reference is <a href="https://ai.google.dev/gemini-api/docs/function-calling">Gemini function calling</a>. We deliberately did <em>not</em> start there — the hand-parsed version makes the loop visible. Once the loop is second nature (after Lesson 4), upgrading to real function calling is a small, safe change.</p>
+
+        <h2 id="exercises">7 · Try it yourself</h2>
+        <p>Make each change, re-run, and <em>predict the result before you look.</em> Predicting then checking is how the ideas stick.</p>
+        <div class="table-wrap">
+        <table>
+          <tr><th>Change</th><th>What you'll learn</th></tr>
+          <tr><td>In <code>detect_anomalies</code>, lower <code>z_threshold</code> to 2.0</td><td>More points get flagged. Detection sensitivity is a <em>tuning choice</em>, not an absolute truth — a real reliability concern (false alarms vs. missed faults).</td></tr>
+          <tr><td>Add a tool <code>tag_stats(tag)</code> that returns min and max, and register it in <code>TOOLS</code></td><td>How a capability is added: write a function, register it, mention it in the system prompt. The agent can only ever do what its registry allows.</td></tr>
+          <tr><td>Edit <code>SYSTEM_PROMPT</code> to also ask for a severity rating (low/med/high)</td><td>How the prompt shapes behavior and output — with the live brain, the report changes; with the offline brain, it doesn't (it ignores the prompt). That contrast teaches what the prompt does and doesn't control.</td></tr>
+          <tr><td>Set <code>max_steps=2</code> and run live</td><td>The safety limit in action: the agent gets cut off mid-task. Why a step limit matters for cost and runaway loops.</td></tr>
+        </table>
+        </div>
+
+        <div class="callout key">
+          <div class="c-ico">🎯</div>
+          <div class="c-body"><div class="c-title">Recap</div>
+          <ul>
+            <li>You ran a real agent and read its loop output: REASON / ACT / OBSERVE map to the Lesson-1 loop.</li>
+            <li><code>agent.py</code> = tools (what it can do) + brain (what decides) + loop (the ~12-line engine).</li>
+            <li>The anomaly math is classical Python; the brain only <em>chooses</em> tools — the EnM nuance, live.</li>
+            <li>Adding a free Gemini key swaps the brain without changing the loop — <strong>the loop is the agent</strong>.</li>
+            <li>Hand-parsed JSON is a learning crutch; production uses validated function calling.</li>
+          </ul></div>
+        </div>
+
+        <h2 id="checks">8 · Check yourself</h2>
+        <div class="quiz">
+          <div class="q">What is the only thing that changes when you go from the offline brain to live Gemini?</div>
+          <button class="opt">The agent loop is rewritten</button>
+          <button class="opt" data-correct="true">Which function decides the next action — the loop stays the same</button>
+          <button class="opt">All the tools change</button>
+          <button class="opt">The data file is replaced</button>
+          <div class="explain">Right — the loop is unchanged; only the decision-maker swaps.</div>
+        </div>
+        <div class="quiz">
+          <div class="q">Who computes the z-scores that detect anomalies?</div>
+          <button class="opt">The language model, by reasoning</button>
+          <button class="opt" data-correct="true">A plain Python function (detect_anomalies), called as a tool</button>
+          <button class="opt">Google's servers automatically</button>
+          <button class="opt">The system prompt</button>
+          <div class="explain">Correct — it's classical statistics; the model never does the math.</div>
+        </div>
+        <div class="quiz">
+          <div class="q">Why does run() have a max_steps limit?</div>
+          <button class="opt">To make the output prettier</button>
+          <button class="opt" data-correct="true">As a safety net so the agent can't loop forever / run up cost</button>
+          <button class="opt">Because Gemini requires it</button>
+          <button class="opt">To limit how many tools exist</button>
+          <div class="explain">Right — the step limit stops runaway loops and bounds cost.</div>
+        </div>
+
+        <div class="callout note">
+          <div class="c-ico">💬</div>
+          <div class="c-body"><div class="c-title">Ask me anything</div>
+          <p>Hit an install error, a key problem, or want me to walk through <code>llm_brain()</code> token by token? Ask me — that's what I'm here for.</p></div>
+        </div>
+
+        <div class="page-nav">
+          <a href="0001-what-is-an-agent.html"><div class="dir">← Previous</div><div class="ttl">Lesson 1 · What is an agent?</div></a>
+          <a class="next" href="0003-prediction-vs-threshold.html"><div class="dir">Next up →</div><div class="ttl">Lesson 3 · Prediction vs. threshold</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
 </div>
 
-<div class="plain">
-  <span class="label">In plain English</span>
-  <code>run()</code> is a <code>for</code> loop that, each time around, asks the brain "what now?", does it,
-  remembers the result, and goes again — stopping when the brain says "done" or after 12 tries.
-</div>
-
-<h2 id="key">4. Step 2 — Get a free LLM key and go live</h2>
-<p>The offline brain is fine for seeing the loop, but it can't <em>reason</em> — it just follows a script.
-To make the agent genuinely intelligent, plug in a real model. Google's Gemini has a generous free tier with
-no credit card required. Follow these steps:</p>
-
-<ul class="steps">
-  <li><strong>Create a free API key.</strong> Go to
-    <a href="https://aistudio.google.com/apikey">aistudio.google.com/apikey</a>, sign in with a Google
-    account, and click "Create API key." Copy the key somewhere safe.</li>
-  <li><strong>Install the SDK.</strong> In your terminal:
-    <pre><code>pip install google-generativeai pandas</code></pre></li>
-  <li><strong>Set the key as an environment variable.</strong> In PowerShell (Windows):
-    <pre><code>$env:GEMINI_API_KEY = "paste-your-key-here"</code></pre>
-    This only lasts for the current terminal window — that's fine for learning. (To make it permanent later,
-    add it to your system environment variables.)</li>
-  <li><strong>Run the agent again,</strong> in the <em>same</em> terminal window so it can see the key:
-    <pre><code>python agent.py</code></pre></li>
-</ul>
-
-<p>The top line now reads <code>[brain] Using Google Gemini (live LLM).</code> A real model is now choosing
-which tags to inspect and writing the report in its own words. Run it a couple of times — you may notice the
-phrasing of the report changes, and it might inspect tags in a different order. <strong>That variability is
-the model reasoning, not a script executing.</strong></p>
-
-<div class="warn-box">
-  <span class="label">Keep your key private</span>
-  Never paste an API key into a file you might share, commit to git, or send in chat. Setting it as an
-  environment variable (as above) keeps it out of your source code. If a key ever leaks, revoke it in AI
-  Studio and make a new one.
-</div>
-
-<h2 id="swap">5. Step 3 — How the brain swap works (the key idea)</h2>
-<p>Re-read <code>get_brain()</code> from Section 3b. When you added the key, <strong>not a single line of the
-loop changed.</strong> The loop calls <code>brain(history)</code>; whether <code>brain</code> is the dumb
-offline policy or live Gemini is decided once, up front. Everything downstream is identical.</p>
-
-<div class="key">
-  <span class="label">The lesson inside the lesson</span>
-  <strong>The loop is the agent; the brain is a replaceable part.</strong> This separation is why agent code
-  is so reusable: you can develop and debug the whole loop offline (free, fast, deterministic), then swap in
-  any model — Gemini today, a local model tomorrow, Claude next week — without touching the structure. Good
-  agent architecture isolates the model behind a clean seam exactly like this.
-</div>
-
-<h2 id="realtools">6. From hand-parsed JSON to real tool calling</h2>
-<p>Our brain returns JSON that we parse by hand (<code>json.loads</code>). That's perfect for learning
-because you can see every moving part. But it's fragile — if the model returns slightly malformed JSON, the
-parse fails.</p>
-<p>Production agents avoid this with built-in <strong>function calling</strong> (also called "tool calling").
-Instead of asking the model to "please reply in JSON," you <em>declare</em> your tools to the SDK with their
-names, descriptions, and input types. The model then emits a <em>structured, validated</em> tool request,
-and the SDK routes it for you — no hand-parsing, no malformed JSON.</p>
-
-<div class="def"><span class="term">Function calling / tool calling</span> — a model feature where you
-register tools with the SDK and the model returns a structured request to call one (with arguments the SDK
-validates), rather than free-form text you must parse yourself. Same agent loop; sturdier plumbing.</div>
-
-<p>The reference is <a href="https://ai.google.dev/gemini-api/docs/function-calling">Gemini function
-calling</a>. We deliberately did <em>not</em> start there — the hand-parsed version makes the loop visible.
-Once the loop is second nature (after Lesson 4), upgrading to real function calling is a small, safe change.</p>
-
-<h2 id="exercises">7. Try it yourself</h2>
-<p>Make each change, re-run, and <em>predict the result before you look.</em> Predicting then checking is how
-the ideas stick.</p>
-<table>
-  <tr><th>Change</th><th>What you'll learn</th></tr>
-  <tr><td>In <code>detect_anomalies</code>, lower <code>z_threshold</code> to 2.0</td><td>More points get flagged. Detection sensitivity is a <em>tuning choice</em>, not an absolute truth — a real reliability concern (false alarms vs. missed faults).</td></tr>
-  <tr><td>Add a tool <code>tag_stats(tag)</code> that returns min and max, and register it in <code>TOOLS</code></td><td>How a capability is added: write a function, register it, mention it in the system prompt. The agent can only ever do what its registry allows.</td></tr>
-  <tr><td>Edit <code>SYSTEM_PROMPT</code> to also ask for a severity rating (low/med/high)</td><td>How the prompt shapes behavior and output — with the live brain, the report changes; with the offline brain, it doesn't (it ignores the prompt). That contrast teaches what the prompt does and doesn't control.</td></tr>
-  <tr><td>Set <code>max_steps=2</code> and run live</td><td>The safety limit in action: the agent gets cut off mid-task. Why a step limit matters for cost and runaway loops.</td></tr>
-</table>
-
-<div class="recap">
-  <h3>Recap</h3>
-  <ul>
-    <li>You ran a real agent and read its loop output: REASON / ACT / OBSERVE map to the Lesson-1 loop.</li>
-    <li><code>agent.py</code> = tools (what it can do) + brain (what decides) + loop (the ~12-line engine).</li>
-    <li>The anomaly math is classical Python; the brain only <em>chooses</em> tools — the EnM nuance, live.</li>
-    <li>Adding a free Gemini key swaps the brain without changing the loop — <strong>the loop is the agent</strong>.</li>
-    <li>Hand-parsed JSON is a learning crutch; production uses validated function calling.</li>
-  </ul>
-</div>
-
-<h2 id="checks">8. Check yourself</h2>
-<div class="quiz" data-good="Right — the loop is unchanged; only the decision-maker swaps." data-bad="Re-read Section 5.">
-  <div class="q">What is the only thing that changes when you go from the offline brain to live Gemini?</div>
-  <button class="opt">The agent loop is rewritten</button>
-  <button class="opt" data-correct="1">Which function decides the next action — the loop stays the same</button>
-  <button class="opt">All the tools change</button>
-  <button class="opt">The data file is replaced</button>
-  <div class="feedback"></div>
-</div>
-<div class="quiz" data-good="Correct — it's classical statistics; the model never does the math." data-bad="Re-read Section 3a.">
-  <div class="q">Who computes the z-scores that detect anomalies?</div>
-  <button class="opt">The language model, by reasoning</button>
-  <button class="opt" data-correct="1">A plain Python function (detect_anomalies), called as a tool</button>
-  <button class="opt">Google's servers automatically</button>
-  <button class="opt">The system prompt</button>
-  <div class="feedback"></div>
-</div>
-<div class="quiz" data-good="Right — the step limit stops runaway loops and bounds cost." data-bad="Re-read Section 3c, annotation 2.">
-  <div class="q">Why does run() have a max_steps limit?</div>
-  <button class="opt">To make the output prettier</button>
-  <button class="opt" data-correct="1">As a safety net so the agent can't loop forever / run up cost</button>
-  <button class="opt">Because Gemini requires it</button>
-  <button class="opt">To limit how many tools exist</button>
-  <div class="feedback"></div>
-</div>
-
-<div class="ask">
-  💬 Hit an install error, a key problem, or want me to walk through <code>llm_brain()</code> token by token?
-  Ask me — that's what I'm here for.
-</div>
-
-<div class="nav">
-  <a href="0001-what-is-an-agent.html">← Lesson 1</a>
-  <a href="0003-prediction-vs-threshold.html">Lesson 3 →</a>
-</div>
-<script src="../assets/quiz.js"></script>
+<script>
+window.PORTAL = {
+  homeHref: "../../genai-portal/index.html",
+  navLabel: "The course",
+  here: "lessons/0002-run-your-first-agent.html",
+  base: "../",
+  pages: [
+    { file: "index.html",                              title: "Course index",          num: "✦", kw: "overview start home index agents course" },
+    { file: "lessons/0001-what-is-an-agent.html",      title: "What is an agent?",     num: "01", kw: "agent definition loop tools chatbot" },
+    { file: "lessons/0002-run-your-first-agent.html",  title: "Run your first agent",  num: "02", kw: "run agent python gemini hands-on first" },
+    { file: "lessons/0003-prediction-vs-threshold.html", title: "Prediction vs. threshold", num: "03", kw: "prediction threshold forecast z-score anomaly" },
+    { file: "lessons/0004-orchestration.html",         title: "Orchestration",         num: "04", kw: "orchestration chain anomaly rca remediation multi-agent" },
+    { file: "lessons/0005-workflow-vs-agent.html",     title: "Workflow vs. agent",    num: "05", kw: "workflow autonomous agent shape decide" },
+    { file: "lessons/0006-mapping-any-enm-row.html",   title: "Mapping any EnM row",   num: "06", kw: "mapping enm row decompose capstone method" },
+    { file: "reference/agent-glossary.html",           title: "Agent glossary",        num: "📖", kw: "glossary reference terms lookup" }
+  ]
+};
+</script>
+<script src="../../genai-portal/assets/sitenav.js"></script>
+<script src="../../genai-portal/assets/portal-page.js"></script>
+<script src="../../genai-portal/assets/enhance.js"></script>
+</body>
+</html>

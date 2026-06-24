@@ -1,240 +1,227 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" data-theme="light">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Learn RAG, MCP, Agents & LLMs — A Hands-On Guide</title>
-<style>
-  :root{
-    --bg:#ffffff; --bg-soft:#f5f5f7; --panel:#ffffff; --panel2:#fbfbfd;
-    --border:#e3e3e8; --border-soft:#ededf0;
-    --ink:#1d1d1f; --ink-2:#424245; --muted:#6e6e73;
-    --accent:#0071e3; --accent-ink:#0066cc; --accent2:#6e56cf; --accent3:#bf5700;
-    --code-bg:#f6f8fa; --green:#1a7f37; --red:#c5221f;
-    --maxw:1040px; --radius:18px;
-    --shadow:0 1px 3px rgba(0,0,0,.04),0 8px 28px -12px rgba(0,0,0,.12);
-  }
-  *{box-sizing:border-box}
-  html{scroll-behavior:smooth}
-  body{
-    margin:0; background:var(--bg); color:var(--ink);
-    font:17px/1.6 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
-    -webkit-font-smoothing:antialiased; letter-spacing:-.01em;
-  }
-  a{color:var(--accent-ink);text-decoration:none}
-  a:hover{text-decoration:underline}
-  .wrap{max-width:var(--maxw);margin:0 auto;padding:0 24px}
-
-  /* HERO */
-  .hero{
-    text-align:center;padding:96px 24px 72px;
-    background:
-      radial-gradient(900px 420px at 50% -8%, rgba(110,86,207,.10), transparent 62%),
-      radial-gradient(700px 320px at 82% 4%, rgba(0,113,227,.08), transparent 58%),
-      var(--bg);
-    border-bottom:1px solid var(--border-soft);
-  }
-  .badge{
-    display:inline-block;font-size:13px;letter-spacing:.04em;text-transform:uppercase;
-    color:var(--accent2);border:1px solid var(--border);border-radius:999px;
-    padding:7px 16px;background:#fff;margin-bottom:26px;font-weight:600;box-shadow:var(--shadow);
-  }
-  .hero h1{
-    font-size:clamp(38px,6.4vw,68px);line-height:1.04;margin:.12em 0 .3em;
-    font-weight:700;letter-spacing:-.03em;
-    background:linear-gradient(120deg,#1d1d1f 20%,#6e56cf 70%,#0071e3);
-    -webkit-background-clip:text;background-clip:text;color:transparent;
-  }
-  .hero p{font-size:clamp(18px,2.4vw,22px);color:var(--muted);max-width:700px;margin:0 auto;line-height:1.5}
-
-  .section-title{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted);margin:64px 0 20px;font-weight:700}
-  .grid{display:grid;gap:20px;grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
-  .card{
-    display:block;background:var(--panel);
-    border:1px solid var(--border);border-radius:var(--radius);padding:28px;
-    transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease;
-    color:var(--ink);position:relative;overflow:hidden;box-shadow:0 1px 2px rgba(0,0,0,.03);
-  }
-  .card:hover{transform:translateY(-4px);border-color:#d3d3da;text-decoration:none;box-shadow:var(--shadow)}
-  .card .num{font-size:12px;font-weight:700;color:var(--accent2);letter-spacing:.08em}
-  .card h3{margin:.5em 0 .35em;font-size:21px;font-weight:650;letter-spacing:-.02em}
-  .card p{margin:0;color:var(--muted);font-size:15px;line-height:1.55}
-  .card .chip{display:inline-block;margin-top:16px;font-size:13px;color:var(--accent-ink);border:1px solid var(--border);padding:4px 12px;border-radius:999px;font-weight:600}
-  .card .ico{font-size:30px;margin-bottom:8px}
-  .card.feat{background:linear-gradient(135deg,#f3f0ff,#fff);border-color:#e2dbf7}
-
-  .lead{background:var(--panel2);border:1px solid var(--border);border-left:4px solid var(--accent);border-radius:14px;padding:20px 24px;margin:28px 0;color:var(--ink-2);box-shadow:0 1px 2px rgba(0,0,0,.02)}
-  .lead b{color:var(--ink)}
-
-  .twocol{display:grid;gap:20px;grid-template-columns:1fr 1fr}
-  @media(max-width:680px){.twocol{grid-template-columns:1fr}}
-  .mini{background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:24px;box-shadow:0 1px 2px rgba(0,0,0,.03)}
-  .mini h4{margin:0 0 10px;color:var(--ink);font-size:17px;font-weight:650}
-  .mini ul{margin:0;padding-left:20px;color:var(--ink-2)}
-  .mini li{margin:7px 0}
-
-  footer{margin:80px 0 60px;text-align:center;color:var(--muted);font-size:14px;border-top:1px solid var(--border-soft);padding-top:32px}
-  .kbd{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;background:var(--code-bg);border:1px solid var(--border);border-radius:6px;padding:2px 8px;font-size:13px;color:var(--accent-ink)}
-</style>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>RAG · MCP · Agents · LLMs — A Hands-On Guide</title>
+<meta name="description" content="A clear, example-driven guide that takes you from 'what is a large language model' all the way to building your own document-Q&A and data-analysis agents. Built for first-time implementers.">
+<link rel="stylesheet" href="../genai-portal/assets/styles.css">
 </head>
-<body>
-
-<header class="hero">
-  <span class="badge">Hands-on Reading Material</span>
-  <h1>RAG · MCP · Agents · LLMs</h1>
-  <p>A clear, example-driven guide that takes you from "what is a large language model" all the way to building your own document-Q&amp;A and data-analysis agents. Built for first-time implementers.</p>
-</header>
-
-<div class="wrap">
-
-  <div class="lead">
-    <b>How to use this guide.</b> Read the pages in order if you're new — each one builds on the last.
-    Already comfortable with the basics? Jump straight to the page you need. Every page is standalone HTML;
-    open them in any browser, no internet required. Code blocks are copy-ready.
-  </div>
-
-  <div class="section-title">Your learning path</div>
-  <div class="grid">
-
-    <a class="card" href="01-llms.html">
-      <div class="ico">🧠</div>
-      <div class="num">PART 01</div>
-      <h3>LLMs — The Foundation</h3>
-      <p>What a large language model actually is, how it predicts text, tokens, context windows, and the one limitation that makes RAG and MCP necessary.</p>
-      <span class="chip">Start here →</span>
-    </a>
-
-    <a class="card" href="02-rag.html">
-      <div class="ico">🔍</div>
-      <div class="num">PART 02</div>
-      <h3>RAG — Retrieval-Augmented Generation</h3>
-      <p>Give an LLM your own knowledge. Embeddings, vector databases, chunking, and the full retrieve-then-generate loop — with diagrams.</p>
-      <span class="chip">Core concept →</span>
-    </a>
-
-    <a class="card" href="03-agents.html">
-      <div class="ico">🤖</div>
-      <div class="num">PART 03</div>
-      <h3>Agents &amp; Tool Use</h3>
-      <p>When an LLM stops just talking and starts <i>doing</i> — calling tools, looping, and making decisions. The bridge between RAG and MCP.</p>
-      <span class="chip">Level up →</span>
-    </a>
-
-    <a class="card" href="04-mcp.html">
-      <div class="ico">🔌</div>
-      <div class="num">PART 04</div>
-      <h3>MCP — Model Context Protocol</h3>
-      <p>The "USB-C for AI." A universal standard for connecting LLMs to tools and data. Servers, clients, simple &amp; practical examples, full code.</p>
-      <span class="chip">The standard →</span>
-    </a>
-
-    <a class="card" href="05-build-simple-rag.html">
-      <div class="ico">⚙️</div>
-      <div class="num">PART 05</div>
-      <h3>Build: A Simple RAG App</h3>
-      <p>Your first working RAG in ~60 lines of Python. From text → embeddings → search → answer. Step-by-step, fully explained.</p>
-      <span class="chip">Build it →</span>
-    </a>
-
-    <a class="card" href="06-build-pdf-qna.html">
-      <div class="ico">📄</div>
-      <div class="num">PART 06</div>
-      <h3>Build: PDF Q&amp;A RAG App</h3>
-      <p>The complete project: load PDFs, chunk them, store in a vector DB, and chat with your documents. Includes a web UI guide.</p>
-      <span class="chip">Capstone →</span>
-    </a>
-
-    <a class="card feat" href="07-eda-agent-ollama.html">
-      <div class="ico">📊</div>
-      <div class="num">PART 07 · NEW</div>
-      <h3>Build: An EDA Agent with Ollama</h3>
-      <p>A fully <b>local, free</b> data-analysis agent. Point it at a CSV and it explores, computes stats, and writes plots — using a local LLM. End-to-end code.</p>
-      <span class="chip">100% local →</span>
-    </a>
-
-  </div>
-
-  <div class="section-title">How the pieces fit together</div>
-  <div class="mini" style="text-align:center;padding:32px 24px">
-    <svg viewBox="0 0 760 240" width="100%" style="max-width:720px" role="img" aria-label="Relationship diagram">
-      <defs>
-        <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
-          <path d="M0,0 L7,3 L0,6 Z" fill="#0071e3"/>
-        </marker>
-        <style>
-          .b{fill:#f5f5f7;stroke:#d3d3da;stroke-width:1.5}
-          .t{fill:#1d1d1f;font:650 15px sans-serif}
-          .s{fill:#6e6e73;font:12px sans-serif}
-          .ln{stroke:#0071e3;stroke-width:2;fill:none;marker-end:url(#ah)}
-        </style>
-      </defs>
-      <rect class="b" x="300" y="10" width="160" height="50" rx="12"/>
-      <text class="t" x="380" y="33" text-anchor="middle">AI</text>
-      <text class="s" x="380" y="50" text-anchor="middle">the broad field</text>
-      <rect class="b" x="300" y="95" width="160" height="50" rx="12"/>
-      <text class="t" x="380" y="118" text-anchor="middle">LLM</text>
-      <text class="s" x="380" y="135" text-anchor="middle">the reasoning engine</text>
-      <rect class="b" x="40" y="180" width="200" height="50" rx="12"/>
-      <text class="t" x="140" y="203" text-anchor="middle">RAG</text>
-      <text class="s" x="140" y="220" text-anchor="middle">gives it knowledge</text>
-      <rect class="b" x="290" y="180" width="180" height="50" rx="12"/>
-      <text class="t" x="380" y="203" text-anchor="middle">Agents</text>
-      <text class="s" x="380" y="220" text-anchor="middle">give it actions</text>
-      <rect class="b" x="520" y="180" width="200" height="50" rx="12"/>
-      <text class="t" x="620" y="203" text-anchor="middle">MCP</text>
-      <text class="s" x="620" y="220" text-anchor="middle">standard plug for tools</text>
-      <path class="ln" d="M380,60 L380,93"/>
-      <path class="ln" d="M340,145 L200,178"/>
-      <path class="ln" d="M380,145 L380,178"/>
-      <path class="ln" d="M420,145 L560,178"/>
-    </svg>
-    <p style="color:var(--muted);margin:16px 0 0;font-size:15px">
-      <b style="color:var(--ink)">LLMs</b> are the brain. <b style="color:var(--ink)">RAG</b> feeds them facts they were never trained on.
-      <b style="color:var(--ink)">Agents</b> let them take actions. <b style="color:var(--ink)">MCP</b> is the universal standard for plugging tools and data into them.
-    </p>
-  </div>
-
-  <div class="section-title">What you'll be able to do by the end</div>
-  <div class="twocol">
-    <div class="mini">
-      <h4>Understand</h4>
-      <ul>
-        <li>Explain LLMs, tokens &amp; context windows plainly</li>
-        <li>Describe exactly how RAG works and why it beats fine-tuning for facts</li>
-        <li>Tell the difference between an LLM, an agent, and a tool</li>
-        <li>Explain what MCP solves and why it matters</li>
-      </ul>
+<body data-page="lr-00">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <div class="brand-mark">R</div>
+        <div class="brand-text"><strong>RAG · MCP · Agents · LLMs</strong><span>Hands-on guide</span></div>
+      </a>
     </div>
-    <div class="mini">
-      <h4>Build</h4>
-      <ul>
-        <li>A minimal RAG pipeline from scratch in Python</li>
-        <li>A PDF Q&amp;A app you can ask questions to</li>
-        <li>A working MCP server with custom tools</li>
-        <li>A fully local EDA (data-analysis) agent with Ollama</li>
-      </ul>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search the guide…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs"><b>RAG · MCP · Agents · LLMs — Guide home</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="hero">
+          <div class="eyebrow"><span class="dot"></span> Hands-on Reading Material</div>
+          <h1>RAG · MCP · <span class="grad">Agents · LLMs</span></h1>
+          <p class="lead">A clear, example-driven guide that takes you from "what is a large language model" all the way to building your own document-Q&amp;A and data-analysis agents. Built for first-time implementers.</p>
+          <div class="meta-row" style="justify-content:center">
+            <span class="pill blue">7 parts</span>
+            <span class="pill">Read in order or jump in</span>
+            <span class="pill purple">Offline · runnable code</span>
+          </div>
+        </div>
+
+        <div class="callout note">
+          <div class="c-ico">📖</div>
+          <div class="c-body"><div class="c-title">How to use this guide</div>
+          <p>Read the pages in order if you're new — each one builds on the last. Already comfortable with the basics? Jump straight to the page you need. Every page is standalone HTML; open them in any browser, no internet required. Code blocks are copy-ready.</p></div>
+        </div>
+
+        <h2 id="path">Your learning path</h2>
+        <div class="grid grid-2">
+
+          <a class="card hover module-card" data-reveal href="01-llms.html">
+            <div class="ico">🧠</div>
+            <div class="num">PART 01</div>
+            <h3>LLMs — The Foundation</h3>
+            <p>What a large language model actually is, how it predicts text, tokens, context windows, and the one limitation that makes RAG and MCP necessary.</p>
+            <span class="pill blue">Start here →</span>
+          </a>
+
+          <a class="card hover module-card" data-reveal href="02-rag.html">
+            <div class="ico">🔍</div>
+            <div class="num">PART 02</div>
+            <h3>RAG — Retrieval-Augmented Generation</h3>
+            <p>Give an LLM your own knowledge. Embeddings, vector databases, chunking, and the full retrieve-then-generate loop — with diagrams.</p>
+            <span class="pill blue">Core concept →</span>
+          </a>
+
+          <a class="card hover module-card" data-reveal href="03-agents.html">
+            <div class="ico">🤖</div>
+            <div class="num">PART 03</div>
+            <h3>Agents &amp; Tool Use</h3>
+            <p>When an LLM stops just talking and starts <i>doing</i> — calling tools, looping, and making decisions. The bridge between RAG and MCP.</p>
+            <span class="pill blue">Level up →</span>
+          </a>
+
+          <a class="card hover module-card" data-reveal href="04-mcp.html">
+            <div class="ico">🔌</div>
+            <div class="num">PART 04</div>
+            <h3>MCP — Model Context Protocol</h3>
+            <p>The "USB-C for AI." A universal standard for connecting LLMs to tools and data. Servers, clients, simple &amp; practical examples, full code.</p>
+            <span class="pill blue">The standard →</span>
+          </a>
+
+          <a class="card hover module-card" data-reveal href="05-build-simple-rag.html">
+            <div class="ico">⚙️</div>
+            <div class="num">PART 05</div>
+            <h3>Build: A Simple RAG App</h3>
+            <p>Your first working RAG in ~60 lines of Python. From text → embeddings → search → answer. Step-by-step, fully explained.</p>
+            <span class="pill blue">Build it →</span>
+          </a>
+
+          <a class="card hover module-card" data-reveal href="06-build-pdf-qna.html">
+            <div class="ico">📄</div>
+            <div class="num">PART 06</div>
+            <h3>Build: PDF Q&amp;A RAG App</h3>
+            <p>The complete project: load PDFs, chunk them, store in a vector DB, and chat with your documents. Includes a web UI guide.</p>
+            <span class="pill blue">Capstone →</span>
+          </a>
+
+          <a class="card hover module-card feat" data-reveal href="07-eda-agent-ollama.html">
+            <div class="ico">📊</div>
+            <div class="num">PART 07 · <span class="pill green">New</span></div>
+            <h3>Build: An EDA Agent with Ollama</h3>
+            <p>A fully <b>local, free</b> data-analysis agent. Point it at a CSV and it explores, computes stats, and writes plots — using a local LLM. End-to-end code.</p>
+            <span class="pill blue">100% local →</span>
+          </a>
+
+        </div>
+
+        <h2 id="fit">How the pieces fit together</h2>
+        <div class="diagram draw-anim">
+          <svg viewBox="0 0 760 240" width="100%" style="max-width:720px" role="img" aria-label="Relationship diagram">
+            <defs>
+              <marker id="ah" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto">
+                <path d="M0,0 L7,3 L0,6 Z" fill="var(--accent)"/>
+              </marker>
+            </defs>
+            <rect class="flow-node-accent" x="300" y="10" width="160" height="50" rx="12"/>
+            <text class="flow-label" x="380" y="33" text-anchor="middle">AI</text>
+            <text class="flow-sub" x="380" y="50" text-anchor="middle">the broad field</text>
+            <rect class="flow-node-accent" x="300" y="95" width="160" height="50" rx="12"/>
+            <text class="flow-label" x="380" y="118" text-anchor="middle">LLM</text>
+            <text class="flow-sub" x="380" y="135" text-anchor="middle">the reasoning engine</text>
+            <rect class="flow-node" x="40" y="180" width="200" height="50" rx="12"/>
+            <text class="flow-label" x="140" y="203" text-anchor="middle">RAG</text>
+            <text class="flow-sub" x="140" y="220" text-anchor="middle">gives it knowledge</text>
+            <rect class="flow-node" x="290" y="180" width="180" height="50" rx="12"/>
+            <text class="flow-label" x="380" y="203" text-anchor="middle">Agents</text>
+            <text class="flow-sub" x="380" y="220" text-anchor="middle">give it actions</text>
+            <rect class="flow-node" x="520" y="180" width="200" height="50" rx="12"/>
+            <text class="flow-label" x="620" y="203" text-anchor="middle">MCP</text>
+            <text class="flow-sub" x="620" y="220" text-anchor="middle">standard plug for tools</text>
+            <path class="ln flow-arrow" d="M380,60 L380,93" stroke="var(--accent)" stroke-width="2" fill="none" marker-end="url(#ah)"/>
+            <path class="ln flow-arrow" d="M340,145 L200,178" stroke="var(--accent)" stroke-width="2" fill="none" marker-end="url(#ah)"/>
+            <path class="ln flow-arrow" d="M380,145 L380,178" stroke="var(--accent)" stroke-width="2" fill="none" marker-end="url(#ah)"/>
+            <path class="ln flow-arrow" d="M420,145 L560,178" stroke="var(--accent)" stroke-width="2" fill="none" marker-end="url(#ah)"/>
+          </svg>
+          <div class="diagram-caption">AI → LLM → {RAG, Agents, MCP}: the LLM is the engine; the three tools below extend it.</div>
+        </div>
+        <p>
+          <b>LLMs</b> are the brain. <b>RAG</b> feeds them facts they were never trained on.
+          <b>Agents</b> let them take actions. <b>MCP</b> is the universal standard for plugging tools and data into them.
+        </p>
+
+        <h2 id="outcomes">What you'll be able to do by the end</h2>
+        <div class="grid grid-2">
+          <div class="card" data-reveal>
+            <h4>Understand</h4>
+            <ul>
+              <li>Explain LLMs, tokens &amp; context windows plainly</li>
+              <li>Describe exactly how RAG works and why it beats fine-tuning for facts</li>
+              <li>Tell the difference between an LLM, an agent, and a tool</li>
+              <li>Explain what MCP solves and why it matters</li>
+            </ul>
+          </div>
+          <div class="card" data-reveal>
+            <h4>Build</h4>
+            <ul>
+              <li>A minimal RAG pipeline from scratch in Python</li>
+              <li>A PDF Q&amp;A app you can ask questions to</li>
+              <li>A working MCP server with custom tools</li>
+              <li>A fully local EDA (data-analysis) agent with Ollama</li>
+            </ul>
+          </div>
+        </div>
+
+        <h2 id="need">What you'll need (for the build pages)</h2>
+        <div class="card" data-reveal>
+          <ul style="columns:2;-webkit-columns:2">
+            <li>Python 3.10+ installed</li>
+            <li>A terminal / command prompt</li>
+            <li>An API key (OpenAI <i>or</i> Anthropic) — <b>or</b> Ollama for free/local</li>
+            <li>~30 minutes per build</li>
+            <li>A PDF (Part 06) and a CSV (Part 07) to test with</li>
+            <li>Curiosity — that's the main one 🙂</li>
+          </ul>
+        </div>
+        <div class="callout tip">
+          <div class="c-ico">✅</div>
+          <div class="c-body"><div class="c-title">No API key? No problem</div>
+          <p>Don't have an API key? <b>Part 07 runs entirely on your own machine with no key and no cost</b> — start there if you prefer.</p></div>
+        </div>
+
+        <p class="callout note" style="display:block">Built as a self-contained learning resource · Open <code>01-llms.html</code> to begin · All examples are runnable and explained line-by-line.</p>
+
+        <div class="page-nav">
+          <span></span>
+          <a class="next" href="01-llms.html"><div class="dir">Start here →</div><div class="ttl">01 · LLMs — The Foundation</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
     </div>
   </div>
-
-  <div class="section-title">What you'll need (for the build pages)</div>
-  <div class="mini">
-    <ul style="columns:2;-webkit-columns:2">
-      <li>Python 3.10+ installed</li>
-      <li>A terminal / command prompt</li>
-      <li>An API key (OpenAI <i>or</i> Anthropic) — <b>or</b> Ollama for free/local</li>
-      <li>~30 minutes per build</li>
-      <li>A PDF (Part 06) and a CSV (Part 07) to test with</li>
-      <li>Curiosity — that's the main one 🙂</li>
-    </ul>
-    <p style="color:var(--muted);margin:12px 0 0;font-size:15px">Don't have an API key? <b>Part 07 runs entirely on your own machine with no key and no cost</b> — start there if you prefer.</p>
-  </div>
-
-  <footer>
-    Built as a self-contained learning resource · Open <span class="kbd">01-llms.html</span> to begin ·
-    All examples are runnable and explained line-by-line.
-  </footer>
-
 </div>
-<script src="sidenav.js"></script>
+
+<script>
+window.PORTAL = {
+  homeHref: "../genai-portal/index.html",
+  navLabel: "Your learning path",
+  here: "index.html",
+  base: "",
+  pages: [
+    { file: "index.html",               title: "Guide home",                     num: "✦", kw: "overview start home index" },
+    { file: "01-llms.html",             title: "LLMs — The Foundation",          num: "01", kw: "llm token context window prediction hallucination temperature prompt" },
+    { file: "02-rag.html",              title: "RAG — Retrieval-Augmented Generation", num: "02", kw: "rag retrieval embedding chunk vector grounding" },
+    { file: "03-agents.html",           title: "Agents & Tool Use",              num: "03", kw: "agent tool loop react planning function calling" },
+    { file: "04-mcp.html",              title: "MCP — Model Context Protocol",   num: "04", kw: "mcp protocol server client tools resources" },
+    { file: "05-build-simple-rag.html", title: "Build: A Simple RAG App",        num: "05", kw: "build rag project simple embeddings" },
+    { file: "06-build-pdf-qna.html",    title: "Build: PDF Q&A RAG App",         num: "06", kw: "pdf qna question answering rag chunk" },
+    { file: "07-eda-agent-ollama.html", title: "Build: EDA Agent with Ollama",   num: "07", kw: "eda agent ollama local pandas analysis" }
+  ]
+};
+</script>
+<script src="../genai-portal/assets/sitenav.js"></script>
+<script src="../genai-portal/assets/portal-page.js"></script>
+<script src="../genai-portal/assets/enhance.js"></script>
 </body>
 </html>

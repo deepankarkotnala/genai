@@ -54,10 +54,14 @@
 
   /* ---------- (1) Home button ---------- */
   function homeHref() {
-    // From inside the hub iframe, the page sits in genai-portal/ alongside index.html.
-    // Standalone, index.html is also the sibling. Either way "index.html" relative to
-    // this page is the hub home — but we navigate the TOP window so the iframe is replaced.
-    return "index.html";
+    // The unified nav (sitenav.js) knows this page's depth and can build a
+    // correct relative path to the hub root from anywhere — modules/, lessons/,
+    // reference/, sub-site folders, etc. Prefer it. Fall back to the per-page
+    // window.PORTAL.homeHref, then a sibling index.html.
+    if (window.SiteNav && typeof window.SiteNav.href === "function") {
+      return window.SiteNav.href("genai-portal/index.html");
+    }
+    return (window.PORTAL && window.PORTAL.homeHref) || "index.html";
   }
   function addHomeButton() {
     var bar = document.querySelector(".topbar");

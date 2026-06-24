@@ -1,378 +1,444 @@
-<!DOCTYPE html>
-<html lang="en">
+<!doctype html>
+<html lang="en" data-theme="light">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Part 07 — Build an EDA Agent with Ollama (Local LLM)</title>
-<link rel="stylesheet" href="style.css">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>07 · Build: EDA Agent with Ollama — RAG · MCP · Agents · LLMs</title>
+<meta name="description" content="Build a 100% local command-line EDA agent: point a tool-calling LLM running in Ollama at any CSV and ask questions in plain English. No API key, no cost, no data leaving your machine.">
+<link rel="stylesheet" href="../genai-portal/assets/styles.css">
 </head>
-<body>
-<nav class="nav"><div class="inner">
-  <a href="06-build-pdf-qna.html">← Part 06 · PDF Q&amp;A</a>
-  <span class="crumb">Part 07 · EDA Agent (Ollama)</span>
-  <a href="index.html">Home ⌂</a>
-</div></nav>
+<body data-page="lr-07">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <div class="brand-mark">R</div>
+        <div class="brand-text"><strong>RAG · MCP · Agents · LLMs</strong><span>Hands-on guide</span></div>
+      </a>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search the guide…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
 
-<div class="wrap">
-  <div class="hero">
-    <span class="tag">Part 07 — Capstone Build · 100% Local &amp; Free</span>
-    <h1>📊 Build an EDA Agent with Ollama</h1>
-    <p class="sub">Point this agent at any CSV file and ask questions in plain English. It will <em>decide</em> which analyses to run, compute real statistics, and even generate plots — powered by a large language model running entirely on your own machine. No API key. No cost. No data leaving your computer.</p>
-  </div>
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">RAG · MCP · Agents · LLMs / <b>07 · Build: EDA Agent with Ollama</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
 
-  <div class="note"><b>What is "EDA"?</b> <b>Exploratory Data Analysis</b> is the first thing a data scientist does with a new dataset: look at its shape, summary statistics, distributions, missing values, and correlations to understand what's there before modeling. We're going to build an <b>agent</b> that does this conversationally — you ask, it explores.</div>
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Part 07 · Build · 100% local</div>
+        <h1>📊 Build an EDA Agent with Ollama</h1>
+        <p class="lead">Point this agent at any CSV file and ask questions in plain English. It will <em>decide</em> which analyses to run, compute real statistics, and even generate plots — powered by a large language model running entirely on your own machine. No API key. No cost. No data leaving your computer.</p>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~25 min build</span>
+          <span class="pill">Difficulty · Capstone</span>
+          <span class="pill purple">Prereq · Parts 01 &amp; 03</span>
+        </div>
 
-  <div class="tip"><b>This page ties the whole guide together.</b> We use the <b>LLM</b> concepts from Part 01, the <b>agent loop</b> from Part 03 (think → act → observe), and the <b>tool</b> pattern throughout — but with a <b>local</b> model via Ollama instead of a cloud API. If you skipped <a href="03-agents.html">Part 03</a>, skim it first; this is that loop applied to data.</div>
+        <div class="callout note">
+          <div class="c-ico">💡</div>
+          <div class="c-body"><div class="c-title">What is "EDA"?</div>
+          <p><strong>Exploratory Data Analysis</strong> is the first thing a data scientist does with a new dataset: look at its shape, summary statistics, distributions, missing values, and correlations to understand what's there before modeling. We're going to build an <strong>agent</strong> that does this conversationally — you ask, it explores.</p></div>
+        </div>
 
-  <div class="toc"><b>Build steps</b>
-    <ol>
-      <li><a href="#what">What we're building (and why local)</a></li>
-      <li><a href="#how">How an EDA agent works</a></li>
-      <li><a href="#ollama">Step 0 — Install &amp; run Ollama</a></li>
-      <li><a href="#setup">Step 1 — Project setup</a></li>
-      <li><a href="#tools">Step 2 — Define the EDA tools</a></li>
-      <li><a href="#schema">Step 3 — Describe tools to the model</a></li>
-      <li><a href="#loop">Step 4 — The agent loop with Ollama</a></li>
-      <li><a href="#full">Step 5 — The complete program</a></li>
-      <li><a href="#run">Step 6 — Run it &amp; sample session</a></li>
-      <li><a href="#extend">Step 7 — Extend it (plots, UI, more tools)</a></li>
-      <li><a href="#trouble">Troubleshooting</a></li>
-    </ol>
-  </div>
+        <div class="callout tip">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">This page ties the whole guide together</div>
+          <p>We use the <strong>LLM</strong> concepts from Part 01, the <strong>agent loop</strong> from Part 03 (think → act → observe), and the <strong>tool</strong> pattern throughout — but with a <strong>local</strong> model via Ollama instead of a cloud API. If you skipped <a href="03-agents.html">Part 03</a>, skim it first; this is that loop applied to data.</p></div>
+        </div>
 
-  <h2 id="what">1. What we're building (and why local)</h2>
-  <p>A command-line assistant where you load <code>data.csv</code> and have a conversation like:</p>
-  <pre>❓ how many rows are there and what columns?
+        <h2 id="what">1 · What we're building (and why local)</h2>
+        <p>A command-line assistant where you load <code>data.csv</code> and have a conversation like:</p>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> text</span><button class="copy-btn">Copy</button></div>
+          <pre><code>❓ how many rows are there and what columns?
 ❓ what's the average age, and are there any missing values?
 ❓ which two numeric columns are most correlated?
-❓ plot a histogram of the price column</pre>
+❓ plot a histogram of the price column</code></pre>
+        </div>
 
-  <p>Behind the scenes, a local LLM reads your question, picks the right <b>tool</b> (e.g. <code>describe_data</code>, <code>correlation</code>, <code>plot_histogram</code>), your Python code runs it on a real <b>pandas</b> DataFrame, and the model explains the result in plain English.</p>
+        <p>Behind the scenes, a local LLM reads your question, picks the right <strong>tool</strong> (e.g. <code>describe_data</code>, <code>correlation</code>, <code>plot_histogram</code>), your Python code runs it on a real <strong>pandas</strong> DataFrame, and the model explains the result in plain English.</p>
 
-  <table>
-    <tr><th>Why a local LLM (Ollama)?</th><th>What it means for you</th></tr>
-    <tr><td><b>Privacy</b></td><td>Your data never leaves your laptop — ideal for sensitive datasets</td></tr>
-    <tr><td><b>Free</b></td><td>No API keys, no per-token billing, run it as much as you want</td></tr>
-    <tr><td><b>Offline</b></td><td>Works on a plane, behind a firewall, anywhere</td></tr>
-    <tr><td><b>Same patterns</b></td><td>The agent loop is identical to cloud LLMs — skills transfer directly</td></tr>
-  </table>
+        <div class="table-wrap">
+        <table>
+          <tr><th>Why a local LLM (Ollama)?</th><th>What it means for you</th></tr>
+          <tr><td><strong>Privacy</strong></td><td>Your data never leaves your laptop — ideal for sensitive datasets</td></tr>
+          <tr><td><strong>Free</strong></td><td>No API keys, no per-token billing, run it as much as you want</td></tr>
+          <tr><td><strong>Offline</strong></td><td>Works on a plane, behind a firewall, anywhere</td></tr>
+          <tr><td><strong>Same patterns</strong></td><td>The agent loop is identical to cloud LLMs — skills transfer directly</td></tr>
+        </table>
+        </div>
 
-  <h2 id="how">2. How an EDA agent works</h2>
-  <p>It's the agent loop from Part 03, specialized for a dataset. The DataFrame stays in your program; the LLM never sees the raw data — only the <em>results</em> of the tools it calls. This keeps things fast, private, and accurate (the model does reasoning, pandas does the math).</p>
+        <h2 id="how">2 · How an EDA agent works</h2>
+        <p>It's the agent loop from Part 03, specialized for a dataset. The DataFrame stays in your program; the LLM never sees the raw data — only the <em>results</em> of the tools it calls. This keeps things fast, private, and accurate (the model does reasoning, pandas does the math).</p>
 
-  <figure class="fig">
-    <svg viewBox="0 0 700 330" width="100%" style="max-width:680px" role="img" aria-label="EDA agent loop">
-      <defs>
-        <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#0071e3"/></marker>
-        <style>
-          .bx{fill:#f5f5f7;stroke:#d3d3da;stroke-width:1.5}
-          .bO{fill:#eef1f4;stroke:#6e56cf;stroke-width:2}
-          .bP{fill:#eef1f4;stroke:#0071e3;stroke-width:2}
-          .t{fill:#1d1d1f;font:600 13px sans-serif}
-          .m{fill:#6e6e73;font:11px sans-serif}
-          .ln{stroke:#0071e3;stroke-width:2;fill:none;marker-end:url(#ar)}
-        </style>
-      </defs>
-      <rect class="bx" x="250" y="14" width="200" height="46" rx="10"/>
-      <text class="t" x="350" y="34" text-anchor="middle">User question</text>
-      <text class="m" x="350" y="50" text-anchor="middle">"avg age? missing values?"</text>
+        <div class="cssflow">
+          <div class="fnode">User question<small>"avg age? missing values?"</small></div>
+          <div class="farrow"></div>
+          <div class="fnode accent">🧠 Ollama (local LLM) picks a tool + arguments<small>describe_data, correlation, column_stat…</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">🐼 Run the pandas tool<small>computes on the in-memory DataFrame</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">Observe the result / table<small>short string fed back to the model ↑ loop</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">✅ Final insight<small>plain-English answer for you</small></div>
+        </div>
 
-      <rect class="bO" x="235" y="100" width="230" height="58" rx="12"/>
-      <text class="t" x="350" y="124" text-anchor="middle">🧠 Ollama (local LLM)</text>
-      <text class="m" x="350" y="142" text-anchor="middle">picks a tool + arguments</text>
+        <div class="diagram draw-anim">
+          <svg viewBox="0 0 700 330" width="100%" style="max-width:680px" role="img" aria-label="EDA agent loop and local architecture">
+            <defs>
+              <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="var(--accent)"/></marker>
+            </defs>
+            <rect class="flow-node" x="250" y="14" width="200" height="46" rx="10"/>
+            <text class="flow-label" x="350" y="34" text-anchor="middle">User question</text>
+            <text class="flow-sub" x="350" y="50" text-anchor="middle">"avg age? missing values?"</text>
 
-      <rect class="bP" x="60" y="210" width="220" height="58" rx="12"/>
-      <text class="t" x="170" y="234" text-anchor="middle">🐼 Run pandas tool</text>
-      <text class="m" x="170" y="252" text-anchor="middle">describe_data() etc.</text>
+            <rect class="flow-node-accent" x="235" y="100" width="230" height="58" rx="12"/>
+            <text class="flow-label" x="350" y="124" text-anchor="middle">🧠 Ollama (local LLM)</text>
+            <text class="flow-sub" x="350" y="142" text-anchor="middle">picks a tool + arguments</text>
 
-      <rect class="bx" x="430" y="210" width="220" height="58" rx="12"/>
-      <text class="t" x="540" y="234" text-anchor="middle">✅ Final explanation</text>
-      <text class="m" x="540" y="252" text-anchor="middle">plain-English answer</text>
+            <rect class="flow-node" x="60" y="210" width="220" height="58" rx="12"/>
+            <text class="flow-label" x="170" y="234" text-anchor="middle">🐼 Run pandas tool</text>
+            <text class="flow-sub" x="170" y="252" text-anchor="middle">describe_data() etc.</text>
 
-      <rect class="bx" x="40" y="120" width="120" height="40" rx="9"/>
-      <text class="t" x="100" y="138" text-anchor="middle">CSV → DataFrame</text>
-      <text class="m" x="100" y="153" text-anchor="middle">stays in your code</text>
+            <rect class="flow-node" x="430" y="210" width="220" height="58" rx="12"/>
+            <text class="flow-label" x="540" y="234" text-anchor="middle">✅ Final explanation</text>
+            <text class="flow-sub" x="540" y="252" text-anchor="middle">plain-English answer</text>
 
-      <path class="ln" d="M350,60 L350,98"/>
-      <path class="ln" d="M300,158 L190,208"/><text class="m" x="205" y="190">needs a tool</text>
-      <path class="ln" d="M410,158 L520,208"/><text class="m" x="495" y="190">has the answer</text>
-      <path class="ln" d="M170,210 C170,180 250,175 290,160"/><text class="m" x="120" y="195">feed result back ↑</text>
-      <path class="ln" d="M160,140 L233,135" stroke-dasharray="4 3"/>
-    </svg>
-    <figcaption>The model decides; pandas computes; the model explains. The loop repeats until the question is fully answered.</figcaption>
-  </figure>
+            <rect class="flow-node" x="40" y="120" width="120" height="40" rx="9"/>
+            <text class="flow-label" x="100" y="138" text-anchor="middle">CSV → DataFrame</text>
+            <text class="flow-sub" x="100" y="153" text-anchor="middle">stays in your code</text>
 
-  <h2 id="ollama">3. Step 0 — Install &amp; run Ollama</h2>
-  <p><a href="https://ollama.com">Ollama</a> is a free app that runs open LLMs locally with a simple API. Install it, then pull a model that supports <b>tool calling</b> (essential for an agent).</p>
+            <path class="ln flow-arrow" d="M350,60 L350,98" stroke="var(--accent)" stroke-width="2" fill="none" marker-end="url(#ar)"/>
+            <path class="ln flow-arrow" d="M300,158 L190,208" stroke="var(--accent)" stroke-width="2" fill="none" marker-end="url(#ar)"/><text class="flow-sub" x="205" y="190">needs a tool</text>
+            <path class="ln flow-arrow" d="M410,158 L520,208" stroke="var(--accent)" stroke-width="2" fill="none" marker-end="url(#ar)"/><text class="flow-sub" x="495" y="190">has the answer</text>
+            <path class="ln flow-arrow" d="M170,210 C170,180 250,175 290,160" stroke="var(--accent)" stroke-width="2" fill="none" marker-end="url(#ar)"/><text class="flow-sub" x="120" y="195">feed result back ↑</text>
+            <path class="ln flow-arrow" d="M160,140 L233,135" stroke="var(--accent)" stroke-width="2" fill="none" stroke-dasharray="4 3" marker-end="url(#ar)"/>
+          </svg>
+          <div class="diagram-caption">The model decides; pandas computes; the model explains. The loop repeats until the question is fully answered.</div>
+        </div>
 
-  <pre><span class="fname">terminal</span><span class="c-com"># 1. Download &amp; install Ollama from https://ollama.com  (Windows/Mac/Linux)</span>
+        <h2 id="ollama">3 · Step 0 — Install &amp; run Ollama</h2>
+        <p><a href="https://ollama.com">Ollama</a> is a free app that runs open LLMs locally with a simple API. Install it, then pull a model that supports <strong>tool calling</strong> (essential for an agent).</p>
 
-<span class="c-com"># 2. Pull a tool-capable model (~4.7 GB). Llama 3.1 supports tool calling.</span>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> bash</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-com"># 1. Download &amp; install Ollama from https://ollama.com  (Windows/Mac/Linux)</span>
+
+<span class="tok-com"># 2. Pull a tool-capable model (~4.7 GB). Llama 3.1 supports tool calling.</span>
 ollama pull llama3.1
 
-<span class="c-com"># 3. Verify it runs</span>
-ollama run llama3.1 <span class="c-str">"Say hello in one short sentence."</span>
+<span class="tok-com"># 3. Verify it runs</span>
+ollama run llama3.1 <span class="tok-str">"Say hello in one short sentence."</span>
 
-<span class="c-com"># Ollama also serves an HTTP API at http://localhost:11434 automatically.</span></pre>
+<span class="tok-com"># Ollama also serves an HTTP API at http://localhost:11434 automatically.</span></code></pre>
+        </div>
 
-  <div class="note"><b>Model choice matters for agents.</b> The agent needs a model trained for <b>function/tool calling</b>. Good local options: <code>llama3.1</code> (8B, solid default), <code>qwen2.5</code> (great at tools), or <code>mistral-nemo</code>. Tiny models (&lt;3B) often call tools unreliably. If you have a weak machine, try <code>qwen2.5:3b</code> but expect occasional misfires.</div>
+        <div class="callout note">
+          <div class="c-ico">💡</div>
+          <div class="c-body"><div class="c-title">Model choice matters for agents</div>
+          <p>The agent needs a model trained for <strong>function/tool calling</strong>. Good local options: <code>llama3.1</code> (8B, solid default), <code>qwen2.5</code> (great at tools), or <code>mistral-nemo</code>. Tiny models (&lt;3B) often call tools unreliably. If you have a weak machine, try <code>qwen2.5:3b</code> but expect occasional misfires.</p></div>
+        </div>
 
-  <div class="tip"><b>Hardware note.</b> An 8B model needs roughly 8 GB of RAM/VRAM to run comfortably. It works on CPU (slower) and is much faster with a GPU or Apple Silicon. The first response is slow (model loads into memory); subsequent ones are quicker.</div>
+        <div class="callout tip">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">Hardware note</div>
+          <p>An 8B model needs roughly 8 GB of RAM/VRAM to run comfortably. It works on CPU (slower) and is much faster with a GPU or Apple Silicon. The first response is slow (model loads into memory); subsequent ones are quicker.</p></div>
+        </div>
 
-  <h2 id="setup">4. Step 1 — Project setup</h2>
-  <p>We'll use the official <code>ollama</code> Python client, plus pandas and matplotlib for analysis and plots.</p>
-  <pre><span class="fname">terminal</span>pip install ollama pandas matplotlib
+        <h2 id="setup">4 · Step 1 — Project setup</h2>
+        <p>We'll use the official <code>ollama</code> Python client, plus pandas and matplotlib for analysis and plots.</p>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> bash</span><button class="copy-btn">Copy</button></div>
+          <pre><code>pip install ollama pandas matplotlib
 
-<span class="c-com"># Make sure Ollama is running (the desktop app, or `ollama serve`)</span></pre>
+<span class="tok-com"># Make sure Ollama is running (the desktop app, or `ollama serve`)</span></code></pre>
+        </div>
 
-  <p>Grab any CSV to test with. No data handy? Create a small sample:</p>
-  <pre><span class="fname">make_sample.py</span><span class="c-kw">import</span> pandas <span class="c-kw">as</span> pd
+        <p>Grab any CSV to test with. No data handy? Create a small sample:</p>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> python</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-com"># make_sample.py</span>
+<span class="tok-kw">import</span> pandas <span class="tok-kw">as</span> pd
 df = pd.DataFrame({
-    <span class="c-str">"name"</span>:   [<span class="c-str">"Ann"</span>,<span class="c-str">"Bob"</span>,<span class="c-str">"Cy"</span>,<span class="c-str">"Dee"</span>,<span class="c-str">"Eve"</span>,<span class="c-str">"Fin"</span>],
-    <span class="c-str">"age"</span>:    [<span class="c-num">25</span>,<span class="c-num">31</span>,<span class="c-num">45</span>,<span class="c-num">29</span>,<span class="c-kw">None</span>,<span class="c-num">52</span>],
-    <span class="c-str">"city"</span>:   [<span class="c-str">"NY"</span>,<span class="c-str">"LA"</span>,<span class="c-str">"NY"</span>,<span class="c-str">"SF"</span>,<span class="c-str">"LA"</span>,<span class="c-str">"SF"</span>],
-    <span class="c-str">"salary"</span>: [<span class="c-num">62000</span>,<span class="c-num">81000</span>,<span class="c-num">95000</span>,<span class="c-num">58000</span>,<span class="c-num">72000</span>,<span class="c-num">120000</span>],
+    <span class="tok-str">"name"</span>:   [<span class="tok-str">"Ann"</span>,<span class="tok-str">"Bob"</span>,<span class="tok-str">"Cy"</span>,<span class="tok-str">"Dee"</span>,<span class="tok-str">"Eve"</span>,<span class="tok-str">"Fin"</span>],
+    <span class="tok-str">"age"</span>:    [<span class="tok-num">25</span>,<span class="tok-num">31</span>,<span class="tok-num">45</span>,<span class="tok-num">29</span>,<span class="tok-kw">None</span>,<span class="tok-num">52</span>],
+    <span class="tok-str">"city"</span>:   [<span class="tok-str">"NY"</span>,<span class="tok-str">"LA"</span>,<span class="tok-str">"NY"</span>,<span class="tok-str">"SF"</span>,<span class="tok-str">"LA"</span>,<span class="tok-str">"SF"</span>],
+    <span class="tok-str">"salary"</span>: [<span class="tok-num">62000</span>,<span class="tok-num">81000</span>,<span class="tok-num">95000</span>,<span class="tok-num">58000</span>,<span class="tok-num">72000</span>,<span class="tok-num">120000</span>],
 })
-df.to_csv(<span class="c-str">"data.csv"</span>, index=<span class="c-kw">False</span>)
-<span class="c-fn">print</span>(<span class="c-str">"wrote data.csv"</span>)</pre>
+df.to_csv(<span class="tok-str">"data.csv"</span>, index=<span class="tok-kw">False</span>)
+<span class="tok-fn">print</span>(<span class="tok-str">"wrote data.csv"</span>)</code></pre>
+        </div>
 
-  <h2 id="tools">5. Step 2 — Define the EDA tools</h2>
-  <p>Tools are just normal Python functions that operate on the DataFrame and return a <b>string</b> (the model reads text). Keep outputs concise — the model only needs the result, not megabytes of raw rows.</p>
+        <h2 id="tools">5 · Step 2 — Define the EDA tools</h2>
+        <p>Tools are just normal Python functions that operate on the DataFrame and return a <strong>string</strong> (the model reads text). Keep outputs concise — the model only needs the result, not megabytes of raw rows.</p>
 
-  <div class="step"><span class="lbl">STEP 2 · TOOLS</span>
-  <pre><span class="c-kw">import</span> pandas <span class="c-kw">as</span> pd
-<span class="c-kw">import</span> matplotlib
-matplotlib.use(<span class="c-str">"Agg"</span>)           <span class="c-com"># save plots to file, no popup window</span>
-<span class="c-kw">import</span> matplotlib.pyplot <span class="c-kw">as</span> plt
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> python · Step 2 · tools</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">import</span> pandas <span class="tok-kw">as</span> pd
+<span class="tok-kw">import</span> matplotlib
+matplotlib.use(<span class="tok-str">"Agg"</span>)           <span class="tok-com"># save plots to file, no popup window</span>
+<span class="tok-kw">import</span> matplotlib.pyplot <span class="tok-kw">as</span> plt
 
-df = pd.read_csv(<span class="c-str">"data.csv"</span>)   <span class="c-com"># the dataset lives here, in our code</span>
+df = pd.read_csv(<span class="tok-str">"data.csv"</span>)   <span class="tok-com"># the dataset lives here, in our code</span>
 
-<span class="c-kw">def</span> <span class="c-fn">get_overview</span>():
-    <span class="c-str">"""Rows, columns, and data types of the dataset."""</span>
-    <span class="c-kw">return</span> (<span class="c-str">f"Shape: {df.shape[0]} rows x {df.shape[1]} columns.\n"</span>
-            <span class="c-str">f"Columns &amp; types:\n{df.dtypes.to_string()}"</span>)
+<span class="tok-kw">def</span> <span class="tok-fn">get_overview</span>():
+    <span class="tok-str">"""Rows, columns, and data types of the dataset."""</span>
+    <span class="tok-kw">return</span> (<span class="tok-str">f"Shape: {df.shape[0]} rows x {df.shape[1]} columns.\n"</span>
+            <span class="tok-str">f"Columns &amp; types:\n{df.dtypes.to_string()}"</span>)
 
-<span class="c-kw">def</span> <span class="c-fn">describe_data</span>():
-    <span class="c-str">"""Summary statistics (mean, std, min, max, quartiles) for numeric columns."""</span>
-    <span class="c-kw">return</span> df.describe().to_string()
+<span class="tok-kw">def</span> <span class="tok-fn">describe_data</span>():
+    <span class="tok-str">"""Summary statistics (mean, std, min, max, quartiles) for numeric columns."""</span>
+    <span class="tok-kw">return</span> df.describe().to_string()
 
-<span class="c-kw">def</span> <span class="c-fn">missing_values</span>():
-    <span class="c-str">"""Count of missing (null) values per column."""</span>
+<span class="tok-kw">def</span> <span class="tok-fn">missing_values</span>():
+    <span class="tok-str">"""Count of missing (null) values per column."""</span>
     miss = df.isnull().sum()
-    <span class="c-kw">return</span> miss[miss &gt; <span class="c-num">0</span>].to_string() <span class="c-kw">or</span> <span class="c-str">"No missing values."</span>
+    <span class="tok-kw">return</span> miss[miss &gt; <span class="tok-num">0</span>].to_string() <span class="tok-kw">or</span> <span class="tok-str">"No missing values."</span>
 
-<span class="c-kw">def</span> <span class="c-fn">value_counts</span>(column: str):
-    <span class="c-str">"""Frequency of each value in a (usually categorical) column."""</span>
-    <span class="c-kw">if</span> column <span class="c-kw">not in</span> df.columns:
-        <span class="c-kw">return</span> <span class="c-str">f"No column '{column}'. Available: {list(df.columns)}"</span>
-    <span class="c-kw">return</span> df[column].value_counts().to_string()
+<span class="tok-kw">def</span> <span class="tok-fn">value_counts</span>(column: str):
+    <span class="tok-str">"""Frequency of each value in a (usually categorical) column."""</span>
+    <span class="tok-kw">if</span> column <span class="tok-kw">not in</span> df.columns:
+        <span class="tok-kw">return</span> <span class="tok-str">f"No column '{column}'. Available: {list(df.columns)}"</span>
+    <span class="tok-kw">return</span> df[column].value_counts().to_string()
 
-<span class="c-kw">def</span> <span class="c-fn">correlation</span>():
-    <span class="c-str">"""Correlation matrix between numeric columns (-1 to 1)."""</span>
-    num = df.select_dtypes(<span class="c-str">"number"</span>)
-    <span class="c-kw">if</span> num.shape[<span class="c-num">1</span>] &lt; <span class="c-num">2</span>:
-        <span class="c-kw">return</span> <span class="c-str">"Need at least 2 numeric columns."</span>
-    <span class="c-kw">return</span> num.corr().round(<span class="c-num">2</span>).to_string()
+<span class="tok-kw">def</span> <span class="tok-fn">correlation</span>():
+    <span class="tok-str">"""Correlation matrix between numeric columns (-1 to 1)."""</span>
+    num = df.select_dtypes(<span class="tok-str">"number"</span>)
+    <span class="tok-kw">if</span> num.shape[<span class="tok-num">1</span>] &lt; <span class="tok-num">2</span>:
+        <span class="tok-kw">return</span> <span class="tok-str">"Need at least 2 numeric columns."</span>
+    <span class="tok-kw">return</span> num.corr().round(<span class="tok-num">2</span>).to_string()
 
-<span class="c-kw">def</span> <span class="c-fn">column_stat</span>(column: str, stat: str):
-    <span class="c-str">"""One statistic (mean, median, min, max, sum, std) for one numeric column."""</span>
-    <span class="c-kw">if</span> column <span class="c-kw">not in</span> df.columns:
-        <span class="c-kw">return</span> <span class="c-str">f"No column '{column}'."</span>
+<span class="tok-kw">def</span> <span class="tok-fn">column_stat</span>(column: str, stat: str):
+    <span class="tok-str">"""One statistic (mean, median, min, max, sum, std) for one numeric column."""</span>
+    <span class="tok-kw">if</span> column <span class="tok-kw">not in</span> df.columns:
+        <span class="tok-kw">return</span> <span class="tok-str">f"No column '{column}'."</span>
     s = df[column]
-    funcs = {<span class="c-str">"mean"</span>:s.mean, <span class="c-str">"median"</span>:s.median, <span class="c-str">"min"</span>:s.min,
-             <span class="c-str">"max"</span>:s.max, <span class="c-str">"sum"</span>:s.sum, <span class="c-str">"std"</span>:s.std}
-    <span class="c-kw">if</span> stat <span class="c-kw">not in</span> funcs:
-        <span class="c-kw">return</span> <span class="c-str">f"Unknown stat '{stat}'. Try: {list(funcs)}"</span>
-    <span class="c-kw">return</span> <span class="c-str">f"{stat} of {column} = {funcs[stat]():.2f}"</span>
+    funcs = {<span class="tok-str">"mean"</span>:s.mean, <span class="tok-str">"median"</span>:s.median, <span class="tok-str">"min"</span>:s.min,
+             <span class="tok-str">"max"</span>:s.max, <span class="tok-str">"sum"</span>:s.sum, <span class="tok-str">"std"</span>:s.std}
+    <span class="tok-kw">if</span> stat <span class="tok-kw">not in</span> funcs:
+        <span class="tok-kw">return</span> <span class="tok-str">f"Unknown stat '{stat}'. Try: {list(funcs)}"</span>
+    <span class="tok-kw">return</span> <span class="tok-str">f"{stat} of {column} = {funcs[stat]():.2f}"</span>
 
-<span class="c-kw">def</span> <span class="c-fn">plot_histogram</span>(column: str):
-    <span class="c-str">"""Save a histogram of a numeric column to a PNG file."""</span>
-    <span class="c-kw">if</span> column <span class="c-kw">not in</span> df.columns:
-        <span class="c-kw">return</span> <span class="c-str">f"No column '{column}'."</span>
+<span class="tok-kw">def</span> <span class="tok-fn">plot_histogram</span>(column: str):
+    <span class="tok-str">"""Save a histogram of a numeric column to a PNG file."""</span>
+    <span class="tok-kw">if</span> column <span class="tok-kw">not in</span> df.columns:
+        <span class="tok-kw">return</span> <span class="tok-str">f"No column '{column}'."</span>
     plt.figure()
-    df[column].hist(bins=<span class="c-num">10</span>)
-    plt.title(<span class="c-str">f"Histogram of {column}"</span>); plt.xlabel(column); plt.ylabel(<span class="c-str">"count"</span>)
-    fname = <span class="c-str">f"hist_{column}.png"</span>
+    df[column].hist(bins=<span class="tok-num">10</span>)
+    plt.title(<span class="tok-str">f"Histogram of {column}"</span>); plt.xlabel(column); plt.ylabel(<span class="tok-str">"count"</span>)
+    fname = <span class="tok-str">f"hist_{column}.png"</span>
     plt.savefig(fname); plt.close()
-    <span class="c-kw">return</span> <span class="c-str">f"Saved histogram to {fname}"</span></pre>
-  </div>
+    <span class="tok-kw">return</span> <span class="tok-str">f"Saved histogram to {fname}"</span></code></pre>
+        </div>
 
-  <div class="note"><b>Design principle.</b> Each tool is small, does one thing, returns a short string, and validates its input (e.g. "no such column"). Good tool design is the difference between an agent that works and one that flails — clear names + docstrings help the LLM choose correctly.</div>
+        <div class="callout note">
+          <div class="c-ico">💡</div>
+          <div class="c-body"><div class="c-title">Design principle</div>
+          <p>Each tool is small, does one thing, returns a short string, and validates its input (e.g. "no such column"). Good tool design is the difference between an agent that works and one that flails — clear names + docstrings help the LLM choose correctly.</p></div>
+        </div>
 
-  <h2 id="schema">6. Step 3 — Describe the tools to the model</h2>
-  <p>Just like Part 03, we give the LLM a JSON description of each tool so it knows what's available and what arguments to pass. Ollama uses the same OpenAI-style tool schema.</p>
+        <h2 id="schema">6 · Step 3 — Describe the tools to the model</h2>
+        <p>Just like Part 03, we give the LLM a JSON description of each tool so it knows what's available and what arguments to pass. Ollama uses the same OpenAI-style tool schema.</p>
 
-  <div class="step"><span class="lbl">STEP 3 · SCHEMA</span>
-  <pre><span class="c-com"># Map tool names -> the actual Python functions</span>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> python · Step 3 · schema</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-com"># Map tool names -> the actual Python functions</span>
 TOOL_FUNCS = {
-    <span class="c-str">"get_overview"</span>: get_overview, <span class="c-str">"describe_data"</span>: describe_data,
-    <span class="c-str">"missing_values"</span>: missing_values, <span class="c-str">"value_counts"</span>: value_counts,
-    <span class="c-str">"correlation"</span>: correlation, <span class="c-str">"column_stat"</span>: column_stat,
-    <span class="c-str">"plot_histogram"</span>: plot_histogram,
+    <span class="tok-str">"get_overview"</span>: get_overview, <span class="tok-str">"describe_data"</span>: describe_data,
+    <span class="tok-str">"missing_values"</span>: missing_values, <span class="tok-str">"value_counts"</span>: value_counts,
+    <span class="tok-str">"correlation"</span>: correlation, <span class="tok-str">"column_stat"</span>: column_stat,
+    <span class="tok-str">"plot_histogram"</span>: plot_histogram,
 }
 
-<span class="c-kw">def</span> <span class="c-fn">tool</span>(name, desc, props=<span class="c-kw">None</span>, required=<span class="c-kw">None</span>):
-    <span class="c-str">"""Helper to build one tool schema entry."""</span>
-    <span class="c-kw">return</span> {<span class="c-str">"type"</span>: <span class="c-str">"function"</span>, <span class="c-str">"function"</span>: {
-        <span class="c-str">"name"</span>: name, <span class="c-str">"description"</span>: desc,
-        <span class="c-str">"parameters"</span>: {<span class="c-str">"type"</span>:<span class="c-str">"object"</span>,
-            <span class="c-str">"properties"</span>: props <span class="c-kw">or</span> {}, <span class="c-str">"required"</span>: required <span class="c-kw">or</span> []}}}
+<span class="tok-kw">def</span> <span class="tok-fn">tool</span>(name, desc, props=<span class="tok-kw">None</span>, required=<span class="tok-kw">None</span>):
+    <span class="tok-str">"""Helper to build one tool schema entry."""</span>
+    <span class="tok-kw">return</span> {<span class="tok-str">"type"</span>: <span class="tok-str">"function"</span>, <span class="tok-str">"function"</span>: {
+        <span class="tok-str">"name"</span>: name, <span class="tok-str">"description"</span>: desc,
+        <span class="tok-str">"parameters"</span>: {<span class="tok-str">"type"</span>:<span class="tok-str">"object"</span>,
+            <span class="tok-str">"properties"</span>: props <span class="tok-kw">or</span> {}, <span class="tok-str">"required"</span>: required <span class="tok-kw">or</span> []}}}
 
-STR = {<span class="c-str">"type"</span>: <span class="c-str">"string"</span>}
+STR = {<span class="tok-str">"type"</span>: <span class="tok-str">"string"</span>}
 TOOLS = [
-  <span class="c-fn">tool</span>(<span class="c-str">"get_overview"</span>,  <span class="c-str">"Rows, columns and data types of the dataset."</span>),
-  <span class="c-fn">tool</span>(<span class="c-str">"describe_data"</span>, <span class="c-str">"Summary stats for all numeric columns."</span>),
-  <span class="c-fn">tool</span>(<span class="c-str">"missing_values"</span>,<span class="c-str">"Count of missing values per column."</span>),
-  <span class="c-fn">tool</span>(<span class="c-str">"correlation"</span>,   <span class="c-str">"Correlation matrix of numeric columns."</span>),
-  <span class="c-fn">tool</span>(<span class="c-str">"value_counts"</span>,  <span class="c-str">"Frequency of values in a column."</span>,
-       {<span class="c-str">"column"</span>: STR}, [<span class="c-str">"column"</span>]),
-  <span class="c-fn">tool</span>(<span class="c-str">"column_stat"</span>,   <span class="c-str">"One statistic for one numeric column."</span>,
-       {<span class="c-str">"column"</span>: STR,
-        <span class="c-str">"stat"</span>: {<span class="c-str">"type"</span>:<span class="c-str">"string"</span>,
-                 <span class="c-str">"enum"</span>:[<span class="c-str">"mean"</span>,<span class="c-str">"median"</span>,<span class="c-str">"min"</span>,<span class="c-str">"max"</span>,<span class="c-str">"sum"</span>,<span class="c-str">"std"</span>]}},
-       [<span class="c-str">"column"</span>,<span class="c-str">"stat"</span>]),
-  <span class="c-fn">tool</span>(<span class="c-str">"plot_histogram"</span>,<span class="c-str">"Save a histogram PNG of a numeric column."</span>,
-       {<span class="c-str">"column"</span>: STR}, [<span class="c-str">"column"</span>]),
-]</pre>
-  </div>
+  <span class="tok-fn">tool</span>(<span class="tok-str">"get_overview"</span>,  <span class="tok-str">"Rows, columns and data types of the dataset."</span>),
+  <span class="tok-fn">tool</span>(<span class="tok-str">"describe_data"</span>, <span class="tok-str">"Summary stats for all numeric columns."</span>),
+  <span class="tok-fn">tool</span>(<span class="tok-str">"missing_values"</span>,<span class="tok-str">"Count of missing values per column."</span>),
+  <span class="tok-fn">tool</span>(<span class="tok-str">"correlation"</span>,   <span class="tok-str">"Correlation matrix of numeric columns."</span>),
+  <span class="tok-fn">tool</span>(<span class="tok-str">"value_counts"</span>,  <span class="tok-str">"Frequency of values in a column."</span>,
+       {<span class="tok-str">"column"</span>: STR}, [<span class="tok-str">"column"</span>]),
+  <span class="tok-fn">tool</span>(<span class="tok-str">"column_stat"</span>,   <span class="tok-str">"One statistic for one numeric column."</span>,
+       {<span class="tok-str">"column"</span>: STR,
+        <span class="tok-str">"stat"</span>: {<span class="tok-str">"type"</span>:<span class="tok-str">"string"</span>,
+                 <span class="tok-str">"enum"</span>:[<span class="tok-str">"mean"</span>,<span class="tok-str">"median"</span>,<span class="tok-str">"min"</span>,<span class="tok-str">"max"</span>,<span class="tok-str">"sum"</span>,<span class="tok-str">"std"</span>]}},
+       [<span class="tok-str">"column"</span>,<span class="tok-str">"stat"</span>]),
+  <span class="tok-fn">tool</span>(<span class="tok-str">"plot_histogram"</span>,<span class="tok-str">"Save a histogram PNG of a numeric column."</span>,
+       {<span class="tok-str">"column"</span>: STR}, [<span class="tok-str">"column"</span>]),
+]</code></pre>
+        </div>
 
-  <div class="tip"><b>Why the <code>enum</code> for <code>stat</code>?</b> Constraining the allowed values ("mean", "median", …) makes the model far more reliable — it can't invent a stat name your code doesn't support. Tightening schemas is one of the easiest ways to improve a local agent.</div>
+        <div class="callout tip">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">Why the <code>enum</code> for <code>stat</code>?</div>
+          <p>Constraining the allowed values ("mean", "median", …) makes the model far more reliable — it can't invent a stat name your code doesn't support. Tightening schemas is one of the easiest ways to improve a local agent.</p></div>
+        </div>
 
-  <h2 id="loop">7. Step 4 — The agent loop with Ollama</h2>
-  <p>This is the same think → act → observe loop from Part 03, now talking to <code>localhost:11434</code>. A <b>system prompt</b> tells the model its job and to always use tools rather than guess.</p>
+        <h2 id="loop">7 · Step 4 — The agent loop with Ollama</h2>
+        <p>This is the same think → act → observe loop from Part 03, now talking to <code>localhost:11434</code>. A <strong>system prompt</strong> tells the model its job and to always use tools rather than guess.</p>
 
-  <div class="step"><span class="lbl">STEP 4 · LOOP</span>
-  <pre><span class="c-kw">import</span> ollama, json
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> python · Step 4 · loop</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">import</span> ollama, json
 
-SYSTEM = (<span class="c-str">"You are a data analysis assistant. Use the provided tools "</span>
-          <span class="c-str">"to inspect the dataset before answering. Never invent numbers; "</span>
-          <span class="c-str">"always call a tool to get real values, then explain the result "</span>
-          <span class="c-str">"clearly and concisely for a non-technical user."</span>)
+SYSTEM = (<span class="tok-str">"You are a data analysis assistant. Use the provided tools "</span>
+          <span class="tok-str">"to inspect the dataset before answering. Never invent numbers; "</span>
+          <span class="tok-str">"always call a tool to get real values, then explain the result "</span>
+          <span class="tok-str">"clearly and concisely for a non-technical user."</span>)
 
-<span class="c-kw">def</span> <span class="c-fn">ask_agent</span>(question, history):
-    history.append({<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: question})
+<span class="tok-kw">def</span> <span class="tok-fn">ask_agent</span>(question, history):
+    history.append({<span class="tok-str">"role"</span>: <span class="tok-str">"user"</span>, <span class="tok-str">"content"</span>: question})
 
-    <span class="c-kw">for</span> _ <span class="c-kw">in</span> <span class="c-fn">range</span>(<span class="c-num">6</span>):                      <span class="c-com"># cap tool-call rounds (safety)</span>
-        resp = ollama.chat(model=<span class="c-str">"llama3.1"</span>,
+    <span class="tok-kw">for</span> _ <span class="tok-kw">in</span> <span class="tok-fn">range</span>(<span class="tok-num">6</span>):                      <span class="tok-com"># cap tool-call rounds (safety)</span>
+        resp = ollama.chat(model=<span class="tok-str">"llama3.1"</span>,
                            messages=history, tools=TOOLS)
-        msg = resp[<span class="c-str">"message"</span>]
+        msg = resp[<span class="tok-str">"message"</span>]
         history.append(msg)
 
-        calls = msg.get(<span class="c-str">"tool_calls"</span>)
-        <span class="c-kw">if</span> <span class="c-kw">not</span> calls:                       <span class="c-com"># no tool -> final answer</span>
-            <span class="c-kw">return</span> msg[<span class="c-str">"content"</span>]
+        calls = msg.get(<span class="tok-str">"tool_calls"</span>)
+        <span class="tok-kw">if</span> <span class="tok-kw">not</span> calls:                       <span class="tok-com"># no tool -> final answer</span>
+            <span class="tok-kw">return</span> msg[<span class="tok-str">"content"</span>]
 
-        <span class="c-kw">for</span> call <span class="c-kw">in</span> calls:               <span class="c-com"># run each requested tool</span>
-            name = call[<span class="c-str">"function"</span>][<span class="c-str">"name"</span>]
-            args = call[<span class="c-str">"function"</span>][<span class="c-str">"arguments"</span>]   <span class="c-com"># already a dict</span>
+        <span class="tok-kw">for</span> call <span class="tok-kw">in</span> calls:               <span class="tok-com"># run each requested tool</span>
+            name = call[<span class="tok-str">"function"</span>][<span class="tok-str">"name"</span>]
+            args = call[<span class="tok-str">"function"</span>][<span class="tok-str">"arguments"</span>]   <span class="tok-com"># already a dict</span>
             fn = TOOL_FUNCS.get(name)
-            result = fn(**args) <span class="c-kw">if</span> fn <span class="c-kw">else</span> <span class="c-str">f"Unknown tool {name}"</span>
-            <span class="c-fn">print</span>(<span class="c-str">f"   🔧 {name}({args}) ->"</span>, result[:<span class="c-num">60</span>].replace(<span class="c-str">chr(10)</span>,<span class="c-str">' '</span>), <span class="c-str">"..."</span>)
-            history.append({<span class="c-str">"role"</span>: <span class="c-str">"tool"</span>, <span class="c-str">"name"</span>: name,
-                            <span class="c-str">"content"</span>: <span class="c-fn">str</span>(result)})
-        <span class="c-com"># loop again so the model can use the tool output</span>
+            result = fn(**args) <span class="tok-kw">if</span> fn <span class="tok-kw">else</span> <span class="tok-str">f"Unknown tool {name}"</span>
+            <span class="tok-fn">print</span>(<span class="tok-str">f"   🔧 {name}({args}) ->"</span>, result[:<span class="tok-num">60</span>].replace(<span class="tok-str">chr(10)</span>,<span class="tok-str">' '</span>), <span class="tok-str">"..."</span>)
+            history.append({<span class="tok-str">"role"</span>: <span class="tok-str">"tool"</span>, <span class="tok-str">"name"</span>: name,
+                            <span class="tok-str">"content"</span>: <span class="tok-fn">str</span>(result)})
+        <span class="tok-com"># loop again so the model can use the tool output</span>
 
-    <span class="c-kw">return</span> <span class="c-str">"(Stopped after several tool calls.)"</span></pre>
-  </div>
+    <span class="tok-kw">return</span> <span class="tok-str">"(Stopped after several tool calls.)"</span></code></pre>
+        </div>
 
-  <div class="note"><b>Trace one turn:</b> you ask "average salary?" → the model returns a <code>tool_calls</code> entry for <code>column_stat(column="salary", stat="mean")</code> → your loop runs it → appends <code>{"role":"tool", ...}</code> with the number → calls the model again → this time it has the value and returns plain text: "The average salary is $81,333." That round-trip is the agent at work — identical in shape to the cloud version in Part 03.</div>
+        <div class="callout note">
+          <div class="c-ico">💡</div>
+          <div class="c-body"><div class="c-title">Trace one turn</div>
+          <p>You ask "average salary?" → the model returns a <code>tool_calls</code> entry for <code>column_stat(column="salary", stat="mean")</code> → your loop runs it → appends <code>{"role":"tool", ...}</code> with the number → calls the model again → this time it has the value and returns plain text: "The average salary is $81,333." That round-trip is the agent at work — identical in shape to the cloud version in Part 03.</p></div>
+        </div>
 
-  <h2 id="full">8. Step 5 — The complete program</h2>
-  <p>Everything in one file. Save as <code>eda_agent.py</code>, make sure Ollama is running and <code>data.csv</code> exists, then run <code>python eda_agent.py</code>.</p>
+        <h2 id="full">8 · Step 5 — The complete program</h2>
+        <p>Everything in one file. Save as <code>eda_agent.py</code>, make sure Ollama is running and <code>data.csv</code> exists, then run <code>python eda_agent.py</code>.</p>
 
-  <pre><span class="fname">eda_agent.py — complete</span><span class="c-kw">import</span> sys, ollama
-<span class="c-kw">import</span> pandas <span class="c-kw">as</span> pd
-<span class="c-kw">import</span> matplotlib
-matplotlib.use(<span class="c-str">"Agg"</span>)
-<span class="c-kw">import</span> matplotlib.pyplot <span class="c-kw">as</span> plt
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> python · eda_agent.py — complete</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">import</span> sys, ollama
+<span class="tok-kw">import</span> pandas <span class="tok-kw">as</span> pd
+<span class="tok-kw">import</span> matplotlib
+matplotlib.use(<span class="tok-str">"Agg"</span>)
+<span class="tok-kw">import</span> matplotlib.pyplot <span class="tok-kw">as</span> plt
 
-CSV   = sys.argv[<span class="c-num">1</span>] <span class="c-kw">if</span> <span class="c-fn">len</span>(sys.argv) &gt; <span class="c-num">1</span> <span class="c-kw">else</span> <span class="c-str">"data.csv"</span>
-MODEL = <span class="c-str">"llama3.1"</span>
+CSV   = sys.argv[<span class="tok-num">1</span>] <span class="tok-kw">if</span> <span class="tok-fn">len</span>(sys.argv) &gt; <span class="tok-num">1</span> <span class="tok-kw">else</span> <span class="tok-str">"data.csv"</span>
+MODEL = <span class="tok-str">"llama3.1"</span>
 df = pd.read_csv(CSV)
 
-<span class="c-com"># ---------- TOOLS ----------</span>
-<span class="c-kw">def</span> <span class="c-fn">get_overview</span>():
-    <span class="c-kw">return</span> <span class="c-str">f"Shape: {df.shape[0]} rows x {df.shape[1]} cols.\n{df.dtypes.to_string()}"</span>
-<span class="c-kw">def</span> <span class="c-fn">describe_data</span>():
-    <span class="c-kw">return</span> df.describe().to_string()
-<span class="c-kw">def</span> <span class="c-fn">missing_values</span>():
-    m = df.isnull().sum(); m = m[m &gt; <span class="c-num">0</span>]
-    <span class="c-kw">return</span> m.to_string() <span class="c-kw">if</span> <span class="c-fn">len</span>(m) <span class="c-kw">else</span> <span class="c-str">"No missing values."</span>
-<span class="c-kw">def</span> <span class="c-fn">value_counts</span>(column):
-    <span class="c-kw">if</span> column <span class="c-kw">not in</span> df.columns: <span class="c-kw">return</span> <span class="c-str">f"No column '{column}'. Have: {list(df.columns)}"</span>
-    <span class="c-kw">return</span> df[column].value_counts().to_string()
-<span class="c-kw">def</span> <span class="c-fn">correlation</span>():
-    num = df.select_dtypes(<span class="c-str">"number"</span>)
-    <span class="c-kw">if</span> num.shape[<span class="c-num">1</span>] &lt; <span class="c-num">2</span>: <span class="c-kw">return</span> <span class="c-str">"Need 2+ numeric columns."</span>
-    <span class="c-kw">return</span> num.corr().round(<span class="c-num">2</span>).to_string()
-<span class="c-kw">def</span> <span class="c-fn">column_stat</span>(column, stat):
-    <span class="c-kw">if</span> column <span class="c-kw">not in</span> df.columns: <span class="c-kw">return</span> <span class="c-str">f"No column '{column}'."</span>
-    s = df[column]; f = {<span class="c-str">"mean"</span>:s.mean,<span class="c-str">"median"</span>:s.median,<span class="c-str">"min"</span>:s.min,
-        <span class="c-str">"max"</span>:s.max,<span class="c-str">"sum"</span>:s.sum,<span class="c-str">"std"</span>:s.std}
-    <span class="c-kw">if</span> stat <span class="c-kw">not in</span> f: <span class="c-kw">return</span> <span class="c-str">f"Unknown stat '{stat}'."</span>
-    <span class="c-kw">return</span> <span class="c-str">f"{stat} of {column} = {f[stat]():.2f}"</span>
-<span class="c-kw">def</span> <span class="c-fn">plot_histogram</span>(column):
-    <span class="c-kw">if</span> column <span class="c-kw">not in</span> df.columns: <span class="c-kw">return</span> <span class="c-str">f"No column '{column}'."</span>
-    plt.figure(); df[column].hist(bins=<span class="c-num">10</span>)
-    plt.title(<span class="c-str">f"Histogram of {column}"</span>); plt.xlabel(column); plt.ylabel(<span class="c-str">"count"</span>)
-    fn = <span class="c-str">f"hist_{column}.png"</span>; plt.savefig(fn); plt.close()
-    <span class="c-kw">return</span> <span class="c-str">f"Saved histogram to {fn}"</span>
+<span class="tok-com"># ---------- TOOLS ----------</span>
+<span class="tok-kw">def</span> <span class="tok-fn">get_overview</span>():
+    <span class="tok-kw">return</span> <span class="tok-str">f"Shape: {df.shape[0]} rows x {df.shape[1]} cols.\n{df.dtypes.to_string()}"</span>
+<span class="tok-kw">def</span> <span class="tok-fn">describe_data</span>():
+    <span class="tok-kw">return</span> df.describe().to_string()
+<span class="tok-kw">def</span> <span class="tok-fn">missing_values</span>():
+    m = df.isnull().sum(); m = m[m &gt; <span class="tok-num">0</span>]
+    <span class="tok-kw">return</span> m.to_string() <span class="tok-kw">if</span> <span class="tok-fn">len</span>(m) <span class="tok-kw">else</span> <span class="tok-str">"No missing values."</span>
+<span class="tok-kw">def</span> <span class="tok-fn">value_counts</span>(column):
+    <span class="tok-kw">if</span> column <span class="tok-kw">not in</span> df.columns: <span class="tok-kw">return</span> <span class="tok-str">f"No column '{column}'. Have: {list(df.columns)}"</span>
+    <span class="tok-kw">return</span> df[column].value_counts().to_string()
+<span class="tok-kw">def</span> <span class="tok-fn">correlation</span>():
+    num = df.select_dtypes(<span class="tok-str">"number"</span>)
+    <span class="tok-kw">if</span> num.shape[<span class="tok-num">1</span>] &lt; <span class="tok-num">2</span>: <span class="tok-kw">return</span> <span class="tok-str">"Need 2+ numeric columns."</span>
+    <span class="tok-kw">return</span> num.corr().round(<span class="tok-num">2</span>).to_string()
+<span class="tok-kw">def</span> <span class="tok-fn">column_stat</span>(column, stat):
+    <span class="tok-kw">if</span> column <span class="tok-kw">not in</span> df.columns: <span class="tok-kw">return</span> <span class="tok-str">f"No column '{column}'."</span>
+    s = df[column]; f = {<span class="tok-str">"mean"</span>:s.mean,<span class="tok-str">"median"</span>:s.median,<span class="tok-str">"min"</span>:s.min,
+        <span class="tok-str">"max"</span>:s.max,<span class="tok-str">"sum"</span>:s.sum,<span class="tok-str">"std"</span>:s.std}
+    <span class="tok-kw">if</span> stat <span class="tok-kw">not in</span> f: <span class="tok-kw">return</span> <span class="tok-str">f"Unknown stat '{stat}'."</span>
+    <span class="tok-kw">return</span> <span class="tok-str">f"{stat} of {column} = {f[stat]():.2f}"</span>
+<span class="tok-kw">def</span> <span class="tok-fn">plot_histogram</span>(column):
+    <span class="tok-kw">if</span> column <span class="tok-kw">not in</span> df.columns: <span class="tok-kw">return</span> <span class="tok-str">f"No column '{column}'."</span>
+    plt.figure(); df[column].hist(bins=<span class="tok-num">10</span>)
+    plt.title(<span class="tok-str">f"Histogram of {column}"</span>); plt.xlabel(column); plt.ylabel(<span class="tok-str">"count"</span>)
+    fn = <span class="tok-str">f"hist_{column}.png"</span>; plt.savefig(fn); plt.close()
+    <span class="tok-kw">return</span> <span class="tok-str">f"Saved histogram to {fn}"</span>
 
-TOOL_FUNCS = {<span class="c-str">"get_overview"</span>:get_overview,<span class="c-str">"describe_data"</span>:describe_data,
-  <span class="c-str">"missing_values"</span>:missing_values,<span class="c-str">"value_counts"</span>:value_counts,
-  <span class="c-str">"correlation"</span>:correlation,<span class="c-str">"column_stat"</span>:column_stat,
-  <span class="c-str">"plot_histogram"</span>:plot_histogram}
+TOOL_FUNCS = {<span class="tok-str">"get_overview"</span>:get_overview,<span class="tok-str">"describe_data"</span>:describe_data,
+  <span class="tok-str">"missing_values"</span>:missing_values,<span class="tok-str">"value_counts"</span>:value_counts,
+  <span class="tok-str">"correlation"</span>:correlation,<span class="tok-str">"column_stat"</span>:column_stat,
+  <span class="tok-str">"plot_histogram"</span>:plot_histogram}
 
-<span class="c-com"># ---------- TOOL SCHEMAS ----------</span>
-<span class="c-kw">def</span> <span class="c-fn">t</span>(n,d,p=<span class="c-kw">None</span>,r=<span class="c-kw">None</span>):
-    <span class="c-kw">return</span> {<span class="c-str">"type"</span>:<span class="c-str">"function"</span>,<span class="c-str">"function"</span>:{<span class="c-str">"name"</span>:n,<span class="c-str">"description"</span>:d,
-      <span class="c-str">"parameters"</span>:{<span class="c-str">"type"</span>:<span class="c-str">"object"</span>,<span class="c-str">"properties"</span>:p <span class="c-kw">or</span> {},<span class="c-str">"required"</span>:r <span class="c-kw">or</span> []}}}
-S = {<span class="c-str">"type"</span>:<span class="c-str">"string"</span>}
+<span class="tok-com"># ---------- TOOL SCHEMAS ----------</span>
+<span class="tok-kw">def</span> <span class="tok-fn">t</span>(n,d,p=<span class="tok-kw">None</span>,r=<span class="tok-kw">None</span>):
+    <span class="tok-kw">return</span> {<span class="tok-str">"type"</span>:<span class="tok-str">"function"</span>,<span class="tok-str">"function"</span>:{<span class="tok-str">"name"</span>:n,<span class="tok-str">"description"</span>:d,
+      <span class="tok-str">"parameters"</span>:{<span class="tok-str">"type"</span>:<span class="tok-str">"object"</span>,<span class="tok-str">"properties"</span>:p <span class="tok-kw">or</span> {},<span class="tok-str">"required"</span>:r <span class="tok-kw">or</span> []}}}
+S = {<span class="tok-str">"type"</span>:<span class="tok-str">"string"</span>}
 TOOLS = [
-  <span class="c-fn">t</span>(<span class="c-str">"get_overview"</span>,<span class="c-str">"Rows, columns and data types."</span>),
-  <span class="c-fn">t</span>(<span class="c-str">"describe_data"</span>,<span class="c-str">"Summary stats for numeric columns."</span>),
-  <span class="c-fn">t</span>(<span class="c-str">"missing_values"</span>,<span class="c-str">"Missing values per column."</span>),
-  <span class="c-fn">t</span>(<span class="c-str">"correlation"</span>,<span class="c-str">"Correlation matrix of numeric columns."</span>),
-  <span class="c-fn">t</span>(<span class="c-str">"value_counts"</span>,<span class="c-str">"Frequency of values in a column."</span>,{<span class="c-str">"column"</span>:S},[<span class="c-str">"column"</span>]),
-  <span class="c-fn">t</span>(<span class="c-str">"column_stat"</span>,<span class="c-str">"One stat for one numeric column."</span>,
-    {<span class="c-str">"column"</span>:S,<span class="c-str">"stat"</span>:{<span class="c-str">"type"</span>:<span class="c-str">"string"</span>,
-     <span class="c-str">"enum"</span>:[<span class="c-str">"mean"</span>,<span class="c-str">"median"</span>,<span class="c-str">"min"</span>,<span class="c-str">"max"</span>,<span class="c-str">"sum"</span>,<span class="c-str">"std"</span>]}},[<span class="c-str">"column"</span>,<span class="c-str">"stat"</span>]),
-  <span class="c-fn">t</span>(<span class="c-str">"plot_histogram"</span>,<span class="c-str">"Save a histogram PNG of a column."</span>,{<span class="c-str">"column"</span>:S},[<span class="c-str">"column"</span>]),
+  <span class="tok-fn">t</span>(<span class="tok-str">"get_overview"</span>,<span class="tok-str">"Rows, columns and data types."</span>),
+  <span class="tok-fn">t</span>(<span class="tok-str">"describe_data"</span>,<span class="tok-str">"Summary stats for numeric columns."</span>),
+  <span class="tok-fn">t</span>(<span class="tok-str">"missing_values"</span>,<span class="tok-str">"Missing values per column."</span>),
+  <span class="tok-fn">t</span>(<span class="tok-str">"correlation"</span>,<span class="tok-str">"Correlation matrix of numeric columns."</span>),
+  <span class="tok-fn">t</span>(<span class="tok-str">"value_counts"</span>,<span class="tok-str">"Frequency of values in a column."</span>,{<span class="tok-str">"column"</span>:S},[<span class="tok-str">"column"</span>]),
+  <span class="tok-fn">t</span>(<span class="tok-str">"column_stat"</span>,<span class="tok-str">"One stat for one numeric column."</span>,
+    {<span class="tok-str">"column"</span>:S,<span class="tok-str">"stat"</span>:{<span class="tok-str">"type"</span>:<span class="tok-str">"string"</span>,
+     <span class="tok-str">"enum"</span>:[<span class="tok-str">"mean"</span>,<span class="tok-str">"median"</span>,<span class="tok-str">"min"</span>,<span class="tok-str">"max"</span>,<span class="tok-str">"sum"</span>,<span class="tok-str">"std"</span>]}},[<span class="tok-str">"column"</span>,<span class="tok-str">"stat"</span>]),
+  <span class="tok-fn">t</span>(<span class="tok-str">"plot_histogram"</span>,<span class="tok-str">"Save a histogram PNG of a column."</span>,{<span class="tok-str">"column"</span>:S},[<span class="tok-str">"column"</span>]),
 ]
 
-SYSTEM = (<span class="c-str">"You are a data analysis assistant. Use the tools to inspect the "</span>
-  <span class="c-str">"dataset before answering. Never invent numbers; call a tool to get "</span>
-  <span class="c-str">"real values, then explain results clearly for a non-technical user."</span>)
+SYSTEM = (<span class="tok-str">"You are a data analysis assistant. Use the tools to inspect the "</span>
+  <span class="tok-str">"dataset before answering. Never invent numbers; call a tool to get "</span>
+  <span class="tok-str">"real values, then explain results clearly for a non-technical user."</span>)
 
-<span class="c-kw">def</span> <span class="c-fn">ask_agent</span>(question, history):
-    history.append({<span class="c-str">"role"</span>:<span class="c-str">"user"</span>,<span class="c-str">"content"</span>:question})
-    <span class="c-kw">for</span> _ <span class="c-kw">in</span> <span class="c-fn">range</span>(<span class="c-num">6</span>):
-        msg = ollama.chat(model=MODEL, messages=history, tools=TOOLS)[<span class="c-str">"message"</span>]
+<span class="tok-kw">def</span> <span class="tok-fn">ask_agent</span>(question, history):
+    history.append({<span class="tok-str">"role"</span>:<span class="tok-str">"user"</span>,<span class="tok-str">"content"</span>:question})
+    <span class="tok-kw">for</span> _ <span class="tok-kw">in</span> <span class="tok-fn">range</span>(<span class="tok-num">6</span>):
+        msg = ollama.chat(model=MODEL, messages=history, tools=TOOLS)[<span class="tok-str">"message"</span>]
         history.append(msg)
-        calls = msg.get(<span class="c-str">"tool_calls"</span>)
-        <span class="c-kw">if</span> <span class="c-kw">not</span> calls:
-            <span class="c-kw">return</span> msg[<span class="c-str">"content"</span>]
-        <span class="c-kw">for</span> c <span class="c-kw">in</span> calls:
-            name = c[<span class="c-str">"function"</span>][<span class="c-str">"name"</span>]; args = c[<span class="c-str">"function"</span>][<span class="c-str">"arguments"</span>]
+        calls = msg.get(<span class="tok-str">"tool_calls"</span>)
+        <span class="tok-kw">if</span> <span class="tok-kw">not</span> calls:
+            <span class="tok-kw">return</span> msg[<span class="tok-str">"content"</span>]
+        <span class="tok-kw">for</span> c <span class="tok-kw">in</span> calls:
+            name = c[<span class="tok-str">"function"</span>][<span class="tok-str">"name"</span>]; args = c[<span class="tok-str">"function"</span>][<span class="tok-str">"arguments"</span>]
             fn = TOOL_FUNCS.get(name)
-            out = fn(**args) <span class="c-kw">if</span> fn <span class="c-kw">else</span> <span class="c-str">f"Unknown tool {name}"</span>
-            <span class="c-fn">print</span>(<span class="c-str">f"   🔧 {name}({args})"</span>)
-            history.append({<span class="c-str">"role"</span>:<span class="c-str">"tool"</span>,<span class="c-str">"name"</span>:name,<span class="c-str">"content"</span>:<span class="c-fn">str</span>(out)})
-    <span class="c-kw">return</span> <span class="c-str">"(Stopped after several tool calls.)"</span>
+            out = fn(**args) <span class="tok-kw">if</span> fn <span class="tok-kw">else</span> <span class="tok-str">f"Unknown tool {name}"</span>
+            <span class="tok-fn">print</span>(<span class="tok-str">f"   🔧 {name}({args})"</span>)
+            history.append({<span class="tok-str">"role"</span>:<span class="tok-str">"tool"</span>,<span class="tok-str">"name"</span>:name,<span class="tok-str">"content"</span>:<span class="tok-fn">str</span>(out)})
+    <span class="tok-kw">return</span> <span class="tok-str">"(Stopped after several tool calls.)"</span>
 
-<span class="c-kw">if</span> __name__ == <span class="c-str">"__main__"</span>:
-    <span class="c-fn">print</span>(<span class="c-str">f"📊 EDA Agent ready. Loaded {CSV} ({df.shape[0]}x{df.shape[1]}). Ctrl+C to quit.\n"</span>)
-    history = [{<span class="c-str">"role"</span>:<span class="c-str">"system"</span>,<span class="c-str">"content"</span>:SYSTEM}]
-    <span class="c-kw">while</span> <span class="c-kw">True</span>:
-        q = <span class="c-fn">input</span>(<span class="c-str">"❓ "</span>)
-        ans = <span class="c-fn">ask_agent</span>(q, history)
-        <span class="c-fn">print</span>(<span class="c-str">f"\n💡 {ans}\n"</span>)</pre>
+<span class="tok-kw">if</span> __name__ == <span class="tok-str">"__main__"</span>:
+    <span class="tok-fn">print</span>(<span class="tok-str">f"📊 EDA Agent ready. Loaded {CSV} ({df.shape[0]}x{df.shape[1]}). Ctrl+C to quit.\n"</span>)
+    history = [{<span class="tok-str">"role"</span>:<span class="tok-str">"system"</span>,<span class="tok-str">"content"</span>:SYSTEM}]
+    <span class="tok-kw">while</span> <span class="tok-kw">True</span>:
+        q = <span class="tok-fn">input</span>(<span class="tok-str">"❓ "</span>)
+        ans = <span class="tok-fn">ask_agent</span>(q, history)
+        <span class="tok-fn">print</span>(<span class="tok-str">f"\n💡 {ans}\n"</span>)</code></pre>
+        </div>
 
-  <h2 id="run">9. Step 6 — Run it &amp; sample session</h2>
-  <pre><span class="fname">terminal</span>$ python eda_agent.py data.csv
+        <h2 id="run">9 · Step 6 — Run it &amp; sample session</h2>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> text · terminal</span><button class="copy-btn">Copy</button></div>
+          <pre><code>$ python eda_agent.py data.csv
 📊 EDA Agent ready. Loaded data.csv (6x4). Ctrl+C to quit.
 
-❓ <span class="c-dec">give me a quick overview and tell me about missing data</span>
+❓ <span class="tok-dec">give me a quick overview and tell me about missing data</span>
    🔧 get_overview({})
    🔧 missing_values({})
 
@@ -380,75 +446,116 @@ SYSTEM = (<span class="c-str">"You are a data analysis assistant. Use the tools 
    city (text), and salary (number). There is 1 missing value, in the
    'age' column — one person's age isn't recorded.
 
-❓ <span class="c-dec">what's the average salary?</span>
+❓ <span class="tok-dec">what's the average salary?</span>
    🔧 column_stat({'column': 'salary', 'stat': 'mean'})
 
 💡 The average salary is $81,333.33.
 
-❓ <span class="c-dec">are salary and age related?</span>
+❓ <span class="tok-dec">are salary and age related?</span>
    🔧 correlation({})
 
 💡 Yes — salary and age have a correlation of about 0.85, which is a
    strong positive relationship: older people in this dataset tend to
    earn more.
 
-❓ <span class="c-dec">plot the salary distribution</span>
+❓ <span class="tok-dec">plot the salary distribution</span>
    🔧 plot_histogram({'column': 'salary'})
 
 💡 I've saved a histogram of the salary column to hist_salary.png.
    The salaries are spread fairly evenly, with one higher outlier
-   around $120,000.</pre>
+   around $120,000.</code></pre>
+        </div>
 
-  <div class="tip"><b>That's a working local AI data analyst.</b> No API key, no internet, your data never left the machine — and it chose tools, ran real pandas computations, and explained them. Open <code>hist_salary.png</code> to see the generated plot.</div>
+        <div class="callout tip">
+          <div class="c-ico">✅</div>
+          <div class="c-body"><div class="c-title">That's a working local AI data analyst</div>
+          <p>No API key, no internet, your data never left the machine — and it chose tools, ran real pandas computations, and explained them. Open <code>hist_salary.png</code> to see the generated plot.</p></div>
+        </div>
 
-  <h2 id="extend">10. Step 7 — Extend it</h2>
-  <table>
-    <tr><th>Extension</th><th>How</th></tr>
-    <tr><td><b>More tools</b></td><td>Add <code>group_by(col, agg)</code>, <code>filter_rows(query)</code>, <code>top_n(col, n)</code> — same pattern: write the function, add a schema entry, register it in <code>TOOL_FUNCS</code>.</td></tr>
-    <tr><td><b>Scatter/box plots</b></td><td>Copy <code>plot_histogram</code>, swap the matplotlib call (e.g. <code>df.plot.scatter(x, y)</code>).</td></tr>
-    <tr><td><b>Web UI</b></td><td>Wrap with Streamlit (like Part 06): a file uploader + chat box. Import <code>ask_agent</code> and display generated PNGs with <code>st.image()</code>.</td></tr>
-    <tr><td><b>Swap the model</b></td><td>Change <code>MODEL = "qwen2.5"</code> — try a few; tool reliability varies by model.</td></tr>
-    <tr><td><b>Make it an MCP server</b></td><td>Wrap the tools with <code>@mcp.tool()</code> (Part 04) so Claude Desktop or any agent can analyze your CSV. Full-circle with the rest of the guide.</td></tr>
-    <tr><td><b>Cloud fallback</b></td><td>The loop is provider-agnostic. Point it at OpenAI/Anthropic by swapping the <code>ollama.chat</code> call — the tool schema is the same shape.</td></tr>
-  </table>
+        <h2 id="extend">10 · Step 7 — Extend it</h2>
+        <div class="table-wrap">
+        <table>
+          <tr><th>Extension</th><th>How</th></tr>
+          <tr><td><strong>More tools</strong></td><td>Add <code>group_by(col, agg)</code>, <code>filter_rows(query)</code>, <code>top_n(col, n)</code> — same pattern: write the function, add a schema entry, register it in <code>TOOL_FUNCS</code>.</td></tr>
+          <tr><td><strong>Scatter/box plots</strong></td><td>Copy <code>plot_histogram</code>, swap the matplotlib call (e.g. <code>df.plot.scatter(x, y)</code>).</td></tr>
+          <tr><td><strong>Web UI</strong></td><td>Wrap with Streamlit (like Part 06): a file uploader + chat box. Import <code>ask_agent</code> and display generated PNGs with <code>st.image()</code>.</td></tr>
+          <tr><td><strong>Swap the model</strong></td><td>Change <code>MODEL = "qwen2.5"</code> — try a few; tool reliability varies by model.</td></tr>
+          <tr><td><strong>Make it an MCP server</strong></td><td>Wrap the tools with <code>@mcp.tool()</code> (Part 04) so Claude Desktop or any agent can analyze your CSV. Full-circle with the rest of the guide.</td></tr>
+          <tr><td><strong>Cloud fallback</strong></td><td>The loop is provider-agnostic. Point it at OpenAI/Anthropic by swapping the <code>ollama.chat</code> call — the tool schema is the same shape.</td></tr>
+        </table>
+        </div>
 
-  <h3>Mini Streamlit UI</h3>
-  <pre><span class="fname">eda_ui.py</span><span class="c-kw">import</span> streamlit <span class="c-kw">as</span> st, pandas <span class="c-kw">as</span> pd
-<span class="c-kw">import</span> eda_agent <span class="c-kw">as</span> agent     <span class="c-com"># reuse ask_agent, TOOLS, etc.</span>
+        <h3>Mini Streamlit UI</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> python · eda_ui.py</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-kw">import</span> streamlit <span class="tok-kw">as</span> st, pandas <span class="tok-kw">as</span> pd
+<span class="tok-kw">import</span> eda_agent <span class="tok-kw">as</span> agent     <span class="tok-com"># reuse ask_agent, TOOLS, etc.</span>
 
-st.title(<span class="c-str">"📊 Local EDA Agent (Ollama)"</span>)
-up = st.file_uploader(<span class="c-str">"Upload a CSV"</span>, type=<span class="c-str">"csv"</span>)
-<span class="c-kw">if</span> up:
-    agent.df = pd.read_csv(up)        <span class="c-com"># point the agent at the uploaded data</span>
+st.title(<span class="tok-str">"📊 Local EDA Agent (Ollama)"</span>)
+up = st.file_uploader(<span class="tok-str">"Upload a CSV"</span>, type=<span class="tok-str">"csv"</span>)
+<span class="tok-kw">if</span> up:
+    agent.df = pd.read_csv(up)        <span class="tok-com"># point the agent at the uploaded data</span>
     st.dataframe(agent.df.head())
-    <span class="c-kw">if</span> <span class="c-str">"hist"</span> <span class="c-kw">not in</span> st.session_state:
-        st.session_state.hist = [{<span class="c-str">"role"</span>:<span class="c-str">"system"</span>,<span class="c-str">"content"</span>:agent.SYSTEM}]
-    q = st.text_input(<span class="c-str">"Ask about your data:"</span>)
-    <span class="c-kw">if</span> q:
-        <span class="c-kw">with</span> st.spinner(<span class="c-str">"Analyzing locally..."</span>):
+    <span class="tok-kw">if</span> <span class="tok-str">"hist"</span> <span class="tok-kw">not in</span> st.session_state:
+        st.session_state.hist = [{<span class="tok-str">"role"</span>:<span class="tok-str">"system"</span>,<span class="tok-str">"content"</span>:agent.SYSTEM}]
+    q = st.text_input(<span class="tok-str">"Ask about your data:"</span>)
+    <span class="tok-kw">if</span> q:
+        <span class="tok-kw">with</span> st.spinner(<span class="tok-str">"Analyzing locally..."</span>):
             ans = agent.ask_agent(q, st.session_state.hist)
-        st.markdown(ans)</pre>
-  <p class="muted">Run with <code>streamlit run eda_ui.py</code>. Upload a CSV, ask away — all processing stays on your machine.</p>
+        st.markdown(ans)</code></pre>
+        </div>
+        <p class="muted">Run with <code>streamlit run eda_ui.py</code>. Upload a CSV, ask away — all processing stays on your machine.</p>
 
-  <h2 id="trouble">11. Troubleshooting</h2>
-  <table>
-    <tr><th>Symptom</th><th>Cause &amp; fix</th></tr>
-    <tr><td>"connection refused" / can't reach Ollama</td><td>Ollama isn't running. Start the desktop app, or run <code>ollama serve</code> in a terminal. Default port is <code>11434</code>.</td></tr>
-    <tr><td>Model never calls tools</td><td>Using a model without tool support. Use <code>llama3.1</code>, <code>qwen2.5</code>, or <code>mistral-nemo</code>. Tiny models call tools poorly.</td></tr>
-    <tr><td>Wrong column names passed</td><td>Mention exact column names in your question, or add a tool that lists columns. The model can only guess from what it's told.</td></tr>
-    <tr><td>Very slow responses</td><td>Normal on CPU, and the first call loads the model into RAM. Use a smaller model (<code>qwen2.5:3b</code>) or a GPU/Apple Silicon machine.</td></tr>
-    <tr><td><code>KeyError: 'tool_calls'</code></td><td>Some responses have no tool calls — we use <code>msg.get("tool_calls")</code> (not <code>msg["tool_calls"]</code>) to handle that. Make sure you copied that line.</td></tr>
-    <tr><td>Loops forever / too many calls</td><td>The <code>range(6)</code> cap stops runaway loops. Lower it, or strengthen the system prompt to answer after gathering data.</td></tr>
-    <tr><td>Hallucinated numbers</td><td>Strengthen the system prompt ("never invent numbers; always call a tool"). Lower-capability models occasionally guess — a better model helps.</td></tr>
-  </table>
+        <h2 id="trouble">11 · Troubleshooting</h2>
+        <div class="table-wrap">
+        <table>
+          <tr><th>Symptom</th><th>Cause &amp; fix</th></tr>
+          <tr><td>"connection refused" / can't reach Ollama</td><td>Ollama isn't running. Start the desktop app, or run <code>ollama serve</code> in a terminal. Default port is <code>11434</code>.</td></tr>
+          <tr><td>Model never calls tools</td><td>Using a model without tool support. Use <code>llama3.1</code>, <code>qwen2.5</code>, or <code>mistral-nemo</code>. Tiny models call tools poorly.</td></tr>
+          <tr><td>Wrong column names passed</td><td>Mention exact column names in your question, or add a tool that lists columns. The model can only guess from what it's told.</td></tr>
+          <tr><td>Very slow responses</td><td>Normal on CPU, and the first call loads the model into RAM. Use a smaller model (<code>qwen2.5:3b</code>) or a GPU/Apple Silicon machine.</td></tr>
+          <tr><td><code>KeyError: 'tool_calls'</code></td><td>Some responses have no tool calls — we use <code>msg.get("tool_calls")</code> (not <code>msg["tool_calls"]</code>) to handle that. Make sure you copied that line.</td></tr>
+          <tr><td>Loops forever / too many calls</td><td>The <code>range(6)</code> cap stops runaway loops. Lower it, or strengthen the system prompt to answer after gathering data.</td></tr>
+          <tr><td>Hallucinated numbers</td><td>Strengthen the system prompt ("never invent numbers; always call a tool"). Lower-capability models occasionally guess — a better model helps.</td></tr>
+        </table>
+        </div>
 
-  <div class="note"><b>🎉 You've completed the guide — and built something genuinely useful.</b> You now have a private, free, local AI data analyst, plus the RAG and PDF-Q&amp;A apps from earlier parts. More importantly, you understand the building blocks — LLMs, RAG, agents, tools, and MCP — well enough to design your own AI features from scratch. That understanding is the part that lasts.</div>
+        <div class="callout key">
+          <div class="c-ico">🎯</div>
+          <div class="c-body"><div class="c-title">🎉 You've completed the guide — and built something genuinely useful</div>
+          <p>You now have a private, free, local AI data analyst, plus the RAG and PDF-Q&amp;A apps from earlier parts. More importantly, you understand the building blocks — LLMs, RAG, agents, tools, and MCP — well enough to design your own AI features from scratch. That understanding is the part that lasts.</p></div>
+        </div>
 
-  <div class="pager">
-    <a href="06-build-pdf-qna.html"><div class="k">← Previous</div><div class="v">Part 06 · PDF Q&amp;A</div></a>
-    <a class="next" href="index.html"><div class="k">Back to →</div><div class="v">Home / All parts</div></a>
+        <div class="page-nav">
+          <a href="06-build-pdf-qna.html"><div class="dir">← Previous</div><div class="ttl">06 · Build: PDF Q&amp;A RAG App</div></a>
+          <a class="next" href="index.html"><div class="dir">Back to →</div><div class="ttl">Guide home</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
   </div>
 </div>
-<script src="sidenav.js"></script>
+
+<script>
+window.PORTAL = {
+  homeHref: "../genai-portal/index.html",
+  navLabel: "Your learning path",
+  here: "07-eda-agent-ollama.html",
+  base: "",
+  pages: [
+    { file: "index.html",               title: "Guide home",                     num: "✦", kw: "overview start home index" },
+    { file: "01-llms.html",             title: "LLMs — The Foundation",          num: "01", kw: "llm token context window prediction hallucination temperature prompt" },
+    { file: "02-rag.html",              title: "RAG — Retrieval-Augmented Generation", num: "02", kw: "rag retrieval embedding chunk vector grounding" },
+    { file: "03-agents.html",           title: "Agents & Tool Use",              num: "03", kw: "agent tool loop react planning function calling" },
+    { file: "04-mcp.html",              title: "MCP — Model Context Protocol",   num: "04", kw: "mcp protocol server client tools resources" },
+    { file: "05-build-simple-rag.html", title: "Build: A Simple RAG App",        num: "05", kw: "build rag project simple embeddings" },
+    { file: "06-build-pdf-qna.html",    title: "Build: PDF Q&A RAG App",         num: "06", kw: "pdf qna question answering rag chunk" },
+    { file: "07-eda-agent-ollama.html", title: "Build: EDA Agent with Ollama",   num: "07", kw: "eda agent ollama local pandas analysis" }
+  ]
+};
+</script>
+<script src="../genai-portal/assets/sitenav.js"></script>
+<script src="../genai-portal/assets/portal-page.js"></script>
+<script src="../genai-portal/assets/enhance.js"></script>
 </body>
 </html>

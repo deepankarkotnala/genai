@@ -1,104 +1,151 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
 <meta charset="utf-8">
-<title>Lesson 4 — Orchestration</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<link rel="stylesheet" href="../assets/style.css">
-<script defer src="../assets/sidenav.js"></script>
+<title>Lesson 4 · Orchestration — Understanding AI Agents</title>
+<meta name="description" content="Why a single agent is the wrong tool for an EnM outcome, and how to chain specialist agents — Anomaly → RCA → Remediation — into one prioritized fix plan with a tiny orchestrator.">
+<link rel="stylesheet" href="../../genai-portal/assets/styles.css">
+</head>
+<body data-page="ta-04">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="../index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <div class="brand-mark">A</div>
+        <div class="brand-text"><strong>Understanding AI Agents</strong><span>Agent Literacy course</span></div>
+      </a>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search the course…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
 
-<p class="kicker">Lesson 4 · Concept + Hands-on</p>
-<h1>Orchestration: many agents, one outcome</h1>
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Understanding AI Agents / <b>Lesson 4 · Orchestration</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
 
-<div class="lesson-meta">
-  <span><b>Reading time:</b> ~25 min (plus hands-on)</span>
-  <span><b>Type:</b> Concept + runnable code</span>
-  <span><b>Prerequisite:</b> Lessons 1–3</span>
-  <span><b>File:</b> code/orchestrator.py</span>
-</div>
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Lesson 4 · Concept + Hands-on</div>
+        <h1>Orchestration: many agents, one outcome</h1>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~25 min (plus hands-on)</span>
+          <span class="pill">Type · Concept + runnable code</span>
+          <span class="pill purple">Prereq · Lessons 1–3</span>
+          <span class="pill">File · code/orchestrator.py</span>
+        </div>
 
-<div class="objectives">
-  <h3>By the end of this lesson you will be able to</h3>
-  <ul>
-    <li>Explain why a single agent is the wrong tool for an EnM business outcome.</li>
-    <li>Define <strong>orchestration</strong>, <strong>handoff</strong>, and <strong>orchestrator</strong>.</li>
-    <li>Run a real three-agent chain that turns raw sensor data into a prioritized fix plan.</li>
-    <li>Read the orchestrator code and trace data flowing from one agent to the next.</li>
-    <li>Map the running code directly onto EnM scenario #2's four named agents.</li>
-  </ul>
-</div>
+        <div class="callout key">
+          <div class="c-ico">🎯</div>
+          <div class="c-body"><div class="c-title">By the end of this lesson you will be able to</div>
+          <ul>
+            <li>Explain why a single agent is the wrong tool for an EnM business outcome.</li>
+            <li>Define <strong>orchestration</strong>, <strong>handoff</strong>, and <strong>orchestrator</strong>.</li>
+            <li>Run a real three-agent chain that turns raw sensor data into a prioritized fix plan.</li>
+            <li>Read the orchestrator code and trace data flowing from one agent to the next.</li>
+            <li>Map the running code directly onto EnM scenario #2's four named agents.</li>
+          </ul></div>
+        </div>
 
-<div class="toc">
-  <h3>In this lesson</h3>
-  <ol>
-    <li><a href="#why">Why one agent isn't enough</a></li>
-    <li><a href="#ideas">The two new ideas: handoff &amp; orchestrator</a></li>
-    <li><a href="#map">Mapping the chain to EnM #2</a></li>
-    <li><a href="#run">Hands-on — run the orchestra</a></li>
-    <li><a href="#walkthrough">Walkthrough of orchestrator.py</a></li>
-    <li><a href="#shape">Workflow vs. autonomous orchestration</a></li>
-    <li><a href="#exercises">Try it yourself</a></li>
-    <li><a href="#checks">Check yourself</a></li>
-  </ol>
-</div>
+        <h2 id="why">1 · Why one agent isn't enough</h2>
+        <p>The very first line of your EnM spreadsheet states the thesis of this entire lesson:</p>
+        <blockquote>"For this area, individual agents may not work — need orchestration of multiple agents to achieve an outcome."</blockquote>
+        <p>Why not just build one big "reliability agent" with all the tools? Three reasons, all of which you'll feel the moment you try:</p>
+        <div class="timeline">
+          <div class="step"><h4>A fuzzy goal makes a confused agent</h4><p>"Handle reliability" is too broad. An agent reasons best when its goal is sharp: "find anomalies," "find the root cause," "recommend a fix." Each is a different mode of thinking.</p></div>
+          <div class="step"><h4>Too many tools dilute the reasoning</h4><p>The more tools an agent has, the more ways it can pick the wrong one. Specialists with a handful of relevant tools choose better than a generalist with thirty.</p></div>
+          <div class="step"><h4>Specialists are reusable and testable</h4><p>A "root cause" agent can be improved, tested, and swapped independently — exactly the clean-seam principle from Lessons 2 and 3, now applied at the agent level.</p></div>
+        </div>
+        <p>So we split the outcome into <strong>specialists</strong> — each a small Lesson-1 agent with one sharp goal — and have them hand work to each other:</p>
 
-<h2 id="why">1. Why one agent isn't enough</h2>
-<p>The very first line of your EnM spreadsheet states the thesis of this entire lesson:</p>
-<blockquote>"For this area, individual agents may not work — need orchestration of multiple agents to
-achieve an outcome."</blockquote>
-<p>Why not just build one big "reliability agent" with all the tools? Three reasons, all of which you'll feel
-the moment you try:</p>
-<ul class="steps">
-  <li><strong>A fuzzy goal makes a confused agent.</strong> "Handle reliability" is too broad. An agent
-      reasons best when its goal is sharp: "find anomalies," "find the root cause," "recommend a fix." Each is
-      a different mode of thinking.</li>
-  <li><strong>Too many tools dilute the reasoning.</strong> The more tools an agent has, the more ways it can
-      pick the wrong one. Specialists with a handful of relevant tools choose better than a generalist with
-      thirty.</li>
-  <li><strong>Specialists are reusable and testable.</strong> A "root cause" agent can be improved, tested,
-      and swapped independently — exactly the clean-seam principle from Lessons 2 and 3, now applied at the
-      agent level.</li>
-</ul>
-<p>So we split the outcome into <strong>specialists</strong> — each a small Lesson-1 agent with one sharp
-goal — and have them hand work to each other:</p>
+        <div class="diagram draw-anim">
+          <svg viewBox="0 0 760 200" width="100%" style="max-width:760px" role="img" aria-label="Three specialist agents in a chain: Anomaly Agent hands off to RCA Agent, which hands off to Remediation Agent.">
+            <!-- connectors first so boxes paint over endpoints -->
+            <path class="ln flow-arrow" d="M210 90 H270" stroke="var(--accent)" fill="none" stroke-width="2.5" marker-end="url(#ar04)"/>
+            <path class="ln flow-arrow" d="M490 90 H550" stroke="var(--accent)" fill="none" stroke-width="2.5" marker-end="url(#ar04)"/>
+            <defs>
+              <marker id="ar04" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0 0L10 5L0 10z" fill="var(--accent)"/>
+              </marker>
+            </defs>
+            <g>
+              <rect class="flow-node-accent" x="30" y="50" width="180" height="80" rx="14"/>
+              <text class="flow-label" x="120" y="86" text-anchor="middle">Anomaly Agent</text>
+              <text class="flow-sub" x="120" y="108" text-anchor="middle">what's wrong?</text>
+            </g>
+            <g>
+              <rect class="flow-node" x="290" y="50" width="180" height="80" rx="14"/>
+              <text class="flow-label" x="380" y="86" text-anchor="middle">RCA Agent</text>
+              <text class="flow-sub" x="380" y="108" text-anchor="middle">why?</text>
+            </g>
+            <g>
+              <rect class="flow-node" x="570" y="50" width="180" height="80" rx="14"/>
+              <text class="flow-label" x="660" y="86" text-anchor="middle">Remediation Agent</text>
+              <text class="flow-sub" x="660" y="108" text-anchor="middle">what do we do?</text>
+            </g>
+            <text class="flow-sub" x="240" y="80" text-anchor="middle">handoff</text>
+            <text class="flow-sub" x="520" y="80" text-anchor="middle">handoff</text>
+          </svg>
+          <div class="diagram-caption">Three specialists in a chain. Each is an agent; the chain is the orchestration.</div>
+        </div>
 
-<div class="loop">
-  <span class="step">Anomaly Agent<br><small>what's wrong?</small></span><span class="arrow">→</span>
-  <span class="step">RCA Agent<br><small>why?</small></span><span class="arrow">→</span>
-  <span class="step">Remediation Agent<br><small>what do we do?</small></span>
-</div>
-<p class="caption">Three specialists in a chain. Each is an agent; the chain is the orchestration.</p>
+        <h2 id="ideas">2 · The two new ideas: handoff &amp; orchestrator</h2>
+        <div class="callout note">
+          <div class="c-ico">💡</div>
+          <div class="c-body"><div class="c-title">Handoff</div>
+          <p>One agent's output becomes the next agent's input. The Anomaly Agent's list of flagged tags is <em>handed off</em> to the RCA Agent; the RCA Agent's ranked diagnoses are handed off to the Remediation Agent. Data flows down the chain.</p></div>
+        </div>
+        <div class="callout note">
+          <div class="c-ico">💡</div>
+          <div class="c-body"><div class="c-title">Orchestrator</div>
+          <p>The "conductor" that runs each agent in order and passes the results along. It holds the <em>workflow</em>; the agents hold the <em>expertise</em>. The orchestrator itself does no domain work — it coordinates.</p></div>
+        </div>
+        <div class="callout note">
+          <div class="c-ico">💡</div>
+          <div class="c-body"><div class="c-title">Orchestration</div>
+          <p>The overall pattern of coordinating multiple specialized agents so their combined work produces one business outcome. This is the central concept of the EnM document.</p></div>
+        </div>
 
-<h2 id="ideas">2. The two new ideas: handoff &amp; orchestrator</h2>
-<div class="def"><span class="term">Handoff</span> — one agent's output becomes the next agent's input. The
-Anomaly Agent's list of flagged tags is <em>handed off</em> to the RCA Agent; the RCA Agent's ranked
-diagnoses are handed off to the Remediation Agent. Data flows down the chain.</div>
-<div class="def"><span class="term">Orchestrator</span> — the "conductor" that runs each agent in order and
-passes the results along. It holds the <em>workflow</em>; the agents hold the <em>expertise</em>. The
-orchestrator itself does no domain work — it coordinates.</div>
-<div class="def"><span class="term">Orchestration</span> — the overall pattern of coordinating multiple
-specialized agents so their combined work produces one business outcome. This is the central concept of the
-EnM document.</div>
+        <div class="callout tip">
+          <div class="c-ico">✅</div>
+          <div class="c-body"><div class="c-title">In plain English</div>
+          <p>Think of an orchestra: each musician (agent) is a specialist who plays one part; the conductor (orchestrator) decides who plays when and keeps them in sync. No single musician plays the whole symphony.</p></div>
+        </div>
 
-<div class="plain">
-  <span class="label">In plain English</span>
-  Think of an orchestra: each musician (agent) is a specialist who plays one part; the conductor
-  (orchestrator) decides who plays when and keeps them in sync. No single musician plays the whole symphony.
-</div>
+        <h2 id="map">3 · Mapping the chain to EnM #2</h2>
+        <p>Our three-agent chain is EnM scenario #2's named agents, slightly simplified (we fold the Contextualization Agent into a small built-in knowledge base for now):</p>
+        <div class="table-wrap">
+        <table>
+          <tr><th>Our code</th><th>EnM #2 name</th><th>Goal</th></tr>
+          <tr><td><code>anomaly_agent()</code></td><td>Anomaly Prediction</td><td>Find tags in trouble now <em>or soon</em> (uses both detection &amp; forecasting)</td></tr>
+          <tr><td><code>rca_agent()</code></td><td>RCA Agent</td><td>Map each finding to an FMEA failure mode; rank by RPN</td></tr>
+          <tr><td>(built-in KB)</td><td>Contextualization Agent</td><td>Supply SOPs / failure modes / remediation knowledge</td></tr>
+          <tr><td><code>remediation_agent()</code></td><td>Remediation Agent</td><td>Recommend guided fix steps, highest priority first</td></tr>
+        </table>
+        </div>
 
-<h2 id="map">3. Mapping the chain to EnM #2</h2>
-<p>Our three-agent chain is EnM scenario #2's named agents, slightly simplified (we fold the
-Contextualization Agent into a small built-in knowledge base for now):</p>
-<table>
-  <tr><th>Our code</th><th>EnM #2 name</th><th>Goal</th></tr>
-  <tr><td><code>anomaly_agent()</code></td><td>Anomaly Prediction</td><td>Find tags in trouble now <em>or soon</em> (uses both detection &amp; forecasting)</td></tr>
-  <tr><td><code>rca_agent()</code></td><td>RCA Agent</td><td>Map each finding to an FMEA failure mode; rank by RPN</td></tr>
-  <tr><td>(built-in KB)</td><td>Contextualization Agent</td><td>Supply SOPs / failure modes / remediation knowledge</td></tr>
-  <tr><td><code>remediation_agent()</code></td><td>Remediation Agent</td><td>Recommend guided fix steps, highest priority first</td></tr>
-</table>
-
-<h2 id="run">4. Hands-on — run the orchestra</h2>
-<pre><code>cd teach-agents/code
+        <h2 id="run">4 · Hands-on — run the orchestra</h2>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> bash</span><button class="copy-btn">Copy</button></div>
+          <pre><code>cd teach-agents/code
 python orchestrator.py</code></pre>
-<p>It produces a complete, prioritized business outcome — a fix plan, ranked by urgency:</p>
-<pre><code>[Anomaly Agent] scanning tags (threshold + forecast)...
+        </div>
+        <p>It produces a complete, prioritized business outcome — a fix plan, ranked by urgency:</p>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> output</span><button class="copy-btn">Copy</button></div>
+          <pre><code>[Anomaly Agent] scanning tags (threshold + forecast)...
     -> T101_reactor_temp: flagged (trend); Predicted to breach 420 in ~13 steps
     -> V401_vibration: flagged (spike); No breach of 4.0 forecast within 20 steps
 [RCA Agent] mapping failure modes and ranking (RPN-style)...
@@ -114,17 +161,16 @@ FINAL REMEDIATION PLAN
 * V401_vibration  (priority RPN=15)
     1. Trigger vibration spectrum analysis
     ...</code></pre>
-<p>Notice what just happened: <strong>the temperature ramp is now caught</strong> (the Anomaly Agent uses the
-Lesson-3 forecaster <em>as well as</em> the z-score), it's been diagnosed, ranked above the vibration issue,
-and turned into concrete steps. No single agent did all that — the chain did.</p>
+        </div>
+        <p>Notice what just happened: <strong>the temperature ramp is now caught</strong> (the Anomaly Agent uses the Lesson-3 forecaster <em>as well as</em> the z-score), it's been diagnosed, ranked above the vibration issue, and turned into concrete steps. No single agent did all that — the chain did.</p>
 
-<h2 id="walkthrough">5. Walkthrough of orchestrator.py</h2>
-<p>Open <a href="../code/orchestrator.py">code/orchestrator.py</a>. The structure is: shared data
-(limits + knowledge base), then three agent functions, then a tiny orchestrator that strings them together.</p>
+        <h2 id="walkthrough">5 · Walkthrough of orchestrator.py</h2>
+        <p>Open <a href="../code/orchestrator.py">code/orchestrator.py</a>. The structure is: shared data (limits + knowledge base), then three agent functions, then a tiny orchestrator that strings them together.</p>
 
-<h3>5a. The shared knowledge — limits and the knowledge base</h3>
-<div class="annotated">
-<pre><code>LIMITS = {"T101_reactor_temp": 420, "V401_vibration": 4.0, ...}
+        <h3>5a · The shared knowledge — limits and the knowledge base</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> python</span><button class="copy-btn">Copy</button></div>
+          <pre><code>LIMITS = {"T101_reactor_temp": 420, "V401_vibration": 4.0, ...}
 
 KNOWLEDGE_BASE = {
     "T101_reactor_temp": {
@@ -134,19 +180,16 @@ KNOWLEDGE_BASE = {
     },
     ...
 }</code></pre>
-<ol class="annot-list">
-  <li><code>LIMITS</code> are the safe operating bounds per tag — the kind of thing a "Constraint Agent"
-      (EnM scenario #8) would own. The Anomaly Agent forecasts against these.</li>
-  <li><code>KNOWLEDGE_BASE</code> is a tiny stand-in for EnM's <strong>Contextualization Agent</strong> — in
-      a real system this is a knowledge graph built from SOPs and best practices. Here it's a dictionary
-      mapping each tag to its failure mode, likely causes, and remediation steps. <strong>The quality of the
-      whole system is capped by the quality of this knowledge base</strong> — a key insight for EnM #2 and #4.</li>
-</ol>
-</div>
+        </div>
+        <ol>
+          <li><code>LIMITS</code> are the safe operating bounds per tag — the kind of thing a "Constraint Agent" (EnM scenario #8) would own. The Anomaly Agent forecasts against these.</li>
+          <li><code>KNOWLEDGE_BASE</code> is a tiny stand-in for EnM's <strong>Contextualization Agent</strong> — in a real system this is a knowledge graph built from SOPs and best practices. Here it's a dictionary mapping each tag to its failure mode, likely causes, and remediation steps. <strong>The quality of the whole system is capped by the quality of this knowledge base</strong> — a key insight for EnM #2 and #4.</li>
+        </ol>
 
-<h3>5b. Agent 1 — the Anomaly Agent</h3>
-<div class="annotated">
-<pre><code>from forecast_tool import forecast_breach   # reuse Lesson 3's tool
+        <h3>5b · Agent 1 — the Anomaly Agent</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> python</span><button class="copy-btn">Copy</button></div>
+          <pre><code>from forecast_tool import forecast_breach   # reuse Lesson 3's tool
 
 def anomaly_agent():
     findings = []
@@ -158,21 +201,17 @@ def anomaly_agent():
                              "forecast": forecast["verdict"],
                              "steps_until_breach": forecast["steps_until_breach"]})
     return findings    # HANDOFF to RCA Agent</code></pre>
-<ol class="annot-list">
-  <li>It <strong>imports and reuses Lesson 3's <code>forecast_breach</code> tool.</strong> This is composition
-      in action — the specialist built in one lesson becomes a tool for an agent in the next. Nothing was
-      rewritten.</li>
-  <li>For every tag it runs <em>both</em> checks: <code>z_anomalies</code> (spikes, backward-looking) and
-      <code>forecast_breach</code> (trends, forward-looking). Using both is exactly the Lesson-3 conclusion
-      that the two are complementary.</li>
-  <li>A tag is flagged if it has spikes <em>or</em> a forecast breach. The list of flagged findings is
-      <code>return</code>ed — that <code>return</code> value <strong>is the handoff</strong> to the next agent.</li>
-</ol>
-</div>
+        </div>
+        <ol>
+          <li>It <strong>imports and reuses Lesson 3's <code>forecast_breach</code> tool.</strong> This is composition in action — the specialist built in one lesson becomes a tool for an agent in the next. Nothing was rewritten.</li>
+          <li>For every tag it runs <em>both</em> checks: <code>z_anomalies</code> (spikes, backward-looking) and <code>forecast_breach</code> (trends, forward-looking). Using both is exactly the Lesson-3 conclusion that the two are complementary.</li>
+          <li>A tag is flagged if it has spikes <em>or</em> a forecast breach. The list of flagged findings is <code>return</code>ed — that <code>return</code> value <strong>is the handoff</strong> to the next agent.</li>
+        </ol>
 
-<h3>5c. Agent 2 — the RCA Agent</h3>
-<div class="annotated">
-<pre><code>def rca_agent(findings):
+        <h3>5c · Agent 2 — the RCA Agent</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> python</span><button class="copy-btn">Copy</button></div>
+          <pre><code>def rca_agent(findings):
     diagnoses = []
     for f in findings:
         kb = KNOWLEDGE_BASE.get(f["tag"], {})
@@ -184,19 +223,17 @@ def anomaly_agent():
                           "likely_causes": kb.get("likely_causes", ...), "rpn": urgency})
     diagnoses.sort(key=lambda d: d["rpn"], reverse=True)
     return diagnoses    # HANDOFF to Remediation Agent</code></pre>
-<ol class="annot-list">
-  <li>It receives the findings (the handoff input) and, for each, looks up the failure mode and likely causes
-      from the knowledge base — this is the FMEA mapping the EnM doc describes.</li>
-  <li>It computes a simple <strong>RPN-style urgency score</strong> (the EnM "Risk Priority Number"): a breach
-      that's sooner scores higher (<code>30 - steps</code>), and spikes add severity. This is a deliberately
-      crude formula you can change — prioritization is a <em>design decision</em>, not a fixed truth.</li>
-  <li>It <strong>sorts by RPN</strong> so the most urgent issue is first, then hands the ranked diagnoses off.</li>
-</ol>
-</div>
+        </div>
+        <ol>
+          <li>It receives the findings (the handoff input) and, for each, looks up the failure mode and likely causes from the knowledge base — this is the FMEA mapping the EnM doc describes.</li>
+          <li>It computes a simple <strong>RPN-style urgency score</strong> (the EnM "Risk Priority Number"): a breach that's sooner scores higher (<code>30 - steps</code>), and spikes add severity. This is a deliberately crude formula you can change — prioritization is a <em>design decision</em>, not a fixed truth.</li>
+          <li>It <strong>sorts by RPN</strong> so the most urgent issue is first, then hands the ranked diagnoses off.</li>
+        </ol>
 
-<h3>5d. Agent 3 and the orchestrator</h3>
-<div class="annotated">
-<pre><code>def remediation_agent(diagnoses):
+        <h3>5d · Agent 3 and the orchestrator</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> python</span><button class="copy-btn">Copy</button></div>
+          <pre><code>def remediation_agent(diagnoses):
     plan = []
     for d in diagnoses:
         kb = KNOWLEDGE_BASE.get(d["tag"], {})
@@ -210,85 +247,147 @@ def orchestrate():
     diagnoses = rca_agent(findings)       # step 2 — fed step 1's output
     plan      = remediation_agent(diagnoses)  # step 3 — fed step 2's output
     # ... print the final plan ...</code></pre>
-<ol class="annot-list">
-  <li>The <strong>Remediation Agent</strong> looks up the recommended SOP steps for each diagnosed tag. If a
-      tag isn't in the knowledge base, it falls back to "escalate to a senior engineer" — a sensible default
-      that mirrors real operations.</li>
-  <li><code>orchestrate()</code> is the <strong>orchestrator</strong>, and notice how <em>small</em> it is.
-      It does no domain work at all. It just calls the three agents in order and <strong>threads each one's
-      output into the next</strong> — <code>findings → rca_agent → diagnoses → remediation_agent</code>.
-      Those arrows are the handoffs. This tiny function is the whole "orchestration."</li>
-  <li>The early <code>return</code> when there are no findings is a small but important touch: if the first
-      agent finds nothing, there's nothing to hand off, so the chain stops cleanly.</li>
-</ol>
+        </div>
+        <ol>
+          <li>The <strong>Remediation Agent</strong> looks up the recommended SOP steps for each diagnosed tag. If a tag isn't in the knowledge base, it falls back to "escalate to a senior engineer" — a sensible default that mirrors real operations.</li>
+          <li><code>orchestrate()</code> is the <strong>orchestrator</strong>, and notice how <em>small</em> it is. It does no domain work at all. It just calls the three agents in order and <strong>threads each one's output into the next</strong> — <code>findings → rca_agent → diagnoses → remediation_agent</code>. Those arrows are the handoffs. This tiny function is the whole "orchestration."</li>
+          <li>The early <code>return</code> when there are no findings is a small but important touch: if the first agent finds nothing, there's nothing to hand off, so the chain stops cleanly.</li>
+        </ol>
+
+        <div class="callout key">
+          <div class="c-ico">🎯</div>
+          <div class="c-body"><div class="c-title">The big realization</div>
+          <p>An orchestrated multi-agent system is mostly <strong>ordinary function composition</strong>: specialist functions whose outputs feed the next. The "agents" hold the expertise; the orchestrator is a short script that wires them together. Once you see this, the intimidating EnM diagrams become readable.</p></div>
+        </div>
+
+        <p>The contrast is worth seeing side by side. One overloaded generalist tries to do everything in a single loop; the orchestrated pipeline splits the work into focused specialists whose outputs hand off down the chain:</p>
+
+        <div class="diagram draw-anim">
+          <svg viewBox="0 0 760 300" width="100%" style="max-width:760px" role="img" aria-label="Comparison of a single overloaded agent against an orchestrated pipeline of three specialist agents.">
+            <defs>
+              <marker id="ar04b" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+                <path d="M0 0L10 5L0 10z" fill="var(--accent)"/>
+              </marker>
+            </defs>
+            <!-- Single agent (top) -->
+            <text class="flow-sub" x="30" y="30" text-anchor="start">One agent, every tool</text>
+            <g>
+              <rect class="flow-node" x="30" y="44" width="700" height="70" rx="14"/>
+              <text class="flow-label" x="380" y="76" text-anchor="middle">"Reliability Agent" — detect + forecast + diagnose + prioritize + fix</text>
+              <text class="flow-sub" x="380" y="98" text-anchor="middle">fuzzy goal · too many tools · hard to test</text>
+            </g>
+
+            <!-- Orchestrated pipeline (bottom) -->
+            <text class="flow-sub" x="30" y="165" text-anchor="start">Orchestrated pipeline — specialists hand off</text>
+            <path class="ln flow-arrow" d="M250 220 H290" stroke="var(--accent)" fill="none" stroke-width="2.5" marker-end="url(#ar04b)"/>
+            <path class="ln flow-arrow" d="M490 220 H530" stroke="var(--accent)" fill="none" stroke-width="2.5" marker-end="url(#ar04b)"/>
+            <g>
+              <rect class="flow-node" x="30" y="185" width="220" height="70" rx="14"/>
+              <text class="flow-label" x="140" y="217" text-anchor="middle">Anomaly Agent</text>
+              <text class="flow-sub" x="140" y="238" text-anchor="middle">runs its own loop</text>
+            </g>
+            <g>
+              <rect class="flow-node" x="290" y="185" width="200" height="70" rx="14"/>
+              <text class="flow-label" x="390" y="217" text-anchor="middle">RCA Agent</text>
+              <text class="flow-sub" x="390" y="238" text-anchor="middle">runs its own loop</text>
+            </g>
+            <g>
+              <rect class="flow-node-accent" x="530" y="185" width="200" height="70" rx="14"/>
+              <text class="flow-label" x="630" y="217" text-anchor="middle">Remediation Agent</text>
+              <text class="flow-sub" x="630" y="238" text-anchor="middle">runs its own loop</text>
+            </g>
+          </svg>
+          <div class="diagram-caption">Left-to-right: one overloaded agent vs. three focused specialists, each running its own agent loop, wired by the orchestrator. The final specialist (highlighted) produces the business outcome.</div>
+        </div>
+
+        <h2 id="shape">6 · Workflow vs. autonomous orchestration</h2>
+        <p>Our orchestrator runs a <strong>fixed</strong> order: Anomaly → RCA → Remediation, every time. That makes it a <em>workflow</em> — predictable, easy to test, easy to trust. An <em>autonomous</em> orchestrator would instead let an LLM decide, at runtime, which agent to invoke next. Both are valid; which one fits a given EnM scenario is a real engineering decision — and it's the entire subject of <strong>Lesson 5</strong>.</p>
+
+        <h2 id="exercises">7 · Try it yourself</h2>
+        <div class="table-wrap">
+        <table>
+          <tr><th>Change</th><th>What you'll learn</th></tr>
+          <tr><td>Add an entry to <code>KNOWLEDGE_BASE</code> for <code>P201_pump_pressure</code></td><td>How the Contextualization layer feeds RCA &amp; Remediation — coverage of the knowledge base directly limits output quality.</td></tr>
+          <tr><td>Change the RPN formula in <code>rca_agent</code> (e.g. weight spikes more)</td><td>Prioritization is a design choice; it changes which fix surfaces first. There's no single "correct" formula.</td></tr>
+          <tr><td>Insert a 4th agent <code>constraint_agent(plan)</code> that flags any remediation step you mark as risky</td><td>How EnM's Constraint Agent (scenario #8) slots into a chain as a guardrail — a new specialist, a new handoff.</td></tr>
+          <tr><td>Make <code>anomaly_agent</code> return findings in a different order and watch RCA re-sort them</td><td>Why each agent owning its own concern (RCA owns ranking) keeps the system robust to upstream changes.</td></tr>
+        </table>
+        </div>
+
+        <div class="callout key">
+          <div class="c-ico">🎯</div>
+          <div class="c-body"><div class="c-title">Recap</div>
+          <ul>
+            <li>EnM outcomes need <strong>orchestration</strong>: many specialist agents, not one generalist.</li>
+            <li><strong>Handoff</strong> = one agent's output becomes the next's input. <strong>Orchestrator</strong> = the conductor that wires them in order.</li>
+            <li>Our chain <em>is</em> EnM #2: Anomaly → RCA → Remediation, with a knowledge base standing in for Contextualization.</li>
+            <li>The Anomaly Agent reuses Lesson 3's forecaster — <strong>specialists compose</strong>.</li>
+            <li>An orchestrated system is largely <strong>function composition</strong>; the orchestrator itself is tiny.</li>
+          </ul></div>
+        </div>
+
+        <h2 id="checks">8 · Check yourself</h2>
+        <div class="quiz">
+          <div class="q">What is the orchestrator's job?</div>
+          <button class="opt">To do the anomaly math itself</button>
+          <button class="opt">To replace all the specialist agents</button>
+          <button class="opt" data-correct="true">To run the specialist agents in order and pass results between them</button>
+          <button class="opt">To store the sensor data</button>
+          <div class="explain">Right — the orchestrator coordinates; the agents specialize.</div>
+        </div>
+        <div class="quiz">
+          <div class="q">In the chain, what is a 'handoff'?</div>
+          <button class="opt">Restarting the agent from scratch</button>
+          <button class="opt" data-correct="true">Passing one agent's output as the next agent's input</button>
+          <button class="opt">Switching to a bigger model</button>
+          <button class="opt">Asking the user for input</button>
+          <div class="explain">Correct — a handoff is one agent's output feeding the next.</div>
+        </div>
+        <div class="quiz">
+          <div class="q">How does the Anomaly Agent catch the slow temperature ramp that Lesson 2 missed?</div>
+          <button class="opt">It uses a smarter language model</button>
+          <button class="opt" data-correct="true">It reuses Lesson 3's forecast_breach tool alongside the z-score</button>
+          <button class="opt">It lowers the z-threshold to zero</button>
+          <button class="opt">It asks the RCA agent</button>
+          <div class="explain">Right — it imports and reuses forecast_breach from Lesson 3.</div>
+        </div>
+
+        <div class="callout note">
+          <div class="c-ico">💬</div>
+          <div class="c-body"><div class="c-title">Ask me anything</div>
+          <p>Want me to wire one of these agents to a real Gemini brain, or split the knowledge base out into a proper "Contextualization Agent" with retrieval? Ask me.</p></div>
+        </div>
+
+        <div class="page-nav">
+          <a href="0003-prediction-vs-threshold.html"><div class="dir">← Previous</div><div class="ttl">Lesson 3 · Prediction vs. threshold</div></a>
+          <a class="next" href="0005-workflow-vs-agent.html"><div class="dir">Next up →</div><div class="ttl">Lesson 5 · Workflow vs. agent</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
 </div>
 
-<div class="key">
-  <span class="label">The big realization</span>
-  An orchestrated multi-agent system is mostly <strong>ordinary function composition</strong>: specialist
-  functions whose outputs feed the next. The "agents" hold the expertise; the orchestrator is a short script
-  that wires them together. Once you see this, the intimidating EnM diagrams become readable.
-</div>
-
-<h2 id="shape">6. Workflow vs. autonomous orchestration</h2>
-<p>Our orchestrator runs a <strong>fixed</strong> order: Anomaly → RCA → Remediation, every time. That makes
-it a <em>workflow</em> — predictable, easy to test, easy to trust. An <em>autonomous</em> orchestrator would
-instead let an LLM decide, at runtime, which agent to invoke next. Both are valid; which one fits a given
-EnM scenario is a real engineering decision — and it's the entire subject of <strong>Lesson 5</strong>.</p>
-
-<h2 id="exercises">7. Try it yourself</h2>
-<table>
-  <tr><th>Change</th><th>What you'll learn</th></tr>
-  <tr><td>Add an entry to <code>KNOWLEDGE_BASE</code> for <code>P201_pump_pressure</code></td><td>How the Contextualization layer feeds RCA &amp; Remediation — coverage of the knowledge base directly limits output quality.</td></tr>
-  <tr><td>Change the RPN formula in <code>rca_agent</code> (e.g. weight spikes more)</td><td>Prioritization is a design choice; it changes which fix surfaces first. There's no single "correct" formula.</td></tr>
-  <tr><td>Insert a 4th agent <code>constraint_agent(plan)</code> that flags any remediation step you mark as risky</td><td>How EnM's Constraint Agent (scenario #8) slots into a chain as a guardrail — a new specialist, a new handoff.</td></tr>
-  <tr><td>Make <code>anomaly_agent</code> return findings in a different order and watch RCA re-sort them</td><td>Why each agent owning its own concern (RCA owns ranking) keeps the system robust to upstream changes.</td></tr>
-</table>
-
-<div class="recap">
-  <h3>Recap</h3>
-  <ul>
-    <li>EnM outcomes need <strong>orchestration</strong>: many specialist agents, not one generalist.</li>
-    <li><strong>Handoff</strong> = one agent's output becomes the next's input. <strong>Orchestrator</strong> = the conductor that wires them in order.</li>
-    <li>Our chain <em>is</em> EnM #2: Anomaly → RCA → Remediation, with a knowledge base standing in for Contextualization.</li>
-    <li>The Anomaly Agent reuses Lesson 3's forecaster — <strong>specialists compose</strong>.</li>
-    <li>An orchestrated system is largely <strong>function composition</strong>; the orchestrator itself is tiny.</li>
-  </ul>
-</div>
-
-<h2 id="checks">8. Check yourself</h2>
-<div class="quiz" data-good="Right — the orchestrator coordinates; the agents specialize." data-bad="Re-read Section 2.">
-  <div class="q">What is the orchestrator's job?</div>
-  <button class="opt">To do the anomaly math itself</button>
-  <button class="opt">To replace all the specialist agents</button>
-  <button class="opt" data-correct="1">To run the specialist agents in order and pass results between them</button>
-  <button class="opt">To store the sensor data</button>
-  <div class="feedback"></div>
-</div>
-<div class="quiz" data-good="Correct — a handoff is one agent's output feeding the next." data-bad="Re-read Section 2.">
-  <div class="q">In the chain, what is a 'handoff'?</div>
-  <button class="opt">Restarting the agent from scratch</button>
-  <button class="opt" data-correct="1">Passing one agent's output as the next agent's input</button>
-  <button class="opt">Switching to a bigger model</button>
-  <button class="opt">Asking the user for input</button>
-  <div class="feedback"></div>
-</div>
-<div class="quiz" data-good="Right — it imports and reuses forecast_breach from Lesson 3." data-bad="Re-read Section 5b, annotation 1.">
-  <div class="q">How does the Anomaly Agent catch the slow temperature ramp that Lesson 2 missed?</div>
-  <button class="opt">It uses a smarter language model</button>
-  <button class="opt" data-correct="1">It reuses Lesson 3's forecast_breach tool alongside the z-score</button>
-  <button class="opt">It lowers the z-threshold to zero</button>
-  <button class="opt">It asks the RCA agent</button>
-  <div class="feedback"></div>
-</div>
-
-<div class="ask">
-  💬 Want me to wire one of these agents to a real Gemini brain, or split the knowledge base out into a
-  proper "Contextualization Agent" with retrieval? Ask me.
-</div>
-
-<div class="nav">
-  <a href="0003-prediction-vs-threshold.html">← Lesson 3</a>
-  <a href="0005-workflow-vs-agent.html">Lesson 5 →</a>
-</div>
-<script src="../assets/quiz.js"></script>
+<script>
+window.PORTAL = {
+  homeHref: "../../genai-portal/index.html",
+  navLabel: "The course",
+  here: "lessons/0004-orchestration.html",
+  base: "../",
+  pages: [
+    { file: "index.html",                              title: "Course index",          num: "✦", kw: "overview start home index agents course" },
+    { file: "lessons/0001-what-is-an-agent.html",      title: "What is an agent?",     num: "01", kw: "agent definition loop tools chatbot" },
+    { file: "lessons/0002-run-your-first-agent.html",  title: "Run your first agent",  num: "02", kw: "run agent python gemini hands-on first" },
+    { file: "lessons/0003-prediction-vs-threshold.html", title: "Prediction vs. threshold", num: "03", kw: "prediction threshold forecast z-score anomaly" },
+    { file: "lessons/0004-orchestration.html",         title: "Orchestration",         num: "04", kw: "orchestration chain anomaly rca remediation multi-agent" },
+    { file: "lessons/0005-workflow-vs-agent.html",     title: "Workflow vs. agent",    num: "05", kw: "workflow autonomous agent shape decide" },
+    { file: "lessons/0006-mapping-any-enm-row.html",   title: "Mapping any EnM row",   num: "06", kw: "mapping enm row decompose capstone method" },
+    { file: "reference/agent-glossary.html",           title: "Agent glossary",        num: "📖", kw: "glossary reference terms lookup" }
+  ]
+};
+</script>
+<script src="../../genai-portal/assets/sitenav.js"></script>
+<script src="../../genai-portal/assets/portal-page.js"></script>
+<script src="../../genai-portal/assets/enhance.js"></script>
+</body>
+</html>
