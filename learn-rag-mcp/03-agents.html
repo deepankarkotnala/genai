@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part 03 — Agents & Tool Use</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav class="nav"><div class="inner">
+  <a href="02-rag.html">← Part 02 · RAG</a>
+  <span class="crumb">Part 03 · Agents</span>
+  <a href="04-mcp.html">Next: MCP →</a>
+</div></nav>
+
+<div class="wrap">
+  <div class="hero">
+    <span class="tag">Part 03 — Level Up</span>
+    <h1>🤖 Agents &amp; Tool Use</h1>
+    <p class="sub">An LLM that can only talk is limited. An LLM that can <em>decide to use tools</em> and act on the world becomes an <b>agent</b>. This is the conceptual bridge to MCP.</p>
+  </div>
+
+  <div class="toc"><b>On this page</b>
+    <ol>
+      <li><a href="#why">From chatbot to agent</a></li>
+      <li><a href="#tool">What a "tool" is to an LLM</a></li>
+      <li><a href="#loop">The agent loop (think → act → observe)</a></li>
+      <li><a href="#code">A real agent in code</a></li>
+      <li><a href="#rag">RAG <em>is</em> a tool: agentic RAG</a></li>
+      <li><a href="#pain">The pain point that MCP fixes</a></li>
+    </ol>
+  </div>
+
+  <h2 id="why">1. From chatbot to agent</h2>
+  <p>A plain LLM is like a brilliant advisor locked in a room with no phone: it can tell you <em>what</em> to do, but can't do anything itself. An <b>agent</b> hands that advisor a set of tools — a calculator, a search box, a database connection — and lets it <em>choose</em> which to use, use them, see the results, and keep going until the task is done.</p>
+
+  <table>
+    <tr><th></th><th>Plain LLM (chatbot)</th><th>Agent</th></tr>
+    <tr><td>Output</td><td>Text only</td><td>Text <em>and</em> actions</td></tr>
+    <tr><td>"What's 8,234 × 591?"</td><td>Guesses (often wrong)</td><td>Calls a calculator tool → exact</td></tr>
+    <tr><td>"What's the weather now?"</td><td>"I can't access live data"</td><td>Calls a weather API → real answer</td></tr>
+    <tr><td>Control flow</td><td>One turn in, one turn out</td><td>Loops: act, observe, decide, repeat</td></tr>
+  </table>
+
+  <h2 id="tool">2. What a "tool" is to an LLM</h2>
+  <p>A <b>tool</b> (a.k.a. "function") is just a function you describe to the LLM: its <em>name</em>, what it <em>does</em>, and what <em>inputs</em> it takes. The model can't run code — but it <em>can</em> output a structured request saying "please run <code>get_weather</code> with <code>city="Paris"</code>." Your code runs it and feeds the result back.</p>
+
+  <pre><span class="c-com"># A tool definition you give to the model (Anthropic/OpenAI both use this shape)</span>
+{
+  <span class="c-str">"name"</span>: <span class="c-str">"get_weather"</span>,
+  <span class="c-str">"description"</span>: <span class="c-str">"Get the current weather for a city."</span>,
+  <span class="c-str">"input_schema"</span>: {
+    <span class="c-str">"type"</span>: <span class="c-str">"object"</span>,
+    <span class="c-str">"properties"</span>: {
+      <span class="c-str">"city"</span>: {<span class="c-str">"type"</span>: <span class="c-str">"string"</span>, <span class="c-str">"description"</span>: <span class="c-str">"e.g. Paris"</span>}
+    },
+    <span class="c-str">"required"</span>: [<span class="c-str">"city"</span>]
+  }
+}</pre>
+
+  <div class="note"><b>The model never executes anything.</b> It only <em>decides</em> to call a tool and produces the arguments. <em>You</em> (your program) actually run the function and return the output. This separation is exactly what MCP standardizes.</div>
+
+  <h2 id="loop">3. The agent loop (think → act → observe)</h2>
+  <p>An agent isn't one API call — it's a loop. The model thinks, optionally calls a tool, you run it, you give it the result, and it continues until it has a final answer.</p>
+
+  <figure class="fig">
+    <svg viewBox="0 0 620 320" width="100%" style="max-width:580px" role="img" aria-label="Agent loop">
+      <defs><marker id="al" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#0071e3"/></marker>
+      <style>.bx{fill:#f5f5f7;stroke:#d3d3da;stroke-width:1.5}.bxg{fill:#eef1f4;stroke:#0071e3;stroke-width:2}.bxp{fill:#eef1f4;stroke:#6e56cf;stroke-width:2}.t{fill:#1d1d1f;font:600 14px sans-serif}.m{fill:#6e6e73;font:11px sans-serif}.ln{stroke:#0071e3;stroke-width:2;fill:none;marker-end:url(#al)}</style></defs>
+      <rect class="bx" x="220" y="20" width="180" height="46" rx="9"/><text class="t" x="310" y="48" text-anchor="middle">User goal</text>
+      <rect class="bxp" x="200" y="110" width="220" height="56" rx="11"/><text class="t" x="310" y="135" text-anchor="middle">🧠 LLM thinks</text><text class="m" x="310" y="153" text-anchor="middle">"Do I need a tool? Which one?"</text>
+      <rect class="bxg" x="40" y="230" width="200" height="56" rx="11"/><text class="t" x="140" y="255" text-anchor="middle">🔧 Run the tool</text><text class="m" x="140" y="273" text-anchor="middle">your code executes it</text>
+      <rect class="bx" x="380" y="230" width="200" height="56" rx="11"/><text class="t" x="480" y="255" text-anchor="middle">✅ Final answer</text><text class="m" x="480" y="273" text-anchor="middle">no tool needed → done</text>
+      <path class="ln" d="M310,66 L310,108"/>
+      <path class="ln" d="M250,166 L160,228"/><text class="m" x="175" y="205">needs a tool</text>
+      <path class="ln" d="M370,166 L460,228"/><text class="m" x="430" y="205">has the answer</text>
+      <path class="ln" d="M140,230 C140,170 170,170 198,150"/><text class="m" x="60" y="185">feed result back ↑</text>
+    </svg>
+    <figcaption>The loop repeats — call a tool, observe the result, decide again — possibly many times, until the model produces a final answer.</figcaption>
+  </figure>
+
+  <h2 id="code">4. A real agent in code</h2>
+  <p>Here's a complete, runnable mini-agent with one tool. Read the comments — this is the heart of every agent framework, stripped to essentials.</p>
+
+  <pre><span class="c-com"># pip install anthropic</span>
+<span class="c-kw">import</span> anthropic
+
+client = anthropic.Anthropic()
+
+<span class="c-com"># 1) The actual Python function the tool maps to</span>
+<span class="c-kw">def</span> <span class="c-fn">get_weather</span>(city):
+    fake = {<span class="c-str">"Paris"</span>: <span class="c-str">"18°C, cloudy"</span>, <span class="c-str">"Tokyo"</span>: <span class="c-str">"27°C, sunny"</span>}
+    <span class="c-kw">return</span> fake.get(city, <span class="c-str">"Unknown city"</span>)
+
+<span class="c-com"># 2) Describe the tool to the model</span>
+tools = [{
+    <span class="c-str">"name"</span>: <span class="c-str">"get_weather"</span>,
+    <span class="c-str">"description"</span>: <span class="c-str">"Get current weather for a city."</span>,
+    <span class="c-str">"input_schema"</span>: {<span class="c-str">"type"</span>: <span class="c-str">"object"</span>,
+        <span class="c-str">"properties"</span>: {<span class="c-str">"city"</span>: {<span class="c-str">"type"</span>: <span class="c-str">"string"</span>}},
+        <span class="c-str">"required"</span>: [<span class="c-str">"city"</span>]}
+}]
+
+messages = [{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"What's the weather in Tokyo?"</span>}]
+
+<span class="c-com"># 3) THE AGENT LOOP</span>
+<span class="c-kw">while</span> <span class="c-kw">True</span>:
+    resp = client.messages.create(
+        model=<span class="c-str">"claude-opus-4-8"</span>, max_tokens=<span class="c-num">500</span>,
+        tools=tools, messages=messages)
+
+    <span class="c-kw">if</span> resp.stop_reason != <span class="c-str">"tool_use"</span>:        <span class="c-com"># model gave a final answer</span>
+        <span class="c-fn">print</span>(resp.content[<span class="c-num">0</span>].text)
+        <span class="c-kw">break</span>
+
+    messages.append({<span class="c-str">"role"</span>: <span class="c-str">"assistant"</span>, <span class="c-str">"content"</span>: resp.content})
+
+    <span class="c-kw">for</span> block <span class="c-kw">in</span> resp.content:           <span class="c-com"># run each requested tool</span>
+        <span class="c-kw">if</span> block.type == <span class="c-str">"tool_use"</span>:
+            result = <span class="c-fn">get_weather</span>(**block.input)
+            messages.append({<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: [{
+                <span class="c-str">"type"</span>: <span class="c-str">"tool_result"</span>,
+                <span class="c-str">"tool_use_id"</span>: block.id,
+                <span class="c-str">"content"</span>: result}]})
+    <span class="c-com"># loop again so the model can use the result</span></pre>
+
+  <div class="tip"><b>Trace what happens:</b> (1) you ask about Tokyo → (2) model replies "I want to call <code>get_weather(city=Tokyo)</code>" → (3) your loop runs the function → (4) you feed back "27°C, sunny" → (5) model writes the final sentence "It's 27°C and sunny in Tokyo." That round-trip <em>is</em> agency.</div>
+
+  <h2 id="rag">5. RAG is just a tool: "agentic RAG"</h2>
+  <p>Here's a beautiful connection. Remember RAG's retrieval step? You can expose it as a <b>tool</b> called <code>search_documents</code>. Now the agent decides <em>for itself</em> when it needs to look something up — and can search multiple times, refine queries, or combine it with other tools.</p>
+
+  <table>
+    <tr><th></th><th>Classic RAG</th><th>Agentic RAG</th></tr>
+    <tr><td>When to retrieve</td><td>Always, every question</td><td>Model decides if &amp; how many times</td></tr>
+    <tr><td>Queries</td><td>Just the user's question</td><td>Model rewrites/splits the query</td></tr>
+    <tr><td>Other tools</td><td>None</td><td>Can combine search + calculator + APIs</td></tr>
+  </table>
+  <div class="note"><b>Takeaway:</b> "retrieval" and "tool use" are the same idea. A document search is one tool; a weather API is another; a database query is another. Which raises an obvious question: if every capability is a tool, isn't there a <em>standard</em> way to define and connect them? Yes — that's <a href="04-mcp.html">MCP</a>.</div>
+
+  <h2 id="pain">6. The pain point that MCP fixes</h2>
+  <p>Imagine you've built agents and want to connect them to: GitHub, Google Drive, a Postgres DB, Slack, and your internal API. Without a standard, you write <b>custom tool code for every (agent × tool) pair</b>. Five tools across three apps = lots of bespoke, duplicated glue.</p>
+
+  <figure class="fig">
+    <svg viewBox="0 0 640 240" width="100%" style="max-width:600px" role="img" aria-label="N times M integrations">
+      <defs><style>.a{fill:#eef1f4;stroke:#6e56cf;stroke-width:1.5}.b{fill:#eef1f4;stroke:#0071e3;stroke-width:1.5}.t{fill:#1d1d1f;font:600 12px sans-serif}.ln{stroke:#c7c7cf;stroke-width:1.2}</style></defs>
+      <text x="90" y="22" class="t" fill="#6e56cf" text-anchor="middle">AI apps</text>
+      <text x="540" y="22" class="t" fill="#0071e3" text-anchor="middle">tools / data</text>
+      <rect class="a" x="30" y="40" width="120" height="34" rx="8"/><text class="t" x="90" y="62" text-anchor="middle">App A</text>
+      <rect class="a" x="30" y="100" width="120" height="34" rx="8"/><text class="t" x="90" y="122" text-anchor="middle">App B</text>
+      <rect class="a" x="30" y="160" width="120" height="34" rx="8"/><text class="t" x="90" y="182" text-anchor="middle">App C</text>
+      <rect class="b" x="490" y="30" width="120" height="30" rx="8"/><text class="t" x="550" y="50" text-anchor="middle">GitHub</text>
+      <rect class="b" x="490" y="75" width="120" height="30" rx="8"/><text class="t" x="550" y="95" text-anchor="middle">Drive</text>
+      <rect class="b" x="490" y="120" width="120" height="30" rx="8"/><text class="t" x="550" y="140" text-anchor="middle">Postgres</text>
+      <rect class="b" x="490" y="165" width="120" height="30" rx="8"/><text class="t" x="550" y="185" text-anchor="middle">Slack</text>
+      <!-- spaghetti -->
+      <path class="ln" d="M150,57 L490,45"/><path class="ln" d="M150,57 L490,90"/><path class="ln" d="M150,57 L490,135"/><path class="ln" d="M150,57 L490,180"/>
+      <path class="ln" d="M150,117 L490,45"/><path class="ln" d="M150,117 L490,90"/><path class="ln" d="M150,117 L490,135"/><path class="ln" d="M150,117 L490,180"/>
+      <path class="ln" d="M150,177 L490,45"/><path class="ln" d="M150,177 L490,90"/><path class="ln" d="M150,177 L490,135"/><path class="ln" d="M150,177 L490,180"/>
+      <text x="320" y="225" class="t" fill="#c5221f" text-anchor="middle">N × M custom integrations 😫</text>
+    </svg>
+    <figcaption>Every app needs custom code for every tool. This is the "N×M problem." MCP turns it into N+M.</figcaption>
+  </figure>
+
+  <div class="tip"><b>Cliffhanger →</b> What if each tool exposed itself <em>once</em> in a standard way, and any AI app could connect to it without custom code? That's the <b>Model Context Protocol</b>. Turn the page.</div>
+
+  <div class="pager">
+    <a href="02-rag.html"><div class="k">← Previous</div><div class="v">Part 02 · RAG</div></a>
+    <a class="next" href="04-mcp.html"><div class="k">Next up →</div><div class="v">Part 04 · MCP</div></a>
+  </div>
+</div>
+<script src="sidenav.js"></script>
+</body>
+</html>

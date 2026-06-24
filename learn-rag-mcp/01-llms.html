@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part 01 — LLMs: The Foundation</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="nav"><div class="inner">
+  <a href="index.html">← All parts</a>
+  <span class="crumb">Part 01 · LLMs</span>
+  <a href="02-rag.html">Next: RAG →</a>
+</div></nav>
+
+<div class="wrap">
+
+  <div class="hero">
+    <span class="tag">Part 01 — Foundation</span>
+    <h1>🧠 LLMs: The Foundation</h1>
+    <p class="sub">Before RAG, agents, or MCP make any sense, you need a solid mental model of what a Large Language Model is — and, crucially, what it <em>can't</em> do on its own.</p>
+  </div>
+
+  <div class="toc">
+    <b>On this page</b>
+    <ol>
+      <li><a href="#what">What is an LLM, really?</a></li>
+      <li><a href="#predict">The core trick: predicting the next token</a></li>
+      <li><a href="#tokens">Tokens & the context window</a></li>
+      <li><a href="#limits">The three big limitations</a></li>
+      <li><a href="#call">Calling an LLM — your first code</a></li>
+      <li><a href="#bridge">Why this leads to RAG, Agents & MCP</a></li>
+    </ol>
+  </div>
+
+  <h2 id="what">1. What is an LLM, really?</h2>
+  <p>An <b>LLM (Large Language Model)</b> is a program trained on a massive amount of text — books, websites, code, articles — until it becomes extremely good at one deceptively simple task: <b>predicting what text comes next.</b></p>
+  <p>That's it. ChatGPT, Claude, Gemini, Llama — under the hood, they are all giant "autocomplete" engines. The magic is that when you make autocomplete <em>big enough</em> and train it on <em>enough</em> text, it starts to look like reasoning, writing, translating, and answering questions.</p>
+
+  <div class="note">
+    <b>Analogy.</b> Imagine someone who has read nearly everything ever written, but has a strange memory: they remember <em>patterns</em> of how words and ideas fit together, not the exact source. Ask them anything and they'll give a fluent, plausible answer drawn from those patterns. That's an LLM — brilliant at language, but with no live access to facts beyond what it absorbed during training.
+  </div>
+
+  <h2 id="predict">2. The core trick: predicting the next token</h2>
+  <p>When you send text to an LLM, it doesn't "look up" an answer. It calculates, for every possible next word, a probability — and picks one. Then it adds that word to the input and repeats. One word at a time.</p>
+
+  <figure class="fig">
+    <svg viewBox="0 0 700 230" width="100%" style="max-width:660px" role="img" aria-label="Next-token prediction">
+      <defs>
+        <marker id="a1" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#6e56cf"/></marker>
+        <style>.bx{fill:#f5f5f7;stroke:#d3d3da;stroke-width:1.5}.tt{fill:#1d1d1f;font:600 14px sans-serif}.mm{fill:#6e6e73;font:12px sans-serif}.pr{fill:#0071e3;font:600 13px monospace}</style>
+      </defs>
+      <text class="mm" x="20" y="30">Input prompt:</text>
+      <rect class="bx" x="20" y="42" width="360" height="40" rx="9"/>
+      <text class="tt" x="36" y="67">"The capital of France is"</text>
+      <path d="M390,62 L470,62" stroke="#6e56cf" stroke-width="2" marker-end="url(#a1)" fill="none"/>
+      <rect class="bx" x="475" y="36" width="205" height="54" rx="10" fill="#eef1f4"/>
+      <text class="tt" x="577" y="58" text-anchor="middle">LLM</text>
+      <text class="mm" x="577" y="76" text-anchor="middle">computes probabilities</text>
+
+      <text class="mm" x="475" y="125">Predicted next token (with probability):</text>
+      <rect class="bx" x="475" y="135" width="205" height="26" rx="7"/><text class="pr" x="485" y="153">"Paris"     0.94</text>
+      <rect class="bx" x="475" y="166" width="205" height="26" rx="7"/><text class="mm" x="485" y="184" font-family="monospace" font-size="12">"a"          0.03</text>
+      <rect class="bx" x="475" y="197" width="205" height="26" rx="7"/><text class="mm" x="485" y="215" font-family="monospace" font-size="12">"located"    0.01</text>
+
+      <text class="mm" x="20" y="125">It picks the most likely →</text>
+      <rect class="bx" x="20" y="135" width="360" height="40" rx="9" stroke="#0071e3"/>
+      <text class="tt" x="36" y="160">"The capital of France is <tspan fill="#0071e3">Paris</tspan>"</text>
+      <text class="mm" x="20" y="205">…then feeds it back in and predicts the next word again.</text>
+    </svg>
+    <figcaption>Generation is a loop: predict one token, append it, predict again — until the model decides to stop.</figcaption>
+  </figure>
+
+  <p>This is why an LLM can produce a confident answer that is completely wrong — it's optimizing for "plausible-sounding next word," not "verified truth." This behavior is called <b>hallucination</b>, and fixing it is exactly what RAG (Part 02) is for.</p>
+
+  <h2 id="tokens">3. Tokens & the context window</h2>
+  <p>LLMs don't read whole words or letters — they read <b>tokens</b>. A token is a chunk of text, roughly ¾ of a word on average. "Understanding" might be one token; "antidisestablishmentarianism" might be five.</p>
+
+  <p>Here's how a sentence gets split into tokens (each box ≈ one token):</p>
+  <div class="seg">
+    <span>Lear</span><span>ning</span><span> RAG</span><span> is</span><span> easier</span><span> than</span><span> it</span><span> sounds</span><span>.</span>
+  </div>
+
+  <p>The <b>context window</b> is the maximum number of tokens the model can "see" at once — your prompt <em>plus</em> its reply must fit inside it. Think of it as the model's short-term memory / desk space.</p>
+
+  <table>
+    <tr><th>Term</th><th>Meaning</th><th>Why you care</th></tr>
+    <tr><td>Token</td><td>A chunk of text (~¾ word)</td><td>You're billed per token; limits are in tokens</td></tr>
+    <tr><td>Context window</td><td>Max tokens in one request</td><td>You can't paste a 500-page book in one go</td></tr>
+    <tr><td>Prompt</td><td>The text you send in</td><td>This is your main control surface</td></tr>
+    <tr><td>Completion</td><td>The text the model generates</td><td>The answer you get back</td></tr>
+    <tr><td>Temperature</td><td>Randomness dial (0 = focused, 1 = creative)</td><td>Use low temp for facts, higher for brainstorming</td></tr>
+  </table>
+
+  <div class="tip"><b>Key insight that motivates RAG:</b> the context window is limited. Even large windows can't hold your entire company wiki, every PDF you own, or a live database. So instead of stuffing <em>everything</em> in, we'll learn to retrieve <em>only the relevant pieces</em> and put just those into the prompt. That's RAG in one sentence.</div>
+
+  <h2 id="limits">4. The three big limitations (and their cures)</h2>
+  <table>
+    <tr><th>Limitation</th><th>What it means</th><th>The cure (where we go next)</th></tr>
+    <tr><td><b>Frozen knowledge</b></td><td>It only knows what it saw in training — nothing after its cutoff date, and nothing private to you.</td><td><b>RAG</b> (Part 02)</td></tr>
+    <tr><td><b>Can't take actions</b></td><td>It generates text. It can't send an email, query a DB, or browse — by itself.</td><td><b>Agents & tools</b> (Part 03)</td></tr>
+    <tr><td><b>Every integration is custom</b></td><td>Connecting it to each tool/data source means writing bespoke glue code every time.</td><td><b>MCP</b> (Part 04)</td></tr>
+  </table>
+
+  <h2 id="call">5. Calling an LLM — your first code</h2>
+  <p>Everything we build later starts with a single API call. Here's the simplest possible version with two popular providers. You'll need an API key (free credits are usually available on signup).</p>
+
+  <h3>Option A — Anthropic Claude</h3>
+  <pre><span class="c-com"># pip install anthropic</span>
+<span class="c-kw">import</span> anthropic
+
+client = anthropic.Anthropic(api_key=<span class="c-str">"YOUR_KEY"</span>)
+
+msg = client.messages.create(
+    model=<span class="c-str">"claude-opus-4-8"</span>,        <span class="c-com"># latest, most capable</span>
+    max_tokens=<span class="c-num">300</span>,
+    messages=[
+        {<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"Explain RAG in one sentence."</span>}
+    ],
+)
+<span class="c-fn">print</span>(msg.content[<span class="c-num">0</span>].text)</pre>
+
+  <h3>Option B — OpenAI</h3>
+  <pre><span class="c-com"># pip install openai</span>
+<span class="c-kw">from</span> openai <span class="c-kw">import</span> OpenAI
+
+client = OpenAI(api_key=<span class="c-str">"YOUR_KEY"</span>)
+
+resp = client.chat.completions.create(
+    model=<span class="c-str">"gpt-4o"</span>,
+    messages=[
+        {<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: <span class="c-str">"Explain RAG in one sentence."</span>}
+    ],
+)
+<span class="c-fn">print</span>(resp.choices[<span class="c-num">0</span>].message.content)</pre>
+
+  <div class="note"><b>The "messages" pattern.</b> Notice both use a list of messages with <code>role</code> + <code>content</code>. Roles are usually <code>system</code> (instructions/persona), <code>user</code> (the human), and <code>assistant</code> (the model's past replies). This conversation format is the backbone of every chat app, agent, and RAG system you'll build.</div>
+
+  <div class="warn"><b>Never hard-code keys in real projects.</b> Use an environment variable instead:<br>
+  <code>import os</code> → <code>api_key=os.environ["ANTHROPIC_API_KEY"]</code>, and set it in your shell with <code>export ANTHROPIC_API_KEY=...</code> (macOS/Linux) or <code>setx ANTHROPIC_API_KEY ...</code> (Windows).</div>
+
+  <h2 id="bridge">6. Why this leads to RAG, Agents & MCP</h2>
+  <p>You now have the foundation. The rest of this guide is about overcoming the three limitations:</p>
+  <ul>
+    <li>The LLM doesn't know <em>your</em> data → we'll <b>retrieve</b> it and inject it (<a href="02-rag.html">RAG</a>).</li>
+    <li>The LLM can't <em>act</em> → we'll give it <b>tools</b> and a loop (<a href="03-agents.html">Agents</a>).</li>
+    <li>Wiring tools is repetitive → we'll use a <b>standard protocol</b> (<a href="04-mcp.html">MCP</a>).</li>
+  </ul>
+  <p>Then we'll put it all together and build two real apps.</p>
+
+  <div class="tip"><b>One-line summary to remember:</b> An LLM is a next-token predictor with frozen, general knowledge and no ability to act. Everything else in this guide is about feeding it the right context and connecting it to the real world.</div>
+
+  <div class="pager">
+    <a href="index.html"><div class="k">← Back to</div><div class="v">Home / All parts</div></a>
+    <a class="next" href="02-rag.html"><div class="k">Next up →</div><div class="v">Part 02 · RAG</div></a>
+  </div>
+
+</div>
+<script src="sidenav.js"></script>
+</body>
+</html>

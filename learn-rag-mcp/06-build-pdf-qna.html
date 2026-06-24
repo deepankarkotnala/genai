@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part 06 — Build a PDF Q&A RAG App</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav class="nav"><div class="inner">
+  <a href="05-build-simple-rag.html">← Part 05 · Simple RAG</a>
+  <span class="crumb">Part 06 · PDF Q&amp;A</span>
+  <a href="07-eda-agent-ollama.html">Next: EDA Agent →</a>
+</div></nav>
+
+<div class="wrap">
+  <div class="hero">
+    <span class="tag">Part 06 — Capstone Build</span>
+    <h1>📄 Build a PDF Q&amp;A RAG App</h1>
+    <p class="sub">The full project. Drop in any PDF — a manual, a research paper, a contract — and chat with it. You'll use a real vector database (Chroma) and finish with an optional web UI.</p>
+  </div>
+
+  <div class="note"><b>What you'll have at the end.</b> A program where you point it at a PDF, it indexes the document, and then you ask questions like "What's the warranty period?" and get accurate answers grounded in the actual document — with the source pages it used.</div>
+
+  <div class="toc"><b>Build steps</b>
+    <ol>
+      <li><a href="#arch">Architecture recap</a></li>
+      <li><a href="#setup">Setup &amp; install</a></li>
+      <li><a href="#load">Step 1 — Load &amp; extract PDF text</a></li>
+      <li><a href="#chunk">Step 2 — Chunk the text</a></li>
+      <li><a href="#store">Step 3 — Embed &amp; store in Chroma</a></li>
+      <li><a href="#query">Step 4 — Retrieve &amp; answer</a></li>
+      <li><a href="#full">The complete CLI app</a></li>
+      <li><a href="#ui">Step 5 — Add a web UI (Streamlit)</a></li>
+      <li><a href="#mcp">Step 6 — Expose it as an MCP server</a></li>
+      <li><a href="#trouble">Troubleshooting &amp; tips</a></li>
+    </ol>
+  </div>
+
+  <h2 id="arch">1. Architecture recap</h2>
+  <p>This is the exact pipeline from <a href="02-rag.html">Part 02</a>, now with real files and a real DB:</p>
+  <figure class="fig">
+    <svg viewBox="0 0 700 120" width="100%" style="max-width:680px" role="img" aria-label="PDF RAG flow">
+      <defs><marker id="p1" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#0071e3"/></marker>
+      <style>.b{fill:#f5f5f7;stroke:#d3d3da;stroke-width:1.5}.bg{fill:#eef1f4;stroke:#0071e3;stroke-width:1.5}.t{fill:#1d1d1f;font:600 12px sans-serif}.ln{stroke:#0071e3;stroke-width:2;fill:none;marker-end:url(#p1)}</style></defs>
+      <rect class="b" x="10" y="40" width="90" height="40" rx="8"/><text class="t" x="55" y="64" text-anchor="middle">📄 PDF</text>
+      <rect class="b" x="125" y="40" width="90" height="40" rx="8"/><text class="t" x="170" y="64" text-anchor="middle">Extract</text>
+      <rect class="b" x="240" y="40" width="90" height="40" rx="8"/><text class="t" x="285" y="64" text-anchor="middle">Chunk</text>
+      <rect class="b" x="355" y="40" width="90" height="40" rx="8"/><text class="t" x="400" y="64" text-anchor="middle">Embed</text>
+      <rect class="bg" x="470" y="40" width="100" height="40" rx="8"/><text class="t" x="520" y="64" text-anchor="middle">Chroma DB</text>
+      <rect class="b" x="600" y="40" width="90" height="40" rx="8"/><text class="t" x="645" y="58" text-anchor="middle">Q&amp;A</text><text class="t" x="645" y="72" text-anchor="middle">loop</text>
+      <path class="ln" d="M100,60 L123,60"/><path class="ln" d="M215,60 L238,60"/><path class="ln" d="M330,60 L353,60"/><path class="ln" d="M445,60 L468,60"/><path class="ln" d="M570,60 L598,60"/>
+    </svg>
+  </figure>
+
+  <h2 id="setup">2. Setup &amp; install</h2>
+  <pre><span class="fname">terminal</span>pip install openai chromadb pypdf
+
+<span class="c-com"># API key</span>
+export OPENAI_API_KEY=<span class="c-str">"sk-..."</span>     <span class="c-com"># PowerShell: $env:OPENAI_API_KEY="sk-..."</span></pre>
+  <table>
+    <tr><th>Library</th><th>Role</th></tr>
+    <tr><td><code>pypdf</code></td><td>Extract text from PDF files</td></tr>
+    <tr><td><code>chromadb</code></td><td>The vector database — stores &amp; searches embeddings, persists to disk</td></tr>
+    <tr><td><code>openai</code></td><td>Embeddings + the chat model</td></tr>
+  </table>
+  <div class="tip"><b>Chroma is beginner-friendly:</b> it can call the embedding model <em>for you</em> and saves to a local folder so you only index once. We'll use that.</div>
+
+  <h2 id="load">3. Step 1 — Load &amp; extract PDF text</h2>
+  <p>PDFs store text page-by-page. We pull it out and keep the page number so we can cite sources later.</p>
+  <div class="step"><span class="lbl">STEP 1 · LOAD</span>
+  <pre><span class="c-kw">from</span> pypdf <span class="c-kw">import</span> PdfReader
+
+<span class="c-kw">def</span> <span class="c-fn">load_pdf</span>(path):
+    <span class="c-str">"""Return a list of (page_number, page_text)."""</span>
+    reader = PdfReader(path)
+    pages = []
+    <span class="c-kw">for</span> i, page <span class="c-kw">in</span> <span class="c-fn">enumerate</span>(reader.pages):
+        text = page.extract_text() <span class="c-kw">or</span> <span class="c-str">""</span>
+        <span class="c-kw">if</span> text.strip():
+            pages.append((i + <span class="c-num">1</span>, text))
+    <span class="c-kw">return</span> pages</pre>
+  </div>
+
+  <h2 id="chunk">4. Step 2 — Chunk the text</h2>
+  <p>A page can be too long for precise retrieval, so we split each page into overlapping chunks (the rules from Part 02). We carry the page number along as <b>metadata</b>.</p>
+  <div class="step"><span class="lbl">STEP 2 · CHUNK</span>
+  <pre><span class="c-kw">def</span> <span class="c-fn">chunk_text</span>(text, size=<span class="c-num">800</span>, overlap=<span class="c-num">150</span>):
+    <span class="c-str">"""Split text into overlapping windows of characters."""</span>
+    chunks, start = [], <span class="c-num">0</span>
+    <span class="c-kw">while</span> start &lt; <span class="c-fn">len</span>(text):
+        end = start + size
+        chunks.append(text[start:end])
+        start = end - overlap          <span class="c-com"># step back to overlap</span>
+    <span class="c-kw">return</span> chunks
+
+<span class="c-kw">def</span> <span class="c-fn">build_chunks</span>(pages):
+    <span class="c-str">"""Flatten pages into chunks with page metadata."""</span>
+    out = []
+    <span class="c-kw">for</span> page_no, text <span class="c-kw">in</span> pages:
+        <span class="c-kw">for</span> j, ch <span class="c-kw">in</span> <span class="c-fn">enumerate</span>(<span class="c-fn">chunk_text</span>(text)):
+            out.append({<span class="c-str">"id"</span>: <span class="c-str">f"p{page_no}-c{j}"</span>,
+                        <span class="c-str">"text"</span>: ch,
+                        <span class="c-str">"page"</span>: page_no})
+    <span class="c-kw">return</span> out</pre>
+  </div>
+
+  <h2 id="store">5. Step 3 — Embed &amp; store in Chroma</h2>
+  <p>We create a Chroma collection that uses OpenAI for embeddings, then add all chunks. Chroma embeds and stores them; this is the one-time indexing phase.</p>
+  <div class="step"><span class="lbl">STEP 3 · INDEX</span>
+  <pre><span class="c-kw">import</span> os, chromadb
+<span class="c-kw">from</span> chromadb.utils <span class="c-kw">import</span> embedding_functions
+
+<span class="c-kw">def</span> <span class="c-fn">get_collection</span>():
+    client = chromadb.PersistentClient(path=<span class="c-str">"./pdf_db"</span>)   <span class="c-com"># saves to disk</span>
+    openai_ef = embedding_functions.OpenAIEmbeddingFunction(
+        api_key=os.environ[<span class="c-str">"OPENAI_API_KEY"</span>],
+        model_name=<span class="c-str">"text-embedding-3-small"</span>)
+    <span class="c-kw">return</span> client.get_or_create_collection(
+        name=<span class="c-str">"pdf"</span>, embedding_function=openai_ef)
+
+<span class="c-kw">def</span> <span class="c-fn">index_pdf</span>(path):
+    col = <span class="c-fn">get_collection</span>()
+    chunks = <span class="c-fn">build_chunks</span>(<span class="c-fn">load_pdf</span>(path))
+    col.add(
+        ids=[c[<span class="c-str">"id"</span>] <span class="c-kw">for</span> c <span class="c-kw">in</span> chunks],
+        documents=[c[<span class="c-str">"text"</span>] <span class="c-kw">for</span> c <span class="c-kw">in</span> chunks],
+        metadatas=[{<span class="c-str">"page"</span>: c[<span class="c-str">"page"</span>]} <span class="c-kw">for</span> c <span class="c-kw">in</span> chunks])
+    <span class="c-fn">print</span>(<span class="c-str">f"Indexed {len(chunks)} chunks from {path}"</span>)
+    <span class="c-kw">return</span> col</pre>
+  </div>
+  <div class="note"><b>Why metadata matters:</b> we attach <code>{"page": n}</code> to each chunk. After retrieval, Chroma hands it back, so we can tell the user "answer found on page 7." That's how citations work.</div>
+
+  <h2 id="query">6. Step 4 — Retrieve &amp; answer</h2>
+  <p>Query the collection for the top chunks, build the grounded prompt, and call the chat model. Note we ask Chroma to return metadata so we can cite pages.</p>
+  <div class="step"><span class="lbl">STEP 4 · ANSWER</span>
+  <pre><span class="c-kw">from</span> openai <span class="c-kw">import</span> OpenAI
+oa = OpenAI()
+
+<span class="c-kw">def</span> <span class="c-fn">ask</span>(col, question, top_k=<span class="c-num">4</span>):
+    res = col.query(query_texts=[question], n_results=top_k)
+    chunks = res[<span class="c-str">"documents"</span>][<span class="c-num">0</span>]
+    pages  = [m[<span class="c-str">"page"</span>] <span class="c-kw">for</span> m <span class="c-kw">in</span> res[<span class="c-str">"metadatas"</span>][<span class="c-num">0</span>]]
+
+    context = <span class="c-str">"\n\n"</span>.join(
+        <span class="c-str">f"[page {p}] {c}"</span> <span class="c-kw">for</span> c, p <span class="c-kw">in</span> <span class="c-fn">zip</span>(chunks, pages))
+
+    prompt = <span class="c-str">f"""You are a precise document assistant. Answer the
+question using ONLY the context. Cite the page numbers you used.
+If the answer isn't in the context, say you don't know.
+
+Context:
+{context}
+
+Question: {question}"""</span>
+
+    resp = oa.chat.completions.create(
+        model=<span class="c-str">"gpt-4o-mini"</span>,
+        messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: prompt}])
+    <span class="c-kw">return</span> resp.choices[<span class="c-num">0</span>].message.content, <span class="c-fn">sorted</span>(<span class="c-fn">set</span>(pages))</pre>
+  </div>
+
+  <h2 id="full">7. The complete CLI app</h2>
+  <p>Save as <code>pdf_qna.py</code>. Run with <code>python pdf_qna.py mydoc.pdf</code>. It indexes once (skips re-indexing if the DB already exists), then chats.</p>
+  <pre><span class="fname">pdf_qna.py — complete</span><span class="c-kw">import</span> os, sys, chromadb
+<span class="c-kw">from</span> pypdf <span class="c-kw">import</span> PdfReader
+<span class="c-kw">from</span> chromadb.utils <span class="c-kw">import</span> embedding_functions
+<span class="c-kw">from</span> openai <span class="c-kw">import</span> OpenAI
+
+oa = OpenAI()
+
+<span class="c-kw">def</span> <span class="c-fn">load_pdf</span>(path):
+    reader = PdfReader(path)
+    <span class="c-kw">return</span> [(i+<span class="c-num">1</span>, p.extract_text() <span class="c-kw">or</span> <span class="c-str">""</span>)
+            <span class="c-kw">for</span> i, p <span class="c-kw">in</span> <span class="c-fn">enumerate</span>(reader.pages)]
+
+<span class="c-kw">def</span> <span class="c-fn">chunk_text</span>(t, size=<span class="c-num">800</span>, overlap=<span class="c-num">150</span>):
+    out, s = [], <span class="c-num">0</span>
+    <span class="c-kw">while</span> s &lt; <span class="c-fn">len</span>(t):
+        out.append(t[s:s+size]); s += size - overlap
+    <span class="c-kw">return</span> [c <span class="c-kw">for</span> c <span class="c-kw">in</span> out <span class="c-kw">if</span> c.strip()]
+
+<span class="c-kw">def</span> <span class="c-fn">get_collection</span>():
+    client = chromadb.PersistentClient(path=<span class="c-str">"./pdf_db"</span>)
+    ef = embedding_functions.OpenAIEmbeddingFunction(
+        api_key=os.environ[<span class="c-str">"OPENAI_API_KEY"</span>],
+        model_name=<span class="c-str">"text-embedding-3-small"</span>)
+    <span class="c-kw">return</span> client.get_or_create_collection(<span class="c-str">"pdf"</span>, embedding_function=ef)
+
+<span class="c-kw">def</span> <span class="c-fn">index_pdf</span>(col, path):
+    ids, docs, metas = [], [], []
+    <span class="c-kw">for</span> page_no, text <span class="c-kw">in</span> <span class="c-fn">load_pdf</span>(path):
+        <span class="c-kw">for</span> j, ch <span class="c-kw">in</span> <span class="c-fn">enumerate</span>(<span class="c-fn">chunk_text</span>(text)):
+            ids.append(<span class="c-str">f"p{page_no}-c{j}"</span>); docs.append(ch)
+            metas.append({<span class="c-str">"page"</span>: page_no})
+    col.add(ids=ids, documents=docs, metadatas=metas)
+    <span class="c-fn">print</span>(<span class="c-str">f"✅ Indexed {len(ids)} chunks."</span>)
+
+<span class="c-kw">def</span> <span class="c-fn">ask</span>(col, question, top_k=<span class="c-num">4</span>):
+    r = col.query(query_texts=[question], n_results=top_k)
+    chunks, metas = r[<span class="c-str">"documents"</span>][<span class="c-num">0</span>], r[<span class="c-str">"metadatas"</span>][<span class="c-num">0</span>]
+    pages = [m[<span class="c-str">"page"</span>] <span class="c-kw">for</span> m <span class="c-kw">in</span> metas]
+    context = <span class="c-str">"\n\n"</span>.join(<span class="c-str">f"[page {p}] {c}"</span> <span class="c-kw">for</span> c,p <span class="c-kw">in</span> <span class="c-fn">zip</span>(chunks,pages))
+    prompt = (<span class="c-str">"Answer using ONLY the context and cite page numbers. "</span>
+              <span class="c-str">"If absent, say you don't know.\n\nContext:\n"</span>
+              + context + <span class="c-str">f"\n\nQuestion: {question}"</span>)
+    resp = oa.chat.completions.create(model=<span class="c-str">"gpt-4o-mini"</span>,
+        messages=[{<span class="c-str">"role"</span>:<span class="c-str">"user"</span>,<span class="c-str">"content"</span>:prompt}])
+    <span class="c-kw">return</span> resp.choices[<span class="c-num">0</span>].message.content, <span class="c-fn">sorted</span>(<span class="c-fn">set</span>(pages))
+
+<span class="c-kw">if</span> __name__ == <span class="c-str">"__main__"</span>:
+    col = <span class="c-fn">get_collection</span>()
+    <span class="c-kw">if</span> col.count() == <span class="c-num">0</span>:                 <span class="c-com"># only index the first time</span>
+        <span class="c-kw">if</span> <span class="c-fn">len</span>(sys.argv) &lt; <span class="c-num">2</span>:
+            <span class="c-fn">print</span>(<span class="c-str">"Usage: python pdf_qna.py &lt;file.pdf&gt;"</span>); sys.exit()
+        <span class="c-fn">index_pdf</span>(col, sys.argv[<span class="c-num">1</span>])
+    <span class="c-fn">print</span>(<span class="c-str">"Ask about your PDF (Ctrl+C to quit)\n"</span>)
+    <span class="c-kw">while</span> <span class="c-kw">True</span>:
+        q = <span class="c-fn">input</span>(<span class="c-str">"❓ "</span>)
+        ans, pages = <span class="c-fn">ask</span>(col, q)
+        <span class="c-fn">print</span>(<span class="c-str">f"\n💡 {ans}\n📄 sources: pages {pages}\n"</span>)</pre>
+
+  <div class="tip"><b>Re-indexing:</b> the app skips indexing if <code>./pdf_db</code> already has data. To index a new PDF, delete the <code>pdf_db</code> folder (or use a different collection name) and run again.</div>
+
+  <h2 id="ui">8. Step 5 — Add a web UI (Streamlit)</h2>
+  <p>A terminal is fine for testing, but a real app needs a UI. Streamlit turns a Python script into a web app with almost no extra code — including a file uploader.</p>
+  <pre><span class="fname">terminal</span>pip install streamlit
+streamlit run app_ui.py</pre>
+  <pre><span class="fname">app_ui.py</span><span class="c-kw">import</span> streamlit <span class="c-kw">as</span> st
+<span class="c-kw">from</span> pdf_qna <span class="c-kw">import</span> get_collection, index_pdf, ask   <span class="c-com"># reuse our functions!</span>
+
+st.title(<span class="c-str">"📄 Chat with your PDF"</span>)
+
+uploaded = st.file_uploader(<span class="c-str">"Upload a PDF"</span>, type=<span class="c-str">"pdf"</span>)
+<span class="c-kw">if</span> uploaded:
+    <span class="c-kw">with</span> <span class="c-fn">open</span>(<span class="c-str">"uploaded.pdf"</span>, <span class="c-str">"wb"</span>) <span class="c-kw">as</span> f:
+        f.write(uploaded.read())
+    col = <span class="c-fn">get_collection</span>()
+    <span class="c-kw">if</span> col.count() == <span class="c-num">0</span>:
+        <span class="c-kw">with</span> st.spinner(<span class="c-str">"Indexing..."</span>):
+            <span class="c-fn">index_pdf</span>(col, <span class="c-str">"uploaded.pdf"</span>)
+
+    question = st.text_input(<span class="c-str">"Ask a question about the document:"</span>)
+    <span class="c-kw">if</span> question:
+        <span class="c-kw">with</span> st.spinner(<span class="c-str">"Thinking..."</span>):
+            answer, pages = <span class="c-fn">ask</span>(col, question)
+        st.markdown(<span class="c-str">f"**Answer:** {answer}"</span>)
+        st.caption(<span class="c-str">f"📄 Sources: pages {pages}"</span>)</pre>
+  <div class="note"><b>Notice the payoff of clean functions.</b> The UI just <em>imports and reuses</em> <code>get_collection</code>, <code>index_pdf</code>, and <code>ask</code> from the CLI app. Same logic, new front-end. This is why we kept the RAG logic in tidy functions.</div>
+
+  <figure class="fig">
+    <svg viewBox="0 0 500 230" width="100%" style="max-width:420px" role="img" aria-label="UI mockup">
+      <rect x="10" y="10" width="480" height="210" rx="10" fill="#eef1f4" stroke="#d3d3da"/>
+      <text x="30" y="45" fill="#1d1d1f" font="700 18px sans-serif" font-size="18" font-weight="700">📄 Chat with your PDF</text>
+      <rect x="30" y="60" width="440" height="34" rx="6" fill="#f6f8fa" stroke="#d3d3da"/><text x="44" y="82" fill="#6e6e73" font-size="12">⬆ Drag &amp; drop a PDF — report.pdf ✓</text>
+      <rect x="30" y="104" width="440" height="34" rx="6" fill="#f6f8fa" stroke="#0071e3"/><text x="44" y="126" fill="#1d1d1f" font-size="12">What is the warranty period?</text>
+      <rect x="30" y="150" width="440" height="60" rx="6" fill="#f5f5f7" stroke="#d3d3da"/>
+      <text x="44" y="172" fill="#1d1d1f" font-size="12" font-weight="700">Answer: The warranty period is 24 months</text>
+      <text x="44" y="190" fill="#1d1d1f" font-size="12">from the date of purchase.</text>
+      <text x="44" y="205" fill="#0071e3" font-size="11">📄 Sources: pages [3, 4]</text>
+    </svg>
+    <figcaption>Roughly what your Streamlit app looks like — upload, ask, get a cited answer.</figcaption>
+  </figure>
+
+  <h2 id="mcp">9. Step 6 — Expose it as an MCP server (full circle)</h2>
+  <p>Remember <a href="04-mcp.html">Part 04</a>? Let's turn this RAG app into a reusable MCP tool so Claude Desktop (or any agent) can query your PDF. It's just a thin wrapper:</p>
+  <pre><span class="fname">pdf_mcp.py</span><span class="c-kw">from</span> mcp.server.fastmcp <span class="c-kw">import</span> FastMCP
+<span class="c-kw">from</span> pdf_qna <span class="c-kw">import</span> get_collection, ask
+
+mcp = FastMCP(<span class="c-str">"pdf-knowledge"</span>)
+col = <span class="c-fn">get_collection</span>()      <span class="c-com"># assumes the PDF is already indexed</span>
+
+<span class="c-dec">@mcp.tool()</span>
+<span class="c-kw">def</span> <span class="c-fn">search_pdf</span>(question: str) -> str:
+    <span class="c-str">"""Answer a question using the indexed PDF document."""</span>
+    answer, pages = <span class="c-fn">ask</span>(col, question)
+    <span class="c-kw">return</span> <span class="c-str">f"{answer}\n\n(Sources: pages {pages})"</span>
+
+<span class="c-kw">if</span> __name__ == <span class="c-str">"__main__"</span>:
+    mcp.run()</pre>
+  <div class="tip"><b>🎉 You've now connected every concept in this guide.</b> An <b>LLM</b> answers using <b>RAG</b> over your PDF, packaged as an <b>agent tool</b> via the <b>MCP</b> standard. Add it to Claude Desktop's config (Part 04, §7) and ask Claude about your document from inside the app.</div>
+
+  <h2 id="trouble">10. Troubleshooting &amp; tips</h2>
+  <table>
+    <tr><th>Symptom</th><th>Cause &amp; fix</th></tr>
+    <tr><td>Empty / garbled answers</td><td>PDF is scanned images, not text. <code>pypdf</code> can't read those — run OCR first (e.g. <code>ocrmypdf</code>) or use a vision model.</td></tr>
+    <tr><td>"I don't know" too often</td><td>Increase <code>top_k</code> (try 6–8), or reduce chunk size for finer retrieval.</td></tr>
+    <tr><td>Wrong/irrelevant chunks</td><td>Chunks too big — lower <code>size</code> to ~500. Add overlap so facts aren't split.</td></tr>
+    <tr><td>Re-indexes every run</td><td>That's expected if you delete <code>pdf_db</code>. Keep the folder to reuse the index.</td></tr>
+    <tr><td>Slow / costly</td><td>Index once and persist (we do). Use <code>text-embedding-3-small</code> (cheap) and a small chat model.</td></tr>
+    <tr><td>Want it fully local/free</td><td>Swap embeddings → <code>sentence-transformers</code>; swap chat → Ollama (<code>llama3</code>). Chroma works with both.</td></tr>
+  </table>
+
+  <h3>Production hardening checklist</h3>
+  <ul class="check">
+    <li>Store API keys in environment variables / a secrets manager — never in code</li>
+    <li>Handle multiple documents (add a <code>source</code> field to metadata; filter by it)</li>
+    <li>Add conversation memory so follow-up questions keep context</li>
+    <li>Show the actual retrieved snippets so users can verify the answer</li>
+    <li>Add rate limiting and error handling around API calls</li>
+    <li>Evaluate quality on real questions before shipping (does it cite correctly?)</li>
+  </ul>
+
+  <div class="note"><b>Congratulations — you finished the guide.</b> You can now explain LLMs, RAG, agents, and MCP, and you've built a real document-Q&amp;A system end to end. From here, explore frameworks like LangChain or LlamaIndex (they automate this pipeline) — but you now understand what they're doing under the hood, which is the hard part.</div>
+
+  <div class="pager">
+    <a href="05-build-simple-rag.html"><div class="k">← Previous</div><div class="v">Part 05 · Simple RAG</div></a>
+    <a class="next" href="07-eda-agent-ollama.html"><div class="k">Next up →</div><div class="v">Part 07 · EDA Agent (Ollama)</div></a>
+  </div>
+</div>
+<script src="sidenav.js"></script>
+</body>
+</html>

@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part 02 — RAG: Retrieval-Augmented Generation</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<nav class="nav"><div class="inner">
+  <a href="01-llms.html">← Part 01 · LLMs</a>
+  <span class="crumb">Part 02 · RAG</span>
+  <a href="03-agents.html">Next: Agents →</a>
+</div></nav>
+
+<div class="wrap">
+  <div class="hero">
+    <span class="tag">Part 02 — Core Concept</span>
+    <h1>🔍 RAG: Retrieval-Augmented Generation</h1>
+    <p class="sub">The single most important technique for making LLMs useful with <em>your</em> data. By the end of this page you'll understand every moving part — embeddings, vector search, chunking, and the retrieve-then-generate loop.</p>
+  </div>
+
+  <div class="toc">
+    <b>On this page</b>
+    <ol>
+      <li><a href="#why">The problem RAG solves</a></li>
+      <li><a href="#what">What RAG is (plain English)</a></li>
+      <li><a href="#emb">Embeddings — turning meaning into numbers</a></li>
+      <li><a href="#vdb">Vector databases & similarity search</a></li>
+      <li><a href="#chunk">Chunking — splitting documents</a></li>
+      <li><a href="#flow">The full RAG pipeline, step by step</a></li>
+      <li><a href="#prompt">What the final prompt actually looks like</a></li>
+      <li><a href="#vs">RAG vs. fine-tuning vs. long context</a></li>
+    </ol>
+  </div>
+
+  <h2 id="why">1. The problem RAG solves</h2>
+  <p>From Part 01: an LLM's knowledge is <b>frozen</b> at training time and <b>generic</b>. Ask it "What's our refund policy?" or "Summarize the Q3 report we just published" and it has no idea — that information was never in its training data. Worse, it may <b>hallucinate</b> a confident, wrong answer.</p>
+
+  <div class="warn"><b>The naive fix doesn't scale.</b> "Just paste the documents into the prompt!" works for one page — but you can't paste a 10,000-page knowledge base into every request (context window limits + cost + the model loses focus). We need to send <em>only the relevant snippets</em>.</div>
+
+  <h2 id="what">2. What RAG is (plain English)</h2>
+  <p><b>Retrieval-Augmented Generation</b> = <span style="color:var(--accent)">Retrieval</span> (find the relevant info) + <span style="color:var(--accent2)">Augmented</span> (add it to the prompt) + <span style="color:var(--accent3)">Generation</span> (let the LLM write the answer using it).</p>
+
+  <div class="note"><b>The open-book exam analogy.</b> A closed-book exam (plain LLM) forces you to answer from memory — you'll guess when unsure. RAG turns it into an <em>open-book</em> exam: before answering, you look up the relevant pages, then write your answer based on what you found. Same brain, far more accurate, with citations.</div>
+
+  <p>The trick is the "looking up" step. You can't keyword-match reliably — a user asking about "time off" should find a doc titled "vacation and leave policy" even though no words overlap. We need search by <b>meaning</b>, not by keywords. That's what embeddings give us.</p>
+
+  <h2 id="emb">3. Embeddings — turning meaning into numbers</h2>
+  <p>An <b>embedding</b> is a list of numbers (a <em>vector</em>) that represents the <em>meaning</em> of a piece of text. A special model — an <b>embedding model</b> — converts text → vector. Texts with similar meaning get vectors that are close together in space.</p>
+
+  <figure class="fig">
+    <svg viewBox="0 0 640 300" width="100%" style="max-width:600px" role="img" aria-label="Embedding space">
+      <defs><style>.ax{stroke:#d3d3da;stroke-width:1.5}.dot{r:7}.lb{font:12px sans-serif;fill:#6e6e73}.lb2{font:600 12px sans-serif;fill:#1d1d1f}</style></defs>
+      <line class="ax" x1="50" y1="260" x2="600" y2="260"/>
+      <line class="ax" x1="50" y1="260" x2="50" y2="30"/>
+      <text class="lb" x="560" y="280">meaning →</text>
+      <!-- cluster 1: animals -->
+      <circle class="dot" cx="140" cy="90" fill="#0071e3"/><text class="lb2" x="152" y="94">"dog"</text>
+      <circle class="dot" cx="180" cy="120" fill="#0071e3"/><text class="lb2" x="192" y="124">"puppy"</text>
+      <circle class="dot" cx="120" cy="140" fill="#0071e3"/><text class="lb2" x="132" y="144">"cat"</text>
+      <text class="lb" x="110" y="185" fill="#0071e3">↑ "pets" cluster</text>
+      <!-- cluster 2: vehicles -->
+      <circle class="dot" cx="450" cy="200" fill="#6e56cf"/><text class="lb2" x="462" y="204">"car"</text>
+      <circle class="dot" cx="490" cy="170" fill="#6e56cf"/><text class="lb2" x="502" y="174">"truck"</text>
+      <circle class="dot" cx="430" cy="160" fill="#6e56cf"/><text class="lb2" x="442" y="164">"vehicle"</text>
+      <text class="lb" x="420" y="235" fill="#6e56cf">↑ "transport" cluster</text>
+    </svg>
+    <figcaption>Similar meanings land near each other. Real embeddings have hundreds or thousands of dimensions; here we show 2 for intuition.</figcaption>
+  </figure>
+
+  <p>So if I embed the question "How do I reset my password?" and embed every paragraph of my docs, the paragraph about password resets will have the <em>closest</em> vector — even if it says "credential recovery." We measure closeness with <b>cosine similarity</b> (1.0 = identical meaning, 0 = unrelated).</p>
+
+  <h3>In code, embedding is one call:</h3>
+  <pre><span class="c-com"># OpenAI example</span>
+<span class="c-kw">from</span> openai <span class="c-kw">import</span> OpenAI
+client = OpenAI()
+
+vec = client.embeddings.create(
+    model=<span class="c-str">"text-embedding-3-small"</span>,
+    input=<span class="c-str">"How do I reset my password?"</span>
+).data[<span class="c-num">0</span>].embedding
+
+<span class="c-fn">print</span>(<span class="c-fn">len</span>(vec))   <span class="c-com"># 1536  → a list of 1536 floats</span>
+<span class="c-fn">print</span>(vec[:<span class="c-num">3</span>])  <span class="c-com"># [0.021, -0.044, 0.013, ...]</span></pre>
+
+  <div class="tip"><b>Embedding model ≠ chat model.</b> They're different models with different jobs. The chat model (e.g. <code>gpt-4o</code>, <code>claude-opus-4-8</code>) writes answers; the embedding model (e.g. <code>text-embedding-3-small</code>) only turns text into vectors. RAG uses both.</div>
+
+  <h2 id="vdb">4. Vector databases & similarity search</h2>
+  <p>Once your documents are vectors, you need somewhere to store them and a fast way to ask "which stored vectors are closest to <em>this</em> query vector?" That's a <b>vector database</b>.</p>
+
+  <table>
+    <tr><th>Vector DB</th><th>Best for</th><th>Notes</th></tr>
+    <tr><td><b>Chroma</b></td><td>Learning, local prototypes</td><td>Pip-installable, runs in your script. We'll use this.</td></tr>
+    <tr><td><b>FAISS</b></td><td>Fast local search, full control</td><td>A library (by Meta), not a server. Very fast.</td></tr>
+    <tr><td><b>Pinecone / Weaviate / Qdrant</b></td><td>Production, scale</td><td>Managed/hosted, handle millions of vectors.</td></tr>
+    <tr><td><b>pgvector</b></td><td>Already using Postgres</td><td>Adds vector search to your existing DB.</td></tr>
+  </table>
+
+  <p>The core operation is always the same: <code>db.query(query_vector, top_k=3)</code> → returns the 3 most similar stored chunks. You don't implement the math; the DB does it efficiently.</p>
+
+  <h2 id="chunk">5. Chunking — splitting documents</h2>
+  <p>You don't embed a whole 50-page PDF as one vector — that would blur all its meaning into a single point and you couldn't retrieve specific facts. Instead you split it into <b>chunks</b> (e.g. ~500–1000 characters each), and embed each chunk separately.</p>
+
+  <figure class="fig">
+    <svg viewBox="0 0 660 200" width="100%" style="max-width:620px" role="img" aria-label="Chunking">
+      <defs><style>.doc{fill:#f5f5f7;stroke:#d3d3da;stroke-width:1.5}.ch{fill:#eef1f4;stroke:#0071e3;stroke-width:1.5}.t{fill:#1d1d1f;font:600 13px sans-serif}.m{fill:#6e6e73;font:11px sans-serif}</style></defs>
+      <rect class="doc" x="20" y="50" width="120" height="110" rx="8"/>
+      <text class="t" x="80" y="100" text-anchor="middle">Big</text>
+      <text class="t" x="80" y="118" text-anchor="middle">Document</text>
+      <text class="m" x="80" y="178" text-anchor="middle">1 PDF</text>
+      <path d="M150,105 L200,105" stroke="#6e56cf" stroke-width="2" fill="none" marker-end="url(#aa)"/>
+      <defs><marker id="aa" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#6e56cf"/></marker></defs>
+      <text class="m" x="175" y="98" text-anchor="middle">split</text>
+      <rect class="ch" x="210" y="40" width="120" height="34" rx="7"/><text class="t" x="270" y="62" text-anchor="middle">chunk 1</text>
+      <rect class="ch" x="210" y="84" width="120" height="34" rx="7"/><text class="t" x="270" y="106" text-anchor="middle">chunk 2</text>
+      <rect class="ch" x="210" y="128" width="120" height="34" rx="7"/><text class="t" x="270" y="150" text-anchor="middle">chunk 3 …</text>
+      <path d="M340,105 L390,105" stroke="#6e56cf" stroke-width="2" fill="none" marker-end="url(#aa)"/>
+      <text class="m" x="365" y="98" text-anchor="middle">embed each</text>
+      <rect class="ch" x="400" y="40" width="240" height="34" rx="7"/><text class="m" x="412" y="62" font-family="monospace">[0.02, -0.1, 0.4, ...]</text>
+      <rect class="ch" x="400" y="84" width="240" height="34" rx="7"/><text class="m" x="412" y="106" font-family="monospace">[0.11, 0.07, -0.2, ...]</text>
+      <rect class="ch" x="400" y="128" width="240" height="34" rx="7"/><text class="m" x="412" y="150" font-family="monospace">[-0.3, 0.22, 0.05, ...]</text>
+    </svg>
+    <figcaption>Each chunk becomes its own searchable vector. Retrieval returns whole chunks, so chunk size affects answer quality.</figcaption>
+  </figure>
+
+  <div class="note"><b>Chunking rules of thumb.</b>
+    <ul style="margin:8px 0 0">
+      <li><b>Size:</b> ~500–1000 characters (or ~100–250 tokens) is a solid default.</li>
+      <li><b>Overlap:</b> let chunks overlap by ~10–20% so a sentence split across the boundary isn't lost.</li>
+      <li><b>Respect structure:</b> split on paragraphs/headings when possible, not mid-word.</li>
+      <li><b>Too big</b> = retrieval is imprecise &amp; wastes context. <b>Too small</b> = chunks lose meaning. Experiment.</li>
+    </ul>
+  </div>
+
+  <h2 id="flow">6. The full RAG pipeline, step by step</h2>
+  <p>RAG has two phases. The <b>indexing</b> phase happens once (or whenever docs change). The <b>query</b> phase happens on every user question.</p>
+
+  <figure class="fig">
+    <svg viewBox="0 0 700 360" width="100%" style="max-width:680px" role="img" aria-label="RAG pipeline">
+      <defs>
+        <marker id="ar" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#0071e3"/></marker>
+        <style>.bx{fill:#f5f5f7;stroke:#d3d3da;stroke-width:1.5}.bxg{fill:#eef1f4;stroke:#0071e3;stroke-width:1.5}.bxp{fill:#eef1f4;stroke:#6e56cf;stroke-width:1.5}.t{fill:#1d1d1f;font:600 13px sans-serif}.m{fill:#6e6e73;font:11px sans-serif}.ph{fill:#6e56cf;font:700 12px sans-serif;letter-spacing:.1em}.ln{stroke:#0071e3;stroke-width:2;fill:none;marker-end:url(#ar)}</style>
+      </defs>
+      <!-- INDEXING ROW -->
+      <text class="ph" x="20" y="28">INDEXING  (done once)</text>
+      <rect class="bx" x="20" y="40" width="110" height="50" rx="9"/><text class="t" x="75" y="62" text-anchor="middle">Documents</text><text class="m" x="75" y="78" text-anchor="middle">PDFs, docs</text>
+      <rect class="bx" x="170" y="40" width="110" height="50" rx="9"/><text class="t" x="225" y="62" text-anchor="middle">Chunk</text><text class="m" x="225" y="78" text-anchor="middle">split text</text>
+      <rect class="bx" x="320" y="40" width="110" height="50" rx="9"/><text class="t" x="375" y="62" text-anchor="middle">Embed</text><text class="m" x="375" y="78" text-anchor="middle">→ vectors</text>
+      <rect class="bxg" x="470" y="40" width="150" height="50" rx="9"/><text class="t" x="545" y="62" text-anchor="middle">Vector DB</text><text class="m" x="545" y="78" text-anchor="middle">store vectors</text>
+      <path class="ln" d="M130,65 L168,65"/><path class="ln" d="M280,65 L318,65"/><path class="ln" d="M430,65 L468,65"/>
+
+      <!-- QUERY ROW -->
+      <text class="ph" x="20" y="160">QUERY  (every question)</text>
+      <rect class="bx" x="20" y="175" width="120" height="50" rx="9"/><text class="t" x="80" y="197" text-anchor="middle">User question</text><text class="m" x="80" y="213" text-anchor="middle">"What's...?"</text>
+      <rect class="bx" x="180" y="175" width="110" height="50" rx="9"/><text class="t" x="235" y="197" text-anchor="middle">Embed Q</text><text class="m" x="235" y="213" text-anchor="middle">→ vector</text>
+      <rect class="bxg" x="330" y="175" width="150" height="50" rx="9"/><text class="t" x="405" y="197" text-anchor="middle">Search DB</text><text class="m" x="405" y="213" text-anchor="middle">top-k chunks</text>
+      <path class="ln" d="M140,200 L178,200"/><path class="ln" d="M290,200 L328,200"/>
+      <!-- DB feeds search -->
+      <path class="ln" d="M545,90 L545,150 L470,150 L420,173" stroke-dasharray="4 3"/>
+      <text class="m" x="500" y="145">retrieved from index</text>
+
+      <rect class="bxp" x="330" y="265" width="150" height="50" rx="9"/><text class="t" x="405" y="287" text-anchor="middle">Build prompt</text><text class="m" x="405" y="303" text-anchor="middle">Q + chunks</text>
+      <rect class="bxp" x="520" y="265" width="160" height="50" rx="9"/><text class="t" x="600" y="287" text-anchor="middle">LLM generates</text><text class="m" x="600" y="303" text-anchor="middle">grounded answer</text>
+      <path class="ln" d="M405,225 L405,263"/><path class="ln" d="M480,290 L518,290"/>
+      <!-- answer back to user -->
+      <path class="ln" d="M520,300 L80,300 L80,227" stroke-dasharray="4 3"/>
+      <text class="m" x="250" y="295" text-anchor="middle">answer returned to user</text>
+    </svg>
+    <figcaption>Top: build the index once. Bottom: for each question, embed it, retrieve the closest chunks, stuff them into the prompt, and let the LLM answer.</figcaption>
+  </figure>
+
+  <ol class="steps">
+    <li><h4>Load &amp; chunk your documents</h4><p class="muted">Read PDFs/text, split into overlapping chunks.</p></li>
+    <li><h4>Embed every chunk → store in vector DB</h4><p class="muted">One-time indexing. Re-run only when documents change.</p></li>
+    <li><h4>User asks a question → embed the question</h4><p class="muted">Same embedding model as the chunks (this matters!).</p></li>
+    <li><h4>Search the DB for the top-k closest chunks</h4><p class="muted">e.g. the 3–5 most relevant snippets.</p></li>
+    <li><h4>Build a prompt: question + retrieved chunks</h4><p class="muted">"Use this context to answer the question."</p></li>
+    <li><h4>LLM generates a grounded answer</h4><p class="muted">Now it's answering from <em>your</em> data, often with citations.</p></li>
+  </ol>
+
+  <h2 id="prompt">7. What the final prompt actually looks like</h2>
+  <p>This demystifies the whole thing. After retrieval, you literally build a string like this and send it to the LLM:</p>
+  <pre><span class="c-kw">You are a helpful assistant. Answer the question using ONLY the
+context below. If the answer isn't in the context, say
+"I don't know based on the provided documents."</span>
+
+<span class="c-com">--- CONTEXT (retrieved chunks) ---</span>
+<span class="c-str">[Chunk 1] Employees accrue 1.5 vacation days per month, up to
+a maximum of 25 days per year...</span>
+
+<span class="c-str">[Chunk 2] Unused vacation days roll over to the next year but
+expire after 18 months...</span>
+
+<span class="c-com">--- QUESTION ---</span>
+<span class="c-str">How many vacation days can I earn in a year?</span></pre>
+
+  <div class="tip"><b>This is the "aha" moment.</b> RAG isn't magic — it's smart search + a well-built prompt. The LLM never touched your database. You retrieved the right text and handed it over. The instruction "use ONLY the context" is what dramatically reduces hallucination.</div>
+
+  <h2 id="vs">8. RAG vs. fine-tuning vs. long context</h2>
+  <table>
+    <tr><th>Approach</th><th>What it does</th><th>Use when</th></tr>
+    <tr><td><b>RAG</b></td><td>Retrieves facts at query time and injects them</td><td>Knowledge changes often, needs citations, large/private corpora. <b>Best default for facts.</b></td></tr>
+    <tr><td><b>Fine-tuning</b></td><td>Re-trains the model to change its <em>behavior/style</em></td><td>You need a specific tone, format, or skill — not for injecting facts.</td></tr>
+    <tr><td><b>Long context</b></td><td>Just paste everything into a huge context window</td><td>Small, one-off docs. Simple but costly &amp; doesn't scale to big corpora.</td></tr>
+  </table>
+
+  <div class="note"><b>Common myth:</b> "To make the AI know my docs, I should fine-tune it." Usually <em>wrong</em>. Fine-tuning teaches <em>how to behave</em>, not <em>what facts to know</em>. For "know my documents," reach for RAG first — it's cheaper, updatable instantly, and gives you sources.</div>
+
+  <h3>You're ready to build</h3>
+  <p>You now understand every concept behind a RAG system. In <a href="05-build-simple-rag.html">Part 05</a> you'll build a minimal one from scratch, and in <a href="06-build-pdf-qna.html">Part 06</a> a full PDF Q&amp;A app. But first, two more concepts that unlock <em>much</em> more powerful systems: <a href="03-agents.html">Agents</a> and <a href="04-mcp.html">MCP</a>.</p>
+
+  <div class="pager">
+    <a href="01-llms.html"><div class="k">← Previous</div><div class="v">Part 01 · LLMs</div></a>
+    <a class="next" href="03-agents.html"><div class="k">Next up →</div><div class="v">Part 03 · Agents</div></a>
+  </div>
+</div>
+<script src="sidenav.js"></script>
+</body>
+</html>

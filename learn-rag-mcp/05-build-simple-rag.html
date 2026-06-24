@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part 05 — Build a Simple RAG App</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav class="nav"><div class="inner">
+  <a href="04-mcp.html">← Part 04 · MCP</a>
+  <span class="crumb">Part 05 · Build Simple RAG</span>
+  <a href="06-build-pdf-qna.html">Next: PDF Q&amp;A →</a>
+</div></nav>
+
+<div class="wrap">
+  <div class="hero">
+    <span class="tag">Part 05 — Build #1</span>
+    <h1>⚙️ Build a Simple RAG App</h1>
+    <p class="sub">Time to make it real. We'll build a working RAG system in ~60 lines of Python — no frameworks, so you see every moving part from Part 02 with your own eyes.</p>
+  </div>
+
+  <div class="note"><b>What we're building.</b> A tiny knowledge base of facts about a fictional company. You ask a question in plain English; the program finds the most relevant facts and the LLM answers using only those. By the end you'll have run real RAG end-to-end.</div>
+
+  <div class="toc"><b>Steps</b>
+    <ol>
+      <li><a href="#setup">Setup &amp; install</a></li>
+      <li><a href="#data">Our knowledge base</a></li>
+      <li><a href="#embed">Step 1 — Embed the chunks (indexing)</a></li>
+      <li><a href="#search">Step 2 — Retrieve relevant chunks</a></li>
+      <li><a href="#answer">Step 3 — Generate the answer</a></li>
+      <li><a href="#full">The complete program</a></li>
+      <li><a href="#run">Run it &amp; what you'll see</a></li>
+      <li><a href="#next">Where to go next</a></li>
+    </ol>
+  </div>
+
+  <h2 id="setup">1. Setup &amp; install</h2>
+  <p>We'll use OpenAI for both embeddings and the chat model, and NumPy for the similarity math (so you see it's not magic). No vector DB yet — we'll keep vectors in a Python list to stay transparent.</p>
+  <pre><span class="fname">terminal</span><span class="c-com"># Create a folder and install dependencies</span>
+pip install openai numpy
+
+<span class="c-com"># Set your API key (do NOT hard-code it)</span>
+<span class="c-com"># macOS/Linux:</span>
+export OPENAI_API_KEY=<span class="c-str">"sk-..."</span>
+<span class="c-com"># Windows (PowerShell):</span>
+$env:OPENAI_API_KEY=<span class="c-str">"sk-..."</span></pre>
+
+  <div class="tip"><b>No API key / want it free &amp; local?</b> Swap OpenAI for local models with <code>sentence-transformers</code> (embeddings) + <a href="https://ollama.com">Ollama</a> (chat). The structure is identical; only the two model calls change. We note the swaps inline.</div>
+
+  <h2 id="data">2. Our knowledge base</h2>
+  <p>Real RAG loads PDFs (Part 06). Here we hard-code a few "chunks" so the focus stays on the RAG mechanics:</p>
+  <pre><span class="fname">app.py</span>documents = [
+    <span class="c-str">"Acme Inc was founded in 2010 and is headquartered in Berlin."</span>,
+    <span class="c-str">"Employees get 25 vacation days per year, accrued monthly."</span>,
+    <span class="c-str">"The company's flagship product is a project tool called BoltBoard."</span>,
+    <span class="c-str">"Remote work is allowed up to 3 days per week."</span>,
+    <span class="c-str">"The support team can be reached at help@acme.example."</span>,
+]</pre>
+
+  <h2 id="embed">3. Step 1 — Embed the chunks (indexing)</h2>
+  <p>We turn each chunk into a vector once, up front. We store them alongside the original text so we can return the text after a match.</p>
+  <div class="step"><span class="lbl">STEP 1 · INDEX</span>
+  <pre><span class="c-kw">import</span> os, numpy <span class="c-kw">as</span> np
+<span class="c-kw">from</span> openai <span class="c-kw">import</span> OpenAI
+
+client = OpenAI()  <span class="c-com"># reads OPENAI_API_KEY from the environment</span>
+
+<span class="c-kw">def</span> <span class="c-fn">embed</span>(text):
+    <span class="c-str">"""Turn text into a vector (list of floats)."""</span>
+    r = client.embeddings.create(model=<span class="c-str">"text-embedding-3-small"</span>, input=text)
+    <span class="c-kw">return</span> np.array(r.data[<span class="c-num">0</span>].embedding)
+
+<span class="c-com"># Build the "index": a list of (text, vector) pairs</span>
+index = [(doc, <span class="c-fn">embed</span>(doc)) <span class="c-kw">for</span> doc <span class="c-kw">in</span> documents]
+<span class="c-fn">print</span>(<span class="c-str">f"Indexed {len(index)} chunks."</span>)</pre>
+  </div>
+  <div class="note"><b>Local swap:</b> replace <code>embed</code> with<br><code>from sentence_transformers import SentenceTransformer</code> → <code>m = SentenceTransformer("all-MiniLM-L6-v2")</code> → <code>return m.encode(text)</code>. No API needed.</div>
+
+  <h2 id="search">4. Step 2 — Retrieve relevant chunks</h2>
+  <p>Given a question, embed it and find the chunks whose vectors are closest. We use <b>cosine similarity</b> — the standard meaning-distance measure from Part 02.</p>
+  <div class="step"><span class="lbl">STEP 2 · RETRIEVE</span>
+  <pre><span class="c-kw">def</span> <span class="c-fn">cosine</span>(a, b):
+    <span class="c-str">"""1.0 = identical meaning, 0 = unrelated."""</span>
+    <span class="c-kw">return</span> np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+<span class="c-kw">def</span> <span class="c-fn">retrieve</span>(question, top_k=<span class="c-num">2</span>):
+    q_vec = <span class="c-fn">embed</span>(question)
+    <span class="c-com"># score every chunk, sort by similarity, take the best</span>
+    scored = [(<span class="c-fn">cosine</span>(q_vec, vec), text) <span class="c-kw">for</span> text, vec <span class="c-kw">in</span> index]
+    scored.sort(reverse=<span class="c-kw">True</span>)
+    <span class="c-kw">return</span> [text <span class="c-kw">for</span> _, text <span class="c-kw">in</span> scored[:top_k]]</pre>
+  </div>
+  <div class="tip"><b>That's the entire "vector database" in 3 lines.</b> A real vector DB (Chroma, FAISS, Pinecone) does exactly this — score + sort + top-k — but optimized to handle millions of vectors fast. Here you see the actual mechanism.</div>
+
+  <h2 id="answer">5. Step 3 — Generate the answer</h2>
+  <p>We stuff the retrieved chunks into a prompt (exactly like the example in Part 02) and ask the LLM to answer using only them.</p>
+  <div class="step"><span class="lbl">STEP 3 · GENERATE</span>
+  <pre><span class="c-kw">def</span> <span class="c-fn">answer</span>(question):
+    chunks = <span class="c-fn">retrieve</span>(question)
+    context = <span class="c-str">"\n"</span>.join(<span class="c-str">f"- {c}"</span> <span class="c-kw">for</span> c <span class="c-kw">in</span> chunks)
+
+    prompt = <span class="c-str">f"""Answer the question using ONLY the context below.
+If the answer isn't there, say you don't know.
+
+Context:
+{context}
+
+Question: {question}"""</span>
+
+    resp = client.chat.completions.create(
+        model=<span class="c-str">"gpt-4o-mini"</span>,
+        messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: prompt}],
+    )
+    <span class="c-kw">return</span> resp.choices[<span class="c-num">0</span>].message.content, chunks</pre>
+  </div>
+
+  <h2 id="full">6. The complete program</h2>
+  <p>Here's everything in one file. Copy it into <code>app.py</code> and you're done.</p>
+  <pre><span class="fname">app.py — complete</span><span class="c-kw">import</span> os, numpy <span class="c-kw">as</span> np
+<span class="c-kw">from</span> openai <span class="c-kw">import</span> OpenAI
+
+client = OpenAI()
+
+documents = [
+    <span class="c-str">"Acme Inc was founded in 2010 and is headquartered in Berlin."</span>,
+    <span class="c-str">"Employees get 25 vacation days per year, accrued monthly."</span>,
+    <span class="c-str">"The company's flagship product is a project tool called BoltBoard."</span>,
+    <span class="c-str">"Remote work is allowed up to 3 days per week."</span>,
+    <span class="c-str">"The support team can be reached at help@acme.example."</span>,
+]
+
+<span class="c-kw">def</span> <span class="c-fn">embed</span>(text):
+    r = client.embeddings.create(model=<span class="c-str">"text-embedding-3-small"</span>, input=text)
+    <span class="c-kw">return</span> np.array(r.data[<span class="c-num">0</span>].embedding)
+
+<span class="c-kw">def</span> <span class="c-fn">cosine</span>(a, b):
+    <span class="c-kw">return</span> np.dot(a, b) / (np.linalg.norm(a) * np.linalg.norm(b))
+
+<span class="c-com"># --- INDEX once ---</span>
+index = [(doc, <span class="c-fn">embed</span>(doc)) <span class="c-kw">for</span> doc <span class="c-kw">in</span> documents]
+
+<span class="c-kw">def</span> <span class="c-fn">retrieve</span>(question, top_k=<span class="c-num">2</span>):
+    q = <span class="c-fn">embed</span>(question)
+    scored = <span class="c-fn">sorted</span>(((<span class="c-fn">cosine</span>(q, v), t) <span class="c-kw">for</span> t, v <span class="c-kw">in</span> index), reverse=<span class="c-kw">True</span>)
+    <span class="c-kw">return</span> [t <span class="c-kw">for</span> _, t <span class="c-kw">in</span> scored[:top_k]]
+
+<span class="c-kw">def</span> <span class="c-fn">answer</span>(question):
+    chunks = <span class="c-fn">retrieve</span>(question)
+    context = <span class="c-str">"\n"</span>.join(<span class="c-str">f"- {c}"</span> <span class="c-kw">for</span> c <span class="c-kw">in</span> chunks)
+    prompt = <span class="c-str">f"Answer using ONLY this context. If absent, say you don't know.\n\n"</span> \
+             <span class="c-str">f"Context:\n{context}\n\nQuestion: {question}"</span>
+    resp = client.chat.completions.create(
+        model=<span class="c-str">"gpt-4o-mini"</span>,
+        messages=[{<span class="c-str">"role"</span>: <span class="c-str">"user"</span>, <span class="c-str">"content"</span>: prompt}])
+    <span class="c-kw">return</span> resp.choices[<span class="c-num">0</span>].message.content, chunks
+
+<span class="c-com"># --- Interactive loop ---</span>
+<span class="c-kw">if</span> __name__ == <span class="c-str">"__main__"</span>:
+    <span class="c-fn">print</span>(<span class="c-str">"Ask me about Acme Inc (Ctrl+C to quit)\n"</span>)
+    <span class="c-kw">while</span> <span class="c-kw">True</span>:
+        q = <span class="c-fn">input</span>(<span class="c-str">"❓ "</span>)
+        ans, used = <span class="c-fn">answer</span>(q)
+        <span class="c-fn">print</span>(<span class="c-str">f"\n💡 {ans}\n"</span>)
+        <span class="c-fn">print</span>(<span class="c-str">f"   (retrieved: {used})\n"</span>)</pre>
+
+  <h2 id="run">7. Run it &amp; what you'll see</h2>
+  <pre><span class="fname">terminal</span>$ python app.py
+Ask me about Acme Inc (Ctrl+C to quit)
+
+❓ <span style="color:var(--accent3)">how many days off do I get?</span>
+
+💡 You get 25 vacation days per year, accrued monthly.
+
+   (retrieved: ['Employees get 25 vacation days per year, accrued monthly.',
+                'Remote work is allowed up to 3 days per week.'])
+
+❓ <span style="color:var(--accent3)">who founded SpaceX?</span>
+
+💡 I don't know based on the provided documents.</pre>
+
+  <div class="note"><b>Look closely at two things.</b> (1) You asked about "days off" but the doc says "vacation days" — different words, yet it matched. That's <b>semantic search</b> via embeddings at work. (2) For an out-of-scope question, it said "I don't know" instead of hallucinating — because of the "use ONLY this context" instruction. <b>That's RAG doing its job.</b></div>
+
+  <h2 id="next">8. Where to go next</h2>
+  <table>
+    <tr><th>Upgrade</th><th>What changes</th></tr>
+    <tr><td>Real documents</td><td>Load PDFs &amp; chunk them → <a href="06-build-pdf-qna.html">Part 06</a></td></tr>
+    <tr><td>A real vector DB</td><td>Replace the Python list with Chroma — persists &amp; scales</td></tr>
+    <tr><td>Citations</td><td>Track which chunk → which source file/page, show it in the answer</td></tr>
+    <tr><td>Make it a tool</td><td>Wrap <code>retrieve()</code> in <code>@mcp.tool()</code> → an MCP server (Part 04)</td></tr>
+    <tr><td>Better chunking</td><td>Overlap, sentence-aware splits for long docs</td></tr>
+  </table>
+
+  <div class="tip"><b>You just built RAG from scratch.</b> Every production system — LangChain, LlamaIndex, enterprise search — is this same loop (embed → retrieve → augment → generate) with more polish. You now understand the engine, not just the wrapper.</div>
+
+  <div class="pager">
+    <a href="04-mcp.html"><div class="k">← Previous</div><div class="v">Part 04 · MCP</div></a>
+    <a class="next" href="06-build-pdf-qna.html"><div class="k">Next up →</div><div class="v">Part 06 · PDF Q&amp;A App</div></a>
+  </div>
+</div>
+<script src="sidenav.js"></script>
+</body>
+</html>

@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Part 04 — MCP: Model Context Protocol</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<nav class="nav"><div class="inner">
+  <a href="03-agents.html">← Part 03 · Agents</a>
+  <span class="crumb">Part 04 · MCP</span>
+  <a href="05-build-simple-rag.html">Next: Build RAG →</a>
+</div></nav>
+
+<div class="wrap">
+  <div class="hero">
+    <span class="tag">Part 04 — The Standard</span>
+    <h1>🔌 MCP: Model Context Protocol</h1>
+    <p class="sub">Often called "USB-C for AI." MCP is an open standard that lets any AI app connect to any tool or data source the same way — no custom glue per integration. Here's what it is, why it matters, and how to build one.</p>
+  </div>
+
+  <div class="toc"><b>On this page</b>
+    <ol>
+      <li><a href="#what">What MCP is (the USB-C analogy)</a></li>
+      <li><a href="#nm">The N×M → N+M shift</a></li>
+      <li><a href="#parts">The architecture: hosts, clients, servers</a></li>
+      <li><a href="#prim">The 3 things a server exposes</a></li>
+      <li><a href="#simple">Simplest example: a "hello" tool</a></li>
+      <li><a href="#build">Build a real MCP server (full code)</a></li>
+      <li><a href="#use">Using it in Claude Desktop / a client</a></li>
+      <li><a href="#practical">Practical, real-world examples</a></li>
+      <li><a href="#sig">Why MCP is significant</a></li>
+    </ol>
+  </div>
+
+  <h2 id="what">1. What MCP is (the USB-C analogy)</h2>
+  <p>Before USB-C, every device had its own charger and cable. Chaos. USB-C created <b>one connector</b> that works across phones, laptops, monitors, and drives. <b>MCP does the same for AI.</b></p>
+  <p>It's an <b>open protocol</b> (created by Anthropic, now broadly adopted) that defines a standard way for an AI application to discover and use external <em>tools</em>, <em>data</em>, and <em>prompts</em>. Build a tool as an MCP server once, and <em>any</em> MCP-compatible app — Claude Desktop, IDEs, custom agents — can use it instantly.</p>
+
+  <div class="note"><b>In one line:</b> MCP standardizes the "tool" concept from <a href="03-agents.html">Part 03</a> so tools become reusable, shareable plugins instead of bespoke code locked inside one app.</div>
+
+  <h2 id="nm">2. The N×M → N+M shift</h2>
+  <p>Recall the spaghetti from Part 03: N apps each needing custom code for M tools = <b>N×M</b> integrations. MCP collapses this. Each tool implements MCP <em>once</em> (M servers); each app speaks MCP <em>once</em> (N clients). Total work = <b>N+M</b>.</p>
+
+  <figure class="fig">
+    <svg viewBox="0 0 660 240" width="100%" style="max-width:620px" role="img" aria-label="MCP hub">
+      <defs><marker id="m1" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#0071e3"/></marker>
+      <style>.a{fill:#eef1f4;stroke:#6e56cf;stroke-width:1.5}.b{fill:#eef1f4;stroke:#0071e3;stroke-width:1.5}.hub{fill:#f5f5f7;stroke:#bf5700;stroke-width:2}.t{fill:#1d1d1f;font:600 12px sans-serif}.ln{stroke:#0071e3;stroke-width:1.6;fill:none}</style></defs>
+      <rect class="a" x="20" y="35" width="110" height="30" rx="8"/><text class="t" x="75" y="55" text-anchor="middle">App A</text>
+      <rect class="a" x="20" y="105" width="110" height="30" rx="8"/><text class="t" x="75" y="125" text-anchor="middle">App B</text>
+      <rect class="a" x="20" y="175" width="110" height="30" rx="8"/><text class="t" x="75" y="195" text-anchor="middle">App C</text>
+      <rect class="hub" x="270" y="95" width="120" height="50" rx="12"/><text class="t" x="330" y="118" text-anchor="middle" fill="#bf5700">MCP</text><text class="t" x="330" y="135" text-anchor="middle">standard</text>
+      <rect class="b" x="530" y="35" width="110" height="30" rx="8"/><text class="t" x="585" y="55" text-anchor="middle">GitHub</text>
+      <rect class="b" x="530" y="90" width="110" height="30" rx="8"/><text class="t" x="585" y="110" text-anchor="middle">Drive</text>
+      <rect class="b" x="530" y="145" width="110" height="30" rx="8"/><text class="t" x="585" y="165" text-anchor="middle">Postgres</text>
+      <rect class="b" x="530" y="195" width="110" height="22" rx="8"/><text class="t" x="585" y="211" text-anchor="middle">Slack</text>
+      <path class="ln" d="M130,50 L268,108"/><path class="ln" d="M130,120 L268,120"/><path class="ln" d="M130,190 L268,132"/>
+      <path class="ln" d="M392,108 L528,50"/><path class="ln" d="M392,118 L528,105"/><path class="ln" d="M392,128 L528,160"/><path class="ln" d="M392,138 L528,205"/>
+      <text x="330" y="185" class="t" fill="#1a7f37" text-anchor="middle">N + M connections 🎉</text>
+    </svg>
+    <figcaption>Everyone speaks one protocol through a common standard. Write a tool once; every app can use it.</figcaption>
+  </figure>
+
+  <h2 id="parts">3. The architecture: hosts, clients, servers</h2>
+  <div class="pillrow">
+    <div class="pill"><h4>🖥️ Host</h4><p>The AI app the user interacts with — Claude Desktop, an IDE, your custom agent. It contains the LLM.</p></div>
+    <div class="pill"><h4>🔗 Client</h4><p>Lives inside the host. One client per server connection; it speaks the MCP protocol.</p></div>
+    <div class="pill"><h4>⚙️ Server</h4><p>A small program <em>you</em> (or a vendor) write that exposes tools/data. E.g. a "filesystem server" or "GitHub server."</p></div>
+  </div>
+
+  <figure class="fig">
+    <svg viewBox="0 0 660 200" width="100%" style="max-width:620px" role="img" aria-label="Host client server">
+      <defs><marker id="m2" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="#6e56cf"/></marker>
+      <style>.box{fill:#f5f5f7;stroke:#d3d3da;stroke-width:1.5}.t{fill:#1d1d1f;font:600 13px sans-serif}.m{fill:#6e6e73;font:11px sans-serif}.ln{stroke:#6e56cf;stroke-width:2;fill:none;marker-end:url(#m2)}</style></defs>
+      <rect class="box" x="20" y="40" width="230" height="120" rx="12" stroke="#0071e3"/>
+      <text class="t" x="135" y="62" text-anchor="middle" fill="#0071e3">HOST (Claude Desktop)</text>
+      <rect class="box" x="40" y="75" width="90" height="40" rx="8"/><text class="m" x="85" y="100" text-anchor="middle">LLM</text>
+      <rect class="box" x="145" y="75" width="90" height="40" rx="8"/><text class="m" x="190" y="95" text-anchor="middle">MCP</text><text class="m" x="190" y="108" text-anchor="middle">client</text>
+      <text class="m" x="135" y="145" text-anchor="middle">talks to servers ↓</text>
+      <rect class="box" x="420" y="35" width="220" height="48" rx="10" stroke="#bf5700"/><text class="t" x="530" y="58" text-anchor="middle" fill="#bf5700">MCP Server: weather</text><text class="m" x="530" y="74" text-anchor="middle">tool: get_weather()</text>
+      <rect class="box" x="420" y="105" width="220" height="48" rx="10" stroke="#bf5700"/><text class="t" x="530" y="128" text-anchor="middle" fill="#bf5700">MCP Server: database</text><text class="m" x="530" y="144" text-anchor="middle">tool: run_query()</text>
+      <path class="ln" d="M250,95 L418,59"/><path class="ln" d="M250,115 L418,129"/>
+      <text class="m" x="335" y="80" text-anchor="middle">MCP protocol (JSON-RPC)</text>
+    </svg>
+    <figcaption>The host's LLM uses its MCP client to talk to one or more servers. Each server is an independent, reusable program.</figcaption>
+  </figure>
+
+  <div class="note"><b>Transport:</b> Servers run either locally (the host launches them and talks over <b>stdio</b> — standard input/output) or remotely (over <b>HTTP</b>). Under the hood the messages are <b>JSON-RPC</b>. The SDK hides all of this — you just write functions.</div>
+
+  <h2 id="prim">4. The 3 things a server exposes ("primitives")</h2>
+  <table>
+    <tr><th>Primitive</th><th>What it is</th><th>Example</th></tr>
+    <tr><td><b>Tools</b></td><td>Functions the model can <em>call</em> to take action (the main one)</td><td><code>create_issue()</code>, <code>send_email()</code>, <code>search_docs()</code></td></tr>
+    <tr><td><b>Resources</b></td><td>Read-only data the model can <em>load</em> as context</td><td>A file's contents, a DB schema, a config</td></tr>
+    <tr><td><b>Prompts</b></td><td>Reusable prompt templates the user can invoke</td><td>"Summarize this PR", "Draft a reply"</td></tr>
+  </table>
+  <div class="tip"><b>Start with Tools.</b> 90% of MCP servers are mostly tools. Resources and prompts are nice extras you can add later.</div>
+
+  <h2 id="simple">5. Simplest possible example: a "hello" tool</h2>
+  <p>The official Python SDK (<code>mcp</code>, with <code>FastMCP</code>) makes a server astonishingly short. A tool is just a decorated function:</p>
+  <pre><span class="c-com"># pip install "mcp[cli]"
+# file: hello_server.py</span>
+<span class="c-kw">from</span> mcp.server.fastmcp <span class="c-kw">import</span> FastMCP
+
+mcp = FastMCP(<span class="c-str">"hello-server"</span>)
+
+<span class="c-dec">@mcp.tool()</span>
+<span class="c-kw">def</span> <span class="c-fn">greet</span>(name: str) -> str:
+    <span class="c-str">"""Return a friendly greeting for the given name."""</span>
+    <span class="c-kw">return</span> <span class="c-str">f"Hello, {name}! 👋"</span>
+
+<span class="c-kw">if</span> __name__ == <span class="c-str">"__main__"</span>:
+    mcp.run()   <span class="c-com"># runs over stdio by default</span></pre>
+
+  <div class="note"><b>That's a complete MCP server.</b> Notice three things the SDK does for you: (1) the <b>function name</b> becomes the tool name, (2) the <b>docstring</b> becomes the description the LLM reads, (3) the <b>type hints</b> (<code>name: str</code>) auto-generate the input schema. You write a normal Python function; MCP handles the protocol.</div>
+
+  <h2 id="build">6. Build a real MCP server (full code)</h2>
+  <p>Let's make something useful: a server with multiple tools and a resource. This one does math and exposes a tiny knowledge base.</p>
+  <pre><span class="c-com"># file: util_server.py    —    run with:  python util_server.py</span>
+<span class="c-kw">from</span> mcp.server.fastmcp <span class="c-kw">import</span> FastMCP
+
+mcp = FastMCP(<span class="c-str">"utilities"</span>)
+
+<span class="c-com"># ---- TOOL 1: reliable math (LLMs are bad at arithmetic) ----</span>
+<span class="c-dec">@mcp.tool()</span>
+<span class="c-kw">def</span> <span class="c-fn">multiply</span>(a: float, b: float) -> float:
+    <span class="c-str">"""Multiply two numbers and return the exact result."""</span>
+    <span class="c-kw">return</span> a * b
+
+<span class="c-com"># ---- TOOL 2: word count ----</span>
+<span class="c-dec">@mcp.tool()</span>
+<span class="c-kw">def</span> <span class="c-fn">word_count</span>(text: str) -> int:
+    <span class="c-str">"""Count the number of words in a piece of text."""</span>
+    <span class="c-kw">return</span> <span class="c-fn">len</span>(text.split())
+
+<span class="c-com"># ---- TOOL 3: a (fake) database lookup ----</span>
+EMPLOYEES = {<span class="c-str">"alice"</span>: <span class="c-str">"Engineering"</span>, <span class="c-str">"bob"</span>: <span class="c-str">"Sales"</span>}
+
+<span class="c-dec">@mcp.tool()</span>
+<span class="c-kw">def</span> <span class="c-fn">find_department</span>(name: str) -> str:
+    <span class="c-str">"""Look up which department an employee works in."""</span>
+    <span class="c-kw">return</span> EMPLOYEES.get(name.lower(), <span class="c-str">"Not found"</span>)
+
+<span class="c-com"># ---- RESOURCE: read-only data the model can load as context ----</span>
+<span class="c-dec">@mcp.resource(</span><span class="c-str">"info://company"</span><span class="c-dec">)</span>
+<span class="c-kw">def</span> <span class="c-fn">company_info</span>() -> str:
+    <span class="c-str">"""Basic facts about the company."""</span>
+    <span class="c-kw">return</span> <span class="c-str">"Acme Inc. Founded 2010. HQ in Berlin. 200 employees."</span>
+
+<span class="c-kw">if</span> __name__ == <span class="c-str">"__main__"</span>:
+    mcp.run()</pre>
+
+  <div class="tip"><b>Test it without an LLM.</b> Run the MCP Inspector — a visual tool to poke at your server:<br><code>npx @modelcontextprotocol/inspector python util_server.py</code><br>It opens a browser UI where you can list and call your tools manually. Great for debugging before wiring up a model.</div>
+
+  <h2 id="use">7. Using your server in a client (Claude Desktop)</h2>
+  <p>To let Claude Desktop use your server, add it to the config file and restart the app.</p>
+  <p><b>Config location:</b> <code>claude_desktop_config.json</code> (macOS: <code>~/Library/Application Support/Claude/</code>; Windows: <code>%APPDATA%\Claude\</code>).</p>
+  <pre>{
+  <span class="c-str">"mcpServers"</span>: {
+    <span class="c-str">"utilities"</span>: {
+      <span class="c-str">"command"</span>: <span class="c-str">"python"</span>,
+      <span class="c-str">"args"</span>: [<span class="c-str">"C:\\path\\to\\util_server.py"</span>]
+    }
+  }
+}</pre>
+  <p>Restart Claude Desktop. You'll see a 🔌/tools icon. Now ask: <em>"What department does Alice work in?"</em> and Claude will call your <code>find_department</code> tool automatically. You just extended an AI app with zero changes to the app itself — that's the power of the standard.</p>
+
+  <div class="note"><b>Custom agents too.</b> Not just Claude Desktop. Any program can be an MCP host using the client SDK (<code>mcp.client</code>) — your own Python agent can launch a server, list its tools, and feed them to the LLM exactly like the Part 03 agent loop. The server is reusable across all of them.</div>
+
+  <h2 id="practical">8. Practical, real-world examples</h2>
+  <table>
+    <tr><th>MCP Server</th><th>What it lets the AI do</th></tr>
+    <tr><td><b>Filesystem</b></td><td>Read/write files in an allowed folder</td></tr>
+    <tr><td><b>GitHub</b></td><td>Open issues, read PRs, search repos, comment</td></tr>
+    <tr><td><b>Postgres / SQLite</b></td><td>Inspect schema and run read-only queries on your DB</td></tr>
+    <tr><td><b>Google Drive / Slack</b></td><td>Search documents, read messages, post updates</td></tr>
+    <tr><td><b>Your RAG system</b></td><td>Expose <code>search_documents()</code> so <em>any</em> AI app can query your knowledge base</td></tr>
+    <tr><td><b>Browser / Puppeteer</b></td><td>Navigate pages, scrape, fill forms</td></tr>
+  </table>
+
+  <div class="tip"><b>Connecting the whole guide:</b> In Part 06 you'll build a PDF Q&amp;A RAG system. Wrap its retrieval function in an <code>@mcp.tool()</code> and you've turned your RAG app into a reusable MCP server — usable from Claude Desktop, your IDE, or any agent. RAG + Agents + MCP, fully assembled.</div>
+
+  <h2 id="sig">9. Why MCP is significant</h2>
+  <ul>
+    <li><b>Write once, use everywhere.</b> A tool built as an MCP server works across every compatible host — no rewrites.</li>
+    <li><b>An ecosystem, not silos.</b> Hundreds of community servers already exist; you plug them in like browser extensions.</li>
+    <li><b>Separation of concerns.</b> Tool authors and app authors work independently against a shared contract.</li>
+    <li><b>Future-proofing.</b> Swap the underlying LLM or app; your servers keep working.</li>
+    <li><b>Security boundaries.</b> Servers declare exactly what they expose; hosts control what's allowed and ask the user to approve.</li>
+  </ul>
+
+  <div class="warn"><b>A note on safety.</b> MCP servers can take real actions (delete files, run queries, post messages). Only install servers you trust, scope their permissions tightly (e.g. a single folder, read-only DB user), and keep a human in the loop for destructive actions. The protocol supports user approval prompts — use them.</div>
+
+  <div class="note"><b>Recap of the journey so far:</b> LLMs predict text (Part 01) → RAG feeds them your facts (Part 02) → Agents let them act via tools (Part 03) → MCP makes those tools a universal, reusable standard (Part 04). Now let's <em>build</em>.</div>
+
+  <div class="pager">
+    <a href="03-agents.html"><div class="k">← Previous</div><div class="v">Part 03 · Agents</div></a>
+    <a class="next" href="05-build-simple-rag.html"><div class="k">Next up →</div><div class="v">Part 05 · Build Simple RAG</div></a>
+  </div>
+</div>
+<script src="sidenav.js"></script>
+</body>
+</html>
