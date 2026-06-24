@@ -59,23 +59,101 @@
     display:block; width:100%; height:100%; border:0; background:var(--bg,#fff);
   }
 
+  /* ---- Mobile-only chrome (hidden on desktop) ---- */
+  .hub-mobilebar{ display:none; }              /* slim top bar: brand · current tab · ☰  */
+  .hub-menu-btn{ display:none; }               /* the ☰ toggle */
+  .hub-drawer-backdrop{ display:none; }        /* dimmer behind the drawer */
+
   /* ---- Mobile (phones / small tablets) ---- */
   @media (max-width:860px){
-    /* hide the brand wordmark so the 4 tab pills get priority; keep the logo mark.
-       the bar already scrolls horizontally (overflow-x:auto) if still tight. */
-    .hub-brand span{ display:none; }
-    .hub-brand{ padding-right:10px; margin-right:4px; }
-    .hub-tab{ padding:9px 13px; }
-    /* the inline GenAI-Mastery sidebar (tab 1) is position:fixed at top:0 and would
-       slide in *under* the sticky tab bar; nudge it below the bar and shorten it so
-       its own header isn't hidden. Scoped to the hub only — module pages are untouched. */
-    #panel-mastery .sidebar{ top:47px; height:calc(100dvh - 47px); }
+    /* Replace the horizontal pill bar with a slim header + a right slide-in drawer.
+       Desktop layout above is completely untouched — all of this lives in the media query. */
+
+    /* slim sticky header: logo · active-tab name · hamburger */
+    .hub-mobilebar{
+      display:flex; align-items:center; gap:10px;
+      position:sticky; top:0; z-index:60; height:52px;
+      padding:0 14px;
+      background:var(--bg, #fff);
+      border-bottom:1px solid var(--border, #e3e3e8);
+      backdrop-filter:saturate(1.4) blur(8px); -webkit-backdrop-filter:saturate(1.4) blur(8px);
+    }
+    .hub-mobilebar .mk{
+      width:28px; height:28px; border-radius:8px; flex:none;
+      display:grid; place-items:center; color:#fff; font-weight:800; font-size:15px;
+      background:linear-gradient(135deg,#6e56cf,#0071e3);
+    }
+    .hub-mobilebar .cur{
+      flex:1; min-width:0; font-weight:700; font-size:15px; letter-spacing:-.01em;
+      color:var(--text, #1d1d1f); white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+    }
+    .hub-menu-btn{
+      display:grid; place-items:center; flex:none;
+      width:42px; height:42px; border-radius:10px; cursor:pointer;
+      border:1px solid var(--border, #e3e3e8); background:var(--bg, #fff);
+      color:var(--text, #1d1d1f);
+    }
+    .hub-menu-btn:active{ background:rgba(110,86,207,.10); }
+
+    /* turn the existing tablist into a right-hand drawer */
+    .hub-tabs{
+      position:fixed; top:0; right:0; bottom:0; left:auto;
+      width:min(82vw, 320px); height:100dvh;
+      flex-direction:column; align-items:stretch; gap:6px;
+      padding:18px 14px; overflow-y:auto;
+      border-bottom:0; border-left:1px solid var(--border, #e3e3e8);
+      box-shadow:-12px 0 40px rgba(0,0,0,.22);
+      transform:translateX(100%); transition:transform .26s ease;
+      z-index:70;
+    }
+    body.hub-nav-open .hub-tabs{ transform:translateX(0); }
+
+    /* drawer header (brand) sits at the top of the panel */
+    .hub-brand{
+      display:flex; padding:4px 8px 14px; margin:0 0 6px;
+      border-right:0; border-bottom:1px solid var(--border, #e3e3e8);
+    }
+    .hub-brand span{ display:inline; }          /* show full wordmark inside the drawer */
+
+    /* each tab becomes a full-width stacked row (icon + label) */
+    .hub-tab{
+      width:100%; text-align:left; border-radius:12px;
+      padding:14px 14px; font-size:15.5px; white-space:normal;
+      display:flex; align-items:center;
+    }
+    .hub-tab .em{ margin-right:12px; font-size:18px; }
+    .hub-tab[aria-selected="true"]{ box-shadow:none; }
+
+    /* backdrop */
+    .hub-drawer-backdrop{
+      display:block; position:fixed; inset:0; z-index:65;
+      background:rgba(0,0,0,.42); opacity:0; pointer-events:none;
+      transition:opacity .26s ease;
+    }
+    body.hub-nav-open .hub-drawer-backdrop{ opacity:1; pointer-events:auto; }
+
+    /* the iframe panels now sit under the 52px mobile header (not the old 47px bar) */
+    .hub-frame-wrap{ height:calc(100dvh - 52px); }
+    /* inline GenAI-Mastery panel: its own sticky topbar + slide-in sidebar must
+       clear the hub's 52px mobile header so the module hamburger stays tappable. */
+    #panel-mastery .topbar{ top:52px; }
+    #panel-mastery .sidebar{ top:52px; height:calc(100dvh - 52px); }
   }
 </style>
 </head>
 <body data-page="00">
 
-<!-- ===================== TOP-LEVEL TAB BAR ===================== -->
+<!-- ===================== MOBILE HEADER (hidden on desktop) ===================== -->
+<div class="hub-mobilebar">
+  <span class="mk">G</span>
+  <span class="cur" data-current-tab>GenAI Mastery</span>
+  <button class="hub-menu-btn" aria-label="Open navigation" aria-expanded="false" data-hub-menu>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+  </button>
+</div>
+<div class="hub-drawer-backdrop" data-hub-backdrop></div>
+
+<!-- ===================== TOP-LEVEL TAB BAR (becomes a right drawer on mobile) ===================== -->
 <div class="hub-tabs" role="tablist" aria-label="Learning portals">
   <div class="hub-brand"><span class="mk">G</span><span>GenAI Learning Hub</span></div>
   <button class="hub-tab" role="tab" id="tab-mastery"  aria-controls="panel-mastery"  aria-selected="true"><span class="em">🎓</span>GenAI Mastery</button>
@@ -198,6 +276,22 @@
     'tab-ragdeep':'panel-ragdeep'
   };
 
+  // Short labels for the mobile header (the full button text can be long).
+  var SHORT = {
+    'tab-mastery':'GenAI Mastery',
+    'tab-agents' :'Understanding AI Agents',
+    'tab-ragmcp' :'RAG · MCP · Agents · LLMs',
+    'tab-ragdeep':'RAG, End-to-End'
+  };
+  var curLabel = document.querySelector('[data-current-tab]');
+
+  /* ---- Mobile right-drawer open/close ---- */
+  function setDrawer(open){
+    document.body.classList.toggle('hub-nav-open', open);
+    var btn = document.querySelector('[data-hub-menu]');
+    if(btn) btn.setAttribute('aria-expanded', open ? 'true':'false');
+  }
+
   function activate(tabId, push){
     tabs.forEach(function(t){ t.setAttribute('aria-selected', t.id === tabId ? 'true':'false'); });
     Object.keys(panels).forEach(function(tid){
@@ -210,6 +304,8 @@
         if(fr && !fr.getAttribute('src')) fr.setAttribute('src', fr.getAttribute('data-src'));
       }
     });
+    if(curLabel && SHORT[tabId]) curLabel.textContent = SHORT[tabId];   // reflect in mobile header
+    setDrawer(false);                                                   // close drawer after choosing
     if(push){
       try{ history.replaceState(null, '', '#' + tabId.replace('tab-','')); }catch(e){}
     }
@@ -218,6 +314,13 @@
   tabs.forEach(function(t){
     t.addEventListener('click', function(){ activate(t.id, true); });
   });
+
+  // hamburger + backdrop wiring
+  var menuBtn = document.querySelector('[data-hub-menu]');
+  var backdrop = document.querySelector('[data-hub-backdrop]');
+  if(menuBtn) menuBtn.addEventListener('click', function(){ setDrawer(!document.body.classList.contains('hub-nav-open')); });
+  if(backdrop) backdrop.addEventListener('click', function(){ setDrawer(false); });
+  document.addEventListener('keydown', function(e){ if(e.key === 'Escape') setDrawer(false); });
 
   // Honor deep-link hash (#agents / #ragmcp / #mastery) on load.
   var initial = (location.hash || '').replace('#','');
