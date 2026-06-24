@@ -49,6 +49,10 @@
     "  color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:15px}",
     ".ta-brand b{font-size:.92rem;color:var(--ink,#1a1a1a);line-height:1.1}",
     ".ta-brand span{display:block;font-size:.68rem;color:var(--muted,#6b6b6b);font-weight:400}",
+    ".ta-home{display:flex;align-items:center;gap:.5rem;margin:.8rem 1.1rem .2rem;padding:.5rem .8rem;",
+    "  border:1px solid var(--rule,#e2e0db);border-radius:8px;background:#fff;color:var(--ink,#1a1a1a);",
+    "  font-size:.82rem;font-weight:600;text-decoration:none}",
+    ".ta-home:hover{border-color:var(--accent,#9a3b1b);color:var(--accent,#9a3b1b);text-decoration:none}",
     ".ta-glabel{font-size:.66rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted,#6b6b6b);",
     "  font-weight:700;padding:1.1rem 1.3rem .35rem}",
     ".ta-link{display:flex;gap:.55rem;align-items:center;padding:.45rem 1.3rem;font-size:.86rem;",
@@ -104,7 +108,8 @@
     var side = document.createElement("aside");
     side.className = "ta-sidebar";
     var html = '<a class="ta-brand" href="' + rel("index.html") + '" style="text-decoration:none">' +
-      '<span class="mk">A</span><span><b>Understanding AI Agents</b><span>Agent Literacy course</span></span></a>';
+      '<span class="mk">A</span><span><b>Understanding AI Agents</b><span>Agent Literacy course</span></span></a>' +
+      '<a class="ta-home" data-hubhome href="#"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h5v-6h4v6h5V10"/></svg> Hub home</a>';
     var lastGroup = null;
     PAGES.forEach(function (p) {
       if (p.group !== lastGroup) { html += '<div class="ta-glabel">' + p.group + "</div>"; lastGroup = p.group; }
@@ -115,6 +120,16 @@
     });
     side.innerHTML = html;
     document.body.appendChild(side);
+
+    /* "Hub home" → navigate the top window back to the hub home (this page may be in an iframe) */
+    var homeLink = side.querySelector("[data-hubhome]");
+    if (homeLink) homeLink.addEventListener("click", function (e) {
+      e.preventDefault();
+      if (window.parent !== window.self) {
+        try { window.parent.postMessage({ type: "genai-hub-home" }, "*"); return; } catch (err) {}
+      }
+      location.href = "../genai-portal/index.html";
+    });
 
     /* mobile menu + backdrop */
     var menu = document.createElement("button");
