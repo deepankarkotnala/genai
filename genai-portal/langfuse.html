@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Langfuse — LLM Observability, End-to-End · GenAI Mastery</title>
+<meta name="description" content="Learn Langfuse from first principles to a working production setup: traces, spans, generations, sessions, users, scores, prompt management, evaluation and a fully instrumented RAG Q&A application.">
+<link rel="stylesheet" href="assets/styles.css">
+<style>
+  .nav .sec-num { font-family: var(--font-mono); }
+  .kv { width:100%; }
+  .lf-tree { font-family:var(--font-mono); font-size:13px; line-height:1.7; background:var(--bg-subtle); border:1px solid var(--border); border-radius:10px; padding:16px 18px; overflow-x:auto; }
+  .lf-tree .t-trace { color:var(--accent); font-weight:700; }
+  .lf-tree .t-span  { color:var(--blue); }
+  .lf-tree .t-gen   { color:var(--purple); }
+  .lf-tree .t-score { color:var(--green); }
+  .lf-tree .muted   { color:var(--text-muted); }
+</style>
+</head>
+<body data-page="langfuse">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <div class="brand-mark">G</div>
+        <div class="brand-text"><strong>GenAI Mastery</strong><span>Langfuse · observability</span></div>
+      </a>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-secsearch placeholder="Jump to a section…  ( / )">
+      </div>
+      <div class="search-results" data-secresults></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Production / <b>Langfuse — LLM observability</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Observability · from basics to a working app</div>
+        <h1>Langfuse, End-to-End</h1>
+        <p class="lead"><strong>Langfuse</strong> is an open-source <em>observability and evaluation</em> platform for LLM applications. Once your app sends a prompt to an LLM, Langfuse is how you answer: <em>What did the model see? What did it return? How long did it take, what did it cost, was the answer any good — and where did it go wrong?</em> This page takes you from the core mental model to a fully instrumented RAG Q&amp;A app.</p>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~35 min read</span>
+          <span class="pill">Beginner → intermediate</span>
+          <span class="pill purple">Python · OpenAI · LangChain · FastAPI</span>
+        </div>
+
+        <div class="callout note">
+          <div class="c-ico">🔗</div>
+          <div class="c-body">
+            <div class="c-title">Where this fits</div>
+            <p>Observability is part of running GenAI in production — the wider topic (cost, guardrails, rate limiting, testing) lives in <a href="modules/14_production_genai.html"><strong>14 · Production GenAI →</strong></a>. The RAG app we instrument here builds on <a href="modules/06_rag_basics.html">06 · RAG Basics →</a>. Code examples use OpenAI + LangChain; swapping to a local Ollama model or to Claude is a one-line change, noted where relevant.</p>
+          </div>
+        </div>
+
+        <!-- 1 -->
+        <h2 id="why">1 · Why observability — the problem Langfuse solves</h2>
+        <p>A traditional web app is mostly deterministic: same input → same output, and a stack trace tells you what broke. LLM apps are different on every axis:</p>
+        <div class="grid grid-2">
+          <div class="card"><h4>Non-deterministic</h4><p>The same prompt can return different answers. "It worked when I tried it" proves nothing.</p></div>
+          <div class="card"><h4>Multi-step</h4><p>One user question may trigger retrieval, reranking, several LLM calls and tool calls. A failure could be in any link.</p></div>
+          <div class="card"><h4>Costly &amp; slow</h4><p>Tokens cost money and latency is user-visible. You need per-call cost and timing, not just an aggregate bill.</p></div>
+          <div class="card"><h4>Quality is fuzzy</h4><p>There is no exit code for "the answer was wrong." You need explicit <em>scores</em> — from users, heuristics, or an LLM judge.</p></div>
+        </div>
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The one-line definition</div>
+          <p>Langfuse records a <strong>trace</strong> of everything your LLM app did for one request — every step, its inputs/outputs, timing, tokens, cost and quality scores — so you can debug, measure and improve it.</p></div>
+        </div>
+
+        <!-- 2 -->
+        <h2 id="model">2 · The core data model</h2>
+        <p>Almost everything in Langfuse is one of five objects. Learn these and the rest is detail.</p>
+        <div class="table-wrap">
+          <table class="kv">
+            <tr><th>Object</th><th>What it represents</th><th>Example</th></tr>
+            <tr><td><strong>Trace</strong></td><td>One end-to-end request through your app. The top-level container.</td><td>"User asked: <em>What are the input tags for PDI1043?</em>"</td></tr>
+            <tr><td><strong>Span</strong></td><td>A unit of work <em>inside</em> a trace — anything with a start/end. Spans nest.</td><td><code>retrieve</code>, <code>rerank</code>, <code>build_prompt</code></td></tr>
+            <tr><td><strong>Generation</strong></td><td>A special span for an <em>LLM call</em>. Captures model, prompt, completion, tokens, cost.</td><td>The <code>gpt-4o-mini</code> call that wrote the answer</td></tr>
+            <tr><td><strong>Score</strong></td><td>A quality measurement attached to a trace/generation. Numeric, boolean or categorical.</td><td><code>faithfulness = 0.9</code>, <code>thumbs_up = true</code></td></tr>
+            <tr><td><strong>Session / User</strong></td><td>Groups traces — a multi-turn conversation (session) or all of one person's traces (user).</td><td><code>session_id="chat_42"</code>, <code>user_id="alice"</code></td></tr>
+          </table>
+        </div>
+        <p>A trace is a tree. Here is what one RAG request looks like once instrumented:</p>
+        <div class="diagram">
+          <div class="lf-tree">
+<span class="t-trace">▼ TRACE</span>  rag-qa  <span class="muted">· user="alice" · session="chat_42" · 1.84s · $0.0007</span>
+   <span class="t-span">▼ SPAN</span>  retrieve            <span class="muted">320ms · k=3</span>
+   <span class="t-span">▼ SPAN</span>  rerank              <span class="muted">110ms · 3 of 12 kept</span>
+   <span class="t-span">▼ SPAN</span>  build_prompt        <span class="muted">2ms</span>
+   <span class="t-gen">▼ GENERATION</span>  answer       <span class="muted">gpt-4o-mini · in 812 / out 96 tok · $0.0007 · 1.4s</span>
+   <span class="t-score">● SCORE</span>  faithfulness=0.92   <span class="muted">(llm-judge)</span>
+   <span class="t-score">● SCORE</span>  user_feedback=1     <span class="muted">(👍)</span>
+          </div>
+          <div class="diagram-caption">One trace, nested spans, one generation, two scores. This is the unit you inspect in the Langfuse UI.</div>
+        </div>
+
+        <!-- 3 -->
+        <h2 id="setup">3 · Getting set up</h2>
+        <p>You have two ways to run Langfuse; both expose the same SDK and UI.</p>
+        <div class="grid grid-2">
+          <div class="card"><h4>☁️ Langfuse Cloud</h4><p>Sign up at <code>cloud.langfuse.com</code>, create a project, copy the public + secret keys. Fastest start; free tier for learning.</p></div>
+          <div class="card"><h4>🐳 Self-hosted (Docker)</h4><p>Run it on your own infra — required for sensitive/on-prem data. Clone the repo and <code>docker compose up</code>.</p></div>
+        </div>
+        <h3 id="setup-keys">3.1 Install &amp; configure</h3>
+        <div class="code-block"><div class="code-head"><span class="lang">bash</span><button class="copy-btn">Copy</button></div>
+<pre><code>pip install langfuse openai langchain langchain-openai</code></pre></div>
+        <p>Configure with environment variables — never hard-code keys (see <a href="guardrails.html#secrets">Guardrails §secrets</a>):</p>
+        <div class="code-block"><div class="code-head"><span class="lang">.env</span><button class="copy-btn">Copy</button></div>
+<pre><code>LANGFUSE_PUBLIC_KEY=pk-lf-...
+LANGFUSE_SECRET_KEY=sk-lf-...
+LANGFUSE_HOST=https://cloud.langfuse.com   # or your self-hosted URL
+OPENAI_API_KEY=sk-...</code></pre></div>
+        <h3 id="setup-verify">3.2 Verify the connection</h3>
+        <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
+<pre><code>from langfuse import get_client
+
+langfuse = get_client()          # reads keys from env
+assert langfuse.auth_check()     # True if keys + host are valid
+print("Langfuse connected ✓")</code></pre></div>
+        <div class="callout tip">
+          <div class="c-ico">💡</div>
+          <div class="c-body"><div class="c-title">Async by design</div>
+          <p>The SDK batches events and ships them in the background, so instrumentation adds ~no latency to your app. Call <code>langfuse.flush()</code> before a short-lived script exits, or events can be lost.</p></div>
+        </div>
+
+        <!-- 4 -->
+        <h2 id="first-trace">4 · Your first trace — three ways</h2>
+        <p>There are three levels of integration. Start with whichever matches your stack.</p>
+
+        <h3 id="decorator">4.1 The <code>@observe</code> decorator (most ergonomic)</h3>
+        <p>Decorate any function and it becomes a span; the outermost decorated call becomes the trace. Nesting is automatic.</p>
+        <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
+<pre><code>from langfuse import observe, get_client
+from openai import OpenAI
+
+oai = OpenAI()
+langfuse = get_client()
+
+@observe()                       # ← this call becomes a SPAN
+def retrieve(question: str) -> list[str]:
+    # ... your vector search ...
+    return ["PDI1043.PV is an input tag for the forecasting model."]
+
+@observe()                       # ← outermost @observe = the TRACE
+def answer_question(question: str) -> str:
+    context = retrieve(question)
+    resp = oai.chat.completions.create(
+        model="gpt-4o-mini",
+        messages=[
+            {"role": "system", "content": "Answer only from the context."},
+            {"role": "user", "content": f"Context:\n{context}\n\nQ: {question}"},
+        ],
+    )
+    return resp.choices[0].message.content
+
+print(answer_question("What is PDI1043.PV?"))
+langfuse.flush()</code></pre></div>
+
+        <h3 id="openai-wrapper">4.2 The OpenAI drop-in wrapper (auto-captures LLM calls)</h3>
+        <p>Swap your import and every OpenAI call is automatically logged as a <em>generation</em> — model, tokens and cost captured for you, no extra code.</p>
+        <div class="code-block"><div class="code-head"><span class="lang">python · before → after</span><button class="copy-btn">Copy</button></div>
+<pre><code># before
+from openai import OpenAI
+# after — same API, now auto-traced
+from langfuse.openai import OpenAI
+
+oai = OpenAI()
+oai.chat.completions.create(model="gpt-4o-mini", messages=[...])  # logged ✓</code></pre></div>
+        <div class="callout note">
+          <div class="c-ico">🔁</div>
+          <div class="c-body"><div class="c-title">Using a different model?</div>
+          <p><strong>Ollama (local, free):</strong> point the OpenAI client at <code>base_url="http://localhost:11434/v1"</code> — the wrapper still traces it. <strong>Claude:</strong> use the Anthropic SDK with the LangChain callback (§4.3) or the <code>@observe</code> decorator; for Claude calls prefer <code>model="claude-opus-4-8"</code> with <code>thinking={"type":"adaptive"}</code> rather than passing a token budget.</p></div>
+        </div>
+
+        <h3 id="langchain-cb">4.3 The LangChain callback (instrument a whole chain)</h3>
+        <p>Pass one callback handler and every step of a LangChain pipeline — retriever, prompt, LLM — becomes spans/generations automatically.</p>
+        <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
+<pre><code>from langfuse.langchain import CallbackHandler
+from langchain_openai import ChatOpenAI
+
+handler = CallbackHandler()
+llm = ChatOpenAI(model="gpt-4o-mini")
+
+llm.invoke("Explain RAG in one sentence.",
+           config={"callbacks": [handler]})   # ← whole call traced</code></pre></div>
+
+        <!-- 5 -->
+        <h2 id="metadata">5 · Sessions, users &amp; metadata</h2>
+        <p>Traces become useful when you can group and filter them. Attach a <code>user_id</code> to see everything one person did, a <code>session_id</code> to stitch a multi-turn conversation, and <code>tags</code>/<code>metadata</code> to slice by anything (plant, model version, feature flag).</p>
+        <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
+<pre><code>from langfuse import observe, get_client
+
+@observe()
+def answer_question(question: str) -> str:
+    get_client().update_current_trace(
+        user_id="alice",
+        session_id="chat_42",
+        tags=["rag", "ammonia-plant"],
+        metadata={"plant": "Ammonia", "loop": "Loop10", "app_version": "1.4.0"},
+    )
+    ...
+</code></pre></div>
+        <div class="callout tip">
+          <div class="c-ico">🧭</div>
+          <div class="c-body"><div class="c-title">Why this matters</div>
+          <p>In the UI you can then ask: <em>"show me all low-faithfulness traces for plant=Ammonia on app_version 1.4.0"</em> — which is exactly how you find a regression introduced by a deploy.</p></div>
+        </div>
+
+        <!-- 6 -->
+        <h2 id="scores">6 · Scoring — measuring quality</h2>
+        <p>A trace tells you <em>what happened</em>; a <strong>score</strong> tells you <em>whether it was any good</em>. Scores are the bridge from observability to evaluation. Three sources:</p>
+        <div class="grid grid-3">
+          <div class="card"><span class="ico">👍</span><h4>User feedback</h4><p>Thumbs up/down, star rating, "was this helpful?". The ground truth that matters most.</p></div>
+          <div class="card"><span class="ico">📐</span><h4>Heuristic / programmatic</h4><p>Cheap deterministic checks: did it cite a source? is it valid JSON? is it under N tokens?</p></div>
+          <div class="card"><span class="ico">⚖️</span><h4>LLM-as-judge</h4><p>A second LLM scores faithfulness/relevance against a rubric. Scales without humans (but can err).</p></div>
+        </div>
+        <h3 id="score-user">6.1 Record a user-feedback score</h3>
+        <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
+<pre><code>from langfuse import get_client
+langfuse = get_client()
+
+# inside a trace, capture its id so the UI can attach feedback later
+with langfuse.start_as_current_span(name="answer") as span:
+    trace_id = langfuse.get_current_trace_id()
+    ...
+
+# when the user clicks 👍 / 👎
+langfuse.create_score(trace_id=trace_id, name="user_feedback",
+                      value=1, data_type="NUMERIC")   # 1 = up, 0 = down</code></pre></div>
+        <h3 id="score-judge">6.2 An LLM-as-judge faithfulness score</h3>
+        <p>This is the same idea as the RAG-evaluation faithfulness metric — see <a href="rag-deep-dive.html#output-eval">RAG, End-to-End §15</a> for the conceptual depth; here we wire it into Langfuse.</p>
+        <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
+<pre><code>import json
+from openai import OpenAI
+from langfuse import get_client
+
+oai, langfuse = OpenAI(), get_client()
+
+def judge_faithfulness(context: str, answer: str) -> float:
+    rubric = ("Score 0-1 how fully the ANSWER is supported by the CONTEXT. "
+              "Reply with JSON: {\"score\": <0..1>, \"reason\": \"...\"}.")
+    r = oai.chat.completions.create(
+        model="gpt-4o-mini", temperature=0,
+        messages=[{"role": "system", "content": rubric},
+                  {"role": "user",
+                   "content": f"CONTEXT:\n{context}\n\nANSWER:\n{answer}"}],
+        response_format={"type": "json_object"},
+    )
+    verdict = json.loads(r.choices[0].message.content)
+    return float(verdict["score"])
+
+score = judge_faithfulness(context, answer)
+langfuse.create_score(trace_id=trace_id, name="faithfulness",
+                      value=score, data_type="NUMERIC")</code></pre></div>
+
+        <!-- 7 -->
+        <h2 id="prompts">7 · Prompt management</h2>
+        <p>Hard-coding prompts in source means every wording tweak is a code deploy, and you can't tell which prompt version produced which trace. Langfuse stores prompts as <em>versioned, named</em> objects you fetch at runtime.</p>
+        <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
+<pre><code>from langfuse import get_client
+langfuse = get_client()
+
+# create/update once (or via the UI)
+langfuse.create_prompt(
+    name="rag-answer",
+    prompt="Answer ONLY from the context. Cite source + page. "
+           "If insufficient, say so.\n\nContext:\n{{context}}\n\nQ: {{question}}",
+    labels=["production"],            # promote a version to 'production'
+)
+
+# fetch at runtime — pinned to the 'production' label
+prompt = langfuse.get_prompt("rag-answer", label="production")
+text = prompt.compile(context=context, question=question)</code></pre></div>
+        <div class="callout key">
+          <div class="c-ico">🎯</div>
+          <div class="c-body"><div class="c-title">The payoff</div>
+          <p>Linking a generation to a prompt version lets you compare quality scores <em>across prompt versions</em> — turning "I think the new prompt is better" into a measured A/B result. Edit prompts in the UI without redeploying code.</p></div>
+        </div>
+
+        <!-- 8 -->
+        <h2 id="datasets">8 · Datasets &amp; offline evaluation</h2>
+        <p>Scores on live traffic tell you how production is doing. <strong>Datasets</strong> let you test <em>before</em> you ship: a fixed set of inputs (and optional expected outputs) you run your app against on every change.</p>
+        <ol>
+          <li>Create a dataset of representative questions (plus gold answers if you have them).</li>
+          <li>On each candidate (new prompt, new model, new chunking), run every item and produce a trace + scores.</li>
+          <li>Compare the average scores between runs — that's your regression test for quality.</li>
+        </ol>
+        <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
+<pre><code>dataset = langfuse.get_dataset("rag-eval-set")
+
+for item in dataset.items:
+    with item.run(run_name="prompt-v3") as root:      # links trace to the run
+        answer = answer_question(item.input["question"])
+        langfuse.create_score(trace_id=root.trace_id, name="faithfulness",
+                              value=judge_faithfulness(item.input["context"], answer))
+langfuse.flush()</code></pre></div>
+
+        <!-- 9 -->
+        <h2 id="sample-app">9 · Sample application — a traced RAG Q&amp;A API</h2>
+        <p>Everything above, assembled into one small but realistic app: a FastAPI <code>/ask</code> endpoint that retrieves, generates, self-scores, and returns the answer <em>plus its Langfuse trace URL</em>. A second endpoint records user feedback as a score.</p>
+        <div class="callout note">
+          <div class="c-ico">📦</div>
+          <div class="c-body"><div class="c-title">What it demonstrates</div>
+          <p>Nested spans (retrieve → generate), a generation with token/cost capture, an automatic faithfulness score, session/user grouping, prompt management, and a feedback loop — the whole page in ~70 lines.</p></div>
+        </div>
+        <div class="code-block"><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> app.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>import json
+from fastapi import FastAPI
+from pydantic import BaseModel
+from langfuse import get_client, observe
+from langfuse.openai import OpenAI          # auto-traced OpenAI client
+
+app = FastAPI()
+oai = OpenAI()
+langfuse = get_client()
+
+# --- tiny in-memory "vector store" stands in for a real retriever ---
+DOCS = {
+    "PDI1043": "PDI1043.PV is an input tag for the Loop10 forecasting model. "
+               "Other inputs: FI1023.PV, FIC1002.PV, TI1354.PV.",
+    "deploy":  "The API is deployed via a Kubernetes Deployment and Service YAML.",
+}
+
+@observe()                                  # → SPAN: retrieve
+def retrieve(question: str, k: int = 2) -> str:
+    hits = [v for key, v in DOCS.items() if key.lower() in question.lower()]
+    return "\n".join(hits[:k]) or "No relevant context found."
+
+@observe()                                  # → GENERATION (auto via wrapper)
+def generate(question: str, context: str) -> str:
+    prompt = langfuse.get_prompt("rag-answer", label="production")
+    messages = [
+        {"role": "system", "content": "Answer only from the context. Cite if possible."},
+        {"role": "user",   "content": prompt.compile(context=context, question=question)},
+    ]
+    resp = oai.chat.completions.create(model="gpt-4o-mini", temperature=0,
+                                       messages=messages)
+    return resp.choices[0].message.content
+
+def judge_faithfulness(context: str, answer: str) -> float:
+    r = oai.chat.completions.create(
+        model="gpt-4o-mini", temperature=0,
+        response_format={"type": "json_object"},
+        messages=[{"role": "system",
+                   "content": 'Rate 0-1 how supported the answer is by the context. '
+                              'JSON: {"score": <0..1>}'},
+                  {"role": "user",
+                   "content": f"CONTEXT:\n{context}\n\nANSWER:\n{answer}"}])
+    return float(json.loads(r.choices[0].message.content)["score"])
+
+class Ask(BaseModel):
+    question: str
+    user_id: str = "anonymous"
+    session_id: str | None = None
+
+@app.post("/ask")
+@observe()                                  # → TRACE (outermost @observe)
+def ask(body: Ask):
+    langfuse.update_current_trace(
+        user_id=body.user_id, session_id=body.session_id, tags=["rag-api"])
+
+    context = retrieve(body.question)
+    answer  = generate(body.question, context)
+
+    score = judge_faithfulness(context, answer)
+    trace_id = langfuse.get_current_trace_id()
+    langfuse.create_score(trace_id=trace_id, name="faithfulness",
+                          value=score, data_type="NUMERIC")
+
+    return {"answer": answer, "faithfulness": round(score, 2),
+            "trace_id": trace_id,
+            "trace_url": langfuse.get_trace_url()}
+
+class Feedback(BaseModel):
+    trace_id: str
+    helpful: bool
+
+@app.post("/feedback")
+def feedback(body: Feedback):
+    langfuse.create_score(trace_id=body.trace_id, name="user_feedback",
+                          value=1 if body.helpful else 0, data_type="NUMERIC")
+    return {"ok": True}</code></pre></div>
+        <h3 id="run-it">9.1 Run it</h3>
+        <div class="code-block"><div class="code-head"><span class="lang">bash</span><button class="copy-btn">Copy</button></div>
+<pre><code>uvicorn app:app --reload
+
+# ask a question
+curl -s localhost:8000/ask -H 'content-type: application/json' \
+  -d '{"question":"What is PDI1043.PV?","user_id":"alice","session_id":"chat_42"}'
+# → {"answer":"PDI1043.PV is an input tag...","faithfulness":0.95,
+#    "trace_id":"...","trace_url":"https://cloud.langfuse.com/trace/..."}
+
+# open trace_url in the browser to see the full tree, then send feedback:
+curl -s localhost:8000/feedback -H 'content-type: application/json' \
+  -d '{"trace_id":"<paste>","helpful":true}'</code></pre></div>
+        <div class="callout tip">
+          <div class="c-ico">🔍</div>
+          <div class="c-body"><div class="c-title">What you'll see in the Langfuse UI</div>
+          <p>One trace per <code>/ask</code>, with <code>retrieve</code> and <code>generate</code> as nested spans, the LLM call as a generation (model, 812+96 tokens, ~$0.0007, latency), a <code>faithfulness</code> score, and — once you POST feedback — a <code>user_feedback</code> score. Filter by <code>user_id=alice</code> or <code>session_id=chat_42</code> to follow the conversation.</p></div>
+        </div>
+
+        <!-- 10 -->
+        <h2 id="dashboards">10 · Dashboards &amp; what to watch</h2>
+        <p>With traffic flowing, Langfuse's dashboards turn raw traces into the numbers you actually run a service on:</p>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Signal</th><th>Why you watch it</th></tr>
+            <tr><td>Traces / volume over time</td><td>Usage trends, spikes, dead features</td></tr>
+            <tr><td>Latency (p50 / p95 / p99)</td><td>The tail is what users feel — p95 matters more than the average</td></tr>
+            <tr><td>Cost (per trace, per user, per day)</td><td>Catch a runaway prompt or an expensive model before the bill does</td></tr>
+            <tr><td>Token usage</td><td>Input vs output split; ballooning context is the usual culprit</td></tr>
+            <tr><td>Score trends (faithfulness, feedback)</td><td>Quality regressions — especially right after a deploy</td></tr>
+            <tr><td>Error rate</td><td>Failed generations, timeouts, guardrail blocks</td></tr>
+          </table>
+        </div>
+
+        <!-- 11 -->
+        <h2 id="best-practices">11 · Best practices</h2>
+        <ul>
+          <li><strong>Instrument the whole chain, not just the LLM call</strong> — retrieval and reranking are where most RAG bugs hide.</li>
+          <li><strong>Always attach <code>user_id</code> and <code>session_id</code></strong> — debugging without them is guesswork.</li>
+          <li><strong>Score in production, not just offline</strong> — combine cheap heuristics on every trace with sampled LLM-judge scoring.</li>
+          <li><strong>Manage prompts in Langfuse</strong> so you can A/B versions and trace which one ran.</li>
+          <li><strong>Keep a dataset</strong> and re-run it on every prompt/model/chunking change — it's your quality regression test.</li>
+          <li><strong>Never log secrets or full PII</strong> into trace inputs/outputs — mask first (see <a href="guardrails.html#secrets">Guardrails</a>).</li>
+          <li><strong>Call <code>flush()</code></strong> in scripts and serverless handlers, or you'll lose the tail of your events.</li>
+          <li><strong>Sample expensive evals</strong> — you don't need an LLM judge on 100% of traffic; 5–10% often suffices to spot trends.</li>
+        </ul>
+        <div class="callout danger">
+          <div class="c-ico">🔒</div>
+          <div class="c-body"><div class="c-title">Data sensitivity</div>
+          <p>Trace inputs/outputs can contain user data. For regulated or on-prem workloads, <strong>self-host Langfuse</strong> and mask secrets/PII before they reach the trace. This is the same boundary discussed in <a href="guardrails.html#secrets">the Guardrails tab</a>.</p></div>
+        </div>
+
+        <div class="page-nav">
+          <a href="modules/14_production_genai.html"><div class="dir">← Production</div><div class="ttl">14 · Production GenAI</div></a>
+          <a class="next" href="rag-deep-dive.html#output-eval"><div class="dir">Related →</div><div class="ttl">RAG · Evaluation</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/app.js"></script>
+<script src="assets/section-nav.js"></script>
+</body>
+</html>

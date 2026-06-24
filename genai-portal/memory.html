@@ -1,0 +1,326 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Memory in LLMs — How It's Managed &amp; Used · GenAI Mastery</title>
+<meta name="description" content="How memory works in LLM applications: the stateless model and context window, short-term vs long-term memory, conversation buffers and summaries, vector-based long-term memory, the memory tool, and memory in agents — with code.">
+<link rel="stylesheet" href="assets/styles.css">
+<style>
+  .nav .sec-num { font-family: var(--font-mono); }
+  .mem-cols { display:grid; gap:16px; grid-template-columns:1fr 1fr; margin:20px 0; }
+  @media (max-width:760px){ .mem-cols{ grid-template-columns:1fr; } }
+</style>
+</head>
+<body data-page="memory">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <div class="brand-mark">G</div>
+        <div class="brand-text"><strong>GenAI Mastery</strong><span>Memory in LLMs</span></div>
+      </a>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-secsearch placeholder="Jump to a section…  ( / )">
+      </div>
+      <div class="search-results" data-secresults></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Foundations / <b>Memory in LLMs</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> How LLMs remember — and how they don't</div>
+        <h1>Memory in LLMs</h1>
+        <p class="lead">A large language model is <strong>stateless</strong>: between two API calls it remembers nothing. Every appearance of "memory" — a chatbot recalling your name, an agent picking up where it left off — is something the <em>application</em> builds around the model by deciding what to put back into its <strong>context window</strong> each turn. This page explains how that's done, from the basics to production patterns.</p>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~30 min read</span>
+          <span class="pill">Foundations → intermediate</span>
+          <span class="pill purple">Buffers · summaries · vector memory · agents</span>
+        </div>
+
+        <div class="callout note">
+          <div class="c-ico">🔗</div>
+          <div class="c-body"><div class="c-title">Where this fits</div>
+          <p>Memory builds on how the context window works (<a href="modules/01_foundations.html">01 · Foundations of LLMs →</a>) and uses the same embeddings + vector-store machinery as retrieval (<a href="modules/04_embeddings.html">04 · Embeddings</a>, <a href="modules/05_vector_databases.html">05 · Vector Databases</a>). Long-term memory and RAG are close cousins — §6 draws the line. Code uses OpenAI + LangChain; the patterns are provider-agnostic.</p></div>
+        </div>
+
+        <!-- 1 -->
+        <h2 id="stateless">1 · The starting point — the model is stateless</h2>
+        <p>Each call to a chat model is independent. The model sees only the messages you send in <em>this</em> request and produces a reply. It has no hidden memory of previous requests.</p>
+        <div class="code-block"><div class="code-head"><span class="lang">python · the model forgets</span><button class="copy-btn">Copy</button></div>
+<pre><code>from openai import OpenAI
+oai = OpenAI()
+
+oai.chat.completions.create(model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "My name is Alice."}])
+# → "Nice to meet you, Alice!"
+
+oai.chat.completions.create(model="gpt-4o-mini",
+    messages=[{"role": "user", "content": "What's my name?"}])
+# → "I don't have that information."   ← no memory of the previous call</code></pre></div>
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The one idea</div>
+          <p>"Memory" in an LLM app = <strong>deciding what to put into the context window on the next call.</strong> The model doesn't remember; your code re-supplies the relevant past every turn. Everything below is a strategy for choosing <em>what</em> to re-supply and <em>how</em> to store it.</p></div>
+        </div>
+
+        <!-- 2 -->
+        <h2 id="context-window">2 · The context window — the model's only "RAM"</h2>
+        <p>The context window is the maximum number of tokens the model can attend to in a single request — system prompt + conversation history + retrieved context + the question + room for the answer, all of it. It is the model's working memory, and it is <strong>finite</strong>.</p>
+        <div class="grid grid-3">
+          <div class="card"><span class="ico">📏</span><h4>It's a budget</h4><p>Everything competes for the same token budget. More history means less room for retrieved context or the answer.</p></div>
+          <div class="card"><span class="ico">💸</span><h4>It costs</h4><p>You pay for every token in the window on every call. Naively replaying a long history gets expensive fast.</p></div>
+          <div class="card"><span class="ico">🪟</span><h4>It's transient</h4><p>When the window fills, something must be dropped or compressed. Nothing persists after the call returns.</p></div>
+        </div>
+        <p>So application memory has two jobs: <strong>(1)</strong> keep the context window within budget, and <strong>(2)</strong> persist anything that must outlive a single request — both of which the model can't do itself.</p>
+
+        <!-- 3 -->
+        <h2 id="short-vs-long">3 · Short-term vs long-term memory</h2>
+        <p>The standard split, by analogy to human memory:</p>
+        <div class="mem-cols">
+          <div class="callout note" style="margin:0">
+            <div class="c-ico">🧠</div>
+            <div class="c-body"><div class="c-title">Short-term (working) memory</div>
+            <p>The <em>current conversation</em>. Lives in the context window for the duration of a session. Implemented by replaying recent messages each turn. Lost when the session ends unless persisted.</p></div>
+          </div>
+          <div class="callout key" style="margin:0">
+            <div class="c-ico">🗄️</div>
+            <div class="c-body"><div class="c-title">Long-term memory</div>
+            <p>Facts that should survive across sessions — user preferences, past decisions, learned context. Stored <em>outside</em> the model (a database or vector store) and selectively retrieved back into the window when relevant.</p></div>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <tr><th></th><th>Short-term</th><th>Long-term</th></tr>
+            <tr><td>Scope</td><td>One conversation/session</td><td>Across sessions, indefinitely</td></tr>
+            <tr><td>Stored where</td><td>In-memory message list → context window</td><td>External store (DB / vector DB / files)</td></tr>
+            <tr><td>How it's used</td><td>Replayed verbatim or summarized</td><td>Retrieved by relevance, injected as context</td></tr>
+            <tr><td>Survives restart?</td><td>No (unless persisted)</td><td>Yes</td></tr>
+          </table>
+        </div>
+
+        <!-- 4 -->
+        <h2 id="short-term">4 · Short-term memory patterns</h2>
+        <p>Three ways to manage the running conversation, trading completeness against token cost.</p>
+
+        <h3 id="buffer">4.1 Full buffer — replay everything</h3>
+        <p>Keep the entire message list and send it all every turn. Simplest, perfectly faithful — until the conversation outgrows the context window or the cost.</p>
+        <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
+<pre><code>history = []                      # short-term memory = this list
+
+def chat(user_msg: str) -> str:
+    history.append({"role": "user", "content": user_msg})
+    resp = oai.chat.completions.create(model="gpt-4o-mini", messages=history)
+    reply = resp.choices[0].message.content
+    history.append({"role": "assistant", "content": reply})   # remember the reply too
+    return reply
+
+chat("My name is Alice.")
+chat("What's my name?")           # → "Alice" — the full history was re-sent</code></pre></div>
+
+        <h3 id="window">4.2 Sliding window — keep the last N turns</h3>
+        <p>Send only the most recent messages. Bounds cost and stays in-window, but the model forgets anything older than the window.</p>
+        <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
+<pre><code>WINDOW = 10                       # keep last 10 messages
+
+def chat(user_msg: str) -> str:
+    history.append({"role": "user", "content": user_msg})
+    recent = history[-WINDOW:]            # only the tail goes into the window
+    resp = oai.chat.completions.create(model="gpt-4o-mini", messages=recent)
+    ...</code></pre></div>
+
+        <h3 id="summary">4.3 Summary memory — compress the old, keep the new</h3>
+        <p>Periodically summarize older turns into a compact "story so far," then send <em>summary + recent messages</em>. Retains the gist of a long conversation at a fraction of the tokens. This is the idea behind <strong>compaction</strong> in long-running agents.</p>
+        <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
+<pre><code>summary = ""                      # rolling summary of older turns
+recent  = []                      # last few verbatim messages
+
+def summarize(old_summary: str, messages: list) -> str:
+    r = oai.chat.completions.create(model="gpt-4o-mini", temperature=0,
+        messages=[{"role": "system",
+                   "content": "Update the running summary with the new messages. "
+                              "Keep names, decisions and facts; be concise."},
+                  {"role": "user",
+                   "content": f"Summary so far:\n{old_summary}\n\nNew:\n{messages}"}])
+    return r.choices[0].message.content
+
+def chat(user_msg: str) -> str:
+    global summary, recent
+    recent.append({"role": "user", "content": user_msg})
+    sys = [{"role": "system", "content": f"Conversation summary:\n{summary}"}]
+    resp = oai.chat.completions.create(model="gpt-4o-mini", messages=sys + recent)
+    reply = resp.choices[0].message.content
+    recent.append({"role": "assistant", "content": reply})
+    if len(recent) > 8:           # fold the oldest into the summary
+        summary = summarize(summary, recent[:4]); recent = recent[4:]
+    return reply</code></pre></div>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Pattern</th><th>Token cost</th><th>Fidelity</th><th>Best for</th></tr>
+            <tr><td>Full buffer</td><td>Grows unbounded</td><td>Perfect</td><td>Short chats, prototypes</td></tr>
+            <tr><td>Sliding window</td><td>Bounded</td><td>Forgets older turns</td><td>Long chats where only recent context matters</td></tr>
+            <tr><td>Summary</td><td>Low, near-constant</td><td>Gist preserved, detail lost</td><td>Long conversations needing overall continuity</td></tr>
+          </table>
+        </div>
+        <div class="callout note">
+          <div class="c-ico">🛠️</div>
+          <div class="c-body"><div class="c-title">Frameworks do this for you</div>
+          <p>LangChain/LangGraph and similar expose these as ready-made memory types (buffer, windowed buffer, summary). Some APIs also offer <strong>server-side compaction</strong> that summarizes earlier context automatically as you near the window limit — you append the returned compaction block to the next request. The mechanics are exactly §4.3; the framework just hides the bookkeeping.</p></div>
+        </div>
+
+        <!-- 5 -->
+        <h2 id="long-term">5 · Long-term memory — persist across sessions</h2>
+        <p>To remember a user between today and next week, store facts <em>outside</em> the model and retrieve them when relevant. The dominant pattern is <strong>vector memory</strong>: embed each memory, store the vector, and on a new request fetch the most semantically similar memories into the context window.</p>
+        <div class="diagram">
+          <div class="cssflow">
+            <div class="fnode">New user message</div>
+            <div class="farrow"></div>
+            <div class="fnode accent">Embed &amp; search memory store <small>top-k similar past facts</small></div>
+            <div class="farrow"></div>
+            <div class="fnode">Inject retrieved memories into the prompt</div>
+            <div class="farrow"></div>
+            <div class="fnode">LLM answers with the recalled context</div>
+            <div class="farrow"></div>
+            <div class="fnode accent">Write new facts back to the store</div>
+          </div>
+          <div class="diagram-caption">Vector long-term memory: retrieve relevant past on the way in, write new memories on the way out.</div>
+        </div>
+        <div class="code-block"><div class="code-head"><span class="lang">python · minimal vector memory</span><button class="copy-btn">Copy</button></div>
+<pre><code>import numpy as np
+from openai import OpenAI
+oai = OpenAI()
+
+MEMORIES: list[dict] = []         # each: {"text": ..., "vec": np.ndarray}
+
+def embed(text: str) -> np.ndarray:
+    v = oai.embeddings.create(model="text-embedding-3-small", input=text).data[0].embedding
+    return np.array(v)
+
+def remember(text: str):          # write a long-term memory
+    MEMORIES.append({"text": text, "vec": embed(text)})
+
+def recall(query: str, k: int = 3) -> list[str]:   # read relevant memories
+    if not MEMORIES: return []
+    q = embed(query)
+    scored = sorted(MEMORIES, key=lambda m: -float(q @ m["vec"]))   # cosine ~ dot (normalized)
+    return [m["text"] for m in scored[:k]]
+
+def chat(user_msg: str) -> str:
+    recalled = recall(user_msg)
+    sys = "Relevant things you remember about the user:\n- " + "\n- ".join(recalled) \
+          if recalled else "You have no stored memories yet."
+    resp = oai.chat.completions.create(model="gpt-4o-mini",
+        messages=[{"role": "system", "content": sys},
+                  {"role": "user", "content": user_msg}])
+    return resp.choices[0].message.content
+
+remember("The user's name is Alice and she manages the Ammonia plant.")
+remember("Alice prefers answers in metric units.")
+chat("What units should you use with me?")   # → recalls the metric preference</code></pre></div>
+        <div class="callout tip">
+          <div class="c-ico">✍️</div>
+          <div class="c-body"><div class="c-title">What to write to memory</div>
+          <p>Don't store every message. Store <em>durable facts</em>: stable preferences, decisions, identities, learned corrections. A common pattern is an LLM step that extracts "memory-worthy" facts from a conversation and writes only those — keeping the store small and high-signal.</p></div>
+        </div>
+
+        <!-- 6 -->
+        <h2 id="memory-vs-rag">6 · Memory vs RAG — same machinery, different purpose</h2>
+        <p>Long-term memory and RAG both embed text, store vectors, and retrieve by similarity — so they look identical under the hood. The difference is <em>what</em> is stored and <em>why</em>:</p>
+        <div class="table-wrap">
+          <table>
+            <tr><th></th><th>RAG (retrieval)</th><th>Long-term memory</th></tr>
+            <tr><td>Stores</td><td>A knowledge corpus (docs, manuals, tickets)</td><td>Facts about <em>this</em> user/agent and past interactions</td></tr>
+            <tr><td>Written by</td><td>An ingestion pipeline, ahead of time</td><td>The app, <em>during</em> conversations</td></tr>
+            <tr><td>Scope</td><td>Shared across all users</td><td>Usually per-user / per-agent</td></tr>
+            <tr><td>Purpose</td><td>Ground answers in external knowledge</td><td>Personalize &amp; maintain continuity</td></tr>
+          </table>
+        </div>
+        <div class="callout note">
+          <div class="c-ico">📎</div>
+          <div class="c-body"><div class="c-title">Reuse the deep dive</div>
+          <p>Chunking, embedding models, vector DBs, similarity metrics and retrieval scoring are covered thoroughly in <a href="rag-deep-dive.html#chunking">RAG, End-to-End →</a>. Memory uses the same toolkit — you don't need to relearn it, just point it at per-user facts instead of a document corpus.</p></div>
+        </div>
+
+        <!-- 7 -->
+        <h2 id="memory-tool">7 · The memory tool — letting the model manage its own notes</h2>
+        <p>A newer pattern gives the model a <strong>memory tool</strong>: a set of file-like operations (view, create, edit, delete) over a dedicated memory directory. The model decides when to jot something down and when to read it back, and your application implements the storage backend.</p>
+        <div class="grid grid-2">
+          <div class="card"><h4>How it works</h4><p>You declare a memory tool; the model emits tool calls like "write <code>/memories/preferences.md</code>"; your handler persists the file. On later sessions the model reads its own notes back.</p></div>
+          <div class="card"><h4>Why it's powerful</h4><p>The model curates its own long-term memory in natural language — no separate extraction pipeline. Especially useful for long-horizon agents that learn as they work.</p></div>
+        </div>
+        <div class="callout danger">
+          <div class="c-ico">🔒</div>
+          <div class="c-body"><div class="c-title">Security — two hard rules</div>
+          <p><strong>(1)</strong> Never let the model store secrets or full PII in memory files — and be careful with personal data under GDPR/CCPA (see <a href="guardrails.html#secrets">Guardrails §5</a>). <strong>(2)</strong> Confine every file operation to the memory directory: validate model-supplied paths and reject traversal (<code>..</code>, symlinks, absolute paths) — the path comes from the model and is untrusted input. In multi-user systems, give each user their own memory directory with access control.</p></div>
+        </div>
+
+        <!-- 8 -->
+        <h2 id="agents">8 · Memory in agents</h2>
+        <p>Agents run many steps and often many sessions, so they lean on every layer at once:</p>
+        <ul>
+          <li><strong>Working memory</strong> — the running transcript of the current task (short-term, §4), compacted as it grows.</li>
+          <li><strong>Episodic memory</strong> — records of past tasks/sessions, retrieved when a similar task recurs (long-term, §5).</li>
+          <li><strong>Semantic memory</strong> — durable facts and learned knowledge (vector store or memory files, §5/§7).</li>
+          <li><strong>Scratchpad</strong> — a notes file the agent writes mid-task and re-reads (the memory tool, §7) — this is where "the agent picks up where it left off" comes from.</li>
+        </ul>
+        <div class="callout key">
+          <div class="c-ico">🤖</div>
+          <div class="c-body"><div class="c-title">The agent loop perspective</div>
+          <p>An autonomous agent over a long run continually decides what to keep in its context window (compact), what to write down for later (memory tool / store), and what to recall when relevant (vector search). Good memory management is what lets an agent stay coherent across an overnight run instead of losing the thread. See <a href="modules/08_agents.html">08 · Agentic AI →</a> and <a href="modules/12_langgraph.html">12 · LangGraph →</a> for the orchestration side.</p></div>
+        </div>
+
+        <!-- 9 -->
+        <h2 id="choosing">9 · Choosing a memory strategy</h2>
+        <div class="table-wrap">
+          <table>
+            <tr><th>If you need…</th><th>Use</th></tr>
+            <tr><td>A short chatbot, a few turns</td><td>Full buffer (§4.1)</td></tr>
+            <tr><td>A long chat where only recent context matters</td><td>Sliding window (§4.2)</td></tr>
+            <tr><td>A long chat needing overall continuity, low cost</td><td>Summary / compaction (§4.3)</td></tr>
+            <tr><td>To remember a user across sessions</td><td>Vector long-term memory (§5)</td></tr>
+            <tr><td>The model to curate its own notes</td><td>Memory tool (§7)</td></tr>
+            <tr><td>An agent doing long-horizon work</td><td>All of the above, layered (§8)</td></tr>
+          </table>
+        </div>
+
+        <!-- 10 -->
+        <h2 id="best-practices">10 · Best practices &amp; pitfalls</h2>
+        <ul>
+          <li><strong>Always budget the context window</strong> — system prompt + memory + retrieval + question + answer must all fit, with headroom.</li>
+          <li><strong>Store durable facts, not chatter</strong> — high-signal memories keep recall accurate and the store small.</li>
+          <li><strong>Summarize before you overflow</strong>, not after — don't wait for a hard context-limit error.</li>
+          <li><strong>Scope memory per user</strong> and enforce access control — one user's memory must never leak into another's context.</li>
+          <li><strong>Never persist secrets or full PII</strong> in memory (buffers, summaries, vector stores or memory files) — mask first.</li>
+          <li><strong>Validate memory-tool paths</strong> — treat model-supplied file paths as untrusted; confine to the memory directory.</li>
+          <li><strong>Decay or expire stale memories</strong> — old preferences and outdated facts should age out or be overwritten.</li>
+          <li><strong>Make memory observable</strong> — log what was recalled and written (see <a href="langfuse.html">Langfuse →</a>) so you can debug "why did it forget / why did it recall that?".</li>
+        </ul>
+
+        <div class="page-nav">
+          <a href="modules/01_foundations.html"><div class="dir">← Foundations</div><div class="ttl">01 · Foundations of LLMs</div></a>
+          <a class="next" href="modules/08_agents.html"><div class="dir">Next →</div><div class="ttl">08 · Agentic AI</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/app.js"></script>
+<script src="assets/section-nav.js"></script>
+</body>
+</html>
