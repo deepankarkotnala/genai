@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>RAG, End-to-End — The Complete Pipeline · GenAI Mastery</title>
 <meta name="description" content="A thorough, first-principles walk through every stage of a production Retrieval-Augmented Generation pipeline: data sources, ingestion, cleaning, chunking strategies, embeddings, indexing, query processing, retrieval, scoring, reranking, context selection, prompting, generation, evaluation, architectures and guardrails.">
+<script>(function(){try{var t=localStorage.getItem("gp.theme")||((window.matchMedia&&window.matchMedia("(prefers-color-scheme: dark)").matches)?"dark":"light");document.documentElement.setAttribute("data-theme",t);}catch(e){}})();</script>
 <link rel="stylesheet" href="assets/styles.css">
 <style>
   /* This standalone page builds its own section sidebar; keep the same look. */
@@ -257,6 +258,13 @@ forecasting model inputs.</code></pre>
           </div>
         </details>
 
+        <details class="collapse"><summary>5.11 · Contextual Retrieval <span class="pill green" style="margin-left:8px">trending · Anthropic</span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
+          <div class="collapse-body">
+            <p>Before embedding, prepend each chunk with a short LLM-generated blurb situating it in the whole document (<em>“This chunk is from the Q3 maintenance report, section on TI1354 tube leakage…”</em>). The standalone chunk <em>“the limit was raised to 200°C”</em> becomes self-contained instead of ambiguous, so it embeds and matches far better. Index the <em>contextualized</em> text with both vectors and BM25.</p>
+            <p><strong>Pros:</strong> large drop in retrieval-failure rate; fixes the classic “orphan chunk loses its context” problem; pairs especially well with hybrid + rerank. <strong>Cons:</strong> one LLM call per chunk at ingestion (mitigate with prompt caching), higher build cost &amp; storage. <strong>Best for:</strong> long manuals, SOPs, regulatory docs, anything where chunks lose meaning out of context.</p>
+          </div>
+        </details>
+
         <!-- ============ 5. EMBEDDINGS ============ -->
         <h2 id="embeddings">6 · Embeddings</h2>
         <div class="callout note">
@@ -468,6 +476,7 @@ Instructions:
           <div class="card"><h4>17.6 Self-RAG</h4><p>The model reflects mid-generation — “need more retrieval”, “context insufficient”, “claim unsupported”, “weak citation”. Useful but more expensive.</p></div>
           <div class="card"><h4 id="graphrag">17.7 Graph RAG</h4><p>Knowledge graph + documents. Traces <em>“which KPIs break if PDI1043.PV is faulty?”</em> via PDI1043.PV → model input → KPI → loop → equipment. See <a href="#graph">§9.5</a>.</p></div>
           <div class="card"><h4>17.8 Multi-modal RAG</h4><p>Text + tables + images + charts + scans, via OCR, table extraction, image captioning, chart understanding, multi-modal embeddings. Best for engineering drawings, P&amp;IDs, scanned PDFs, dashboards, QC templates.</p></div>
+          <div class="card"><h4 id="raptor">17.9 RAPTOR <span class="pill green">trending</span></h4><p>Recursively cluster chunks and summarize each cluster, building a <em>tree</em> of summaries (leaves = raw chunks, higher nodes = broader summaries). Retrieve across all levels, so a query can grab a single fact <em>or</em> a document-wide synthesis. Strong for “summarize everything about X” and multi-document questions where flat top-K misses the big picture.</p></div>
         </div>
         <div class="callout note">
           <div class="c-ico">🔀</div>
