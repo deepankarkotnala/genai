@@ -85,7 +85,16 @@
 
 /* ---------- Reset ---------- */
 *, *::before, *::after { box-sizing: border-box; }
-html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+/* Background lives on <html> (not just <body>) so there is never an unpainted
+   white frame — during a cross-document page transition the browser shows the
+   html background between documents. color-scheme keeps native UI (scrollbars,
+   form controls) matched to the theme. */
+html {
+  scroll-behavior: smooth; -webkit-text-size-adjust: 100%;
+  background: var(--bg);
+}
+html[data-theme="dark"] { color-scheme: dark; }
+html[data-theme="light"] { color-scheme: light; }
 body {
   margin: 0;
   font-family: var(--font-sans);
@@ -496,6 +505,18 @@ tbody tr:hover { background: var(--bg-subtle); }
 /* utility */
 .muted { color: var(--text-muted); }
 
+/* ---------- Site footer (injected by sitenav.js on every page) ---------- */
+.site-footer {
+  margin-top: clamp(40px, 6vw, 72px);
+  padding: 18px 0 4px;
+  border-top: 1px solid var(--border);
+  font-size: 12px; color: var(--text-muted);
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px;
+}
+.site-footer .sep { opacity: .5; }
+.site-footer a { color: var(--text-muted); text-decoration: none; }
+.site-footer a:hover { color: var(--text-secondary); text-decoration: underline; }
+
 /* fade-in on load */
 .reveal { opacity: 0; transform: translateY(12px); animation: reveal .6s ease forwards; }
 @keyframes reveal { to { opacity: 1; transform: none; } }
@@ -507,4 +528,46 @@ tbody tr:hover { background: var(--bg-subtle); }
   .reveal { opacity: 1; transform: none; animation: none; }
   .flow-anim .fnode, .flow-anim .rf, .flow-anim .farrow, .flow-anim .arr,
   .fade-anim, .draw-anim path.ln, .draw-anim .flow-arrow { opacity: 1; transform: none; }
+}
+
+/* ---------- Page transitions ----------
+   Two mutually-exclusive paths, so the effect never doubles up (which looked
+   jittery before):
+
+   1. Browsers WITH the View Transitions API → a single smooth crossfade of the
+      whole page, handled natively by `@view-transition`. We explicitly turn OFF
+      the JS-era .main entry animation there so nothing competes with it.
+   2. Browsers WITHOUT it → the JS fallback (sitenav.js) fades the content out on
+      leave, and the `page-enter` keyframe fades the next page in. */
+
+/* --- Fallback path (no View Transitions support) --- */
+@supports not (view-transition-name: none) {
+  .main { animation: page-enter .4s ease both; }
+  @keyframes page-enter {
+    from { opacity: 0; transform: translateY(8px); }
+    to   { opacity: 1; transform: none; }
+  }
+  html.is-leaving .main {
+    opacity: 0; transform: translateY(-4px);
+    transition: opacity .18s ease, transform .18s ease;
+  }
+}
+
+/* --- Native View Transitions path --- */
+@view-transition { navigation: auto; }
+/* A gentle, eyes-friendly crossfade. Because the html background is themed,
+   there is no white frame between documents. */
+@media (prefers-reduced-motion: no-preference) {
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: .28s;
+    animation-timing-function: ease;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .main { animation: none; }
+  html.is-leaving .main { opacity: 1; transform: none; transition: none; }
+  /* The UA already suppresses the @view-transition crossfade under
+     prefers-reduced-motion, so nothing more is needed here. */
 }

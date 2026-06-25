@@ -238,6 +238,20 @@
     if (brandLink) brandLink.setAttribute("href", href("genai-portal/index.html"));
   }
 
+  /* ---------- Footer credit (subtle, on every page) ---------- */
+  function injectFooter() {
+    var content = document.querySelector(".content");
+    if (!content || content.querySelector(".site-footer")) return;
+    var year = new Date().getFullYear();
+    var f = document.createElement("footer");
+    f.className = "site-footer";
+    f.innerHTML =
+      '<span>© ' + year + ' GenAI Learning Hub</span>' +
+      '<span class="sep">·</span>' +
+      '<span>Developed by Deepankar Kotnala</span>';
+    content.appendChild(f);
+  }
+
   /* ---------- ☰ button: collapse the sidebar on desktop, open the drawer on
      mobile. The desktop collapse choice is remembered across pages/visits. ---- */
   var LS_SIDEBAR = "gp.sidebar";        // "collapsed" | "open"
@@ -273,7 +287,67 @@
     });
   }
 
-  function init() { buildSidebar(); setupSearch(); fixBrand(); setupSidebarToggle(); }
+  /* ---------- Smooth page transitions ----------
+     A subtle fade-out → navigate → fade-in between same-site pages. Where the
+     browser supports the View Transitions API we use a true crossfade; elsewhere
+     we fall back to fading the content out (CSS .is-leaving) before navigating,
+     and the CSS page-enter animation fades the next page in. Honors
+     prefers-reduced-motion and never interferes with normal browser behaviour. */
+  var REDUCED_MOTION = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  function isPlainLeftClick(e) {
+    return e.button === 0 && !e.metaKey && !e.ctrlKey && !e.shiftKey && !e.altKey;
+  }
+
+  function shouldIntercept(a, e) {
+    if (!a || !isPlainLeftClick(e) || e.defaultPrevented) return false;
+    if (a.target && a.target !== "" && a.target !== "_self") return false;   // new tab/window
+    if (a.hasAttribute("download")) return false;
+    var href = a.getAttribute("href");
+    if (!href || href.charAt(0) === "#") return false;                       // in-page anchor
+    if (/^(mailto:|tel:|javascript:)/i.test(href)) return false;
+    // resolve to compare origin + path
+    var url;
+    try { url = new URL(a.href, location.href); } catch (e2) { return false; }
+    if (url.origin !== location.origin) return false;                        // external site
+    // same document (only the hash differs) → let the browser handle it
+    if (url.pathname === location.pathname && url.search === location.search) return false;
+    // only animate navigations to our own .html pages (or directory roots)
+    if (!/\.html?$|\/$/.test(url.pathname)) return false;
+    return url.href;
+  }
+
+  function setupPageTransitions() {
+    if (REDUCED_MOTION) return;   // respect the user's preference — no transitions
+
+    // Any browser with the View Transitions API handles the transition via CSS
+    // (`@view-transition`), and the CSS gates the JS-fallback styling behind
+    // `@supports not (view-transition-name)`. So if VT is supported at all, the
+    // JS fade would either double up or have no styling to apply — skip it and
+    // keep the two paths perfectly aligned with the CSS.
+    var hasVT = (window.CSS && CSS.supports && CSS.supports("view-transition-name: none"));
+    if (hasVT) return;
+
+    document.addEventListener("click", function (e) {
+      var a = e.target.closest && e.target.closest("a[href]");
+      var dest = shouldIntercept(a, e);
+      if (!dest) return;
+      e.preventDefault();
+      // Fade the content out, then navigate; the next page's CSS page-enter
+      // animation fades it in — giving a smooth out→in between pages.
+      document.documentElement.classList.add("is-leaving");
+      window.setTimeout(function () { window.location.href = dest; }, 180);
+    });
+
+    // Safety net: if navigation is somehow cancelled, or the page is restored
+    // from the back/forward cache, clear the leaving state so it isn't stuck
+    // faded out.
+    window.addEventListener("pageshow", function () {
+      document.documentElement.classList.remove("is-leaving");
+    });
+  }
+
+  function init() { buildSidebar(); setupSearch(); fixBrand(); injectFooter(); setupSidebarToggle(); setupPageTransitions(); }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();
 
