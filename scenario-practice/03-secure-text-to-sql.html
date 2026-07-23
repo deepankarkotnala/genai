@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+
+<html data-theme="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="#f4f5f8" name="theme-color"/>
+<title>Secure Text-to-SQL Analytics Assistant — GenAI Learning Hub</title>
+<!-- Interview Preparation brand metadata -->
+<link href="../../assets/brand/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/brand/favicon-32.png" rel="icon" sizes="32x32" type="image/png"/>
+<link href="../../assets/brand/favicon.ico" rel="shortcut icon"/>
+<link href="../../assets/brand/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180"/>
+<link href="../../assets/brand/site.webmanifest" rel="manifest"/>
+<link color="#6f47f5" href="../../assets/brand/safari-pinned-tab.svg" rel="mask-icon"/>
+<link href="../../assets/brand/social-card.png" rel="image_src"/>
+<meta content="Interview Preparation" name="application-name"/>
+<meta content="Interview Prep" name="apple-mobile-web-app-title"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="#5b35e8" name="msapplication-TileColor"/>
+<meta content="../../assets/brand/browserconfig.xml" name="msapplication-config"/>
+<meta content="website" property="og:type"/>
+<meta content="Interview Preparation" property="og:site_name"/>
+<meta content="Secure Text-to-SQL Analytics Assistant — GenAI Learning Hub" property="og:title"/>
+<meta content="Design a secure text-to-SQL assistant with semantic models, authorization and SQL injection defenses." property="og:description"/>
+<meta content="../../assets/brand/social-card.png" property="og:image"/>
+<meta content="1200" property="og:image:width"/>
+<meta content="630" property="og:image:height"/>
+<meta content="Interview Preparation glass-style logo" property="og:image:alt"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="Secure Text-to-SQL Analytics Assistant — GenAI Learning Hub" name="twitter:title"/>
+<meta content="Design a secure text-to-SQL assistant with semantic models, authorization and SQL injection defenses." name="twitter:description"/>
+<meta content="../../assets/brand/social-card.png" name="twitter:image"/>
+<!-- /Interview Preparation brand metadata -->
+<meta content="Design a secure text-to-SQL assistant with semantic models, authorization and SQL injection defenses." name="description"/>
+<link href="../assets/styles.css" rel="stylesheet"/>
+<link href="../assets/office-theme.css" rel="stylesheet"/>
+</head>
+<body data-page="scenario-text-to-sql" data-prep-section="scenario">
+<div class="app">
+<aside class="sidebar">
+<div class="brand"><a href="../index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit"><span aria-hidden="true" class="brand-mark"><span>I</span><span>P</span></span><div class="brand-text"><strong>Interview</strong><span>Preparation</span></div></a></div>
+<div class="search-wrap"><div class="search-box"><svg fill="none" height="15" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="15"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg><input data-search="" placeholder="Search everything…  ( / )" type="text"/></div><div class="search-results"></div></div>
+<nav class="nav"></nav>
+</aside>
+<div class="backdrop"></div>
+<div class="main">
+<header class="topbar">
+<button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
+<div class="crumbs">Scenario Design Studio / Secure Text-to-SQL Analytics Assistant</div>
+<button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
+</header>
+<div class="content-wrap">
+<main class="content prep-content">
+<div class="eyebrow"><span class="dot"></span> Scenario 03 · Architecture practice</div>
+<h1>Secure Text-to-SQL Analytics Assistant</h1>
+<p class="lead">Design natural-language analytics without giving a language model unrestricted database access.</p>
+<div class="meta-row"><span class="pill purple">System design practice</span><span class="pill">Advanced</span><span class="pill blue">Target: 25 min</span></div>
+<div class="scenario-prompt" data-reveal=""><div class="scenario-prompt-head"><span>Interview prompt</span><button class="btn ghost" data-start-timer="20" type="button">Start 20-min timer</button></div><p>Design an analytics assistant for business users who ask questions such as “Which products lost revenue in South India last quarter?” It must query a multi-tenant warehouse safely, explain its answer and return a chart within 10 seconds.</p><div class="scenario-timer" data-scenario-timer="" hidden=""><strong data-timer-display="">20:00</strong><button data-pause-timer="" type="button">Pause</button><button data-reset-timer="" type="button">Reset</button></div></div>
+<h2 id="clarify">1 · Clarify before designing</h2>
+<p>Start by asking a few questions. It shows that you design for constraints rather than drawing a fashionable architecture.</p>
+<div class="scenario-two-col"><div class="card"><h4>Questions to ask</h4><ul><li>Which metrics and dimensions are officially defined?</li><li>Is arbitrary ad-hoc SQL required, or can we use a semantic layer?</li><li>What tenant, row and column restrictions apply?</li><li>What warehouse and peak query volume?</li><li>How should ambiguous business terms be resolved?</li></ul></div><div class="card"><h4>Assumptions for this answer</h4><ul><li>A governed semantic layer defines revenue, product, geography and time.</li><li>100 tenants, 30 peak QPS and p95 under 10 seconds.</li><li>Queries are read-only and results are capped.</li><li>Users may see only their tenant and role-approved measures.</li><li>Every result must expose the interpreted query and source freshness.</li></ul></div></div>
+<h2 id="requirements">2 · Requirements and success criteria</h2>
+<div class="scenario-requirements"><div><span>Must do</span><ul><li>Interpret question into approved measures, dimensions and filters.</li><li>Ask clarification for ambiguity.</li><li>Execute a safe analytical query and produce explanation plus chart.</li><li>Save useful queries as governed templates.</li></ul></div><div><span>Must protect</span><ul><li>No DDL, DML, unrestricted joins or raw sensitive columns.</li><li>Tenant and row policies cannot be bypassed by a prompt.</li><li>Warehouse cost and execution time are bounded.</li><li>Results are reproducible and auditable.</li></ul></div></div>
+<h2 id="architecture">3 · Proposed architecture</h2>
+<div class="diagram prep-diagram scenario-diagram" data-reveal=""><svg aria-label="Animated scenario architecture" role="img" viewbox="0 0 930 290"><defs><marker id="sa" markerheight="10" markerwidth="10" orient="auto" refx="8" refy="3"><path d="M0,0 L8,3 L0,6 Z" fill="var(--accent)"></path></marker></defs><g class="prep-node n1"><rect height="66" rx="17" width="145" x="35" y="105"></rect><text x="107.5" y="133">Analyst</text><text class="sub" x="107.5" y="154">question</text></g><g class="prep-node n2"><rect height="66" rx="17" width="150" x="224" y="38"></rect><text x="299.0" y="66">Semantic API</text><text class="sub" x="299.0" y="87">terms + ACL</text></g><g class="prep-node n3"><rect height="66" rx="17" width="150" x="224" y="174"></rect><text x="299.0" y="202">Planner</text><text class="sub" x="299.0" y="223">typed query plan</text></g><g class="prep-node n4"><rect height="66" rx="17" width="150" x="424" y="105"></rect><text x="499.0" y="133">Validator</text><text class="sub" x="499.0" y="154">allowlist + cost</text></g><g class="prep-node n5"><rect height="66" rx="17" width="150" x="624" y="38"></rect><text x="699.0" y="66">Compiler</text><text class="sub" x="699.0" y="87">parameterized SQL</text></g><g class="prep-node n1"><rect height="66" rx="17" width="150" x="624" y="174"></rect><text x="699.0" y="202">Warehouse</text><text class="sub" x="699.0" y="223">read-only views</text></g><g class="prep-node n2"><rect height="66" rx="17" width="95" x="805" y="105"></rect><text x="852.5" y="133">Result</text><text class="sub" x="852.5" y="154">chart + trace</text></g><path class="prep-flow" d="M180 138L222 82" marker-end="url(#sa)"></path><path class="prep-flow" d="M180 138L222 207" marker-end="url(#sa)"></path><path class="prep-flow" d="M374 71L485 103" marker-end="url(#sa)"></path><path class="prep-flow" d="M374 207L485 171" marker-end="url(#sa)"></path><path class="prep-flow" d="M574 138L622 72" marker-end="url(#sa)"></path><path class="prep-flow" d="M574 138L622 207" marker-end="url(#sa)"></path><path class="prep-flow" d="M774 72L803 116" marker-end="url(#sa)"></path><path class="prep-flow" d="M774 207L803 160" marker-end="url(#sa)"></path><circle class="prep-packet p1" cx="180" cy="138" r="5"></circle><circle class="prep-packet p2" cx="574" cy="138" r="5"></circle></svg><div class="diagram-caption">The model creates a typed semantic query plan. Deterministic code validates and compiles it; the model never submits arbitrary SQL.</div></div>
+<div class="callout note"><div class="c-ico">🤖</div><div class="c-body"><div class="c-title">Where agents fit</div><p>A full agent is optional. Use a fixed loop—interpret, clarify if needed, validate, execute, explain. An agent may help choose among metadata, glossary and chart tools, but it should never gain a general SQL execution tool.</p></div></div>
+<h2 id="stack">4 · Tech stack and why</h2>
+<div class="table-wrap"><table><thead><tr><th>Layer</th><th>Choice</th><th>Why here</th></tr></thead><tbody><tr><td><strong>API</strong></td><td>FastAPI</td><td>Typed request, identity and streaming progress.</td></tr><tr><td><strong>Semantic layer</strong></td><td>dbt Semantic Layer, Cube or custom metric service</td><td>Central business definitions and governed joins.</td></tr><tr><td><strong>Planning</strong></td><td>Structured-output LLM</td><td>Produces measure/dimension/filter plan, not SQL text.</td></tr><tr><td><strong>Validation</strong></td><td>Pydantic + rule engine</td><td>Allowlist, tenant scope, date and row limits.</td></tr><tr><td><strong>Compilation</strong></td><td>Server-side SQL builder</td><td>Parameterized SQL from approved identifiers.</td></tr><tr><td><strong>Warehouse</strong></td><td>Snowflake/BigQuery/Redshift read-only role</td><td>Workload controls, audit and scalable analytics.</td></tr><tr><td><strong>Cache</strong></td><td>Redis/result cache</td><td>Tenant-scoped cache for repeated governed queries.</td></tr></tbody></table></div>
+<h2 id="performance">5 · Latency, cost and load handling</h2>
+<div class="scenario-two-col"><div class="card"><h4>Fast path</h4><ul><li>Cache semantic metadata and repeated result sets by tenant, role, plan and data version.</li><li>Run metadata lookup before the model and send only relevant schema, not the entire warehouse.</li><li>Use warehouse result caching and pre-aggregations for common measures.</li><li>Return query interpretation early, then chart after execution.</li></ul></div><div class="card"><h4>Scale and reliability</h4><ul><li>Apply per-tenant query quotas and separate interactive from scheduled workloads.</li><li>Estimate cost before execution; reject or require confirmation for large scans.</li><li>Set warehouse statement timeouts, row caps and dedicated resource groups.</li><li>Queue expensive reports and notify users asynchronously.</li></ul></div></div>
+<h2 id="security">6 · Security design</h2>
+<div class="scenario-security"><div><h4>Prompt-injection boundary</h4><ul><li>Treat column descriptions and sample values as untrusted metadata.</li><li>Constrain model output to a semantic plan schema; reject unknown measures or operators.</li><li>Do not expose a raw SQL execution tool or system catalog credentials.</li><li>Use canary prompts and red-team tests for instruction injection through data values.</li></ul></div><div><h4>Application and data security</h4><ul><li>Compile parameterized SQL and allowlist every identifier; values are bound by the driver.</li><li>Enforce tenant predicates in the semantic/compiler layer and again through warehouse row policies.</li><li>Use read-only views, no sensitive raw columns, row limits and statement timeouts.</li><li>Log plan, compiled SQL hash, user, role, cost and result size.</li></ul></div></div>
+<h2 id="evaluation">7 · How we know it works</h2>
+<div class="scenario-metrics"><div class="scenario-metric"><strong>Semantic accuracy</strong><span>correct measure, dimension, filter and time grain</span></div><div class="scenario-metric"><strong>Execution</strong><span>valid-query rate, timeout and scanned bytes</span></div><div class="scenario-metric"><strong>Answer</strong><span>numerical correctness and explanation faithfulness</span></div><div class="scenario-metric"><strong>Security</strong><span>blocked policy violations and cross-tenant test pass rate</span></div></div>
+<div class="callout key"><div class="c-ico">⚖️</div><div class="c-body"><div class="c-title">Important trade-off</div><p>Arbitrary text-to-SQL offers flexibility but expands security and correctness risk. A governed semantic layer covers fewer questions but produces more trustworthy, explainable and cost-controlled analytics.</p></div></div>
+<h2 id="code">8 · Python implementation sketch</h2>
+<div class="code-block" data-reveal="">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>service.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import Literal
+from pydantic import BaseModel, Field
+
+class Filter(BaseModel):
+    field: Literal["region", "product", "quarter"]
+    op: Literal["eq", "in"]
+    value: str | list[str]
+
+class QueryPlan(BaseModel):
+    measure: Literal["revenue", "orders", "margin"]
+    dimensions: list[Literal["product", "region", "quarter"]]
+    filters: list[Filter] = Field(default_factory=list)
+    limit: int = Field(default=100, le=500)
+
+async def execute(plan: QueryPlan, principal):
+    sql, params = compiler.compile(plan, tenant_id=principal.tenant_id)
+    return await readonly_db.fetch(sql, params, timeout=5)</code></pre>
+</div>
+<h2 id="answer">9 · A crisp two-minute answer</h2>
+<div class="scenario-answer"><ol><li>Clarify governed metrics, permissions, ambiguity, load and warehouse limits.</li><li>Have the model produce a typed semantic query plan instead of arbitrary SQL.</li><li>Validate identifiers and policies, then compile parameterized SQL against read-only views.</li><li>Use pre-aggregations, result caching, cost estimates and workload isolation for latency and load.</li><li>Measure semantic correctness, numerical accuracy, query cost and cross-tenant security.</li></ol></div>
+
+<div class="page-nav"><a href="02-customer-support-agent.html"><div class="dir">← Previous</div><div class="ttl">Customer Support Resolution Agent</div></a><a class="next" href="04-ats-recruiter-copilot.html"><div class="dir">Next →</div><div class="ttl">ATS Recruiter Copilot</div></a></div>
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script src="../assets/app.js"></script>
+<script src="../assets/sitenav.js"></script>
+<script src="../assets/enhance.js"></script>
+<script src="../assets/interview-prep.js"></script>
+</body>
+</html>

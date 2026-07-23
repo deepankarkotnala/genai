@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>AsyncIO for LangGraph — Interview Lab</title>
+<link rel="icon" href="../assets/brand/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../assets/brand/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../assets/brand/favicon.ico">
+<link rel="apple-touch-icon" href="../assets/brand/apple-touch-icon.png" sizes="180x180">
+<link rel="manifest" href="../assets/brand/site.webmanifest">
+<link rel="mask-icon" href="../assets/brand/safari-pinned-tab.svg" color="#6f47f5">
+<link rel="image_src" href="../assets/brand/social-card.png">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="msapplication-TileColor" content="#5b35e8">
+<meta name="msapplication-config" content="../assets/brand/browserconfig.xml">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Interview Preparation">
+<meta property="og:title" content="AsyncIO for LangGraph — Interview Lab">
+<meta property="og:description" content="Interview-focused AsyncIO learning for LangGraph: event loops, coroutines, TaskGroup, cancellation, timeouts, backpressure, async nodes, ainvoke and astream.">
+<meta property="og:image" content="../assets/brand/social-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Interview Preparation glass-style logo">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="AsyncIO for LangGraph — Interview Lab">
+<meta name="twitter:description" content="Interview-focused AsyncIO learning for LangGraph: event loops, coroutines, TaskGroup, cancellation, timeouts, backpressure, async nodes, ainvoke and astream.">
+<meta name="twitter:image" content="../assets/brand/social-card.png">
+<meta name="description" content="Interview-focused AsyncIO learning for LangGraph: event loops, coroutines, TaskGroup, cancellation, timeouts, backpressure, async nodes, ainvoke and astream.">
+<link rel="stylesheet" href="assets/styles.css">
+<link href="assets/office-theme.css" rel="stylesheet"/>
+</head>
+<body data-page="langgraph-asyncio">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <span class="brand-mark" aria-hidden="true"><span>I</span><span>P</span></span>
+        <div class="brand-text"><strong>Interview</strong><span>Preparation</span></div>
+      </a>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search portal…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div class="crumbs">Frameworks / LangGraph / <b>AsyncIO for LangGraph</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> LangGraph interview lab · Python concurrency</div>
+        <h1>AsyncIO for LangGraph</h1>
+        <p class="lead">Learn the Python concurrency concepts that make production LangGraph systems responsive and safe. This lab moves from the event-loop mental model to async nodes, structured concurrency, cancellation, timeouts, backpressure, streaming, debugging, and interview practice.</p>
+        <div class="meta-row"><span class="pill blue">⏱ Study + coding · 6–10 h</span><span class="pill">Difficulty · Intermediate</span><span class="pill purple">Python · LangGraph · Backend</span></div>
+        
+<div class="callout key"><div class="c-ico">🎯</div><div class="c-body"><div class="c-title">Interview outcome</div><p>After this lab you should be able to explain the event loop, write an async LangGraph node, choose between sequential awaits, <code>gather</code>, and <code>TaskGroup</code>, enforce timeouts and concurrency limits, and diagnose why “async code” can still block a production service.</p></div></div>
+
+<h2 id="why">1 · Why AsyncIO matters in LangGraph</h2>
+<p>Agent graphs spend most of their time waiting: model APIs, vector databases, HTTP tools, SQL drivers, object storage, and checkpoints. AsyncIO lets one Python process make progress on other work while one operation is waiting for I/O. It improves <strong>concurrency and throughput</strong>; it does not make CPU-heavy Python calculations faster.</p>
+<div class="grid grid-3">
+  <div class="card"><h4>Good async work</h4><p>HTTP calls, async database clients, LLM requests, streaming, sockets, queues.</p></div>
+  <div class="card"><h4>Bad assumption</h4><p><code>async def</code> alone gives concurrency. It does not; code must reach an <code>await</code> on non-blocking I/O.</p></div>
+  <div class="card"><h4>LangGraph connection</h4><p>Use async nodes plus <code>graph.ainvoke()</code> or <code>graph.astream()</code>.</p></div>
+</div>
+
+<h2 id="mental-model">2 · The mental model: coroutine, task, event loop</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Term</th><th>Interview-ready definition</th><th>Common trap</th></tr></thead>
+<tbody>
+<tr><td><strong>Coroutine function</strong></td><td>A function declared with <code>async def</code>.</td><td>Calling it does not run it; it creates a coroutine object.</td></tr>
+<tr><td><strong>Coroutine object</strong></td><td>An awaitable representing suspended work.</td><td>Forgetting to await it causes “coroutine was never awaited”.</td></tr>
+<tr><td><strong>Task</strong></td><td>A coroutine scheduled on the event loop so it can progress concurrently.</td><td>Creating untracked fire-and-forget tasks loses errors and lifecycle control.</td></tr>
+<tr><td><strong>Event loop</strong></td><td>The scheduler that resumes ready tasks and waits for I/O readiness.</td><td>Blocking calls freeze every task on that loop.</td></tr>
+</tbody></table></div>
+<div class="code-block">
+  <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> async_basics.py</span><button class="copy-btn">Copy</button></div>
+  <pre><code>import asyncio
+
+async def fetch(name: str, delay: float) -&gt; str:
+    await asyncio.sleep(delay)   # yields control to the event loop
+    return f&quot;{name} finished&quot;
+
+async def main() -&gt; None:
+    # Sequential: roughly 3 seconds total
+    first = await fetch(&quot;docs&quot;, 1)
+    second = await fetch(&quot;web&quot;, 2)
+    print(first, second)
+
+asyncio.run(main())</code></pre>
+</div>
+<div class="callout note"><div class="c-ico">🧠</div><div class="c-body"><div class="c-title">Core interview distinction</div><p><strong>Concurrency</strong> means tasks overlap while waiting. <strong>Parallelism</strong> means work executes simultaneously, often on multiple CPU cores. AsyncIO normally provides single-threaded concurrency, not CPU parallelism.</p></div></div>
+
+<h2 id="concurrency">3 · Sequential await vs gather vs TaskGroup</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Technique</th><th>Use it when</th><th>Failure behaviour</th></tr></thead>
+<tbody>
+<tr><td><code>await a(); await b()</code></td><td>B depends on A, or ordering is required.</td><td>Simple propagation; no overlap.</td></tr>
+<tr><td><code>asyncio.gather(...)</code></td><td>You want results in input order and understand its exception semantics.</td><td>By default the first exception propagates, while other awaitables are not automatically cancelled.</td></tr>
+<tr><td><code>asyncio.TaskGroup</code></td><td>Related child tasks should succeed or fail as one structured unit.</td><td>On a child failure, remaining children are cancelled; errors are grouped.</td></tr>
+</tbody></table></div>
+<div class="code-block">
+  <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> structured_concurrency.py</span><button class="copy-btn">Copy</button></div>
+  <pre><code>import asyncio
+
+async def retrieve(source: str) -&gt; dict[str, str]:
+    await asyncio.sleep(0.2)
+    return {&quot;source&quot;: source, &quot;text&quot;: f&quot;evidence from {source}&quot;}
+
+async def retrieve_all() -&gt; list[dict[str, str]]:
+    async with asyncio.TaskGroup() as group:
+        tasks = [
+            group.create_task(retrieve(&quot;docs&quot;)),
+            group.create_task(retrieve(&quot;web&quot;)),
+            group.create_task(retrieve(&quot;database&quot;)),
+        ]
+    return [task.result() for task in tasks]
+
+asyncio.run(retrieve_all())</code></pre>
+</div>
+<p><strong>Google-style follow-up:</strong> Why prefer structured concurrency? Because child tasks have an explicit parent scope, errors are not silently orphaned, and cleanup/cancellation becomes predictable.</p>
+
+<h2 id="langgraph">4 · Async nodes and async graph execution</h2>
+<div class="code-block">
+  <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> async_langgraph.py</span><button class="copy-btn">Copy</button></div>
+  <pre><code>from typing_extensions import TypedDict
+from langgraph.graph import StateGraph, START, END
+
+class State(TypedDict):
+    question: str
+    answer: str
+
+async def answer_node(state: State) -&gt; dict[str, str]:
+    # Replace with an actual async model/client call.
+    response = await model.ainvoke(state[&quot;question&quot;])
+    return {&quot;answer&quot;: response.content}
+
+builder = StateGraph(State)
+builder.add_node(&quot;answer&quot;, answer_node)
+builder.add_edge(START, &quot;answer&quot;)
+builder.add_edge(&quot;answer&quot;, END)
+graph = builder.compile()
+
+result = await graph.ainvoke({&quot;question&quot;: &quot;Explain idempotency&quot;})
+
+async for event in graph.astream(
+    {&quot;question&quot;: &quot;Explain backpressure&quot;},
+    stream_mode=&quot;updates&quot;,
+):
+    print(event)</code></pre>
+</div>
+<div class="callout tip"><div class="c-ico">✅</div><div class="c-body"><div class="c-title">Design boundary</div><p>Use LangGraph edges for <strong>workflow-level parallel branches</strong>. Use AsyncIO inside a node when that node itself must perform several independent I/O calls. Do not create an extra concurrency layer without a reason; it complicates limits, retries, tracing, and cancellation.</p></div></div>
+
+<h2 id="production">5 · Production patterns: timeout, cancellation, limits</h2>
+<div class="code-block">
+  <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> bounded_async_node.py</span><button class="copy-btn">Copy</button></div>
+  <pre><code>import asyncio
+from typing_extensions import TypedDict
+
+class State(TypedDict):
+    urls: list[str]
+    documents: list[str]
+
+MAX_IN_FLIGHT = 8
+semaphore = asyncio.Semaphore(MAX_IN_FLIGHT)
+
+async def fetch_document(client, url: str) -&gt; str:
+    async with semaphore:                 # backpressure
+        async with asyncio.timeout(3.0):  # end-to-end deadline
+            response = await client.get(url)
+            response.raise_for_status()
+            return response.text
+
+async def load_documents(state: State) -&gt; dict[str, list[str]]:
+    try:
+        async with asyncio.TaskGroup() as group:
+            tasks = [group.create_task(fetch_document(client, url))
+                     for url in state[&quot;urls&quot;]]
+        return {&quot;documents&quot;: [task.result() for task in tasks]}
+    except asyncio.CancelledError:
+        # cleanup belongs in finally/async context managers; do not swallow cancellation
+        raise</code></pre>
+</div>
+<div class="grid grid-2">
+  <div class="card"><h4>Timeout</h4><p>Bounds latency and resource usage. Decide whether the timeout applies per request, per node, or to the whole graph run.</p></div>
+  <div class="card"><h4>Semaphore</h4><p>Caps in-flight work so a large state cannot create thousands of sockets or trigger provider rate limits.</p></div>
+  <div class="card"><h4>Cancellation</h4><p>Cooperative. Await points receive cancellation; cleanup resources and re-raise <code>CancelledError</code>.</p></div>
+  <div class="card"><h4>Retry</h4><p>Retry only transient, idempotent operations with bounded attempts, jitter, and a total deadline.</p></div>
+</div>
+
+<h2 id="blocking">6 · Blocking code inside async applications</h2>
+<div class="code-block">
+  <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> blocking_fix.py</span><button class="copy-btn">Copy</button></div>
+  <pre><code>import asyncio
+import requests
+
+# WRONG: requests.get blocks the event-loop thread.
+async def wrong(url: str) -&gt; str:
+    return requests.get(url, timeout=5).text
+
+# Transitional fix for blocking I/O libraries.
+async def acceptable_bridge(url: str) -&gt; str:
+    response = await asyncio.to_thread(requests.get, url, timeout=5)
+    return response.text
+
+# Preferred: use a native async HTTP client.
+async def preferred(client, url: str) -&gt; str:
+    response = await client.get(url)
+    return response.text</code></pre>
+</div>
+<p>For CPU-bound parsing, embeddings implemented in Python, or heavy numerical work, <code>to_thread</code> may keep the loop responsive but does not guarantee CPU scaling because of the GIL. Use vectorized/native code, a process pool, or a separate worker service when CPU parallelism is required.</p>
+
+<h2 id="bugs">7 · Debugging checklist</h2>
+<div class="table-wrap"><table>
+<thead><tr><th>Symptom</th><th>Likely cause</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td>“coroutine was never awaited”</td><td>Called an async function without awaiting/scheduling it.</td><td><code>await fn()</code> or create a managed task.</td></tr>
+<tr><td>Async service freezes during one call</td><td>Blocking library or CPU loop on the event-loop thread.</td><td>Native async client, <code>to_thread</code>, process/worker.</td></tr>
+<tr><td>Provider returns 429 under load</td><td>Unbounded fan-out.</td><td>Semaphore, queue, backoff, provider-aware rate limiter.</td></tr>
+<tr><td>Tasks continue after request disconnect</td><td>Cancellation swallowed or detached tasks.</td><td>Structured concurrency and cancellation propagation.</td></tr>
+<tr><td>Race-like state corruption</td><td>Shared mutable object changed by concurrent tasks.</td><td>Return isolated results and merge deterministically via reducers.</td></tr>
+</tbody></table></div>
+
+<h2 id="interview">8 · Interview questions and strong answer anchors</h2>
+<details class="recall"><summary><span class="q-ico">Q</span> What happens when an async function is called? <span class="chev">›</span></summary><div class="a">It returns a coroutine object. The body runs only when the coroutine is awaited or scheduled as a task by an event loop.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Does AsyncIO use multiple threads? <span class="chev">›</span></summary><div class="a">The normal event-loop model is one thread executing one Python task at a time, switching at await points. Threads can be introduced deliberately, for example with <code>asyncio.to_thread</code>.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Why can a single blocking call be disastrous? <span class="chev">›</span></summary><div class="a">Because the event loop cannot schedule any other task while the loop thread is blocked, so the latency of unrelated requests rises too.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> TaskGroup vs gather? <span class="chev">›</span></summary><div class="a">Both run awaitables concurrently. TaskGroup gives structured lifecycle and cancels sibling tasks when one fails, making it the safer default for related child work. Gather is useful when its ordering and exception behaviour are exactly what you need.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Where should concurrency limits live in a LangGraph system? <span class="chev">›</span></summary><div class="a">At every scarce boundary: graph/service admission, per-provider/API semaphore or rate limiter, database pool, and worker queue. The smallest local semaphore alone is not a complete capacity strategy.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> How would you make an async tool call reliable? <span class="chev">›</span></summary><div class="a">Use a total deadline, bounded retries for transient errors, idempotency where side effects exist, cancellation propagation, concurrency/rate limits, structured logs/traces, and explicit error mapping into graph state.</div></details>
+
+<h2 id="quiz">9 · Knowledge check</h2>
+<div class="quiz"><div class="q">1 · Which workload benefits most directly from AsyncIO?</div><label class="opt">A large CPU-bound matrix multiplication in pure Python</label><label class="opt" data-correct="true">Thousands of overlapping network waits with an async client</label><label class="opt">A single regex running once</label><label class="opt">Sorting one in-memory list</label><div class="explain">AsyncIO is strongest for I/O-bound concurrency. CPU-heavy work needs a different execution strategy.</div></div>
+<div class="quiz"><div class="q">2 · What is the safest default for a set of related child tasks that should fail together?</div><label class="opt">Untracked create_task calls</label><label class="opt">Sequential await</label><label class="opt" data-correct="true">asyncio.TaskGroup</label><label class="opt">time.sleep</label><div class="explain">TaskGroup provides structured concurrency and manages sibling cancellation on failure.</div></div>
+<div class="quiz"><div class="q">3 · An async LangGraph node calls <code>requests.get()</code>. What is the main risk?</div><label class="opt">Pydantic cannot validate it</label><label class="opt" data-correct="true">It blocks the event-loop thread and stalls unrelated tasks</label><label class="opt">LangGraph will create duplicate nodes</label><label class="opt">The graph cannot be checkpointed</label><div class="explain">Synchronous network I/O inside async code blocks the entire event loop.</div></div>
+
+<h2 id="practice">10 · Focused practice</h2>
+<div class="callout tip"><div class="c-ico">🟢</div><div class="c-body"><div class="c-title">Exercise 1 · Fluency</div><p>Write three coroutines with different delays. Run them sequentially, with <code>gather</code>, and with <code>TaskGroup</code>. Measure elapsed time and explain the result aloud.</p></div></div>
+<div class="callout warn"><div class="c-ico">🟡</div><div class="c-body"><div class="c-title">Exercise 2 · Reliability</div><p>Build a downloader with a semaphore of 5, a 2-second timeout, cancellation-safe cleanup, and explicit handling for partial failures.</p></div></div>
+<div class="callout danger"><div class="c-ico">🔴</div><div class="c-body"><div class="c-title">Exercise 3 · LangGraph interview task</div><p>Create a graph that fans out to three retriever nodes, streams updates, and merges evidence through a reducer. Then compare it with one node using a TaskGroup. Explain which design gives better observability, retries, and checkpoint granularity.</p></div></div>
+
+<h2 id="plan">11 · Five-session mastery plan</h2>
+<div class="timeline">
+<div class="step"><h4>Session 1</h4><p>Coroutine/task/event-loop mental model; predict execution order.</p></div>
+<div class="step"><h4>Session 2</h4><p>Sequential vs concurrent execution; gather and TaskGroup.</p></div>
+<div class="step"><h4>Session 3</h4><p>Timeouts, cancellation, semaphores, blocking-code diagnosis.</p></div>
+<div class="step"><h4>Session 4</h4><p>Async LangGraph node, <code>ainvoke</code>, <code>astream</code>.</p></div>
+<div class="step"><h4>Session 5</h4><p>Implement the interview task without AI help; explain trade-offs.</p></div>
+</div>
+
+<h2 id="references">12 · Official references</h2>
+<ul><li><a href="https://docs.python.org/3/library/asyncio.html">Python AsyncIO documentation</a></li><li><a href="https://docs.python.org/3/library/asyncio-task.html">Python coroutines, tasks, TaskGroup, cancellation and timeouts</a></li><li><a href="https://docs.langchain.com/oss/python/langgraph/use-graph-api#async">LangGraph Graph API — async execution</a></li><li><a href="https://docs.langchain.com/oss/python/langgraph/streaming">LangGraph streaming</a></li></ul>
+
+        <div class="page-nav">
+          <a href="modules/12_langgraph.html"><div class="dir">← Core module</div><div class="ttl">12 · LangGraph</div></a>
+          <a class="next" href="langgraph-pydantic.html"><div class="dir">Companion lab →</div><div class="ttl">Pydantic for LangGraph</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+<script src="assets/app.js"></script>
+<script src="assets/sitenav.js"></script>
+<script src="assets/enhance.js"></script>
+</body>
+</html>

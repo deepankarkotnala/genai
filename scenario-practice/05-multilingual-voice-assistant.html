@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+
+<html data-theme="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="#f4f5f8" name="theme-color"/>
+<title>Multilingual Voice Service Assistant — GenAI Learning Hub</title>
+<!-- Interview Preparation brand metadata -->
+<link href="../../assets/brand/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/brand/favicon-32.png" rel="icon" sizes="32x32" type="image/png"/>
+<link href="../../assets/brand/favicon.ico" rel="shortcut icon"/>
+<link href="../../assets/brand/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180"/>
+<link href="../../assets/brand/site.webmanifest" rel="manifest"/>
+<link color="#6f47f5" href="../../assets/brand/safari-pinned-tab.svg" rel="mask-icon"/>
+<link href="../../assets/brand/social-card.png" rel="image_src"/>
+<meta content="Interview Preparation" name="application-name"/>
+<meta content="Interview Prep" name="apple-mobile-web-app-title"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="#5b35e8" name="msapplication-TileColor"/>
+<meta content="../../assets/brand/browserconfig.xml" name="msapplication-config"/>
+<meta content="website" property="og:type"/>
+<meta content="Interview Preparation" property="og:site_name"/>
+<meta content="Multilingual Voice Service Assistant — GenAI Learning Hub" property="og:title"/>
+<meta content="Design a low-latency multilingual voice assistant with streaming, tool use and safe escalation." property="og:description"/>
+<meta content="../../assets/brand/social-card.png" property="og:image"/>
+<meta content="1200" property="og:image:width"/>
+<meta content="630" property="og:image:height"/>
+<meta content="Interview Preparation glass-style logo" property="og:image:alt"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="Multilingual Voice Service Assistant — GenAI Learning Hub" name="twitter:title"/>
+<meta content="Design a low-latency multilingual voice assistant with streaming, tool use and safe escalation." name="twitter:description"/>
+<meta content="../../assets/brand/social-card.png" name="twitter:image"/>
+<!-- /Interview Preparation brand metadata -->
+<meta content="Design a low-latency multilingual voice assistant with streaming, tool use and safe escalation." name="description"/>
+<link href="../assets/styles.css" rel="stylesheet"/>
+<link href="../assets/office-theme.css" rel="stylesheet"/>
+</head>
+<body data-page="scenario-voice" data-prep-section="scenario">
+<div class="app">
+<aside class="sidebar">
+<div class="brand"><a href="../index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit"><span aria-hidden="true" class="brand-mark"><span>I</span><span>P</span></span><div class="brand-text"><strong>Interview</strong><span>Preparation</span></div></a></div>
+<div class="search-wrap"><div class="search-box"><svg fill="none" height="15" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="15"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg><input data-search="" placeholder="Search everything…  ( / )" type="text"/></div><div class="search-results"></div></div>
+<nav class="nav"></nav>
+</aside>
+<div class="backdrop"></div>
+<div class="main">
+<header class="topbar">
+<button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
+<div class="crumbs">Scenario Design Studio / Multilingual Voice Service Assistant</div>
+<button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
+</header>
+<div class="content-wrap">
+<main class="content prep-content">
+<div class="eyebrow"><span class="dot"></span> Scenario 05 · Architecture practice</div>
+<h1>Multilingual Voice Service Assistant</h1>
+<p class="lead">Design a natural voice experience while controlling latency, interruptions, language quality and sensitive actions.</p>
+<div class="meta-row"><span class="pill purple">System design practice</span><span class="pill">Advanced</span><span class="pill blue">Target: 25 min</span></div>
+<div class="scenario-prompt" data-reveal=""><div class="scenario-prompt-head"><span>Interview prompt</span><button class="btn ghost" data-start-timer="20" type="button">Start 20-min timer</button></div><p>Design a multilingual voice assistant for a telecom provider. It should identify the caller, answer plan and billing questions, troubleshoot common issues, open a ticket and transfer to a human. It must support Hindi, English and code-switching, with natural turn-taking.</p><div class="scenario-timer" data-scenario-timer="" hidden=""><strong data-timer-display="">20:00</strong><button data-pause-timer="" type="button">Pause</button><button data-reset-timer="" type="button">Reset</button></div></div>
+<h2 id="clarify">1 · Clarify before designing</h2>
+<p>Start by asking a few questions. It shows that you design for constraints rather than drawing a fashionable architecture.</p>
+<div class="scenario-two-col"><div class="card"><h4>Questions to ask</h4><ul><li>Which channels and telephony provider are used?</li><li>What identity verification is required for account information?</li><li>What p95 response gap feels acceptable?</li><li>How often do users code-switch, and are transcripts retained?</li><li>Which actions can be completed without a human?</li></ul></div><div class="card"><h4>Assumptions for this answer</h4><ul><li>10,000 concurrent calls at peak across India.</li><li>Hindi, English and Hinglish are required.</li><li>Target end-of-utterance to first audio under 1.5 seconds.</li><li>Ticket creation is allowed; plan changes require human or stronger confirmation.</li><li>Calls can transfer with transcript and structured summary.</li></ul></div></div>
+<h2 id="requirements">2 · Requirements and success criteria</h2>
+<div class="scenario-requirements"><div><span>Must do</span><ul><li>Stream speech recognition with endpointing and barge-in.</li><li>Answer from approved knowledge and inspect an authenticated account.</li><li>Run bounded troubleshooting and create a ticket.</li><li>Transfer with context, language and attempted steps.</li></ul></div><div><span>Must protect</span><ul><li>Low conversational latency and graceful jitter handling.</li><li>Accurate language detection without losing named entities.</li><li>PII protection for audio, transcripts and traces.</li><li>Fallback to keypad or human when speech quality is poor.</li></ul></div></div>
+<h2 id="architecture">3 · Proposed architecture</h2>
+<div class="diagram prep-diagram scenario-diagram" data-reveal=""><svg aria-label="Animated scenario architecture" role="img" viewbox="0 0 930 290"><defs><marker id="sa" markerheight="10" markerwidth="10" orient="auto" refx="8" refy="3"><path d="M0,0 L8,3 L0,6 Z" fill="var(--accent)"></path></marker></defs><g class="prep-node n1"><rect height="66" rx="17" width="145" x="35" y="105"></rect><text x="107.5" y="133">Caller</text><text class="sub" x="107.5" y="154">audio stream</text></g><g class="prep-node n2"><rect height="66" rx="17" width="150" x="224" y="38"></rect><text x="299.0" y="66">Media edge</text><text class="sub" x="299.0" y="87">VAD + jitter</text></g><g class="prep-node n3"><rect height="66" rx="17" width="150" x="224" y="174"></rect><text x="299.0" y="202">Speech</text><text class="sub" x="299.0" y="223">ASR + language</text></g><g class="prep-node n4"><rect height="66" rx="17" width="150" x="424" y="105"></rect><text x="499.0" y="133">Voice agent</text><text class="sub" x="499.0" y="154">state + routing</text></g><g class="prep-node n5"><rect height="66" rx="17" width="150" x="624" y="38"></rect><text x="699.0" y="66">Knowledge</text><text class="sub" x="699.0" y="87">RAG</text></g><g class="prep-node n1"><rect height="66" rx="17" width="150" x="624" y="174"></rect><text x="699.0" y="202">Account tools</text><text class="sub" x="699.0" y="223">policy gate</text></g><g class="prep-node n2"><rect height="66" rx="17" width="95" x="805" y="105"></rect><text x="852.5" y="133">TTS/Handoff</text><text class="sub" x="852.5" y="154">audio or human</text></g><path class="prep-flow" d="M180 138L222 82" marker-end="url(#sa)"></path><path class="prep-flow" d="M180 138L222 207" marker-end="url(#sa)"></path><path class="prep-flow" d="M374 71L485 103" marker-end="url(#sa)"></path><path class="prep-flow" d="M374 207L485 171" marker-end="url(#sa)"></path><path class="prep-flow" d="M574 138L622 72" marker-end="url(#sa)"></path><path class="prep-flow" d="M574 138L622 207" marker-end="url(#sa)"></path><path class="prep-flow" d="M774 72L803 116" marker-end="url(#sa)"></path><path class="prep-flow" d="M774 207L803 160" marker-end="url(#sa)"></path><circle class="prep-packet p1" cx="180" cy="138" r="5"></circle><circle class="prep-packet p2" cx="574" cy="138" r="5"></circle></svg><div class="diagram-caption">Audio is processed incrementally. Read-only retrieval and account lookup can run while the user is speaking, but sensitive actions wait for explicit confirmation.</div></div>
+<div class="callout note"><div class="c-ico">🤖</div><div class="c-body"><div class="c-title">Where agents fit</div><p>A bounded conversational agent fits because it must react to partial speech, tool results and interruptions. Keep troubleshooting paths as explicit graph nodes, cap turns, and make transfer a normal outcome—not a failure.</p></div></div>
+<h2 id="stack">4 · Tech stack and why</h2>
+<div class="table-wrap"><table><thead><tr><th>Layer</th><th>Choice</th><th>Why here</th></tr></thead><tbody><tr><td><strong>Telephony</strong></td><td>Twilio/Exotel or carrier SIP</td><td>Bidirectional media streams and call control.</td></tr><tr><td><strong>Streaming gateway</strong></td><td>Async Python/Go WebSocket service</td><td>Low-overhead audio transport, VAD and session state.</td></tr><tr><td><strong>Speech</strong></td><td>Streaming ASR/TTS with Indian-language support</td><td>Low-latency transcription, code-switching and natural output.</td></tr><tr><td><strong>Orchestration</strong></td><td>LangGraph or state machine</td><td>Turn state, interruption, tools and transfer checkpoints.</td></tr><tr><td><strong>Knowledge</strong></td><td>Hybrid RAG</td><td>Grounded plans, troubleshooting and policy answers.</td></tr><tr><td><strong>State</strong></td><td>Redis + PostgreSQL</td><td>Hot call state plus durable ticket/audit records.</td></tr><tr><td><strong>Observability</strong></td><td>Audio-safe traces + QoS metrics</td><td>Per-stage latency without unnecessary raw audio retention.</td></tr></tbody></table></div>
+<h2 id="performance">5 · Latency, cost and load handling</h2>
+<div class="scenario-two-col"><div class="card"><h4>Fast path</h4><ul><li>Use streaming ASR, endpointing and speculative intent detection before the utterance fully ends.</li><li>Start retrieval in parallel with final transcript stabilization, then cancel if the intent changes.</li><li>Route simple intents to a smaller model and use cached TTS for fixed confirmations.</li><li>Stream TTS sentence by sentence and support immediate barge-in cancellation.</li></ul></div><div class="card"><h4>Scale and reliability</h4><ul><li>Partition sessions by call ID and keep media workers sticky but stateless beyond Redis.</li><li>Autoscale on concurrent streams and audio-frame lag, not HTTP request count.</li><li>Use regional speech endpoints, provider quotas and per-stage circuit breakers.</li><li>If the model or RAG is slow, play a brief progress cue and transfer rather than leaving silence.</li></ul></div></div>
+<h2 id="security">6 · Security design</h2>
+<div class="scenario-security"><div><h4>Prompt-injection boundary</h4><ul><li>Do not allow spoken or retrieved instructions to alter tool policy.</li><li>Expose only typed account and ticket tools; no arbitrary browsing or shell access.</li><li>Require identity state and fresh confirmation in the tool wrapper.</li><li>Sanitize transcript-derived fields before placing them in downstream tickets.</li></ul></div><div><h4>Application and data security</h4><ul><li>Use step-up verification before account details; bind verified identity to the call session.</li><li>Encrypt audio and transcripts, minimize retention and redact account numbers from traces.</li><li>Use scoped service credentials and audit every lookup and ticket action.</li><li>Detect abuse and rate-limit repeated account or OTP attempts.</li></ul></div></div>
+<h2 id="evaluation">7 · How we know it works</h2>
+<div class="scenario-metrics"><div class="scenario-metric"><strong>Conversation</strong><span>task completion, transfer and repeat-call rate</span></div><div class="scenario-metric"><strong>Speech</strong><span>word error rate by language and entity accuracy</span></div><div class="scenario-metric"><strong>Latency</strong><span>end-of-turn to first audio, interruption reaction time</span></div><div class="scenario-metric"><strong>Safety</strong><span>identity failures, unauthorized tool attempts and PII exposure</span></div></div>
+<div class="callout key"><div class="c-ico">⚖️</div><div class="c-body"><div class="c-title">Important trade-off</div><p>Aggressive endpointing makes the assistant feel fast but can cut off slower speakers or code-switched phrases. Tune by language and user behavior, and optimize perceived latency with acknowledgements rather than sacrificing understanding.</p></div></div>
+<h2 id="code">8 · Python implementation sketch</h2>
+<div class="code-block" data-reveal="">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>service.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>async def on_final_transcript(session, text: str):
+    intent_task = asyncio.create_task(router.classify(text, session.language))
+    retrieval_task = asyncio.create_task(knowledge.search(text, session.acl))
+
+    intent = await intent_task
+    evidence = await retrieval_task if intent.needs_knowledge else []
+    reply = await voice_agent.next_turn(
+        state=session.state, intent=intent, evidence=evidence
+    )
+    async for audio_chunk in tts.stream(reply.text, language=session.language):
+        if session.user_is_speaking:  # barge-in
+            break
+        await session.send_audio(audio_chunk)</code></pre>
+</div>
+<h2 id="answer">9 · A crisp two-minute answer</h2>
+<div class="scenario-answer"><ol><li>Clarify languages, identity, permitted actions, concurrency and conversational latency.</li><li>Build a streaming media pipeline with explicit turn state, barge-in and language-aware ASR/TTS.</li><li>Use a bounded agent for dynamic conversation, but deterministic policy for identity and tools.</li><li>Parallelize ASR-adjacent work, route simple intents and degrade quickly to a human.</li><li>Measure speech quality by language, end-of-turn latency, completion, transfer and safety.</li></ol></div>
+
+<div class="page-nav"><a href="04-ats-recruiter-copilot.html"><div class="dir">← Previous</div><div class="ttl">ATS Recruiter Copilot</div></a><a class="next" href="06-invoice-document-workflow.html"><div class="dir">Next →</div><div class="ttl">Invoice &amp; Document Processing Workflow</div></a></div>
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script src="../assets/app.js"></script>
+<script src="../assets/sitenav.js"></script>
+<script src="../assets/enhance.js"></script>
+<script src="../assets/interview-prep.js"></script>
+</body>
+</html>

@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+
+<html data-theme="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="#f4f5f8" name="theme-color"/>
+<title>Customer Support Resolution Agent — GenAI Learning Hub</title>
+<!-- Interview Preparation brand metadata -->
+<link href="../../assets/brand/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/brand/favicon-32.png" rel="icon" sizes="32x32" type="image/png"/>
+<link href="../../assets/brand/favicon.ico" rel="shortcut icon"/>
+<link href="../../assets/brand/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180"/>
+<link href="../../assets/brand/site.webmanifest" rel="manifest"/>
+<link color="#6f47f5" href="../../assets/brand/safari-pinned-tab.svg" rel="mask-icon"/>
+<link href="../../assets/brand/social-card.png" rel="image_src"/>
+<meta content="Interview Preparation" name="application-name"/>
+<meta content="Interview Prep" name="apple-mobile-web-app-title"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="#5b35e8" name="msapplication-TileColor"/>
+<meta content="../../assets/brand/browserconfig.xml" name="msapplication-config"/>
+<meta content="website" property="og:type"/>
+<meta content="Interview Preparation" property="og:site_name"/>
+<meta content="Customer Support Resolution Agent — GenAI Learning Hub" property="og:title"/>
+<meta content="Design a customer support agent with tools, RAG, safe actions, human handoff and load handling." property="og:description"/>
+<meta content="../../assets/brand/social-card.png" property="og:image"/>
+<meta content="1200" property="og:image:width"/>
+<meta content="630" property="og:image:height"/>
+<meta content="Interview Preparation glass-style logo" property="og:image:alt"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="Customer Support Resolution Agent — GenAI Learning Hub" name="twitter:title"/>
+<meta content="Design a customer support agent with tools, RAG, safe actions, human handoff and load handling." name="twitter:description"/>
+<meta content="../../assets/brand/social-card.png" name="twitter:image"/>
+<!-- /Interview Preparation brand metadata -->
+<meta content="Design a customer support agent with tools, RAG, safe actions, human handoff and load handling." name="description"/>
+<link href="../assets/styles.css" rel="stylesheet"/>
+<link href="../assets/office-theme.css" rel="stylesheet"/>
+</head>
+<body data-page="scenario-support-agent" data-prep-section="scenario">
+<div class="app">
+<aside class="sidebar">
+<div class="brand"><a href="../index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit"><span aria-hidden="true" class="brand-mark"><span>I</span><span>P</span></span><div class="brand-text"><strong>Interview</strong><span>Preparation</span></div></a></div>
+<div class="search-wrap"><div class="search-box"><svg fill="none" height="15" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="15"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg><input data-search="" placeholder="Search everything…  ( / )" type="text"/></div><div class="search-results"></div></div>
+<nav class="nav"></nav>
+</aside>
+<div class="backdrop"></div>
+<div class="main">
+<header class="topbar">
+<button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
+<div class="crumbs">Scenario Design Studio / Customer Support Resolution Agent</div>
+<button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
+</header>
+<div class="content-wrap">
+<main class="content prep-content">
+<div class="eyebrow"><span class="dot"></span> Scenario 02 · Architecture practice</div>
+<h1>Customer Support Resolution Agent</h1>
+<p class="lead">Design a support agent that can answer, inspect an account and perform a small set of reversible actions safely.</p>
+<div class="meta-row"><span class="pill purple">System design practice</span><span class="pill">Advanced</span><span class="pill blue">Target: 25 min</span></div>
+<div class="scenario-prompt" data-reveal=""><div class="scenario-prompt-head"><span>Interview prompt</span><button class="btn ghost" data-start-timer="20" type="button">Start 20-min timer</button></div><p>Design a customer-support assistant for a consumer SaaS product. It should answer product questions, inspect a customer account, issue eligible credits, update a subscription and hand off complex cases. Peak traffic is 150 requests per second during incidents.</p><div class="scenario-timer" data-scenario-timer="" hidden=""><strong data-timer-display="">20:00</strong><button data-pause-timer="" type="button">Pause</button><button data-reset-timer="" type="button">Reset</button></div></div>
+<h2 id="clarify">1 · Clarify before designing</h2>
+<p>Start by asking a few questions. It shows that you design for constraints rather than drawing a fashionable architecture.</p>
+<div class="scenario-two-col"><div class="card"><h4>Questions to ask</h4><ul><li>Which actions are allowed and what monetary limits apply?</li><li>What authentication level is required before account access?</li><li>Which regions, languages and support channels?</li><li>How fresh is the product knowledge base?</li><li>What is the target containment rate without reducing customer trust?</li></ul></div><div class="card"><h4>Assumptions for this answer</h4><ul><li>Authenticated web chat with 150 peak request QPS.</li><li>Credits under a policy limit are reversible; cancellation requires confirmation.</li><li>Account and billing systems already expose APIs.</li><li>p95 first token under 2 seconds and simple resolutions under 12 seconds.</li><li>Human agents use an existing ticketing platform.</li></ul></div></div>
+<h2 id="requirements">2 · Requirements and success criteria</h2>
+<div class="scenario-requirements"><div><span>Must do</span><ul><li>Answer from approved product knowledge.</li><li>Look up account and billing state after authentication.</li><li>Propose or execute allowlisted actions under policy.</li><li>Summarize and transfer context to a human agent.</li></ul></div><div><span>Must protect</span><ul><li>No cross-account data access.</li><li>Exactly-once behavior for financial side effects.</li><li>Clear user confirmation and action receipts.</li><li>Survive incident traffic without cascading failures.</li></ul></div></div>
+<h2 id="architecture">3 · Proposed architecture</h2>
+<div class="diagram prep-diagram scenario-diagram" data-reveal=""><svg aria-label="Animated scenario architecture" role="img" viewbox="0 0 930 290"><defs><marker id="sa" markerheight="10" markerwidth="10" orient="auto" refx="8" refy="3"><path d="M0,0 L8,3 L0,6 Z" fill="var(--accent)"></path></marker></defs><g class="prep-node n1"><rect height="66" rx="17" width="145" x="35" y="105"></rect><text x="107.5" y="133">Customer</text><text class="sub" x="107.5" y="154">chat</text></g><g class="prep-node n2"><rect height="66" rx="17" width="150" x="224" y="38"></rect><text x="299.0" y="66">Gateway</text><text class="sub" x="299.0" y="87">auth + limits</text></g><g class="prep-node n3"><rect height="66" rx="17" width="150" x="224" y="174"></rect><text x="299.0" y="202">Knowledge</text><text class="sub" x="299.0" y="223">RAG path</text></g><g class="prep-node n4"><rect height="66" rx="17" width="150" x="424" y="105"></rect><text x="499.0" y="133">Agent graph</text><text class="sub" x="499.0" y="154">state + policy</text></g><g class="prep-node n5"><rect height="66" rx="17" width="150" x="624" y="38"></rect><text x="699.0" y="66">Account tools</text><text class="sub" x="699.0" y="87">read only</text></g><g class="prep-node n1"><rect height="66" rx="17" width="150" x="624" y="174"></rect><text x="699.0" y="202">Action tools</text><text class="sub" x="699.0" y="223">approve + execute</text></g><g class="prep-node n2"><rect height="66" rx="17" width="95" x="805" y="105"></rect><text x="852.5" y="133">Reply</text><text class="sub" x="852.5" y="154">or handoff</text></g><path class="prep-flow" d="M180 138L222 82" marker-end="url(#sa)"></path><path class="prep-flow" d="M180 138L222 207" marker-end="url(#sa)"></path><path class="prep-flow" d="M374 71L485 103" marker-end="url(#sa)"></path><path class="prep-flow" d="M374 207L485 171" marker-end="url(#sa)"></path><path class="prep-flow" d="M574 138L622 72" marker-end="url(#sa)"></path><path class="prep-flow" d="M574 138L622 207" marker-end="url(#sa)"></path><path class="prep-flow" d="M774 72L803 116" marker-end="url(#sa)"></path><path class="prep-flow" d="M774 207L803 160" marker-end="url(#sa)"></path><circle class="prep-packet p1" cx="180" cy="138" r="5"></circle><circle class="prep-packet p2" cx="574" cy="138" r="5"></circle></svg><div class="diagram-caption">The agent may choose among tools, but a policy service authorizes every call and side-effecting actions use confirmation plus idempotency.</div></div>
+<div class="callout note"><div class="c-ico">🤖</div><div class="c-body"><div class="c-title">Where agents fit</div><p>An agent fits because the next step depends on what the user says and what tools return. Keep the graph bounded: classify, retrieve or inspect, propose an action, pass policy, obtain confirmation, execute, verify and stop. A deterministic policy service owns eligibility and limits.</p></div></div>
+<h2 id="stack">4 · Tech stack and why</h2>
+<div class="table-wrap"><table><thead><tr><th>Layer</th><th>Choice</th><th>Why here</th></tr></thead><tbody><tr><td><strong>Channel/API</strong></td><td>WebSocket or SSE + FastAPI</td><td>Responsive chat with typed events and cancellation.</td></tr><tr><td><strong>Workflow</strong></td><td>LangGraph or durable state machine</td><td>Explicit loops, checkpoints, handoff and approval states.</td></tr><tr><td><strong>Knowledge</strong></td><td>Hybrid RAG index</td><td>Current help content with source tracking.</td></tr><tr><td><strong>Tools</strong></td><td>Internal REST/gRPC adapters</td><td>Typed contracts around account, billing and ticket APIs.</td></tr><tr><td><strong>Policy</strong></td><td>Dedicated deterministic service</td><td>Eligibility, limits, region and role rules.</td></tr><tr><td><strong>State</strong></td><td>Redis + PostgreSQL</td><td>Short-lived session state and durable action/audit records.</td></tr><tr><td><strong>Queue</strong></td><td>Kafka/SQS + workers</td><td>Absorb incident bursts and process summaries asynchronously.</td></tr></tbody></table></div>
+<h2 id="performance">5 · Latency, cost and load handling</h2>
+<div class="scenario-two-col"><div class="card"><h4>Fast path</h4><ul><li>Route FAQ-only requests to a small model and skip agent loops.</li><li>Parallelize knowledge retrieval and safe read-only account lookup after intent classification.</li><li>Stream conversational text, but never stream an unapproved action as completed.</li><li>Summarize history and cap loop iterations, tool calls and generated tokens.</li></ul></div><div class="card"><h4>Scale and reliability</h4><ul><li>Use admission control and priority queues so authenticated action requests are not starved by anonymous traffic.</li><li>Bulkhead account, billing and model dependencies with separate concurrency pools.</li><li>Circuit-break unhealthy tools and fall back to ticket creation with status messaging.</li><li>Autoscale on concurrent conversations, queue depth and provider headroom.</li></ul></div></div>
+<h2 id="security">6 · Security design</h2>
+<div class="scenario-security"><div><h4>Prompt-injection boundary</h4><ul><li>Keep tool descriptions narrow and never expose credentials to the model.</li><li>Treat knowledge and customer messages as untrusted; retrieved instructions cannot alter policy.</li><li>Validate tool name, typed arguments, account ownership and action risk server-side.</li><li>Require a fresh confirmation token for cancellation, credit or plan changes.</li></ul></div><div><h4>Application and data security</h4><ul><li>Reauthenticate or step up MFA for sensitive account changes.</li><li>Use idempotency keys, append-only audit records and reconciliation for financial actions.</li><li>Redact payment data and minimize support transcripts.</li><li>Rate-limit account enumeration and protect ticket handoff payloads.</li></ul></div></div>
+<h2 id="evaluation">7 · How we know it works</h2>
+<div class="scenario-metrics"><div class="scenario-metric"><strong>Resolution</strong><span>verified containment and repeat-contact rate</span></div><div class="scenario-metric"><strong>Actions</strong><span>tool success, reversal and unauthorized-attempt rate</span></div><div class="scenario-metric"><strong>Experience</strong><span>CSAT, handoff quality and p95 response time</span></div><div class="scenario-metric"><strong>Economics</strong><span>cost per resolved conversation and human minutes saved</span></div></div>
+<div class="callout key"><div class="c-ico">⚖️</div><div class="c-body"><div class="c-title">Important trade-off</div><p>Maximizing autonomous containment can harm trust. Optimize for verified resolution and safe handoff, not the percentage of chats that avoid a human.</p></div></div>
+<h2 id="code">8 · Python implementation sketch</h2>
+<div class="code-block" data-reveal="">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>service.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from pydantic import BaseModel
+
+class CreditRequest(BaseModel):
+    account_id: str
+    amount: int
+    reason: str
+
+async def issue_credit(req: CreditRequest, user, idempotency_key: str):
+    assert req.account_id in user.allowed_accounts
+    decision = await policy.check_credit(user=user, request=req)
+    if not decision.allowed:
+        raise PermissionError(decision.reason)
+    return await billing.credit(
+        req, idempotency_key=idempotency_key
+    )
+
+# The agent can propose this tool call; only this wrapper may execute it.</code></pre>
+</div>
+<h2 id="answer">9 · A crisp two-minute answer</h2>
+<div class="scenario-answer"><ol><li>Separate FAQ answering, read-only account inspection and side-effecting actions by risk.</li><li>Use a bounded agent graph because routing depends on conversation and tool observations.</li><li>Put eligibility, identity, confirmation and idempotency in deterministic services.</li><li>Protect incident traffic with quotas, bulkheads, queues and graceful ticket handoff.</li><li>Evaluate verified resolution, action safety, repeat contacts, latency and cost.</li></ol></div>
+
+<div class="page-nav"><a href="01-enterprise-knowledge-assistant.html"><div class="dir">← Previous</div><div class="ttl">Enterprise Knowledge Assistant</div></a><a class="next" href="03-secure-text-to-sql.html"><div class="dir">Next →</div><div class="ttl">Secure Text-to-SQL Analytics Assistant</div></a></div>
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script src="../assets/app.js"></script>
+<script src="../assets/sitenav.js"></script>
+<script src="../assets/enhance.js"></script>
+<script src="../assets/interview-prep.js"></script>
+</body>
+</html>

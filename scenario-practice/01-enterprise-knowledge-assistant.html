@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+
+<html data-theme="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="#f4f5f8" name="theme-color"/>
+<title>Enterprise Knowledge Assistant — GenAI Learning Hub</title>
+<!-- Interview Preparation brand metadata -->
+<link href="../../assets/brand/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/brand/favicon-32.png" rel="icon" sizes="32x32" type="image/png"/>
+<link href="../../assets/brand/favicon.ico" rel="shortcut icon"/>
+<link href="../../assets/brand/apple-touch-icon.png" rel="apple-touch-icon" sizes="180x180"/>
+<link href="../../assets/brand/site.webmanifest" rel="manifest"/>
+<link color="#6f47f5" href="../../assets/brand/safari-pinned-tab.svg" rel="mask-icon"/>
+<link href="../../assets/brand/social-card.png" rel="image_src"/>
+<meta content="Interview Preparation" name="application-name"/>
+<meta content="Interview Prep" name="apple-mobile-web-app-title"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="#5b35e8" name="msapplication-TileColor"/>
+<meta content="../../assets/brand/browserconfig.xml" name="msapplication-config"/>
+<meta content="website" property="og:type"/>
+<meta content="Interview Preparation" property="og:site_name"/>
+<meta content="Enterprise Knowledge Assistant — GenAI Learning Hub" property="og:title"/>
+<meta content="Design a secure enterprise RAG assistant with citations, permissions, scale and evaluation." property="og:description"/>
+<meta content="../../assets/brand/social-card.png" property="og:image"/>
+<meta content="1200" property="og:image:width"/>
+<meta content="630" property="og:image:height"/>
+<meta content="Interview Preparation glass-style logo" property="og:image:alt"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="Enterprise Knowledge Assistant — GenAI Learning Hub" name="twitter:title"/>
+<meta content="Design a secure enterprise RAG assistant with citations, permissions, scale and evaluation." name="twitter:description"/>
+<meta content="../../assets/brand/social-card.png" name="twitter:image"/>
+<!-- /Interview Preparation brand metadata -->
+<meta content="Design a secure enterprise RAG assistant with citations, permissions, scale and evaluation." name="description"/>
+<link href="../assets/styles.css" rel="stylesheet"/>
+<link href="../assets/office-theme.css" rel="stylesheet"/>
+</head>
+<body data-page="scenario-enterprise-rag" data-prep-section="scenario">
+<div class="app">
+<aside class="sidebar">
+<div class="brand"><a href="../index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit"><span aria-hidden="true" class="brand-mark"><span>I</span><span>P</span></span><div class="brand-text"><strong>Interview</strong><span>Preparation</span></div></a></div>
+<div class="search-wrap"><div class="search-box"><svg fill="none" height="15" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="15"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg><input data-search="" placeholder="Search everything…  ( / )" type="text"/></div><div class="search-results"></div></div>
+<nav class="nav"></nav>
+</aside>
+<div class="backdrop"></div>
+<div class="main">
+<header class="topbar">
+<button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
+<div class="crumbs">Scenario Design Studio / Enterprise Knowledge Assistant</div>
+<button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
+</header>
+<div class="content-wrap">
+<main class="content prep-content">
+<div class="eyebrow"><span class="dot"></span> Scenario 01 · Architecture practice</div>
+<h1>Enterprise Knowledge Assistant</h1>
+<p class="lead">Design an internal assistant that answers across company documents without leaking data or inventing policy.</p>
+<div class="meta-row"><span class="pill purple">System design practice</span><span class="pill">Intermediate</span><span class="pill blue">Target: 20 min</span></div>
+<div class="scenario-prompt" data-reveal=""><div class="scenario-prompt-head"><span>Interview prompt</span><button class="btn ghost" data-start-timer="20" type="button">Start 20-min timer</button></div><p>Design a GenAI assistant for 20,000 employees. It should answer questions over policies, wikis and project documents, cite sources, respect existing permissions and respond interactively. Documents change throughout the day.</p><div class="scenario-timer" data-scenario-timer="" hidden=""><strong data-timer-display="">20:00</strong><button data-pause-timer="" type="button">Pause</button><button data-reset-timer="" type="button">Reset</button></div></div>
+<h2 id="clarify">1 · Clarify before designing</h2>
+<p>Start by asking a few questions. It shows that you design for constraints rather than drawing a fashionable architecture.</p>
+<div class="scenario-two-col"><div class="card"><h4>Questions to ask</h4><ul><li>Which repositories and file types are in scope?</li><li>Must permissions match source systems in near real time?</li><li>What languages and daily active users are expected?</li><li>Is the assistant advisory, or may it trigger actions?</li><li>What latency and citation-accuracy targets matter?</li></ul></div><div class="card"><h4>Assumptions for this answer</h4><ul><li>5,000 daily active users and 50 peak QPS.</li><li>Documents come from SharePoint, Confluence and object storage.</li><li>Answers target p95 under 5 seconds with visible streaming.</li><li>No write actions in version one.</li><li>Every answer must cite accessible evidence or abstain.</li></ul></div></div>
+<h2 id="requirements">2 · Requirements and success criteria</h2>
+<div class="scenario-requirements"><div><span>Must do</span><ul><li>Ingest and update documents incrementally.</li><li>Retrieve only authorized passages.</li><li>Answer with source links and quoted evidence.</li><li>Support follow-up questions without replaying all history.</li></ul></div><div><span>Must protect</span><ul><li>Strict tenant and document ACL enforcement.</li><li>p95 first token under 2 seconds.</li><li>Auditable retrieval and answer traces.</li><li>Graceful fallback when retrieval or model is unavailable.</li></ul></div></div>
+<h2 id="architecture">3 · Proposed architecture</h2>
+<div class="diagram prep-diagram scenario-diagram" data-reveal=""><svg aria-label="Animated scenario architecture" role="img" viewbox="0 0 930 290"><defs><marker id="sa" markerheight="10" markerwidth="10" orient="auto" refx="8" refy="3"><path d="M0,0 L8,3 L0,6 Z" fill="var(--accent)"></path></marker></defs><g class="prep-node n1"><rect height="66" rx="17" width="145" x="35" y="105"></rect><text x="107.5" y="133">Employee</text><text class="sub" x="107.5" y="154">question</text></g><g class="prep-node n2"><rect height="66" rx="17" width="150" x="224" y="38"></rect><text x="299.0" y="66">API gateway</text><text class="sub" x="299.0" y="87">identity + limit</text></g><g class="prep-node n3"><rect height="66" rx="17" width="150" x="224" y="174"></rect><text x="299.0" y="202">Conversation</text><text class="sub" x="299.0" y="223">summary state</text></g><g class="prep-node n4"><rect height="66" rx="17" width="150" x="424" y="105"></rect><text x="499.0" y="133">RAG service</text><text class="sub" x="499.0" y="154">route + compose</text></g><g class="prep-node n5"><rect height="66" rx="17" width="150" x="624" y="38"></rect><text x="699.0" y="66">Hybrid index</text><text class="sub" x="699.0" y="87">ACL-filtered</text></g><g class="prep-node n1"><rect height="66" rx="17" width="150" x="624" y="174"></rect><text x="699.0" y="202">LLM gateway</text><text class="sub" x="699.0" y="223">stream + validate</text></g><g class="prep-node n2"><rect height="66" rx="17" width="95" x="805" y="105"></rect><text x="852.5" y="133">Answer</text><text class="sub" x="852.5" y="154">citations</text></g><path class="prep-flow" d="M180 138L222 82" marker-end="url(#sa)"></path><path class="prep-flow" d="M180 138L222 207" marker-end="url(#sa)"></path><path class="prep-flow" d="M374 71L485 103" marker-end="url(#sa)"></path><path class="prep-flow" d="M374 207L485 171" marker-end="url(#sa)"></path><path class="prep-flow" d="M574 138L622 72" marker-end="url(#sa)"></path><path class="prep-flow" d="M574 138L622 207" marker-end="url(#sa)"></path><path class="prep-flow" d="M774 72L803 116" marker-end="url(#sa)"></path><path class="prep-flow" d="M774 207L803 160" marker-end="url(#sa)"></path><circle class="prep-packet p1" cx="180" cy="138" r="5"></circle><circle class="prep-packet p2" cx="574" cy="138" r="5"></circle></svg><div class="diagram-caption">Authorization is applied during retrieval. The model never sees chunks the employee is not allowed to read.</div></div>
+<div class="callout note"><div class="c-ico">🤖</div><div class="c-body"><div class="c-title">Where agents fit</div><p>Start with a deterministic RAG workflow: classify intent, retrieve, rerank, generate and verify citations. Add a bounded agent only if users need dynamic tool choice across several systems. The model must not decide document access.</p></div></div>
+<h2 id="stack">4 · Tech stack and why</h2>
+<div class="table-wrap"><table><thead><tr><th>Layer</th><th>Choice</th><th>Why here</th></tr></thead><tbody><tr><td><strong>API</strong></td><td>FastAPI + async Python</td><td>Typed streaming endpoints and parallel I/O.</td></tr><tr><td><strong>Identity</strong></td><td>OIDC/SAML through company IdP</td><td>Reuse corporate users, groups and MFA.</td></tr><tr><td><strong>Metadata</strong></td><td>PostgreSQL</td><td>Document versions, ACL snapshots, traces and feedback.</td></tr><tr><td><strong>Search</strong></td><td>OpenSearch or Elasticsearch + vector search</td><td>Strong lexical search, filters and dense retrieval at enterprise scale.</td></tr><tr><td><strong>Object data</strong></td><td>Existing source systems + object store</td><td>Keep canonical documents at the source.</td></tr><tr><td><strong>Model</strong></td><td>Gateway over approved hosted models</td><td>Central routing, redaction, budgets and fallback.</td></tr><tr><td><strong>Observability</strong></td><td>OpenTelemetry + Langfuse-compatible traces</td><td>Span-level retrieval, model and token diagnostics.</td></tr></tbody></table></div>
+<h2 id="performance">5 · Latency, cost and load handling</h2>
+<div class="scenario-two-col"><div class="card"><h4>Fast path</h4><ul><li>Run query rewrite and conversation-summary lookup in parallel when possible.</li><li>Use hybrid retrieval with metadata prefilters and rerank only the top 20–40 chunks.</li><li>Keep context to the best evidence; stream after validation of citations or buffer the first sentence.</li><li>Cache embeddings and permission-aware retrieval for stable popular queries.</li></ul></div><div class="card"><h4>Scale and reliability</h4><ul><li>Incremental ingestion through a queue; isolate OCR and embedding workers.</li><li>Autoscale API on active requests and ingestion workers on queue depth.</li><li>Apply per-user and per-tenant quotas plus a global model concurrency budget.</li><li>Degrade to lexical search with source links if the model is unavailable.</li></ul></div></div>
+<h2 id="security">6 · Security design</h2>
+<div class="scenario-security"><div><h4>Prompt-injection boundary</h4><ul><li>Treat document text as untrusted data and wrap it in explicit evidence blocks.</li><li>Ignore instructions found inside documents; tools are not exposed in version one.</li><li>Run injection detectors for telemetry, but rely on ACLs and absence of dangerous tools.</li><li>Require citations to retrieved chunk IDs and reject unsupported references.</li></ul></div><div><h4>Application and data security</h4><ul><li>Resolve user groups server-side and filter the search query before retrieval.</li><li>Include identity and ACL version in all cache keys.</li><li>Encrypt content and traces; redact unnecessary PII and enforce retention.</li><li>Test cross-group and recently revoked access as security regression cases.</li></ul></div></div>
+<h2 id="evaluation">7 · How we know it works</h2>
+<div class="scenario-metrics"><div class="scenario-metric"><strong>Retrieval</strong><span>recall@k and permission-filter accuracy</span></div><div class="scenario-metric"><strong>Answer</strong><span>groundedness, completeness and citation precision</span></div><div class="scenario-metric"><strong>Product</strong><span>task success, abstention and search fallback rate</span></div><div class="scenario-metric"><strong>Operations</strong><span>p95 TTFT, total latency and cost per accepted answer</span></div></div>
+<div class="callout key"><div class="c-ico">⚖️</div><div class="c-body"><div class="c-title">Important trade-off</div><p>A larger context can improve synthesis but increases cost, latency and the chance that irrelevant or malicious text distracts the model. Prefer better retrieval and reranking before expanding the prompt.</p></div></div>
+<h2 id="code">8 · Python implementation sketch</h2>
+<div class="code-block" data-reveal="">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>service.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from dataclasses import dataclass
+
+@dataclass
+class Principal:
+    user_id: str
+    group_ids: list[str]
+
+async def answer(question: str, principal: Principal):
+    # Authorization is part of retrieval, never delegated to the LLM.
+    hits = await search.hybrid(
+        query=question,
+        filters={"allowed_groups": {"$in": principal.group_ids}},
+        limit=40,
+    )
+    evidence = await reranker.top(question, hits, k=8)
+    result = await model.answer_json(
+        question=question, evidence=evidence, allow_abstain=True
+    )
+    validate_citations(result, allowed_ids={x.id for x in evidence})
+    return result</code></pre>
+</div>
+<h2 id="answer">9 · A crisp two-minute answer</h2>
+<div class="scenario-answer"><ol><li>Clarify repositories, permissions, scale, freshness and acceptable abstention.</li><li>Propose incremental ingestion plus ACL-aware hybrid retrieval and reranking.</li><li>Keep the first version as a deterministic RAG workflow; identity and authorization stay outside the model.</li><li>Budget latency by retrieval, model first token and generation; cache only with permission-aware keys.</li><li>Measure retrieval and groundedness separately, and degrade to source search when generation fails.</li></ol></div>
+
+<div class="page-nav"><a href="framework.html"><div class="dir">← Previous</div><div class="ttl">Scenario answer framework</div></a><a class="next" href="02-customer-support-agent.html"><div class="dir">Next →</div><div class="ttl">Customer Support Resolution Agent</div></a></div>
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script src="../assets/app.js"></script>
+<script src="../assets/sitenav.js"></script>
+<script src="../assets/enhance.js"></script>
+<script src="../assets/interview-prep.js"></script>
+</body>
+</html>

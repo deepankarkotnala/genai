@@ -1,0 +1,298 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>Pydantic for LangGraph — Interview Lab</title>
+<link rel="icon" href="../assets/brand/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../assets/brand/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../assets/brand/favicon.ico">
+<link rel="apple-touch-icon" href="../assets/brand/apple-touch-icon.png" sizes="180x180">
+<link rel="manifest" href="../assets/brand/site.webmanifest">
+<link rel="mask-icon" href="../assets/brand/safari-pinned-tab.svg" color="#6f47f5">
+<link rel="image_src" href="../assets/brand/social-card.png">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="msapplication-TileColor" content="#5b35e8">
+<meta name="msapplication-config" content="../assets/brand/browserconfig.xml">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Interview Preparation">
+<meta property="og:title" content="Pydantic for LangGraph — Interview Lab">
+<meta property="og:description" content="Interview-focused Pydantic v2 learning for LangGraph: strict models, validators, discriminated unions, tool schemas, state schemas, limitations and boundary validation.">
+<meta property="og:image" content="../assets/brand/social-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Interview Preparation glass-style logo">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Pydantic for LangGraph — Interview Lab">
+<meta name="twitter:description" content="Interview-focused Pydantic v2 learning for LangGraph: strict models, validators, discriminated unions, tool schemas, state schemas, limitations and boundary validation.">
+<meta name="twitter:image" content="../assets/brand/social-card.png">
+<meta name="description" content="Interview-focused Pydantic v2 learning for LangGraph: strict models, validators, discriminated unions, tool schemas, state schemas, limitations and boundary validation.">
+<link rel="stylesheet" href="assets/styles.css">
+<link href="assets/office-theme.css" rel="stylesheet"/>
+</head>
+<body data-page="langgraph-pydantic">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <span class="brand-mark" aria-hidden="true"><span>I</span><span>P</span></span>
+        <div class="brand-text"><strong>Interview</strong><span>Preparation</span></div>
+      </a>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search portal…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button>
+      <div class="crumbs">Frameworks / LangGraph / <b>Pydantic for LangGraph</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> LangGraph interview lab · Runtime schemas</div>
+        <h1>Pydantic for LangGraph</h1>
+        <p class="lead">Learn to make agent inputs, tool calls, structured outputs, and graph boundaries explicit and safe. This lab covers Pydantic v2 fundamentals, validators, strict contracts, unions, LangGraph state choices, current limitations, and system-design interview trade-offs.</p>
+        <div class="meta-row"><span class="pill blue">⏱ Study + coding · 6–10 h</span><span class="pill">Difficulty · Intermediate</span><span class="pill purple">Pydantic v2 · LangGraph · APIs</span></div>
+        
+<div class="callout key"><div class="c-ico">🎯</div><div class="c-body"><div class="c-title">Interview outcome</div><p>After this lab you should be able to design strict request and tool schemas, explain Pydantic v2 validation and serialization, choose between <code>TypedDict</code>, dataclass, and <code>BaseModel</code>, and describe the important limitations of Pydantic state inside LangGraph.</p></div></div>
+
+<h2 id="why">1 · Where Pydantic belongs in a LangGraph system</h2>
+<p>Pydantic validates untrusted or loosely typed data at runtime. In an agent service, the strongest value is at <strong>boundaries</strong>: HTTP requests, tool arguments, model structured output, environment/settings, messages from queues, and persisted records. It can also define LangGraph state, but that choice has trade-offs.</p>
+<div class="grid grid-3">
+<div class="card"><h4>Ingress</h4><p>Reject malformed API payloads before graph execution.</p></div>
+<div class="card"><h4>Tool contracts</h4><p>Constrain what the model or caller may ask a tool to execute.</p></div>
+<div class="card"><h4>Graph state</h4><p>Add input validation and nested typed objects, accepting runtime cost and current LangGraph limitations.</p></div>
+</div>
+
+<h2 id="basics">2 · Pydantic v2 essentials</h2>
+<div class="code-block">
+  <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> models_basics.py</span><button class="copy-btn">Copy</button></div>
+  <pre><code>from datetime import datetime
+from pydantic import BaseModel, ConfigDict, Field, ValidationError
+
+class SearchRequest(BaseModel):
+    model_config = ConfigDict(extra=&quot;forbid&quot;, str_strip_whitespace=True)
+
+    query: str = Field(min_length=3, max_length=500)
+    top_k: int = Field(default=5, ge=1, le=50)
+    requested_at: datetime | None = None
+
+raw = {&quot;query&quot;: &quot;  async python  &quot;, &quot;top_k&quot;: &quot;10&quot;}
+request = SearchRequest.model_validate(raw)
+
+print(request.query)                    # &quot;async python&quot;
+print(request.top_k, type(request.top_k))  # 10, int
+print(request.model_dump())
+print(request.model_dump_json())
+
+try:
+    SearchRequest.model_validate({&quot;query&quot;: &quot;x&quot;, &quot;unknown&quot;: True})
+except ValidationError as exc:
+    print(exc.errors())</code></pre>
+</div>
+<div class="table-wrap"><table><thead><tr><th>API</th><th>What to say in an interview</th></tr></thead><tbody>
+<tr><td><code>model_validate(data)</code></td><td>Parses and validates Python input into a model.</td></tr>
+<tr><td><code>model_dump()</code></td><td>Serializes a model recursively into Python data.</td></tr>
+<tr><td><code>model_dump_json()</code></td><td>Produces JSON using Pydantic serialization rules.</td></tr>
+<tr><td><code>ConfigDict(extra="forbid")</code></td><td>Fails closed on unexpected fields; useful for security-sensitive contracts.</td></tr>
+<tr><td><code>Field(...)</code></td><td>Declares defaults, bounds, descriptions, aliases, and schema metadata.</td></tr>
+</tbody></table></div>
+<div class="callout note"><div class="c-ico">⚖️</div><div class="c-body"><div class="c-title">Coercion vs strictness</div><p>Pydantic commonly coerces compatible inputs, such as <code>"10"</code> into <code>10</code>. That is convenient for APIs but can hide upstream defects. Use strict types/configuration where implicit conversion is unsafe.</p></div></div>
+
+<h2 id="validators">3 · Field and model validators</h2>
+<div class="code-block">
+  <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> validators.py</span><button class="copy-btn">Copy</button></div>
+  <pre><code>from typing_extensions import Self
+from pydantic import BaseModel, ConfigDict, Field, field_validator, model_validator
+
+class ToolCall(BaseModel):
+    model_config = ConfigDict(extra=&quot;forbid&quot;)
+
+    tool_name: str
+    arguments: dict[str, object]
+    requires_approval: bool = False
+    risk_score: int = Field(ge=0, le=100)
+
+    @field_validator(&quot;tool_name&quot;)
+    @classmethod
+    def normalize_tool_name(cls, value: str) -&gt; str:
+        value = value.strip().lower()
+        if not value:
+            raise ValueError(&quot;tool_name cannot be empty&quot;)
+        return value
+
+    @model_validator(mode=&quot;after&quot;)
+    def enforce_approval_policy(self) -&gt; Self:
+        if self.risk_score &gt;= 70 and not self.requires_approval:
+            raise ValueError(&quot;high-risk tools require approval&quot;)
+        return self</code></pre>
+</div>
+<p><strong>Interview rule:</strong> use field validators for one field’s invariant. Use a model validator when the rule depends on several fields. Keep validators deterministic and side-effect free; database calls and network checks belong in service logic, not schema construction.</p>
+
+<h2 id="nested">4 · Nested models, unions, and tool schemas</h2>
+<div class="code-block">
+  <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> tool_contracts.py</span><button class="copy-btn">Copy</button></div>
+  <pre><code>from typing import Annotated, Literal
+from pydantic import BaseModel, Field
+
+class SqlQuery(BaseModel):
+    kind: Literal[&quot;sql&quot;]
+    statement: str = Field(min_length=1)
+    read_only: bool = True
+
+class WebSearch(BaseModel):
+    kind: Literal[&quot;web&quot;]
+    query: str = Field(min_length=3)
+    max_results: int = Field(default=5, ge=1, le=10)
+
+ToolRequest = Annotated[SqlQuery | WebSearch, Field(discriminator=&quot;kind&quot;)]
+
+class AgentInput(BaseModel):
+    request_id: str
+    tool: ToolRequest</code></pre>
+</div>
+<p>A discriminated union selects one schema using a stable tag such as <code>kind</code>. This is clearer and usually faster than trying each union member. In interviews, connect this to safe tool routing: each tool gets a precise contract instead of a single unstructured dictionary.</p>
+
+<h2 id="state-choice">5 · TypedDict vs dataclass vs Pydantic state</h2>
+<div class="table-wrap"><table><thead><tr><th>Schema</th><th>Strength</th><th>Use when</th><th>Trade-off</th></tr></thead><tbody>
+<tr><td><strong>TypedDict</strong></td><td>Lightweight typing and reducers.</td><td>Most LangGraph state; trusted internal data.</td><td>No runtime validation by itself.</td></tr>
+<tr><td><strong>dataclass</strong></td><td>Defaults and attribute access with lower overhead.</td><td>You need defaults or object semantics without deep validation.</td><td>Less boundary validation than Pydantic.</td></tr>
+<tr><td><strong>BaseModel</strong></td><td>Recursive runtime validation and JSON schema.</td><td>Input state is complex/untrusted and validation value exceeds cost.</td><td>Slower; current graph validation/output limitations matter.</td></tr>
+</tbody></table></div>
+
+<h2 id="langgraph">6 · Pydantic state in LangGraph</h2>
+<div class="code-block">
+  <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> pydantic_state.py</span><button class="copy-btn">Copy</button></div>
+  <pre><code>from pydantic import BaseModel, ConfigDict, Field
+from langgraph.graph import StateGraph, START, END
+
+class ResearchState(BaseModel):
+    model_config = ConfigDict(extra=&quot;forbid&quot;)
+
+    question: str = Field(min_length=3)
+    attempt: int = Field(default=0, ge=0, le=3)
+    answer: str | None = None
+
+async def answer_node(state: ResearchState) -&gt; dict[str, object]:
+    response = await model.ainvoke(state.question)
+    return {
+        &quot;answer&quot;: response.content,
+        &quot;attempt&quot;: state.attempt + 1,
+    }
+
+builder = StateGraph(ResearchState)
+builder.add_node(&quot;answer&quot;, answer_node)
+builder.add_edge(START, &quot;answer&quot;)
+builder.add_edge(&quot;answer&quot;, END)
+graph = builder.compile()
+
+result = await graph.ainvoke({&quot;question&quot;: &quot;How does cancellation work?&quot;})
+# result is graph output data; validate again if a Pydantic object is required.
+validated_output = ResearchState.model_validate(result)</code></pre>
+</div>
+<div class="callout danger"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">Current LangGraph limitations to know</div><ul style="margin-bottom:0"><li>Graph output is not automatically returned as a Pydantic model instance.</li><li>Runtime validation is documented as occurring on input to the first node, not on every later update/output.</li><li>Validation errors do not necessarily identify the originating node cleanly.</li><li>Recursive Pydantic validation is slower than TypedDict/dataclass state.</li><li>The higher-level <code>create_agent</code> factory does not support Pydantic state schemas.</li></ul></div></div>
+<p><strong>Production implication:</strong> do not assume that choosing a Pydantic state makes every node update safe. Validate critical node outputs explicitly, or place validated models at boundaries and keep internal state lightweight.</p>
+
+<h2 id="boundaries">7 · A stronger architecture: validate at boundaries</h2>
+<div class="code-block">
+  <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> validated_boundaries.py</span><button class="copy-btn">Copy</button></div>
+  <pre><code>from pydantic import BaseModel, ConfigDict, Field, ValidationError
+from typing_extensions import TypedDict
+
+class GraphRequest(BaseModel):
+    model_config = ConfigDict(extra=&quot;forbid&quot;)
+    question: str = Field(min_length=3, max_length=1000)
+    tenant_id: str
+
+class GraphResponse(BaseModel):
+    answer: str
+    citations: list[str]
+
+class InternalState(TypedDict):
+    question: str
+    tenant_id: str
+    evidence: list[str]
+    answer: str
+
+async def handle(payload: dict) -&gt; GraphResponse:
+    request = GraphRequest.model_validate(payload)        # ingress boundary
+    result = await graph.ainvoke(request.model_dump())
+    return GraphResponse.model_validate(result)           # egress boundary</code></pre>
+</div>
+<p>This pattern is often easier to defend in a system-design interview: strict public contracts, efficient internal state, explicit output validation, and well-defined ownership of failures.</p>
+
+<h2 id="errors">8 · Error handling and API behaviour</h2>
+<div class="grid grid-2">
+<div class="card"><h4>Client validation error</h4><p>Return a structured 4xx response with field locations and safe messages. Do not expose secrets or raw internal traces.</p></div>
+<div class="card"><h4>Node/domain error</h4><p>Represent retryable vs terminal failures explicitly; Pydantic validation is not a substitute for domain error design.</p></div>
+<div class="card"><h4>Schema evolution</h4><p>Add backward-compatible defaults, version external contracts, and test old persisted/checkpoint data.</p></div>
+<div class="card"><h4>Observability</h4><p>Log error type, request/thread identifiers, schema version, and redacted field paths—not sensitive payloads.</p></div>
+</div>
+
+<h2 id="mistakes">9 · Common mistakes</h2>
+<div class="table-wrap"><table><thead><tr><th>Mistake</th><th>Why it hurts</th><th>Better choice</th></tr></thead><tbody>
+<tr><td>Using <code>dict[str, Any]</code> everywhere</td><td>No contract, weak IDE/type checking, runtime surprises.</td><td>Typed models at boundaries and precise internal types.</td></tr>
+<tr><td>Leaving extras allowed for sensitive commands</td><td>Misspelled or injected fields may pass unnoticed.</td><td><code>extra="forbid"</code> where contracts must fail closed.</td></tr>
+<tr><td>Doing network/database work in validators</td><td>Hidden latency, hard testing, unpredictable construction.</td><td>Pure validation plus an explicit service/domain layer.</td></tr>
+<tr><td>Assuming type hints alone validate</td><td>Python annotations are not runtime enforcement.</td><td>Pydantic or explicit checks at untrusted boundaries.</td></tr>
+<tr><td>Assuming LangGraph validates every update</td><td>Invalid intermediate state can still propagate.</td><td>Explicit validation of critical node outputs.</td></tr>
+<tr><td>Using mutable defaults carelessly</td><td>Shared-state bugs in ordinary Python models/classes.</td><td>Use Pydantic/default factories and verify semantics.</td></tr>
+</tbody></table></div>
+
+<h2 id="interview">10 · Interview questions and strong answer anchors</h2>
+<details class="recall"><summary><span class="q-ico">Q</span> Pydantic vs dataclass? <span class="chev">›</span></summary><div class="a">A dataclass primarily generates ordinary class boilerplate and is lightweight. Pydantic builds validated/parsed runtime models, JSON schema, and rich serialization, at extra runtime cost.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Validation vs serialization? <span class="chev">›</span></summary><div class="a">Validation transforms/checks input into a trusted model. Serialization converts the trusted model into Python/JSON output according to rules and field inclusion settings.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Why forbid extra fields? <span class="chev">›</span></summary><div class="a">It detects typos and unexpected input early and is valuable for commands/security-sensitive payloads. For forward-compatible public APIs you may deliberately choose a different policy, but it should be explicit.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> When would you not use Pydantic for LangGraph state? <span class="chev">›</span></summary><div class="a">When state is internal/trusted, high-volume, or frequently updated and recursive validation cost is not justified; also when you require every intermediate update to be validated automatically, because current documented behaviour does not provide that guarantee.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> How do you validate LLM structured output safely? <span class="chev">›</span></summary><div class="a">Define a constrained schema, parse/validate the model output, reject or repair only under a bounded policy, distinguish validation failures from provider failures, and never execute side effects until the validated object passes authorization/domain checks.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What is a discriminated union? <span class="chev">›</span></summary><div class="a">A union whose member is selected by a known tag field. It produces clearer errors and deterministic tool/event routing compared with ambiguous untagged unions.</div></details>
+
+<h2 id="quiz">11 · Knowledge check</h2>
+<div class="quiz"><div class="q">1 · What does <code>extra="forbid"</code> do?</div><label class="opt">Converts every field to a string</label><label class="opt" data-correct="true">Rejects input containing undeclared fields</label><label class="opt">Makes every field optional</label><label class="opt">Disables serialization</label><div class="explain">It enforces a closed schema for unexpected fields.</div></div>
+<div class="quiz"><div class="q">2 · Which validator is appropriate for a rule involving risk score and approval flag together?</div><label class="opt">No validator is possible</label><label class="opt">A serializer only</label><label class="opt" data-correct="true">A model validator</label><label class="opt">A property decorator</label><div class="explain">Cross-field invariants belong at model level.</div></div>
+<div class="quiz"><div class="q">3 · What is an important limitation of Pydantic LangGraph state?</div><label class="opt">It cannot contain strings</label><label class="opt">It prevents async nodes</label><label class="opt" data-correct="true">It does not automatically validate every later node update/output</label><label class="opt">It cannot be checkpointed</label><div class="explain">Current documentation describes runtime validation at the first node input, not every intermediate update.</div></div>
+
+<h2 id="practice">12 · Focused practice</h2>
+<div class="callout tip"><div class="c-ico">🟢</div><div class="c-body"><div class="c-title">Exercise 1 · Contract design</div><p>Model a paginated search request with query length limits, a bounded page size, optional filters, forbidden extra fields, and clear descriptions. Test ten invalid payloads.</p></div></div>
+<div class="callout warn"><div class="c-ico">🟡</div><div class="c-body"><div class="c-title">Exercise 2 · Safe tool routing</div><p>Create discriminated schemas for SQL read, web search, and email-draft tools. Add a cross-field approval rule for high-risk operations.</p></div></div>
+<div class="callout danger"><div class="c-ico">🔴</div><div class="c-body"><div class="c-title">Exercise 3 · LangGraph boundary architecture</div><p>Use Pydantic request/response models around a TypedDict graph. Inject malformed node output, prove the egress model catches it, and explain the trade-off against a BaseModel graph state.</p></div></div>
+
+<h2 id="plan">13 · Five-session mastery plan</h2>
+<div class="timeline">
+<div class="step"><h4>Session 1</h4><p>BaseModel, Field, model_validate, model_dump, ValidationError.</p></div>
+<div class="step"><h4>Session 2</h4><p>Strictness, ConfigDict, nested models, constrained fields.</p></div>
+<div class="step"><h4>Session 3</h4><p>Field/model validators and discriminated unions.</p></div>
+<div class="step"><h4>Session 4</h4><p>Pydantic state in LangGraph and documented limitations.</p></div>
+<div class="step"><h4>Session 5</h4><p>Implement strict boundary validation without AI and defend the design.</p></div>
+</div>
+
+<h2 id="references">14 · Official references</h2>
+<ul><li><a href="https://docs.pydantic.dev/latest/concepts/models/">Pydantic models</a></li><li><a href="https://docs.pydantic.dev/latest/concepts/validators/">Pydantic validators</a></li><li><a href="https://docs.pydantic.dev/latest/concepts/config/">Pydantic model configuration</a></li><li><a href="https://docs.langchain.com/oss/python/langgraph/use-graph-api#use-pydantic-models-for-graph-state">LangGraph — Pydantic models for graph state</a></li><li><a href="https://docs.langchain.com/oss/python/langgraph/graph-api#schema">LangGraph state schema choices</a></li></ul>
+
+        <div class="page-nav">
+          <a href="modules/12_langgraph.html"><div class="dir">← Core module</div><div class="ttl">12 · LangGraph</div></a>
+          <a class="next" href="langgraph-asyncio.html"><div class="dir">Companion lab →</div><div class="ttl">AsyncIO for LangGraph</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+<script src="assets/app.js"></script>
+<script src="assets/sitenav.js"></script>
+<script src="assets/enhance.js"></script>
+</body>
+</html>
