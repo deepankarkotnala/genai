@@ -1,0 +1,684 @@
+<!DOCTYPE html>
+<html data-theme="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="#f4f5f8" name="theme-color"/>
+<title>02 · Arrays — DSA Interview Preparation</title>
+<link href="../../assets/brand/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/brand/favicon-32.png" rel="icon" sizes="32x32" type="image/png"/>
+<link href="../../assets/brand/favicon.ico" rel="shortcut icon"/>
+<meta content="Arrays for interviews: Python list internals, prefix/suffix products, Kadane, in-place marking, matrix traversal, with 15 canonical problems and tested Python." name="description"/>
+<link href="../assets/styles.css" rel="stylesheet"/>
+<link href="../assets/office-theme.css" rel="stylesheet"/>
+<link href="../assets/dsa-prep.css" rel="stylesheet"/>
+</head>
+<body data-page="dsa-chapter">
+<div class="app">
+<aside class="sidebar">
+<div class="brand"><a href="../index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit"><span aria-hidden="true" class="brand-mark"><span>D</span><span>S</span></span><div class="brand-text"><strong>DSA Prep</strong><span>Coding Interviews</span></div></a></div>
+<div class="search-wrap"><div class="search-box"><svg fill="none" height="15" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="15"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg><input data-search="" placeholder="Search everything…  ( / )" type="text"/></div><div class="search-results"></div></div>
+<nav class="nav"></nav>
+</aside>
+<div class="backdrop"></div>
+<div class="main">
+<header class="topbar">
+<button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
+<div class="crumbs">DSA Interview Preparation / 02 · Arrays</div>
+<button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
+</header>
+<div class="content-wrap">
+<main class="content">
+<div class="eyebrow"><span class="dot"></span> Chapter 02 · Core structures</div>
+<h1>Arrays</h1>
+<p class="lead">Arrays are the substrate for most interview problems — and Python's <code>list</code> hides internals (references, over-allocation, slice copies) that decide whether your solution is O(n) or accidentally O(n²). This is one of the two deepest chapters in the book.</p>
+
+<div class="dsa-chead">
+<span class="dsa-chapter-no">Outcome</span>
+<p class="dsa-outcome">Reason about a Python list the way an interviewer does, recognise the ten array patterns on sight, and solve a 15-problem ladder from single-pass scans to cyclic placement — stating time, auxiliary space, output space and mutation every time.</p>
+<div class="dsa-tags">
+<span class="dsa-tag core">Core for every role</span>
+<span class="dsa-tag sde">SDE</span><span class="dsa-tag sde">Python</span><span class="dsa-tag ds">Data Science</span><span class="dsa-tag ds">ML / AI / GenAI</span>
+</div>
+<div class="dsa-facts">
+<div class="dsa-fact"><span class="k">Study time</span><span class="v">10–14 hours</span></div>
+<div class="dsa-fact"><span class="k">Prerequisites</span><span class="v">Ch 00–01</span></div>
+<div class="dsa-fact"><span class="k">Patterns</span><span class="v">10</span></div>
+<div class="dsa-fact"><span class="k">Canonical problems</span><span class="v">15 (Arrays owns 10)</span></div>
+<div class="dsa-fact"><span class="k">Difficulty</span><span class="v">Easy → Hard</span></div>
+<div class="dsa-fact"><span class="k">Progress</span><span class="v" data-dsa-progress="">0 / 15</span></div>
+</div>
+</div>
+
+<div class="dsa-toolbar">
+<button class="dsa-btn" type="button" data-dsa-practice="">🙈 Practice mode</button>
+<button class="dsa-btn" type="button" data-dsa-reset="">↺ Reset progress</button>
+<span class="dsa-progress-line" data-dsa-progress="">0 / 15 solved</span>
+</div>
+
+<h2 id="foundations">1 · Foundations</h2>
+<p><strong>Mental model.</strong> An array is a contiguous block of equally-sized slots with O(1) indexing: element <code>i</code> lives at <code>base + i × width</code>, so the CPU computes any address by arithmetic. That single property — random access in constant time — is what every array algorithm leans on.</p>
+<p><strong>How Python represents it.</strong> A Python <code>list</code> is a dynamic array of <em>pointers</em> to objects, not a packed block of values. It over-allocates spare capacity so <code>append</code> is amortised O(1), and it resizes (allocating a bigger block and copying the pointers) when it fills. Because it stores references, a list of a million ints holds a million pointers <em>plus</em> the int objects — heavier and less cache-friendly than a C array.</p>
+<div class="dsa-cells" role="img" aria-label="Array cells with indices 0 to 4 holding values 5, 1, 9, 2, 7">
+<span class="dsa-cell hl">5</span><span class="dsa-cell">1</span><span class="dsa-cell">9</span><span class="dsa-cell">2</span><span class="dsa-cell">7</span>
+</div>
+<p class="dsa-note-sm">Index 0 → value 5. Any index is one arithmetic step away — that is the whole advantage over a linked list.</p>
+
+<h3 id="ops-complexity">Core operations and complexity</h3>
+<div class="table-wrap"><table class="cx-table">
+<thead><tr><th>Operation</th><th>Time</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>Index read / write <code>a[i]</code></td><td class="big-o">O(1)</td><td>Address arithmetic</td></tr>
+<tr><td>Append / pop at end</td><td class="big-o">O(1)*</td><td>Amortised; occasional resize</td></tr>
+<tr><td>Insert / pop at front</td><td class="big-o">O(n)</td><td>All later elements shift</td></tr>
+<tr><td>Search (unsorted)</td><td class="big-o">O(n)</td><td>Linear scan</td></tr>
+<tr><td>Search (sorted, binary)</td><td class="big-o">O(log n)</td><td>Halve the range — see Ch 10</td></tr>
+<tr><td>Slice <code>a[i:j]</code></td><td class="big-o">O(j − i)</td><td>Copies the sub-range</td></tr>
+<tr><td>Sort</td><td class="big-o">O(n log n)</td><td>Timsort</td></tr>
+</tbody>
+</table></div>
+<p class="dsa-note-sm">* amortised.</p>
+
+<h3 id="list-array-numpy">list vs array.array vs numpy.ndarray</h3>
+<div class="table-wrap"><table>
+<thead><tr><th>Type</th><th>Stores</th><th>Use when</th></tr></thead>
+<tbody>
+<tr><td><code>list</code></td><td>Pointers to any objects</td><td>General purpose, mixed types, the interview default</td></tr>
+<tr><td><code>array.array</code></td><td>Packed C values of one type</td><td>Large homogeneous numeric data, tight memory, no vector math</td></tr>
+<tr><td><code>numpy.ndarray</code></td><td>Contiguous typed buffer</td><td>Vectorised math, matrices, ML data — see <a href="index.html">Ch 22</a></td></tr>
+</tbody>
+</table></div>
+
+<h3 id="tradeoffs">Advantages, disadvantages and alternatives</h3>
+<div class="grid grid-2">
+<div class="card"><h4>Strengths</h4><p>O(1) random access; cache-friendly iteration; compact index arithmetic; the natural home for prefix sums, two pointers and sorting.</p></div>
+<div class="card"><h4>Weaknesses</h4><p>O(n) insert/delete anywhere but the end; fixed conceptual size (Python hides resizing but it still costs); reference storage adds memory overhead.</p></div>
+</div>
+<p><strong>Nearest alternative — linked list.</strong> A linked list gives O(1) insert/delete <em>once you hold the node</em>, but O(n) access and poor locality. Choose an array when you index a lot; choose a linked list when you splice a lot in the middle. Full treatment in <a href="03-linked-lists.html">Chapter 03</a>.</p>
+<div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">Python-specific pitfalls</div><p><code>list.pop(0)</code> is O(n) (use <code>deque</code>); slicing in a loop hides O(n²); <code>[[0]*c]*r</code> aliases one row (use a comprehension); distinguish <em>output space</em> (the array you must return) from <em>auxiliary space</em> (extra working memory).</p></div></div>
+
+<h2 id="patterns">2 · Pattern library</h2>
+<p>Almost every array problem is one of these ten patterns. Learn the recognition signal and the invariant, and the code follows.</p>
+<div class="dsa-patterns">
+<div class="dsa-pattern"><h4><span class="pnum">1</span>Linear scan + running state</h4><dl><dt>Signal</dt><dd>"best so far", running min/max/sum</dd><dt>Invariant</dt><dd>State summarises everything left of <code>i</code></dd><dt>Cost</dt><dd>O(n) / O(1)</dd></dl></div>
+<div class="dsa-pattern"><h4><span class="pnum">2</span>Prefix / suffix products</h4><dl><dt>Signal</dt><dd>"except self", range aggregates</dd><dt>Invariant</dt><dd>prefix[i] = aggregate of everything before i</dd><dt>Cost</dt><dd>O(n) / O(1) extra</dd></dl></div>
+<div class="dsa-pattern"><h4><span class="pnum">3</span>Kadane</h4><dl><dt>Signal</dt><dd>max/min contiguous subarray</dd><dt>Invariant</dt><dd>best subarray ending exactly at i</dd><dt>Cost</dt><dd>O(n) / O(1)</dd></dl></div>
+<div class="dsa-pattern"><h4><span class="pnum">4</span>In-place marking</h4><dl><dt>Signal</dt><dd>bounded values, O(1) space demanded</dd><dt>Invariant</dt><dd>the array encodes seen-state via sign/position</dd><dt>Cost</dt><dd>O(n) / O(1)</dd></dl></div>
+<div class="dsa-pattern"><h4><span class="pnum">5</span>Reversal / rotation</h4><dl><dt>Signal</dt><dd>"rotate by k", reorder in place</dd><dt>Invariant</dt><dd>reverse-of-reverse composes the shift</dd><dt>Cost</dt><dd>O(n) / O(1)</dd></dl></div>
+<div class="dsa-pattern"><h4><span class="pnum">6</span>Boundary traversal</h4><dl><dt>Signal</dt><dd>spiral, layer-by-layer matrix walk</dd><dt>Invariant</dt><dd>four shrinking edges top/bottom/left/right</dd><dt>Cost</dt><dd>O(rc) / O(1)</dd></dl></div>
+<div class="dsa-pattern"><h4><span class="pnum">7</span>Matrix row/column markers</h4><dl><dt>Signal</dt><dd>propagate a flag across a row/column</dd><dt>Invariant</dt><dd>first row/col stores which lines to clear</dd><dt>Cost</dt><dd>O(rc) / O(1)</dd></dl></div>
+<div class="dsa-pattern"><h4><span class="pnum">8</span>Sort then scan</h4><dl><dt>Signal</dt><dd>order unlocks a linear pass</dd><dt>Invariant</dt><dd>neighbours are comparable after sorting</dd><dt>Cost</dt><dd>O(n log n) / O(1)–O(n)</dd></dl></div>
+<div class="dsa-pattern"><h4><span class="pnum">9</span>Partitioning</h4><dl><dt>Signal</dt><dd>group by predicate in place (Dutch flag)</dd><dt>Invariant</dt><dd>regions [&lt;] [=] [unknown] [&gt;]</dd><dt>Cost</dt><dd>O(n) / O(1)</dd></dl></div>
+<div class="dsa-pattern"><h4><span class="pnum">10</span>Array as index (cyclic sort)</h4><dl><dt>Signal</dt><dd>values in <code>[1..n]</code>, find missing/dup</dd><dt>Invariant</dt><dd>value v belongs at index v−1</dd><dt>Cost</dt><dd>O(n) / O(1)</dd></dl></div>
+</div>
+
+<h2 id="ladder">3 · Problem ladder — 15</h2>
+<p>Ordered as a ladder: foundation → easy recognition → single-pattern medium → multi-pattern → hard. Expand a row for the full write-up. Problems whose canonical editorial lives in another chapter show a cross-reference and the array-lens summary. Use <span class="dsa-kbd">🙈 Practice mode</span> to blur solutions and rebuild from the pattern. Mark each <em>Learning / Solved / Review</em> — status is shared everywhere the problem appears.</p>
+
+<div class="callout note"><div class="c-ico">📎</div><div class="c-body"><div class="c-title">On copyright</div><p>Problem statements are original one-line summaries, never copied text. Each row links to the official LeetCode source for the full statement, examples and constraints.</p></div></div>
+
+<div class="dsa-ladder">
+
+<!-- 1 · LC121 -->
+<details class="dsa-prob" data-pid="lc-121">
+<summary>
+<span class="p-idx">1</span>
+<span class="p-title"><span class="lc">LC 121</span>Best Time to Buy and Sell Stock</span>
+<span class="p-badges"><span class="diff easy">Easy</span><span class="badge-canonical">Canonical</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Pattern 1 · Linear scan + running minimum · buy low then sell high, one pass</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Summary.</strong> Given daily prices, choose one buy day and a later sell day to maximise profit; return 0 if no profit is possible. <a href="https://leetcode.com/problems/best-time-to-buy-and-sell-stock/" target="_blank" rel="noopener">LeetCode 121 ↗</a> · Secondary pattern: 1D DP · Interview time ~15 min.</p>
+<p class="wu-clarify"><strong>Clarify:</strong> single transaction only? Can prices be empty? (Yes — return 0.) Are prices non-negative? <strong>Constraints that matter:</strong> up to 10⁵ prices ⇒ need O(n).</p>
+<div class="dsa-hints">
+<details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">The best sell on day <em>i</em> pairs with the cheapest buy on any earlier day. Track that cheapest price as you go.</div></details>
+<details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Keep <code>min_price</code> so far and, at each day, update the best profit as <code>price − min_price</code>. One pass, O(1) memory.</div></details>
+</div>
+<p class="wu-approach"><span class="wu-section">Approach</span> <strong>Brute force</strong> tries every buy/sell pair: O(n²), times out at 10⁵. <strong>Recognition signal:</strong> "best so far" ⇒ running state. <strong>Invariant:</strong> <code>min_price</code> is the cheapest price in <code>prices[0..i]</code>, so <code>prices[i] − min_price</code> is the best profit selling on day <code>i</code>.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lc121.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
+
+def max_profit(prices: List[int]) -> int:
+    min_price, best = float("inf"), 0
+    for p in prices:
+        min_price = min(min_price, p)      # cheapest buy seen so far
+        best = max(best, p - min_price)    # best sell today
+    return best
+
+assert max_profit([7, 1, 5, 3, 6, 4]) == 5   # buy 1, sell 6
+assert max_profit([7, 6, 4, 3, 1]) == 0      # only losses -> 0
+assert max_profit([]) == 0                    # empty
+assert max_profit([3]) == 0                   # single day
+print("lc121 ok")</code></pre>
+</div>
+<p><strong>Time</strong> O(n) · <strong>Auxiliary space</strong> O(1) · <strong>Output</strong> a single int · <strong>Mutation</strong> none. <strong>Common mistakes:</strong> resetting profit to 0 when price dips (keep the running best), or allowing sell before buy. <strong>Follow-ups:</strong> unlimited transactions (LC 122, greedy in <a href="index.html">Ch 17</a>); with cooldown (LC 309, DP in <a href="index.html">Ch 18</a>). <strong>Narration:</strong> "I keep the cheapest buy so far; each day's best sale is today's price minus that minimum."</p>
+</div>
+</details>
+
+<!-- 2 · LC217 cross-ref -->
+<details class="dsa-prob" data-pid="lc-217">
+<summary>
+<span class="p-idx">2</span>
+<span class="p-title"><span class="lc">LC 217</span>Contains Duplicate</span>
+<span class="p-badges"><span class="diff easy">Easy</span><span class="badge-xref">Cross-ref → Hashing</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Pattern: seen-set · full editorial lives in Chapter 04 — Hashing</span>
+</summary>
+<div class="p-body">
+<div class="dsa-xref"><span class="xi">🔗</span><div><strong>Canonical write-up: Chapter 04 — Hashing.</strong> The full editorial (brute force, sort-and-scan, set) is written there so it is not duplicated. <a href="https://leetcode.com/problems/contains-duplicate/" target="_blank" rel="noopener">LeetCode 217 ↗</a></div></div>
+<p><strong>Array lens.</strong> This is the gateway to the hashing trade-off: a duplicate exists iff a value repeats. Sorting first gives O(n log n)/O(1) and lets you compare neighbours; a <code>set</code> gives O(n)/O(n) — trading memory for time. Naming that trade-off out loud is the point of the problem.</p>
+</div>
+</details>
+
+<!-- 3 · LC238 -->
+<details class="dsa-prob" data-pid="lc-238">
+<summary>
+<span class="p-idx">3</span>
+<span class="p-title"><span class="lc">LC 238</span>Product of Array Except Self</span>
+<span class="p-badges"><span class="diff medium">Medium</span><span class="badge-canonical">Canonical</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Pattern 2 · Prefix × suffix, no division</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Summary.</strong> Return an array where each position holds the product of all other elements — without using division and in O(n). <a href="https://leetcode.com/problems/product-of-array-except-self/" target="_blank" rel="noopener">LeetCode 238 ↗</a> · Interview time ~20 min.</p>
+<p class="wu-clarify"><strong>Clarify:</strong> can the array contain zeros? (Yes — division would fail, which is why it's banned.) Does the output array count as extra space? (Conventionally excluded.)</p>
+<div class="dsa-hints">
+<details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">The answer at <code>i</code> is (product of everything left of i) × (product of everything right of i).</div></details>
+<details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Do a left-to-right pass writing prefixes into the output, then a right-to-left pass multiplying by a running suffix — O(1) extra space.</div></details>
+</div>
+<p class="wu-approach"><span class="wu-section">Approach</span> <strong>Recognition:</strong> range aggregate ⇒ prefix/suffix. <strong>Invariant:</strong> after the first pass <code>out[i]</code> = product of <code>nums[0..i−1]</code>; the second pass multiplies in the running product of <code>nums[i+1..]</code>. <strong>Dry run</strong> on <code>[1,2,3,4]</code>: prefixes <code>[1,1,2,6]</code>, then suffixes <code>×[24,12,4,1]</code> ⇒ <code>[24,12,8,6]</code>.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lc238.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
+
+def product_except_self(nums: List[int]) -> List[int]:
+    n = len(nums)
+    out = [1] * n
+    prefix = 1
+    for i in range(n):              # out[i] = product of everything left of i
+        out[i] = prefix
+        prefix *= nums[i]
+    suffix = 1
+    for i in range(n - 1, -1, -1):  # multiply in product of everything right of i
+        out[i] *= suffix
+        suffix *= nums[i]
+    return out
+
+assert product_except_self([1, 2, 3, 4]) == [24, 12, 8, 6]
+assert product_except_self([-1, 1, 0, -3, 3]) == [0, 0, 9, 0, 0]  # zeros handled
+assert product_except_self([2, 3]) == [3, 2]
+print("lc238 ok")</code></pre>
+</div>
+<p><strong>Time</strong> O(n) · <strong>Auxiliary space</strong> O(1) beyond the output (the <code>out</code> array is output space, excluded by convention) · <strong>Mutation</strong> none of the input. <strong>Common mistakes:</strong> using division (fails on zeros); allocating separate prefix and suffix arrays (unnecessary — reuse <code>out</code>). <strong>Follow-up:</strong> handle exactly-one vs multiple zeros if division <em>were</em> allowed. <strong>Narration:</strong> "Left products in one pass, right products folded in on the way back — division-free and O(1) extra."</p>
+</div>
+</details>
+
+<!-- 4 · LC53 -->
+<details class="dsa-prob" data-pid="lc-53">
+<summary>
+<span class="p-idx">4</span>
+<span class="p-title"><span class="lc">LC 53</span>Maximum Subarray</span>
+<span class="p-badges"><span class="diff medium">Medium</span><span class="badge-canonical">Canonical</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Pattern 3 · Kadane — best subarray ending here</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Summary.</strong> Find the contiguous subarray with the largest sum and return that sum. <a href="https://leetcode.com/problems/maximum-subarray/" target="_blank" rel="noopener">LeetCode 53 ↗</a> · Secondary: 1D DP, prefix sums · ~20 min.</p>
+<p class="wu-clarify"><strong>Clarify:</strong> is the array non-empty? (Yes.) Can all values be negative? (Yes — answer is the largest single element.) Must the subarray be non-empty? (Yes.)</p>
+<div class="dsa-hints">
+<details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">At each index decide: extend the previous best subarray, or start fresh here.</div></details>
+<details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body"><code>cur = max(x, cur + x)</code> is that decision; track the global best separately.</div></details>
+</div>
+<p class="wu-approach"><span class="wu-section">Approach</span> <strong>Brute force</strong> sums every subarray: O(n²). <strong>Recognition:</strong> "contiguous max" ⇒ Kadane. <strong>Invariant:</strong> <code>cur</code> is the maximum sum of a subarray <em>ending at</em> the current index; a negative <code>cur</code> is worth discarding. <strong>Dry run</strong> on <code>[-2,1,-3,4,-1,2,1,-5,4]</code> ⇒ best = 6 (subarray <code>[4,-1,2,1]</code>).</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lc53.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
+
+def max_subarray(nums: List[int]) -> int:
+    best = cur = nums[0]
+    for x in nums[1:]:
+        cur = max(x, cur + x)   # extend, or restart at x
+        best = max(best, cur)
+    return best
+
+assert max_subarray([-2, 1, -3, 4, -1, 2, 1, -5, 4]) == 6
+assert max_subarray([1]) == 1
+assert max_subarray([-3, -1, -2]) == -1   # all negative -> largest single
+print("lc53 ok")</code></pre>
+</div>
+<p><strong>Time</strong> O(n) · <strong>Auxiliary space</strong> O(1) · <strong>Mutation</strong> none. <strong>Common mistakes:</strong> initialising <code>best = 0</code> (breaks the all-negative case); resetting <code>cur</code> to 0 instead of to <code>x</code>. <strong>Follow-ups:</strong> return the indices; the max-product variant (LC 152, <a href="index.html">Ch 18</a>) where a negative × negative flips sign. <strong>Narration:</strong> "Kadane — at each step I either extend the running subarray or restart, and I remember the best I've seen."</p>
+</div>
+</details>
+
+<!-- 5 · LC88 -->
+<details class="dsa-prob" data-pid="lc-88">
+<summary>
+<span class="p-idx">5</span>
+<span class="p-title"><span class="lc">LC 88</span>Merge Sorted Array</span>
+<span class="p-badges"><span class="diff easy">Easy</span><span class="badge-canonical">Canonical</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Pattern: merge pointers, filled from the back</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Summary.</strong> Merge two sorted arrays into the first, which has trailing space for both. <a href="https://leetcode.com/problems/merge-sorted-array/" target="_blank" rel="noopener">LeetCode 88 ↗</a> · Secondary: two pointers · ~15 min.</p>
+<p class="wu-clarify"><strong>Clarify:</strong> is <code>nums1</code> sized <code>m + n</code> with the last <code>n</code> slots as padding? (Yes.) Merge in place? (Yes.)</p>
+<div class="dsa-hints">
+<details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Merging from the front would overwrite unread <code>nums1</code> values.</div></details>
+<details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Fill from the back: the largest remaining element goes into the last empty slot.</div></details>
+</div>
+<p class="wu-approach"><span class="wu-section">Approach</span> <strong>Recognition:</strong> two sorted inputs, in-place ⇒ merge from the back. <strong>Invariant:</strong> positions after <code>k</code> hold the largest merged elements in sorted order; the padding region is always free to write.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lc88.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
+
+def merge(nums1: List[int], m: int, nums2: List[int], n: int) -> None:
+    i, j, k = m - 1, n - 1, m + n - 1     # tails of the two runs + write cursor
+    while j >= 0:                          # once nums2 is placed, nums1 is done
+        if i >= 0 and nums1[i] > nums2[j]:
+            nums1[k] = nums1[i]; i -= 1
+        else:
+            nums1[k] = nums2[j]; j -= 1
+        k -= 1
+
+a = [1, 2, 3, 0, 0, 0]; merge(a, 3, [2, 5, 6], 3); assert a == [1, 2, 2, 3, 5, 6]
+a = [0];               merge(a, 0, [1], 1);       assert a == [1]      # nums1 empty
+a = [1];               merge(a, 1, [], 0);        assert a == [1]      # nums2 empty
+print("lc88 ok")</code></pre>
+</div>
+<p><strong>Time</strong> O(m + n) · <strong>Auxiliary space</strong> O(1) · <strong>Mutation</strong> <code>nums1</code> is written in place (required). <strong>Common mistakes:</strong> merging front-to-back (clobbers data); forgetting the <code>i &gt;= 0</code> guard. <strong>Follow-up:</strong> merge <em>k</em> sorted arrays with a heap (<a href="index.html">Ch 13</a>). <strong>Narration:</strong> "I write from the back so I never overwrite an element I still need to compare."</p>
+</div>
+</details>
+
+<!-- 6 · LC189 -->
+<details class="dsa-prob" data-pid="lc-189">
+<summary>
+<span class="p-idx">6</span>
+<span class="p-title"><span class="lc">LC 189</span>Rotate Array</span>
+<span class="p-badges"><span class="diff medium">Medium</span><span class="badge-canonical">Canonical</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Pattern 5 · Triple reversal rotates in place</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Summary.</strong> Rotate the array right by <code>k</code> steps, in place. <a href="https://leetcode.com/problems/rotate-array/" target="_blank" rel="noopener">LeetCode 189 ↗</a> · ~15 min.</p>
+<p class="wu-clarify"><strong>Clarify:</strong> can <code>k</code> exceed <code>n</code>? (Yes — take <code>k % n</code>.) Extra array allowed? (The interesting version is O(1) space.)</p>
+<div class="dsa-hints">
+<details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Reversing the whole array puts the last k elements first — but in reversed order.</div></details>
+<details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Reverse all, then reverse the first k and the rest separately.</div></details>
+</div>
+<p class="wu-approach"><span class="wu-section">Approach</span> <strong>Recognition:</strong> cyclic shift in O(1) space ⇒ reversal trick. <strong>Invariant:</strong> reverse(whole) then reverse(0, k−1) then reverse(k, n−1) composes exactly to a right-rotation by k. <strong>Dry run</strong> <code>[1..7]</code>, k=3: reverse all → <code>[7,6,5,4,3,2,1]</code>; reverse first 3 → <code>[5,6,7,4,3,2,1]</code>; reverse rest → <code>[5,6,7,1,2,3,4]</code>.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lc189.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
+
+def rotate(nums: List[int], k: int) -> None:
+    n = len(nums)
+    if not n:
+        return
+    k %= n
+    def rev(l, r):
+        while l < r:
+            nums[l], nums[r] = nums[r], nums[l]
+            l += 1; r -= 1
+    rev(0, n - 1)      # reverse everything
+    rev(0, k - 1)      # fix the first k
+    rev(k, n - 1)      # fix the rest
+
+a = [1, 2, 3, 4, 5, 6, 7]; rotate(a, 3); assert a == [5, 6, 7, 1, 2, 3, 4]
+a = [-1, -100, 3, 99];     rotate(a, 2); assert a == [3, 99, -1, -100]
+a = [1, 2];                rotate(a, 3); assert a == [2, 1]   # k > n
+print("lc189 ok")</code></pre>
+</div>
+<p><strong>Time</strong> O(n) · <strong>Auxiliary space</strong> O(1) · <strong>Mutation</strong> in place. <strong>Common mistakes:</strong> forgetting <code>k %= n</code> (index error when k &gt; n); the easy O(n)-space slice <code>nums[:] = nums[-k:] + nums[:-k]</code> is fine but state that it uses O(n) extra. <strong>Narration:</strong> "Reverse the whole array, then reverse each part back — a right-rotation in O(1) space."</p>
+</div>
+</details>
+
+<!-- 7 · LC169 -->
+<details class="dsa-prob" data-pid="lc-169">
+<summary>
+<span class="p-idx">7</span>
+<span class="p-title"><span class="lc">LC 169</span>Majority Element</span>
+<span class="p-badges"><span class="diff easy">Easy</span><span class="badge-canonical">Canonical</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Pattern 1 · Boyer–Moore voting in O(1) space</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Summary.</strong> Return the element that appears more than ⌊n/2⌋ times (guaranteed to exist). <a href="https://leetcode.com/problems/majority-element/" target="_blank" rel="noopener">LeetCode 169 ↗</a> · Secondary: hashing · ~15 min.</p>
+<p class="wu-clarify"><strong>Clarify:</strong> is a majority guaranteed? (Yes.) Can you use O(1) space? (That's the elegant version.)</p>
+<div class="dsa-hints">
+<details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">A hash count is O(n) space. Can you cancel each non-majority element against a majority one?</div></details>
+<details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Keep a candidate and a count; +1 when it matches, −1 otherwise; reset the candidate when the count hits 0.</div></details>
+</div>
+<p class="wu-approach"><span class="wu-section">Approach</span> <strong>Recognition:</strong> "more than half" ⇒ Boyer–Moore voting. <strong>Invariant:</strong> after processing a prefix, <code>cand</code> with <code>count</code> is the element that would survive pairwise cancellation of that prefix. Because the true majority exceeds all others combined, it always survives.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lc169.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
+
+def majority_element(nums: List[int]) -> int:
+    count, cand = 0, None
+    for x in nums:
+        if count == 0:
+            cand = x
+        count += 1 if x == cand else -1
+    return cand
+
+assert majority_element([3, 2, 3]) == 3
+assert majority_element([2, 2, 1, 1, 1, 2, 2]) == 2
+assert majority_element([9]) == 9
+print("lc169 ok")</code></pre>
+</div>
+<p><strong>Time</strong> O(n) · <strong>Auxiliary space</strong> O(1) (vs O(n) for a hash count — this is the memory win, and output is a single int) · <strong>Mutation</strong> none. <strong>Common mistakes:</strong> returning the candidate without knowing a majority is guaranteed (otherwise a verification pass is needed). <strong>Follow-up:</strong> elements appearing more than ⌊n/3⌋ times (two candidates). <strong>Narration:</strong> "Voting: every minority element cancels one majority vote, and the majority still outnumbers them all."</p>
+</div>
+</details>
+
+<!-- 8 · LC54 -->
+<details class="dsa-prob" data-pid="lc-54">
+<summary>
+<span class="p-idx">8</span>
+<span class="p-title"><span class="lc">LC 54</span>Spiral Matrix</span>
+<span class="p-badges"><span class="diff medium">Medium</span><span class="badge-canonical">Canonical</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Pattern 6 · Four shrinking boundaries</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Summary.</strong> Return all matrix elements in clockwise spiral order. <a href="https://leetcode.com/problems/spiral-matrix/" target="_blank" rel="noopener">LeetCode 54 ↗</a> · Secondary: matrix (<a href="index.html">Ch 20</a>) · ~20 min.</p>
+<p class="wu-clarify"><strong>Clarify:</strong> can the matrix be empty or non-square? (Yes — handle both.)</p>
+<div class="dsa-hints">
+<details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Track four boundaries: top, bottom, left, right, and peel one edge at a time.</div></details>
+<details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">After the top row and right column, guard with <code>top &lt;= bottom</code> and <code>left &lt;= right</code> before the bottom row / left column to avoid re-reading a single remaining line.</div></details>
+</div>
+<p class="wu-approach"><span class="wu-section">Approach</span> <strong>Invariant:</strong> the unvisited region is always the rectangle <code>[top..bottom] × [left..right]</code>; each of the four passes peels one edge and moves its boundary inward. The two guards prevent double-reading the last row or column in odd shapes.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lc54.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
+
+def spiral_order(matrix: List[List[int]]) -> List[int]:
+    if not matrix:
+        return []
+    top, bottom = 0, len(matrix) - 1
+    left, right = 0, len(matrix[0]) - 1
+    out = []
+    while top <= bottom and left <= right:
+        for c in range(left, right + 1):        # top row L->R
+            out.append(matrix[top][c])
+        top += 1
+        for r in range(top, bottom + 1):        # right col T->B
+            out.append(matrix[r][right])
+        right -= 1
+        if top <= bottom:                        # bottom row R->L
+            for c in range(right, left - 1, -1):
+                out.append(matrix[bottom][c])
+            bottom -= 1
+        if left <= right:                        # left col B->T
+            for r in range(bottom, top - 1, -1):
+                out.append(matrix[r][left])
+            left += 1
+    return out
+
+assert spiral_order([[1,2,3],[4,5,6],[7,8,9]]) == [1,2,3,6,9,8,7,4,5]
+assert spiral_order([[1,2,3,4],[5,6,7,8],[9,10,11,12]]) == [1,2,3,4,8,12,11,10,9,5,6,7]
+assert spiral_order([[7]]) == [7]
+print("lc54 ok")</code></pre>
+</div>
+<p><strong>Time</strong> O(rows × cols) · <strong>Auxiliary space</strong> O(1) beyond the output · <strong>Mutation</strong> none. <strong>Common mistakes:</strong> omitting the two guards (double-counts the middle row/column); off-by-one in the reverse ranges. <strong>Follow-up:</strong> generate a spiral matrix (LC 59). <strong>Narration:</strong> "Four boundaries closing inward; guards stop me re-reading the last line."</p>
+</div>
+</details>
+
+<!-- 9 · LC73 -->
+<details class="dsa-prob" data-pid="lc-73">
+<summary>
+<span class="p-idx">9</span>
+<span class="p-title"><span class="lc">LC 73</span>Set Matrix Zeroes</span>
+<span class="p-badges"><span class="diff medium">Medium</span><span class="badge-canonical">Canonical</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Pattern 7 · First row/column as O(1) markers</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Summary.</strong> If a cell is 0, set its entire row and column to 0 — in place, O(1) extra space. <a href="https://leetcode.com/problems/set-matrix-zeroes/" target="_blank" rel="noopener">LeetCode 73 ↗</a> · Secondary: matrix (<a href="index.html">Ch 20</a>) · ~20 min.</p>
+<p class="wu-clarify"><strong>Clarify:</strong> must it be O(1) space? (That's the point — an O(m+n) set-of-rows/cols is the easy version.)</p>
+<div class="dsa-hints">
+<details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">You need to remember which rows and columns to zero — but the matrix itself has spare storage.</div></details>
+<details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Use row 0 and column 0 as the marker arrays; handle their own zero-state with two separate flags first.</div></details>
+</div>
+<p class="wu-approach"><span class="wu-section">Approach</span> <strong>Invariant:</strong> after the marking pass, <code>matrix[r][0]==0</code> means "row r must be zeroed" and <code>matrix[0][c]==0</code> means "column c must be zeroed". Record whether row 0 / column 0 themselves contain a zero <em>first</em>, since they double as markers.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lc73.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
+
+def set_zeroes(matrix: List[List[int]]) -> None:
+    rows, cols = len(matrix), len(matrix[0])
+    first_row_zero = any(matrix[0][c] == 0 for c in range(cols))
+    first_col_zero = any(matrix[r][0] == 0 for r in range(rows))
+    for r in range(1, rows):                 # mark in the borders
+        for c in range(1, cols):
+            if matrix[r][c] == 0:
+                matrix[r][0] = 0
+                matrix[0][c] = 0
+    for r in range(1, rows):                 # apply the marks
+        for c in range(1, cols):
+            if matrix[r][0] == 0 or matrix[0][c] == 0:
+                matrix[r][c] = 0
+    if first_row_zero:
+        for c in range(cols):
+            matrix[0][c] = 0
+    if first_col_zero:
+        for r in range(rows):
+            matrix[r][0] = 0
+
+m = [[1,1,1],[1,0,1],[1,1,1]]; set_zeroes(m); assert m == [[1,0,1],[0,0,0],[1,0,1]]
+m = [[0,1,2,0],[3,4,5,2],[1,3,1,5]]; set_zeroes(m); assert m == [[0,0,0,0],[0,4,5,0],[0,3,1,0]]
+print("lc73 ok")</code></pre>
+</div>
+<p><strong>Time</strong> O(rows × cols) · <strong>Auxiliary space</strong> O(1) (vs O(m+n) for the marker-set version — that is the memory win) · <strong>Mutation</strong> in place. <strong>Common mistakes:</strong> not capturing the first row/column state before overwriting; applying marks before finishing marking. <strong>Narration:</strong> "The first row and column become my note-pad; I just record their own zero-state up front."</p>
+</div>
+</details>
+
+<!-- 10 · LC11 cross-ref -->
+<details class="dsa-prob" data-pid="lc-11">
+<summary>
+<span class="p-idx">10</span>
+<span class="p-title"><span class="lc">LC 11</span>Container With Most Water</span>
+<span class="p-badges"><span class="diff medium">Medium</span><span class="badge-xref">Cross-ref → Two Pointers</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Full editorial lives in Chapter 06 — Two Pointers</span>
+</summary>
+<div class="p-body">
+<div class="dsa-xref"><span class="xi">🔗</span><div><strong>Canonical write-up: Chapter 06 — Two Pointers.</strong> <a href="https://leetcode.com/problems/container-with-most-water/" target="_blank" rel="noopener">LeetCode 11 ↗</a></div></div>
+<p><strong>Array lens.</strong> Given heights, the water between two lines is <code>min(h[l], h[r]) × (r − l)</code>. Start pointers at both ends and always move the <em>shorter</em> line inward — the width shrinks, so only a taller line can improve the area. Greedy two-pointer, O(n)/O(1), versus the O(n²) brute force over all pairs.</p>
+</div>
+</details>
+
+<!-- 11 · LC56 cross-ref -->
+<details class="dsa-prob" data-pid="lc-56">
+<summary>
+<span class="p-idx">11</span>
+<span class="p-title"><span class="lc">LC 56</span>Merge Intervals</span>
+<span class="p-badges"><span class="diff medium">Medium</span><span class="badge-xref">Cross-ref → Sorting/Intervals</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Full editorial lives in Chapter 09 — Sorting, Intervals &amp; Selection</span>
+</summary>
+<div class="p-body">
+<div class="dsa-xref"><span class="xi">🔗</span><div><strong>Canonical write-up: Chapter 09 — Sorting, Intervals &amp; Selection.</strong> <a href="https://leetcode.com/problems/merge-intervals/" target="_blank" rel="noopener">LeetCode 56 ↗</a></div></div>
+<p><strong>Array lens.</strong> Sort intervals by start, then sweep: if the next interval starts at or before the current end, extend the end; otherwise close the current interval and open a new one. Sorting dominates at O(n log n); the sweep is O(n). The pattern — sort to make neighbours comparable — recurs across the intervals family.</p>
+</div>
+</details>
+
+<!-- 12 · LC31 -->
+<details class="dsa-prob" data-pid="lc-31">
+<summary>
+<span class="p-idx">12</span>
+<span class="p-title"><span class="lc">LC 31</span>Next Permutation</span>
+<span class="p-badges"><span class="diff medium">Medium</span><span class="badge-canonical">Canonical</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Pattern 5 · Pivot from the right, swap, reverse the tail</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Summary.</strong> Rearrange the array into the next lexicographically greater permutation in place; if it is the largest, wrap to the smallest (sorted ascending). <a href="https://leetcode.com/problems/next-permutation/" target="_blank" rel="noopener">LeetCode 31 ↗</a> · ~25 min.</p>
+<p class="wu-clarify"><strong>Clarify:</strong> in place with O(1) space? (Yes.) Duplicates allowed? (Yes — the ≤/≥ comparisons handle them.)</p>
+<div class="dsa-hints">
+<details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">A suffix that is descending is already the largest arrangement of those elements — the change must happen just left of it.</div></details>
+<details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Find the first index <code>i</code> from the right with <code>nums[i] &lt; nums[i+1]</code>, swap it with the next-larger element to its right, then reverse the suffix.</div></details>
+</div>
+<p class="wu-approach"><span class="wu-section">Approach</span> <strong>Invariant:</strong> everything right of the pivot <code>i</code> is non-increasing (the maximal suffix). Swapping <code>nums[i]</code> with the smallest element to its right that still exceeds it makes the smallest possible increase; reversing the suffix turns it into the smallest arrangement, giving the very next permutation. <strong>Dry run</strong> <code>[1,2,3]</code> → pivot i=1 (2&lt;3), swap 2,3 → <code>[1,3,2]</code>, reverse tail (len 1) → <code>[1,3,2]</code>.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lc31.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
+
+def next_permutation(nums: List[int]) -> None:
+    n = len(nums)
+    i = n - 2
+    while i >= 0 and nums[i] >= nums[i + 1]:   # find the pivot
+        i -= 1
+    if i >= 0:
+        j = n - 1
+        while nums[j] <= nums[i]:               # next-larger to the right
+            j -= 1
+        nums[i], nums[j] = nums[j], nums[i]
+    nums[i + 1:] = reversed(nums[i + 1:])       # make the suffix smallest
+
+a = [1, 2, 3]; next_permutation(a); assert a == [1, 3, 2]
+a = [3, 2, 1]; next_permutation(a); assert a == [1, 2, 3]   # wrap to smallest
+a = [1, 1, 5]; next_permutation(a); assert a == [1, 5, 1]
+print("lc31 ok")</code></pre>
+</div>
+<p><strong>Time</strong> O(n) · <strong>Auxiliary space</strong> O(1) · <strong>Mutation</strong> in place. <strong>Common mistakes:</strong> wrong strict/non-strict comparison with duplicates; forgetting the all-descending wrap-around (the reverse still runs from <code>i+1 = 0</code>). <strong>Narration:</strong> "Find where the ascending run breaks from the right, bump it up minimally, then reset the tail to its smallest order."</p>
+</div>
+</details>
+
+<!-- 13 · LC128 cross-ref -->
+<details class="dsa-prob" data-pid="lc-128">
+<summary>
+<span class="p-idx">13</span>
+<span class="p-title"><span class="lc">LC 128</span>Longest Consecutive Sequence</span>
+<span class="p-badges"><span class="diff medium">Medium</span><span class="badge-xref">Cross-ref → Hashing</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Full editorial lives in Chapter 04 — Hashing</span>
+</summary>
+<div class="p-body">
+<div class="dsa-xref"><span class="xi">🔗</span><div><strong>Canonical write-up: Chapter 04 — Hashing.</strong> <a href="https://leetcode.com/problems/longest-consecutive-sequence/" target="_blank" rel="noopener">LeetCode 128 ↗</a></div></div>
+<p><strong>Array lens.</strong> Sorting gives an easy O(n log n) answer, but the O(n) trick is pure hashing: put everything in a <code>set</code>, then start counting a run only from a value whose predecessor is absent (a "sequence start"). Each element is visited at most twice, so it is O(n) despite the nested look. The lesson: a set can beat sorting when you only need membership, not order.</p>
+</div>
+</details>
+
+<!-- 14 · LC42 cross-ref -->
+<details class="dsa-prob" data-pid="lc-42">
+<summary>
+<span class="p-idx">14</span>
+<span class="p-title"><span class="lc">LC 42</span>Trapping Rain Water</span>
+<span class="p-badges"><span class="diff hard">Hard</span><span class="badge-xref">Cross-ref → Two Pointers</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Full editorial lives in Chapter 06 — Two Pointers</span>
+</summary>
+<div class="p-body">
+<div class="dsa-xref"><span class="xi">🔗</span><div><strong>Canonical write-up: Chapter 06 — Two Pointers.</strong> <a href="https://leetcode.com/problems/trapping-rain-water/" target="_blank" rel="noopener">LeetCode 42 ↗</a></div></div>
+<p><strong>Array lens.</strong> Water above bar <code>i</code> is <code>min(maxLeft, maxRight) − height[i]</code>. The prefix-array version (compute maxLeft and maxRight arrays) is O(n) time / O(n) space and is the clearest first solution; the two-pointer version drops it to O(1) space by advancing the side with the smaller running max. Great problem to show a memory optimisation with an explicit before/after.</p>
+</div>
+</details>
+
+<!-- 15 · LC41 -->
+<details class="dsa-prob" data-pid="lc-41">
+<summary>
+<span class="p-idx">15</span>
+<span class="p-title"><span class="lc">LC 41</span>First Missing Positive</span>
+<span class="p-badges"><span class="diff hard">Hard</span><span class="badge-canonical">Canonical</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Pattern 10 · Array-as-index (cyclic placement) in O(1) space</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Summary.</strong> Find the smallest positive integer missing from the array in O(n) time and O(1) extra space. <a href="https://leetcode.com/problems/first-missing-positive/" target="_blank" rel="noopener">LeetCode 41 ↗</a> · ~30 min.</p>
+<p class="wu-clarify"><strong>Clarify:</strong> can values be negative or huge? (Yes — they're irrelevant; the answer is in <code>[1..n+1]</code>.) Mutation allowed? (Yes — it's what makes O(1) space possible.)</p>
+<div class="dsa-hints">
+<details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">The answer must be one of 1..n+1, so only values in that range matter.</div></details>
+<details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Place each value <code>v</code> in <code>[1..n]</code> at index <code>v−1</code> by swapping; then the first index whose value ≠ index+1 is the answer.</div></details>
+</div>
+<p class="wu-approach"><span class="wu-section">Approach</span> <strong>Recognition:</strong> "smallest missing in [1..n]", O(1) space ⇒ use the array itself as a hash by position. <strong>Invariant:</strong> after placement, if value <code>i+1</code> exists it sits at index <code>i</code>. The <code>while</code> swap runs at most n times total (each swap puts one value home), so the whole thing is O(n) despite the nested loop.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lc41.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
+
+def first_missing_positive(nums: List[int]) -> int:
+    n = len(nums)
+    for i in range(n):
+        # send nums[i] to its home index nums[i]-1 while it belongs in range
+        while 1 <= nums[i] <= n and nums[nums[i] - 1] != nums[i]:
+            j = nums[i] - 1
+            nums[i], nums[j] = nums[j], nums[i]
+    for i in range(n):
+        if nums[i] != i + 1:
+            return i + 1
+    return n + 1
+
+assert first_missing_positive([1, 2, 0]) == 3
+assert first_missing_positive([3, 4, -1, 1]) == 2
+assert first_missing_positive([7, 8, 9, 11, 12]) == 1   # none of 1..n present
+assert first_missing_positive([1]) == 2
+print("lc41 ok")</code></pre>
+</div>
+<p><strong>Time</strong> O(n) amortised · <strong>Auxiliary space</strong> O(1) (the input is reused as the hash — mutation is required) · <strong>Output</strong> a single int. <strong>Common mistakes:</strong> using <code>if</code> instead of <code>while</code> (leaves values un-homed); a swap condition that loops forever on duplicates — the <code>nums[nums[i]-1] != nums[i]</code> guard prevents it. <strong>Narration:</strong> "Each value that belongs in 1..n gets swapped to its own index; the first slot that disagrees is the missing number."</p>
+</div>
+</details>
+
+</div>
+
+<h2 id="playbook">4 · Interview playbook</h2>
+<ul>
+<li><strong>Clarifying questions:</strong> sorted or unsorted? duplicates? negatives? bounded value range? may I mutate the input? does the output array count as space?</li>
+<li><strong>Brute → optimal:</strong> state the O(n²) idea first, then name the pattern (hash, two pointers, prefix, sort) that removes a factor of n.</li>
+<li><strong>Invariant to say aloud:</strong> "everything left of <code>i</code> is already processed / summarised by my running state."</li>
+<li><strong>Edge cases before coding:</strong> empty, single element, all-equal, all-negative, already-sorted, duplicate-heavy.</li>
+<li><strong>Memory discipline:</strong> separate output space from auxiliary space; when you say "O(1) space", confirm you are allowed to mutate the input.</li>
+<li><strong>Warning signs another structure is better:</strong> heavy mid-array insertion (→ linked list / balanced structure); repeated membership (→ set); repeated range queries (→ prefix sums / Fenwick, <a href="index.html">Ch 24</a>).</li>
+</ul>
+
+<h2 id="role-notes">5 · Role notes</h2>
+<div class="grid grid-2">
+<div class="card"><h4>SDE / Python backend</h4><p>Expect in-place mutation, O(1)-space asks, and matrix problems. Be fluent in the reversal trick and index-as-hash — they signal comfort with memory.</p></div>
+<div class="card"><h4>Data Science / ML / AI / GenAI</h4><p>Prefix sums and Kadane recur in feature engineering and time-series; the <code>list</code> vs <code>numpy</code> memory contrast connects directly to <a href="index.html">Chapter 22</a>. Know when a vectorised NumPy pass replaces the Python loop.</p></div>
+</div>
+
+<h2 id="review">6 · Review</h2>
+<div class="dsa-cheat">
+<strong>Cheat sheet</strong>
+<ul>
+<li>Running state → linear scan (Best Time to Buy/Sell, Majority via voting).</li>
+<li>"Except self" / range aggregate → prefix × suffix, no division.</li>
+<li>Max/min contiguous → Kadane (<code>cur = max(x, cur+x)</code>).</li>
+<li>Rotate in O(1) space → reverse whole, reverse parts.</li>
+<li>Matrix flags in O(1) → use row 0 / column 0 as markers.</li>
+<li>Spiral → four shrinking boundaries with two guards.</li>
+<li>Values in [1..n], find missing/dup → cyclic placement (array as index).</li>
+<li>Merge sorted in place → fill from the back.</li>
+</ul>
+</div>
+
+<h3 id="concept-checks">Concept checks</h3>
+<div class="quiz">
+<div class="q">Why does <code>list.pop(0)</code> make an otherwise-linear loop quadratic?</div>
+<div class="opt" data-correct="false">Because it copies the whole list on every call</div>
+<div class="opt" data-correct="true">Because removing the front shifts every remaining element left — O(n) per call, O(n²) across the loop</div>
+<div class="opt" data-correct="false">Because it triggers a resize each time</div>
+<div class="explain">A list is a contiguous array of references; removing index 0 shifts all others down by one. Use <code>collections.deque.popleft()</code> for O(1).</div>
+</div>
+<div class="quiz">
+<div class="q">You claim your Product-of-Array-Except-Self is "O(1) space". What must you state to be correct?</div>
+<div class="opt" data-correct="true">That the output array is output space (excluded), and no additional arrays are used beyond two scalars</div>
+<div class="opt" data-correct="false">That you used NumPy to save memory</div>
+<div class="opt" data-correct="false">Nothing — O(1) space is obvious</div>
+<div class="explain">The memory-analysis standard requires naming that the returned array is output space and that auxiliary space is O(1) (two running products), not hidden prefix/suffix arrays.</div>
+</div>
+
+<h3 id="drills">Drills</h3>
+<p><strong>Code-completion:</strong> (1) fill in Kadane's decision line; (2) write the back-to-front merge loop; (3) complete the triple-reversal rotate. <strong>Debugging:</strong> (1) fix a Set-Matrix-Zeroes that forgot to capture the first row/column state; (2) fix a First-Missing-Positive using <code>if</code> instead of <code>while</code>. <strong>Timed mixed:</strong> in 20 minutes solve LC 238 and LC 53, stating complexity and one edge case each.</p>
+
+<h3 id="mastery">Mastery checklist</h3>
+<ul class="dsa-check">
+<li><input type="checkbox" data-check="arr-list-internals"> I can explain how a Python list stores references and why append is amortised O(1).</li>
+<li><input type="checkbox" data-check="arr-aux-vs-output"> I distinguish auxiliary space from output space in every answer.</li>
+<li><input type="checkbox" data-check="arr-kadane"> I can write Kadane and state its invariant without notes.</li>
+<li><input type="checkbox" data-check="arr-inplace"> I can rotate and set-matrix-zeroes in O(1) auxiliary space.</li>
+<li><input type="checkbox" data-check="arr-cyclic"> I understand why cyclic placement (LC 41) is amortised O(n).</li>
+<li><input type="checkbox" data-check="arr-xref"> I know which array problems are canonically owned by Hashing, Two Pointers and Sorting.</li>
+</ul>
+
+<div class="page-nav">
+<a class="prev" href="01-python-dsa-foundations.html"><div class="dir">← Previous</div><div class="ttl">01 · Python DSA Foundations</div></a>
+<a class="next" href="03-linked-lists.html"><div class="dir">Next →</div><div class="ttl">03 · Linked Lists</div></a>
+</div>
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script src="../assets/app.js"></script>
+<script src="../assets/sitenav.js"></script>
+<script src="../assets/enhance.js"></script>
+<script src="../assets/dsa-question-bank.js"></script>
+<script src="../assets/dsa-prep.js"></script>
+</body>
+</html>

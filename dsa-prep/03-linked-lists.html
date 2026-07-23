@@ -1,0 +1,888 @@
+<!DOCTYPE html>
+<html data-theme="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="#f4f5f8" name="theme-color"/>
+<title>03 · Linked Lists — DSA Interview Preparation</title>
+<link href="../../assets/brand/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../assets/brand/favicon-32.png" rel="icon" sizes="32x32" type="image/png"/>
+<link href="../../assets/brand/favicon.ico" rel="shortcut icon"/>
+<meta content="Linked lists for interviews: pointer rewiring, dummy heads, fast/slow pointers, reversal, cycle detection, with 15 canonical problems and tested Python." name="description"/>
+<link href="../assets/styles.css" rel="stylesheet"/>
+<link href="../assets/office-theme.css" rel="stylesheet"/>
+<link href="../assets/dsa-prep.css" rel="stylesheet"/>
+</head>
+<body data-page="dsa-chapter">
+<div class="app">
+<aside class="sidebar">
+<div class="brand"><a href="../index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit"><span aria-hidden="true" class="brand-mark"><span>D</span><span>S</span></span><div class="brand-text"><strong>DSA Prep</strong><span>Coding Interviews</span></div></a></div>
+<div class="search-wrap"><div class="search-box"><svg fill="none" height="15" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="15"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg><input data-search="" placeholder="Search everything…  ( / )" type="text"/></div><div class="search-results"></div></div>
+<nav class="nav"></nav>
+</aside>
+<div class="backdrop"></div>
+<div class="main">
+<header class="topbar">
+<button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
+<div class="crumbs">DSA Interview Preparation / 03 · Linked Lists</div>
+<button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
+</header>
+<div class="content-wrap">
+<main class="content">
+<div class="eyebrow"><span class="dot"></span> Chapter 03 · Core structures</div>
+<h1>Linked Lists</h1>
+<p class="lead">Linked lists test one thing above all: can you rewire pointers without losing nodes? This chapter is nearly self-contained — fourteen of its fifteen problems are owned here — and every pattern comes down to a small set of pointer moves you can draw before you type.</p>
+
+<div class="dsa-chead">
+<span class="dsa-chapter-no">Outcome</span>
+<p class="dsa-outcome">Manipulate singly and doubly linked lists confidently: use a dummy head when the head may change, save <code>next</code> before overwriting it, run fast/slow pointers for midpoints and cycles, and reverse in place — always stating what each pointer means as an invariant.</p>
+<div class="dsa-tags">
+<span class="dsa-tag core">Core for every role</span>
+<span class="dsa-tag sde">SDE</span><span class="dsa-tag sde">Python</span><span class="dsa-tag ds">Data Science</span><span class="dsa-tag ds">ML / AI / GenAI</span>
+</div>
+<div class="dsa-facts">
+<div class="dsa-fact"><span class="k">Study time</span><span class="v">10–14 hours</span></div>
+<div class="dsa-fact"><span class="k">Prerequisites</span><span class="v">Ch 00–01</span></div>
+<div class="dsa-fact"><span class="k">Patterns</span><span class="v">10</span></div>
+<div class="dsa-fact"><span class="k">Canonical problems</span><span class="v">15 (owns 14)</span></div>
+<div class="dsa-fact"><span class="k">Difficulty</span><span class="v">Easy → Hard</span></div>
+<div class="dsa-fact"><span class="k">Progress</span><span class="v" data-dsa-progress="">0 / 15</span></div>
+</div>
+</div>
+
+<div class="dsa-toolbar">
+<button class="dsa-btn" type="button" data-dsa-practice="">🙈 Practice mode</button>
+<button class="dsa-btn" type="button" data-dsa-reset="">↺ Reset progress</button>
+<span class="dsa-progress-line" data-dsa-progress="">0 / 15 solved</span>
+</div>
+
+<h2 id="foundations">1 · Foundations</h2>
+<p><strong>Mental model.</strong> A linked list is a chain of nodes, each holding a value and a reference to the next node. There is no index arithmetic: to reach the k-th node you walk k links. That single difference from arrays — no O(1) random access — shapes every trade-off.</p>
+<div class="dsa-nodes" role="img" aria-label="Singly linked list: head to 1 to 2 to 3 to null">
+<div class="dsa-node-wrap"><span class="dsa-node ptr">head</span></div><span class="dsa-arrow">→</span>
+<div class="dsa-node-wrap"><span class="dsa-node">1</span></div><span class="dsa-arrow">→</span>
+<div class="dsa-node-wrap"><span class="dsa-node">2</span></div><span class="dsa-arrow">→</span>
+<div class="dsa-node-wrap"><span class="dsa-node">3</span></div><span class="dsa-arrow">→</span>
+<div class="dsa-node-wrap"><span class="dsa-node null">∅</span></div>
+</div>
+<p><strong>How Python represents it.</strong> There is no built-in linked list — you define a node class. Each node is a separate heap object holding a reference to the next, so nodes are scattered in memory (poor cache locality) and each carries Python object overhead. The standard interview definition:</p>
+<div class="code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>node.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>class ListNode:
+    def __init__(self, val=0, next=None):
+        self.val = val
+        self.next = next
+
+# small helpers used in the tests below
+def build(vals):
+    dummy = ListNode()
+    cur = dummy
+    for v in vals:
+        cur.next = ListNode(v)
+        cur = cur.next
+    return dummy.next
+
+def to_list(head):
+    out = []
+    while head:
+        out.append(head.val)
+        head = head.next
+    return out
+
+assert to_list(build([1, 2, 3])) == [1, 2, 3]
+print("node ok")</code></pre>
+</div>
+
+<h3 id="variants">Variants and the golden rule</h3>
+<ul>
+<li><strong>Singly linked:</strong> each node points forward only. The interview default.</li>
+<li><strong>Doubly linked:</strong> nodes point both ways — O(1) removal given a node, the backbone of LRU (<a href="index.html">Ch 21</a>).</li>
+<li><strong>Circular:</strong> the tail points back into the list; the source of accidental cycles.</li>
+</ul>
+<div class="callout danger"><div class="c-ico">🔗</div><div class="c-body"><div class="c-title">The golden rule of rewiring</div><p>Before you overwrite <code>node.next</code>, save it. Almost every linked-list bug is a lost reference — you reassigned a pointer and can no longer reach the rest of the list. Draw three nodes and move one arrow at a time.</p></div></div>
+
+<h3 id="ops-complexity">Operations and complexity</h3>
+<div class="table-wrap"><table class="cx-table">
+<thead><tr><th>Operation</th><th>Linked list</th><th>Array</th></tr></thead>
+<tbody>
+<tr><td>Access k-th element</td><td class="big-o">O(n)</td><td class="big-o">O(1)</td></tr>
+<tr><td>Insert / delete at head</td><td class="big-o">O(1)</td><td class="big-o">O(n)</td></tr>
+<tr><td>Insert / delete given the node</td><td class="big-o">O(1)</td><td class="big-o">O(n)</td></tr>
+<tr><td>Search by value</td><td class="big-o">O(n)</td><td class="big-o">O(n)</td></tr>
+<tr><td>Memory locality</td><td>Poor (scattered nodes)</td><td>Good (contiguous)</td></tr>
+</tbody>
+</table></div>
+<div class="grid grid-2">
+<div class="card"><h4>Choose a linked list when…</h4><p>you splice at the ends or middle frequently and rarely index; you need stable O(1) insert/delete given a node (LRU, free lists, adjacency).</p></div>
+<div class="card"><h4>Prefer an array when…</h4><p>you index or scan a lot; locality and simplicity matter. In real systems arrays usually win on cache behaviour — say so when asked to compare.</p></div>
+</div>
+<div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">Python-specific pitfalls</div><p>Recursion over a long list hits the ~1000-frame limit — prefer iteration (<a href="01-python-dsa-foundations.html">Ch 01</a>). Aliasing two names to the same node and rewiring one can create an unintended cycle. A dangling <code>next</code> you forgot to set to <code>None</code> can leave a loop that hangs your traversal.</p></div></div>
+
+<h2 id="patterns">2 · Pattern library</h2>
+<div class="dsa-patterns">
+<div class="dsa-pattern"><h4><span class="pnum">1</span>Dummy head</h4><dl><dt>Signal</dt><dd>the head node may be removed/changed</dd><dt>Invariant</dt><dd><code>dummy.next</code> is always the current head</dd><dt>Why</dt><dd>removes head/non-head special cases</dd></dl></div>
+<div class="dsa-pattern"><h4><span class="pnum">2</span>Fast / slow pointers</h4><dl><dt>Signal</dt><dd>midpoint, cycle, k-from-end</dd><dt>Invariant</dt><dd>fast moves 2×; when it ends, slow is at the middle</dd><dt>Cost</dt><dd>O(n) / O(1)</dd></dl></div>
+<div class="dsa-pattern"><h4><span class="pnum">3</span>In-place reversal</h4><dl><dt>Signal</dt><dd>reverse all or a segment</dd><dt>Invariant</dt><dd>everything before <code>cur</code> is already reversed</dd><dt>Cost</dt><dd>O(n) / O(1)</dd></dl></div>
+<div class="dsa-pattern"><h4><span class="pnum">4</span>Merge / split</h4><dl><dt>Signal</dt><dd>combine two sorted lists / cut in halves</dd><dt>Invariant</dt><dd>tail always points at the smaller frontier</dd><dt>Cost</dt><dd>O(n+m) / O(1)</dd></dl></div>
+<div class="dsa-pattern"><h4><span class="pnum">5</span>Floyd cycle detection</h4><dl><dt>Signal</dt><dd>does a cycle exist / where does it start</dd><dt>Invariant</dt><dd>meeting point ⇒ head-distance equals cycle-entry distance</dd><dt>Cost</dt><dd>O(n) / O(1)</dd></dl></div>
+<div class="dsa-pattern"><h4><span class="pnum">6</span>One-pass kth-from-end</h4><dl><dt>Signal</dt><dd>"nth node from the end"</dd><dt>Invariant</dt><dd>fast leads slow by exactly n links</dd><dt>Cost</dt><dd>O(n) / O(1)</dd></dl></div>
+<div class="dsa-pattern"><h4><span class="pnum">7</span>Random-pointer cloning</h4><dl><dt>Signal</dt><dd>deep copy with extra pointers</dd><dt>Invariant</dt><dd>each copy sits right after its original</dd><dt>Cost</dt><dd>O(n) / O(1) extra</dd></dl></div>
+<div class="dsa-pattern"><h4><span class="pnum">8</span>k-way merge (heap)</h4><dl><dt>Signal</dt><dd>merge k sorted lists</dd><dt>Invariant</dt><dd>heap holds the current front of each list</dd><dt>Cost</dt><dd>O(N log k)</dd></dl></div>
+<div class="dsa-pattern"><h4><span class="pnum">9</span>Merge sort on a list</h4><dl><dt>Signal</dt><dd>sort in O(n log n), O(1) aux besides recursion</dd><dt>Invariant</dt><dd>split at midpoint, sort halves, merge</dd><dt>Cost</dt><dd>O(n log n) / O(log n) stack</dd></dl></div>
+<div class="dsa-pattern"><h4><span class="pnum">10</span>Doubly linked + hash map</h4><dl><dt>Signal</dt><dd>O(1) get/put with recency (LRU)</dd><dt>Invariant</dt><dd>map → node; list orders by recency</dd><dt>Cost</dt><dd>O(1) per op</dd></dl></div>
+</div>
+
+<div class="callout note"><div class="c-ico">🎞️</div><div class="c-body"><div class="c-title">The three moves you will reuse everywhere</div>
+<p>Reversal is <code>nxt = cur.next; cur.next = prev; prev = cur; cur = nxt</code>. The dummy head is <code>dummy = ListNode(0, head)</code>. Fast/slow is <code>slow = slow.next; fast = fast.next.next</code>. Memorise these three and most problems become composition.</p></div></div>
+
+<h2 id="reversal-diagram">Reversal, drawn</h2>
+<p>The invariant "everything before <code>cur</code> is reversed" made visible. <code>prev</code> grows the reversed prefix; <code>cur</code> walks the untouched suffix:</p>
+<div class="dsa-nodes" role="img" aria-label="Mid-reversal: prev points at 2 which points back to 1 to null; cur points at 3 to 4">
+<div class="dsa-node-wrap"><span class="dsa-node null">∅</span></div><span class="dsa-arrow">←</span>
+<div class="dsa-node-wrap"><span class="dsa-node">1</span><span class="dsa-node-label">reversed</span></div><span class="dsa-arrow">←</span>
+<div class="dsa-node-wrap"><span class="dsa-node ptr">2</span><span class="dsa-node-label">prev</span></div>
+<span class="dsa-arrow" style="opacity:.35">|</span>
+<div class="dsa-node-wrap"><span class="dsa-node ptr">3</span><span class="dsa-node-label">cur</span></div><span class="dsa-arrow">→</span>
+<div class="dsa-node-wrap"><span class="dsa-node">4</span><span class="dsa-node-label">suffix</span></div><span class="dsa-arrow">→</span>
+<div class="dsa-node-wrap"><span class="dsa-node null">∅</span></div>
+</div>
+
+<h2 id="ladder">3 · Problem ladder — 15</h2>
+<p>All code assumes the <code>ListNode</code>, <code>build</code> and <code>to_list</code> helpers above. Expand a row for the full write-up; use <span class="dsa-kbd">🙈 Practice mode</span> to hide solutions and rebuild from the pattern. Fourteen problems are owned here; LRU Cache is cross-linked to Data Structure Design.</p>
+
+<div class="dsa-ladder">
+
+<!-- 1 · LC206 -->
+<details class="dsa-prob" data-pid="lc-206">
+<summary>
+<span class="p-idx">1</span>
+<span class="p-title"><span class="lc">LC 206</span>Reverse Linked List</span>
+<span class="p-badges"><span class="diff easy">Easy</span><span class="badge-canonical">Canonical</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Pattern 3 · The reversal move — the foundation of the chapter</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Summary.</strong> Reverse a singly linked list and return the new head. <a href="https://leetcode.com/problems/reverse-linked-list/" target="_blank" rel="noopener">LeetCode 206 ↗</a> · ~15 min.</p>
+<p class="wu-clarify"><strong>Clarify:</strong> in place (O(1) space) or a new list? Recursive or iterative — do they want to see both? (Iterative is safest for long lists.)</p>
+<div class="dsa-hints">
+<details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Walk the list, flipping each <code>next</code> pointer to point backward.</div></details>
+<details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Keep three references: <code>prev</code>, <code>cur</code>, and <code>nxt</code> (saved before you overwrite <code>cur.next</code>).</div></details>
+</div>
+<p class="wu-approach"><span class="wu-section">Approach</span> <strong>Invariant:</strong> <code>prev</code> is the head of the already-reversed prefix; <code>cur</code> is the next node to flip. Save <code>cur.next</code>, point <code>cur.next</code> at <code>prev</code>, then advance both. When <code>cur</code> is <code>None</code>, <code>prev</code> is the new head.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lc206.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>def reverse_list(head):
+    prev = None
+    while head:
+        nxt = head.next     # save before overwriting (golden rule)
+        head.next = prev    # flip the pointer
+        prev = head         # extend the reversed prefix
+        head = nxt          # advance into the untouched suffix
+    return prev
+
+assert to_list(reverse_list(build([1, 2, 3, 4, 5]))) == [5, 4, 3, 2, 1]
+assert to_list(reverse_list(build([]))) == []       # empty
+assert to_list(reverse_list(build([1]))) == [1]     # single node
+print("lc206 ok")</code></pre>
+</div>
+<p><strong>Time</strong> O(n) · <strong>Auxiliary space</strong> O(1) iterative (the recursive version is O(n) stack — state that trade-off) · <strong>Mutation</strong> pointers rewired in place. <strong>Common mistakes:</strong> overwriting <code>head.next</code> before saving it (loses the rest of the list). <strong>Follow-up:</strong> reverse between positions m and n (LC 92). <strong>Narration:</strong> "prev holds the reversed part; I flip one arrow at a time, saving next first."</p>
+</div>
+</details>
+
+<!-- 2 · LC21 -->
+<details class="dsa-prob" data-pid="lc-21">
+<summary>
+<span class="p-idx">2</span>
+<span class="p-title"><span class="lc">LC 21</span>Merge Two Sorted Lists</span>
+<span class="p-badges"><span class="diff easy">Easy</span><span class="badge-canonical">Canonical</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Patterns 1 + 4 · Dummy head and merge pointers</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Summary.</strong> Splice two sorted lists into one sorted list and return its head. <a href="https://leetcode.com/problems/merge-two-sorted-lists/" target="_blank" rel="noopener">LeetCode 21 ↗</a> · ~15 min.</p>
+<p class="wu-clarify"><strong>Clarify:</strong> reuse the existing nodes (no new allocations)? (Yes.) Stable on ties? (Take from <code>l1</code> on equality.)</p>
+<div class="dsa-hints">
+<details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">A dummy head lets you append without special-casing the first node.</div></details>
+<details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Attach the smaller front each step; at the end, one list may remain — attach it whole.</div></details>
+</div>
+<p class="wu-approach"><span class="wu-section">Approach</span> <strong>Invariant:</strong> <code>tail</code> is the last node of the merged list; <code>dummy.next</code> is the eventual head. Compare fronts, attach the smaller, advance. When one list empties, <code>tail.next = l1 or l2</code> attaches the remainder in O(1).</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lc21.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>def merge_two(l1, l2):
+    dummy = ListNode()
+    tail = dummy
+    while l1 and l2:
+        if l1.val <= l2.val:        # <= keeps it stable
+            tail.next = l1; l1 = l1.next
+        else:
+            tail.next = l2; l2 = l2.next
+        tail = tail.next
+    tail.next = l1 or l2            # attach whatever remains
+    return dummy.next
+
+assert to_list(merge_two(build([1, 2, 4]), build([1, 3, 4]))) == [1, 1, 2, 3, 4, 4]
+assert to_list(merge_two(build([]), build([]))) == []
+assert to_list(merge_two(build([]), build([0]))) == [0]
+print("lc21 ok")</code></pre>
+</div>
+<p><strong>Time</strong> O(n + m) · <strong>Auxiliary space</strong> O(1) (nodes reused; recursion would cost O(n+m) stack) · <strong>Mutation</strong> relinks inputs. <strong>Common mistakes:</strong> forgetting the leftover tail; building a new list when reuse is expected. <strong>Follow-up:</strong> merge k lists (problem 13). <strong>Narration:</strong> "Dummy head, take the smaller front each time, then attach the leftover in one step."</p>
+</div>
+</details>
+
+<!-- 3 · LC141 -->
+<details class="dsa-prob" data-pid="lc-141">
+<summary>
+<span class="p-idx">3</span>
+<span class="p-title"><span class="lc">LC 141</span>Linked List Cycle</span>
+<span class="p-badges"><span class="diff easy">Easy</span><span class="badge-canonical">Canonical</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Pattern 5 · Floyd's tortoise and hare</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Summary.</strong> Return whether the list contains a cycle. <a href="https://leetcode.com/problems/linked-list-cycle/" target="_blank" rel="noopener">LeetCode 141 ↗</a> · ~15 min.</p>
+<p class="wu-clarify"><strong>Clarify:</strong> can I use O(1) space (vs a visited set)? (Yes — Floyd.) May I mutate nodes? (No need to.)</p>
+<div class="dsa-hints">
+<details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">A visited set works but costs O(n) memory. Can two pointers at different speeds detect a loop?</div></details>
+<details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">If a cycle exists, a 2× pointer eventually laps and meets the 1× pointer.</div></details>
+</div>
+<p class="wu-approach"><span class="wu-section">Approach</span> <strong>Invariant:</strong> in a cycle, each step the fast pointer closes the gap to the slow pointer by one, so they must meet; with no cycle, fast reaches the end. <strong>Dry run:</strong> on <code>3→2→0→-4→(back to 2)</code>, slow and fast meet inside the loop.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lc141.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>def has_cycle(head):
+    slow = fast = head
+    while fast and fast.next:
+        slow = slow.next
+        fast = fast.next.next
+        if slow is fast:        # identity, not value
+            return True
+    return False
+
+# build a cycle: tail links back to node index 1
+h = build([3, 2, 0, -4])
+nodes = []
+cur = h
+while cur:
+    nodes.append(cur); cur = cur.next
+nodes[-1].next = nodes[1]
+assert has_cycle(h) is True
+assert has_cycle(build([1, 2])) is False
+assert has_cycle(build([])) is False
+print("lc141 ok")</code></pre>
+</div>
+<p><strong>Time</strong> O(n) · <strong>Auxiliary space</strong> O(1) (vs O(n) for a visited set — the memory win) · <strong>Mutation</strong> none. <strong>Common mistakes:</strong> comparing <code>.val</code> instead of node identity (<code>is</code>); missing the <code>fast.next</code> guard (crashes at the end). <strong>Narration:</strong> "Tortoise and hare — if the hare laps the tortoise there's a loop; otherwise it runs off the end."</p>
+</div>
+</details>
+
+<!-- 4 · LC142 -->
+<details class="dsa-prob" data-pid="lc-142">
+<summary>
+<span class="p-idx">4</span>
+<span class="p-title"><span class="lc">LC 142</span>Linked List Cycle II</span>
+<span class="p-badges"><span class="diff medium">Medium</span><span class="badge-canonical">Canonical</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Pattern 5 · Find the node where the cycle begins</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Summary.</strong> Return the node where the cycle starts, or <code>None</code>. <a href="https://leetcode.com/problems/linked-list-cycle-ii/" target="_blank" rel="noopener">LeetCode 142 ↗</a> · ~25 min.</p>
+<div class="dsa-hints">
+<details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">First detect the meeting point with Floyd, as in problem 3.</div></details>
+<details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">From the meeting point, the distance to the cycle entry equals the distance from the head to the entry. Walk two pointers one step at a time from head and from the meeting point.</div></details>
+</div>
+<p class="wu-approach"><span class="wu-section">Approach</span> <strong>Why it works:</strong> let the head-to-entry distance be <em>a</em> and the meeting point be <em>b</em> into the loop of length <em>c</em>. Floyd's math gives <code>a ≡ (c − b) (mod c)</code>, so a pointer from the head and a pointer from the meeting point, each moving one step, collide exactly at the entry. <strong>Invariant:</strong> both walkers are equidistant (mod c) from the entry.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lc142.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>def detect_cycle(head):
+    slow = fast = head
+    while fast and fast.next:
+        slow = slow.next
+        fast = fast.next.next
+        if slow is fast:                 # meeting point inside the loop
+            p = head
+            while p is not slow:         # both advance one step
+                p = p.next
+                slow = slow.next
+            return p                      # the cycle entry
+    return None
+
+h = build([3, 2, 0, -4])
+nodes = []
+cur = h
+while cur:
+    nodes.append(cur); cur = cur.next
+nodes[-1].next = nodes[1]
+assert detect_cycle(h) is nodes[1]
+assert detect_cycle(build([1, 2])) is None
+print("lc142 ok")</code></pre>
+</div>
+<p><strong>Time</strong> O(n) · <strong>Auxiliary space</strong> O(1) · <strong>Mutation</strong> none. <strong>Common mistakes:</strong> restarting both pointers from the head (only one restarts); returning the meeting point instead of the entry. <strong>Narration:</strong> "Detect the meeting point, then the head-distance equals the entry-distance, so two one-step walkers meet at the start of the loop."</p>
+</div>
+</details>
+
+<!-- 5 · LC19 -->
+<details class="dsa-prob" data-pid="lc-19">
+<summary>
+<span class="p-idx">5</span>
+<span class="p-title"><span class="lc">LC 19</span>Remove Nth Node From End of List</span>
+<span class="p-badges"><span class="diff medium">Medium</span><span class="badge-canonical">Canonical</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Patterns 1 + 6 · Dummy head + a fixed-gap one pass</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Summary.</strong> Remove the n-th node from the end and return the head. <a href="https://leetcode.com/problems/remove-nth-node-from-end-of-list/" target="_blank" rel="noopener">LeetCode 19 ↗</a> · ~20 min.</p>
+<p class="wu-clarify"><strong>Clarify:</strong> is n valid (1 ≤ n ≤ length)? Can we do it in one pass? (Yes.) The head itself may be removed — so use a dummy.</p>
+<div class="dsa-hints">
+<details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">If <code>fast</code> is n nodes ahead of <code>slow</code>, when <code>fast</code> hits the end <code>slow</code> sits just before the target.</div></details>
+<details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Start both at a dummy so removing the head is not a special case.</div></details>
+</div>
+<p class="wu-approach"><span class="wu-section">Approach</span> <strong>Invariant:</strong> <code>fast</code> leads <code>slow</code> by exactly n links. Advance both until <code>fast.next</code> is <code>None</code>; then <code>slow.next</code> is the node to unlink. The dummy makes head-removal uniform.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lc19.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>def remove_nth(head, n):
+    dummy = ListNode(0, head)
+    fast = slow = dummy
+    for _ in range(n):        # open a gap of n
+        fast = fast.next
+    while fast.next:          # move both until fast is last
+        fast = fast.next
+        slow = slow.next
+    slow.next = slow.next.next  # unlink the target
+    return dummy.next
+
+assert to_list(remove_nth(build([1, 2, 3, 4, 5]), 2)) == [1, 2, 3, 5]
+assert to_list(remove_nth(build([1]), 1)) == []          # remove only node
+assert to_list(remove_nth(build([1, 2]), 2)) == [2]      # remove head
+print("lc19 ok")</code></pre>
+</div>
+<p><strong>Time</strong> O(n) single pass · <strong>Auxiliary space</strong> O(1) · <strong>Mutation</strong> one unlink. <strong>Common mistakes:</strong> not using a dummy (head removal breaks); an off-by-one in the gap. <strong>Narration:</strong> "Open an n-node gap, slide both to the end, and the trailing pointer lands right before the node to drop."</p>
+</div>
+</details>
+
+<!-- 6 · LC143 -->
+<details class="dsa-prob" data-pid="lc-143">
+<summary>
+<span class="p-idx">6</span>
+<span class="p-title"><span class="lc">LC 143</span>Reorder List</span>
+<span class="p-badges"><span class="diff medium">Medium</span><span class="badge-canonical">Canonical</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Patterns 2 + 3 + 4 · Midpoint, reverse the tail, interleave</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Summary.</strong> Reorder <code>L0→L1→…→Ln</code> into <code>L0→Ln→L1→Ln-1→…</code> in place. <a href="https://leetcode.com/problems/reorder-list/" target="_blank" rel="noopener">LeetCode 143 ↗</a> · ~25 min.</p>
+<div class="dsa-hints">
+<details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">This is three known moves in sequence — split at the middle, reverse the second half, then zip the two halves together.</div></details>
+</div>
+<p class="wu-approach"><span class="wu-section">Approach</span> <strong>Composition:</strong> (1) fast/slow to find the midpoint and cut; (2) reverse the second half; (3) merge the two halves alternately. Each step is O(n) and O(1) space. <strong>Invariant of the zip:</strong> at each step you attach the next node of the reversed tail between two front nodes.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lc143.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>def reorder(head):
+    if not head or not head.next:
+        return head
+    # 1) midpoint (slow ends at end of first half)
+    slow = fast = head
+    while fast.next and fast.next.next:
+        slow = slow.next
+        fast = fast.next.next
+    second = slow.next
+    slow.next = None
+    # 2) reverse the second half
+    prev = None
+    while second:
+        nxt = second.next
+        second.next = prev
+        prev = second
+        second = nxt
+    # 3) interleave the two halves
+    first, second = head, prev
+    while second:
+        f_next, s_next = first.next, second.next
+        first.next = second
+        second.next = f_next
+        first, second = f_next, s_next
+    return head
+
+assert to_list(reorder(build([1, 2, 3, 4]))) == [1, 4, 2, 3]
+assert to_list(reorder(build([1, 2, 3, 4, 5]))) == [1, 5, 2, 4, 3]
+assert to_list(reorder(build([1]))) == [1]
+print("lc143 ok")</code></pre>
+</div>
+<p><strong>Time</strong> O(n) · <strong>Auxiliary space</strong> O(1) · <strong>Mutation</strong> extensive rewiring. <strong>Common mistakes:</strong> not cutting the first half (<code>slow.next = None</code>) creates a cycle; picking the wrong midpoint on even lengths. <strong>Narration:</strong> "Find the middle, reverse the back, then zip front and back together."</p>
+</div>
+</details>
+
+<!-- 7 · LC2 -->
+<details class="dsa-prob" data-pid="lc-2">
+<summary>
+<span class="p-idx">7</span>
+<span class="p-title"><span class="lc">LC 2</span>Add Two Numbers</span>
+<span class="p-badges"><span class="diff medium">Medium</span><span class="badge-canonical">Canonical</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Pattern 1 · Dummy head with a running carry</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Summary.</strong> Two numbers are stored as digit lists in reverse order; return their sum as a list. <a href="https://leetcode.com/problems/add-two-numbers/" target="_blank" rel="noopener">LeetCode 2 ↗</a> · ~20 min.</p>
+<p class="wu-clarify"><strong>Clarify:</strong> digits least-significant first? (Yes — convenient.) Lists of different lengths? (Yes.) Final carry can add a node.</p>
+<div class="dsa-hints">
+<details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Add digit by digit like grade-school addition, carrying to the next place.</div></details>
+<details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Loop while either list has digits <em>or</em> a carry remains.</div></details>
+</div>
+<p class="wu-approach"><span class="wu-section">Approach</span> <strong>Invariant:</strong> after processing place <em>i</em>, <code>carry</code> holds the overflow into place <em>i+1</em>. <code>divmod(sum, 10)</code> splits digit and carry cleanly. The loop condition <code>l1 or l2 or carry</code> handles unequal lengths and a trailing carry in one place.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lc2.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>def add_two(l1, l2):
+    dummy = ListNode()
+    cur = dummy
+    carry = 0
+    while l1 or l2 or carry:
+        s = carry
+        if l1:
+            s += l1.val; l1 = l1.next
+        if l2:
+            s += l2.val; l2 = l2.next
+        carry, digit = divmod(s, 10)
+        cur.next = ListNode(digit)
+        cur = cur.next
+    return dummy.next
+
+assert to_list(add_two(build([2, 4, 3]), build([5, 6, 4]))) == [7, 0, 8]   # 342+465=807
+assert to_list(add_two(build([9, 9]), build([1]))) == [0, 0, 1]            # 99+1=100
+assert to_list(add_two(build([0]), build([0]))) == [0]
+print("lc2 ok")</code></pre>
+</div>
+<p><strong>Time</strong> O(max(n, m)) · <strong>Auxiliary space</strong> O(1) beyond the output list · <strong>Mutation</strong> none of the inputs. <strong>Common mistakes:</strong> dropping the final carry; stopping when one list ends. <strong>Follow-up:</strong> digits stored most-significant first (LC 445 — reverse or use a stack). <strong>Narration:</strong> "Schoolbook addition with a carry; loop while any digit or carry remains."</p>
+</div>
+</details>
+
+<!-- 8 · LC138 -->
+<details class="dsa-prob" data-pid="lc-138">
+<summary>
+<span class="p-idx">8</span>
+<span class="p-title"><span class="lc">LC 138</span>Copy List with Random Pointer</span>
+<span class="p-badges"><span class="diff medium">Medium</span><span class="badge-canonical">Canonical</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Pattern 7 · Interleave clones for O(1) extra space</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Summary.</strong> Deep-copy a list where each node has an extra <code>random</code> pointer to any node or null. <a href="https://leetcode.com/problems/copy-list-with-random-pointer/" target="_blank" rel="noopener">LeetCode 138 ↗</a> · ~25 min.</p>
+<p class="wu-clarify"><strong>Clarify:</strong> is O(1) extra space required (vs a hash map original→copy)? Both approaches are worth stating.</p>
+<div class="dsa-hints">
+<details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">A hash map from original node to its copy makes random pointers trivial — O(n) space.</div></details>
+<details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">To avoid the map, weave each copy right after its original, wire randoms from that adjacency, then unzip.</div></details>
+</div>
+<p class="wu-approach"><span class="wu-section">Approach</span> Three passes. (1) Insert <code>copy</code> after each <code>original</code>. (2) Set <code>copy.random = original.random.next</code> — the copy of the target sits right after it. (3) Detach the copies to restore both lists. <strong>Invariant:</strong> a node's copy is always its immediate successor during passes 1–2.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lc138.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>class Node:
+    def __init__(self, x, next=None, random=None):
+        self.val = x; self.next = next; self.random = random
+
+def copy_random(head):
+    if not head:
+        return None
+    cur = head                       # 1) weave copies in
+    while cur:
+        cur.next = Node(cur.val, cur.next)
+        cur = cur.next.next
+    cur = head                       # 2) wire random pointers
+    while cur:
+        if cur.random:
+            cur.next.random = cur.random.next
+        cur = cur.next.next
+    cur = head                       # 3) unzip original / copy
+    copy_head = head.next
+    while cur:
+        nxt = cur.next
+        cur.next = nxt.next
+        if nxt.next:
+            nxt.next = nxt.next.next
+        cur = cur.next
+    return copy_head
+
+a = Node(1); b = Node(2); a.next = b; a.random = b; b.random = b
+cp = copy_random(a)
+assert cp.val == 1 and cp.next.val == 2
+assert cp.random is cp.next and cp.next.random is cp.next   # deep, not aliased
+assert cp is not a and cp.next is not b
+assert copy_random(None) is None
+print("lc138 ok")</code></pre>
+</div>
+<p><strong>Time</strong> O(n) · <strong>Auxiliary space</strong> O(1) interleave (vs O(n) hash-map version — state both) · <strong>Mutation</strong> temporarily interleaves then restores. <strong>Common mistakes:</strong> not restoring the original list; mishandling a null random. <strong>Narration:</strong> "Clone each node right behind its original so random pointers are one hop away, then unzip."</p>
+</div>
+</details>
+
+<!-- 9 · LC160 -->
+<details class="dsa-prob" data-pid="lc-160">
+<summary>
+<span class="p-idx">9</span>
+<span class="p-title"><span class="lc">LC 160</span>Intersection of Two Linked Lists</span>
+<span class="p-badges"><span class="diff easy">Easy</span><span class="badge-canonical">Canonical</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Pattern 2 · Two-pointer length equaliser</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Summary.</strong> Return the node where two lists merge, or <code>None</code>. <a href="https://leetcode.com/problems/intersection-of-two-linked-lists/" target="_blank" rel="noopener">LeetCode 160 ↗</a> · ~20 min.</p>
+<div class="dsa-hints">
+<details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">The tails are shared; only the prefixes differ in length.</div></details>
+<details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Redirect each pointer to the other list's head when it ends — both then travel len(a)+len(b) and align at the intersection.</div></details>
+</div>
+<p class="wu-approach"><span class="wu-section">Approach</span> <strong>Invariant:</strong> after switching heads once, both pointers have walked the same total distance, so they arrive at the intersection simultaneously (or both reach <code>None</code>). No length counting, O(1) space.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lc160.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>def get_intersection(a, b):
+    if not a or not b:
+        return None
+    pa, pb = a, b
+    while pa is not pb:
+        pa = pa.next if pa else b     # switch to the other head at the end
+        pb = pb.next if pb else a
+    return pa                          # the shared node, or None
+
+common = build([8, 4, 5])
+la, lb = build([4, 1]), build([5, 6, 1])
+for lst in (la, lb):
+    cur = lst
+    while cur.next:
+        cur = cur.next
+    cur.next = common
+assert get_intersection(la, lb) is common
+assert get_intersection(build([2, 6, 4]), build([1, 5])) is None
+print("lc160 ok")</code></pre>
+</div>
+<p><strong>Time</strong> O(n + m) · <strong>Auxiliary space</strong> O(1) (vs O(n) visited-set) · <strong>Mutation</strong> none. <strong>Common mistakes:</strong> switching to the <em>current</em> head instead of the other list's; comparing values not identity. <strong>Narration:</strong> "Each pointer walks its list then the other's, so they cover equal distance and meet at the join."</p>
+</div>
+</details>
+
+<!-- 10 · LC234 -->
+<details class="dsa-prob" data-pid="lc-234">
+<summary>
+<span class="p-idx">10</span>
+<span class="p-title"><span class="lc">LC 234</span>Palindrome Linked List</span>
+<span class="p-badges"><span class="diff easy">Easy</span><span class="badge-canonical">Canonical</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Patterns 2 + 3 · Midpoint, reverse half, compare</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Summary.</strong> Return whether the list reads the same forwards and backwards. <a href="https://leetcode.com/problems/palindrome-linked-list/" target="_blank" rel="noopener">LeetCode 234 ↗</a> · Secondary: two pointers · ~20 min.</p>
+<div class="dsa-hints">
+<details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Copying to a list and using two pointers is O(n) space. Can you do O(1)?</div></details>
+<details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Reverse the second half in place, then compare it against the first half.</div></details>
+</div>
+<p class="wu-approach"><span class="wu-section">Approach</span> Find the midpoint with fast/slow, reverse from the midpoint, then walk the first half and the reversed second half in lock-step. <strong>Invariant:</strong> equal values at mirrored positions ⇒ palindrome. (An interview-clean variant restores the list afterward; note it if asked.)</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lc234.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>def is_palindrome(head):
+    slow = fast = head
+    while fast and fast.next:         # slow reaches the middle
+        slow = slow.next
+        fast = fast.next.next
+    prev = None                        # reverse the second half
+    while slow:
+        nxt = slow.next
+        slow.next = prev
+        prev = slow
+        slow = nxt
+    left, right = head, prev           # compare halves
+    while right:
+        if left.val != right.val:
+            return False
+        left = left.next
+        right = right.next
+    return True
+
+assert is_palindrome(build([1, 2, 2, 1])) is True   # even
+assert is_palindrome(build([1, 2, 3, 2, 1])) is True # odd
+assert is_palindrome(build([1, 2])) is False
+assert is_palindrome(build([1])) is True
+print("lc234 ok")</code></pre>
+</div>
+<p><strong>Time</strong> O(n) · <strong>Auxiliary space</strong> O(1) (vs O(n) copy-to-array) · <strong>Mutation</strong> reverses the second half (restore it if the caller reuses the list). <strong>Common mistakes:</strong> mishandling odd length (the middle node is ignored by comparing only while <code>right</code> exists). <strong>Narration:</strong> "Middle, reverse the back half, then walk both halves inward comparing values."</p>
+</div>
+</details>
+
+<!-- 11 · LC82 -->
+<details class="dsa-prob" data-pid="lc-82">
+<summary>
+<span class="p-idx">11</span>
+<span class="p-title"><span class="lc">LC 82</span>Remove Duplicates from Sorted List II</span>
+<span class="p-badges"><span class="diff medium">Medium</span><span class="badge-canonical">Canonical</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Pattern 1 · Dummy head, skip whole runs</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Summary.</strong> In a sorted list, delete <em>every</em> node that has a duplicate, keeping only distinct values. <a href="https://leetcode.com/problems/remove-duplicates-from-sorted-list-ii/" target="_blank" rel="noopener">LeetCode 82 ↗</a> · ~25 min.</p>
+<p class="wu-clarify"><strong>Clarify:</strong> keep one copy, or remove all duplicated values entirely? (Remove entirely — that's the "II" twist.) Head may be a duplicate ⇒ dummy.</p>
+<div class="dsa-hints">
+<details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">When you see a value repeated, skip the entire run, not just the extra copies.</div></details>
+<details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Keep <code>prev</code> at the last confirmed-unique node; point it past the whole duplicated run.</div></details>
+</div>
+<p class="wu-approach"><span class="wu-section">Approach</span> <strong>Invariant:</strong> <code>prev</code> is the last node guaranteed unique so far; <code>cur</code> scans ahead. If <code>cur</code> begins a run of equals, advance <code>cur</code> past all of them and set <code>prev.next = cur</code> to excise the run; otherwise move <code>prev</code> forward.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lc82.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>def delete_duplicates(head):
+    dummy = ListNode(0, head)
+    prev = dummy
+    cur = head
+    while cur:
+        if cur.next and cur.val == cur.next.val:
+            v = cur.val
+            while cur and cur.val == v:   # skip the whole run
+                cur = cur.next
+            prev.next = cur               # excise it
+        else:
+            prev = cur
+            cur = cur.next
+    return dummy.next
+
+assert to_list(delete_duplicates(build([1, 2, 3, 3, 4, 4, 5]))) == [1, 2, 5]
+assert to_list(delete_duplicates(build([1, 1, 1, 2, 3]))) == [2, 3]   # head dup
+assert to_list(delete_duplicates(build([1, 1]))) == []
+print("lc82 ok")</code></pre>
+</div>
+<p><strong>Time</strong> O(n) · <strong>Auxiliary space</strong> O(1) · <strong>Mutation</strong> unlinks runs. <strong>Common mistakes:</strong> keeping one copy (that's LC 83, not II); not using a dummy when the head is duplicated. <strong>Narration:</strong> "prev is the last safe node; whenever a value repeats I jump prev past the entire run."</p>
+</div>
+</details>
+
+<!-- 12 · LC148 -->
+<details class="dsa-prob" data-pid="lc-148">
+<summary>
+<span class="p-idx">12</span>
+<span class="p-title"><span class="lc">LC 148</span>Sort List</span>
+<span class="p-badges"><span class="diff medium">Medium</span><span class="badge-canonical">Canonical</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Pattern 9 · Merge sort on a linked list</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Summary.</strong> Sort the list in O(n log n) time. <a href="https://leetcode.com/problems/sort-list/" target="_blank" rel="noopener">LeetCode 148 ↗</a> · Secondary: sorting (<a href="index.html">Ch 09</a>) · ~30 min.</p>
+<p class="wu-clarify"><strong>Clarify:</strong> constant extra space beyond recursion? (Merge sort is the natural fit; quicksort is unstable and awkward on lists.)</p>
+<div class="dsa-hints">
+<details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Merge sort suits linked lists: splitting and merging are pure pointer work, no shifting.</div></details>
+<details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Split at the midpoint (fast/slow), sort each half recursively, then reuse the merge-two-lists routine.</div></details>
+</div>
+<p class="wu-approach"><span class="wu-section">Approach</span> Classic divide and conquer. Find the midpoint, cut, recurse on both halves, and merge. <strong>Invariant:</strong> each recursive call returns a fully sorted sublist. <strong>Note on space:</strong> arrays merge in O(n) auxiliary; on a list the merge is O(1) extra, but the recursion stack is O(log n).</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lc148.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>def sort_list(head):
+    if not head or not head.next:
+        return head
+    slow, fast = head, head.next        # split into two halves
+    while fast and fast.next:
+        slow = slow.next
+        fast = fast.next.next
+    mid = slow.next
+    slow.next = None
+    left = sort_list(head)
+    right = sort_list(mid)
+    return merge_two(left, right)        # reuse problem 2's merge
+
+assert to_list(sort_list(build([4, 2, 1, 3]))) == [1, 2, 3, 4]
+assert to_list(sort_list(build([-1, 5, 3, 4, 0]))) == [-1, 0, 3, 4, 5]
+assert to_list(sort_list(build([]))) == []
+print("lc148 ok")</code></pre>
+</div>
+<p><strong>Time</strong> O(n log n) · <strong>Auxiliary space</strong> O(log n) recursion stack (O(1) merge work) · <strong>Mutation</strong> relinks in place. <strong>Common mistakes:</strong> using <code>slow = head</code> (not <code>head.next</code>) — can loop forever on length 2; forgetting to cut with <code>slow.next = None</code>. <strong>Narration:</strong> "Merge sort — split at the middle, sort halves, merge; pointers only, so no element shifting."</p>
+</div>
+</details>
+
+<!-- 13 · LC23 -->
+<details class="dsa-prob" data-pid="lc-23">
+<summary>
+<span class="p-idx">13</span>
+<span class="p-title"><span class="lc">LC 23</span>Merge k Sorted Lists</span>
+<span class="p-badges"><span class="diff hard">Hard</span><span class="badge-canonical">Canonical</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Pattern 8 · Min-heap over the k list fronts</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Summary.</strong> Merge <em>k</em> sorted lists into one sorted list. <a href="https://leetcode.com/problems/merge-k-sorted-lists/" target="_blank" rel="noopener">LeetCode 23 ↗</a> · Secondary: heaps (<a href="index.html">Ch 13</a>) · ~30 min.</p>
+<p class="wu-clarify"><strong>Clarify:</strong> can lists be empty or the input list of lists empty? (Yes.) How large is k vs total N?</p>
+<div class="dsa-hints">
+<details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Repeatedly pick the smallest current front across the k lists.</div></details>
+<details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">A min-heap of size k gives the smallest front in O(log k); push the popped node's successor.</div></details>
+</div>
+<p class="wu-approach"><span class="wu-section">Approach</span> Push the head of each non-empty list into a heap keyed by value (with a tiebreak index so nodes never compare). Pop the smallest, append it, and push its <code>next</code>. <strong>Invariant:</strong> the heap always holds the current front of every list that still has nodes. Total <code>N</code> pops × O(log k) = O(N log k).</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lc23.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>import heapq
+
+def merge_k(lists):
+    h = []
+    for i, node in enumerate(lists):
+        if node:
+            heapq.heappush(h, (node.val, i, node))   # i breaks ties on equal vals
+    dummy = ListNode()
+    tail = dummy
+    while h:
+        val, i, node = heapq.heappop(h)
+        tail.next = node
+        tail = node
+        if node.next:
+            heapq.heappush(h, (node.next.val, i, node.next))
+    tail.next = None
+    return dummy.next
+
+assert to_list(merge_k([build([1,4,5]), build([1,3,4]), build([2,6])])) == [1,1,2,3,4,4,5,6]
+assert to_list(merge_k([])) == []
+assert to_list(merge_k([build([])])) == []
+print("lc23 ok")</code></pre>
+</div>
+<p><strong>Time</strong> O(N log k) · <strong>Auxiliary space</strong> O(k) for the heap · <strong>Mutation</strong> relinks nodes. <strong>Common mistakes:</strong> comparing <code>ListNode</code> objects (crashes) — always carry a tiebreaker index; forgetting to null-terminate <code>tail</code>. <strong>Follow-up:</strong> divide-and-conquer pairwise merge, same O(N log k) without a heap. <strong>Narration:</strong> "A size-k heap always holds each list's front; pop the smallest and push its successor."</p>
+</div>
+</details>
+
+<!-- 14 · LC25 -->
+<details class="dsa-prob" data-pid="lc-25">
+<summary>
+<span class="p-idx">14</span>
+<span class="p-title"><span class="lc">LC 25</span>Reverse Nodes in k-Group</span>
+<span class="p-badges"><span class="diff hard">Hard</span><span class="badge-canonical">Canonical</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Pattern 3 · Segmented reversal with a group anchor</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Summary.</strong> Reverse the list in groups of <em>k</em>; a trailing group smaller than k stays as-is. <a href="https://leetcode.com/problems/reverse-nodes-in-k-group/" target="_blank" rel="noopener">LeetCode 25 ↗</a> · ~35 min.</p>
+<div class="dsa-hints">
+<details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Reversal you know; the work is stitching each reversed block to its neighbours.</div></details>
+<details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Keep a <code>group_prev</code> anchor; find the k-th node; if fewer than k remain, stop.</div></details>
+</div>
+<p class="wu-approach"><span class="wu-section">Approach</span> For each group, walk k nodes to find <code>kth</code> (stop if the list runs out). Reverse the block <code>[group_prev.next .. kth]</code> so it points at <code>group_next = kth.next</code>. Re-attach: <code>group_prev.next</code> becomes <code>kth</code>, and the old block head becomes the next <code>group_prev</code>. <strong>Invariant:</strong> everything before <code>group_prev</code> is finalised.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lc25.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>def reverse_k_group(head, k):
+    dummy = ListNode(0, head)
+    group_prev = dummy
+    while True:
+        kth = group_prev                    # find the k-th node of this group
+        for _ in range(k):
+            kth = kth.next
+            if not kth:
+                return dummy.next            # fewer than k remain -> done
+        group_next = kth.next
+        # reverse [group_prev.next .. kth]
+        prev, cur = group_next, group_prev.next
+        while cur is not group_next:
+            nxt = cur.next
+            cur.next = prev
+            prev = cur
+            cur = nxt
+        # re-stitch and advance the anchor
+        tmp = group_prev.next
+        group_prev.next = kth
+        group_prev = tmp
+
+assert to_list(reverse_k_group(build([1,2,3,4,5]), 2)) == [2,1,4,3,5]
+assert to_list(reverse_k_group(build([1,2,3,4,5]), 3)) == [3,2,1,4,5]
+assert to_list(reverse_k_group(build([1,2,3,4,5]), 1)) == [1,2,3,4,5]
+print("lc25 ok")</code></pre>
+</div>
+<p><strong>Time</strong> O(n) · <strong>Auxiliary space</strong> O(1) iterative · <strong>Mutation</strong> heavy rewiring. <strong>Common mistakes:</strong> reversing the final short group (it must stay); losing the anchor when re-stitching. <strong>Narration:</strong> "Anchor before each group; if k nodes exist, reverse the block and reconnect, else leave the tail alone."</p>
+</div>
+</details>
+
+<!-- 15 · LC146 cross-ref -->
+<details class="dsa-prob" data-pid="lc-146">
+<summary>
+<span class="p-idx">15</span>
+<span class="p-title"><span class="lc">LC 146</span>LRU Cache</span>
+<span class="p-badges"><span class="diff medium">Medium</span><span class="badge-xref">Cross-ref → Design</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Full editorial lives in Chapter 21 — Data Structure Design</span>
+</summary>
+<div class="p-body">
+<div class="dsa-xref"><span class="xi">🔗</span><div><strong>Canonical write-up: Chapter 21 — Data Structure Design.</strong> The full editorial builds the doubly-linked-list-plus-hash-map from scratch. <a href="https://leetcode.com/problems/lru-cache/" target="_blank" rel="noopener">LeetCode 146 ↗</a></div></div>
+<p><strong>Linked-list lens.</strong> This is why doubly linked lists exist in interviews. A hash map gives O(1) lookup <code>key → node</code>; a doubly linked list orders nodes by recency so you can move a node to the front and evict from the back in O(1) (a singly linked list cannot unlink in O(1) because it can't reach the predecessor). In Python you can prototype it with <code>collections.OrderedDict</code> and <code>move_to_end</code> / <code>popitem(last=False)</code>, but be ready to hand-build the doubly linked list when asked.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lc146_prototype.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from collections import OrderedDict
+
+class LRUCache:
+    def __init__(self, capacity):
+        self.cap = capacity
+        self.d = OrderedDict()          # ordered by recency
+
+    def get(self, key):
+        if key not in self.d:
+            return -1
+        self.d.move_to_end(key)         # mark most-recent
+        return self.d[key]
+
+    def put(self, key, value):
+        if key in self.d:
+            self.d.move_to_end(key)
+        self.d[key] = value
+        if len(self.d) > self.cap:
+            self.d.popitem(last=False)  # evict least-recent
+
+c = LRUCache(2)
+c.put(1, 1); c.put(2, 2)
+assert c.get(1) == 1
+c.put(3, 3)                 # evicts key 2
+assert c.get(2) == -1
+c.put(4, 4)                 # evicts key 1
+assert c.get(1) == -1 and c.get(3) == 3 and c.get(4) == 4
+print("lc146 prototype ok")</code></pre>
+</div>
+</div>
+</details>
+
+</div>
+
+<h2 id="playbook">4 · Interview playbook</h2>
+<ul>
+<li><strong>Before any rewiring:</strong> save <code>node.next</code>. Draw three nodes and move one arrow at a time.</li>
+<li><strong>Use a dummy head</strong> whenever the head might be removed or replaced (LC 19, 21, 82, 25).</li>
+<li><strong>State the invariant:</strong> "everything before <code>cur</code> is reversed", "fast leads slow by n", "tail points at the smaller frontier".</li>
+<li><strong>Cycle safety:</strong> compare node <em>identity</em> with <code>is</code>, guard <code>fast.next</code> before <code>fast.next.next</code>, and null-terminate any list you split.</li>
+<li><strong>Edge cases:</strong> empty list, one node, two nodes, odd vs even length, head/tail change, and (for detection problems) a cycle.</li>
+<li><strong>Recursion caution:</strong> a 10⁵-node list overflows the default recursion limit — prefer iterative reversal and merges.</li>
+</ul>
+
+<h2 id="role-notes">5 · Role notes</h2>
+<div class="grid grid-2">
+<div class="card"><h4>SDE / Python backend</h4><p>Pointer fluency and the dummy-head habit are the signal. Expect reversal variants, k-group, and the LRU design question in real onsites.</p></div>
+<div class="card"><h4>Data Science / ML / AI / GenAI</h4><p>Pure linked-list puzzles are rarer, but the LRU pattern is everywhere in caching (feature stores, embedding caches, token/KV caches). Know the doubly-linked-list + hash-map idea even if you rarely hand-code it.</p></div>
+</div>
+
+<h2 id="review">6 · Review</h2>
+<div class="dsa-cheat">
+<strong>Cheat sheet</strong>
+<ul>
+<li>Reversal move: <code>nxt = cur.next; cur.next = prev; prev = cur; cur = nxt</code>.</li>
+<li>Dummy head when the head can change: <code>dummy = ListNode(0, head)</code>.</li>
+<li>Midpoint / cycle / kth-from-end → fast &amp; slow pointers.</li>
+<li>Cycle start → Floyd, then walk from head and meeting point together.</li>
+<li>Two lists intersect → switch heads to equalise length.</li>
+<li>Sort a list → merge sort (split, sort, merge).</li>
+<li>Merge k lists → min-heap with a tiebreaker index.</li>
+<li>O(1) recency cache → doubly linked list + hash map (LRU).</li>
+</ul>
+</div>
+
+<h3 id="concept-checks">Concept checks</h3>
+<div class="quiz">
+<div class="q">Why do we compare pointers with <code>is</code> (not <code>==</code>) in cycle detection?</div>
+<div class="opt" data-correct="true">Two different nodes can hold equal values; a cycle means the <em>same object</em> is revisited, which is identity</div>
+<div class="opt" data-correct="false">Because <code>==</code> is slower</div>
+<div class="opt" data-correct="false">Because values might be <code>None</code></div>
+<div class="explain">A cycle is defined by node identity — the fast pointer must land on the exact same object the slow pointer is on. Value equality could give false positives on lists with repeated values.</div>
+</div>
+<div class="quiz">
+<div class="q">You are asked to reverse a 200,000-node list. Which reversal do you write and why?</div>
+<div class="opt" data-correct="true">Iterative — recursion would exceed Python's ~1000-frame limit and raise RecursionError</div>
+<div class="opt" data-correct="false">Recursive — it is shorter</div>
+<div class="opt" data-correct="false">Either; they behave identically</div>
+<div class="explain">Recursive reversal uses O(n) stack frames; at 200k nodes that overflows the default limit. Iterative reversal is O(1) auxiliary space and safe.</div>
+</div>
+
+<h3 id="drills">Drills</h3>
+<p><strong>Code-completion:</strong> (1) write the reversal move from memory; (2) build the dummy-head merge loop; (3) complete the fast/slow midpoint. <strong>Debugging:</strong> (1) fix a reorder that forgot <code>slow.next = None</code> (creates a cycle); (2) fix a merge-k that pushes bare <code>ListNode</code>s into the heap (comparison crash). <strong>Timed mixed:</strong> in 25 minutes solve LC 206 and LC 19, testing empty, single-node and head-removal cases aloud.</p>
+
+<h3 id="mastery">Mastery checklist</h3>
+<ul class="dsa-check">
+<li><input type="checkbox" data-check="ll-golden"> I always save <code>next</code> before rewiring and can draw the moves.</li>
+<li><input type="checkbox" data-check="ll-dummy"> I use a dummy head whenever the head can change.</li>
+<li><input type="checkbox" data-check="ll-reversal"> I can write iterative reversal and state its invariant without notes.</li>
+<li><input type="checkbox" data-check="ll-floyd"> I can explain why Floyd finds the cycle start, not just its existence.</li>
+<li><input type="checkbox" data-check="ll-mergesort"> I can merge-sort a list and state its stack cost.</li>
+<li><input type="checkbox" data-check="ll-lru"> I understand why LRU needs a doubly linked list plus a hash map.</li>
+</ul>
+
+<div class="page-nav">
+<a class="prev" href="02-arrays.html"><div class="dir">← Previous</div><div class="ttl">02 · Arrays</div></a>
+<a class="next" href="04-hashing.html"><div class="dir">Next →</div><div class="ttl">04 · Hashing</div></a>
+</div>
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script src="../assets/app.js"></script>
+<script src="../assets/sitenav.js"></script>
+<script src="../assets/enhance.js"></script>
+<script src="../assets/dsa-question-bank.js"></script>
+<script src="../assets/dsa-prep.js"></script>
+</body>
+</html>

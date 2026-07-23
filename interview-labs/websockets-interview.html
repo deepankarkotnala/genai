@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>WebSockets for Interviews - Interview Lab</title>
+<meta name="description" content="Focused WebSocket interview preparation covering protocol handshake, FastAPI implementation, testing, authentication, heartbeats, backpressure, reconnection and horizontal scaling.">
+<link rel="icon" href="../../assets/brand/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="../assets/styles.css">
+<link href="../assets/office-theme.css" rel="stylesheet"/>
+</head>
+<body data-page="websockets-interview">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand"><a href="../index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit"><span class="brand-mark" aria-hidden="true"><span>I</span><span>P</span></span><div class="brand-text"><strong>Interview</strong><span>Preparation</span></div></a></div>
+    <div class="search-wrap"><div class="search-box"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg><input type="text" data-search placeholder="Search portal...  ( / )"></div><div class="search-results"></div></div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+  <div class="main">
+    <header class="topbar"><button class="icon-btn menu-btn" aria-label="Menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg></button><div class="crumbs">Focused Interview Labs / <b>WebSockets for Interviews</b></div><button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button></header>
+    <div class="content-wrap"><main class="content">
+      <div class="eyebrow"><span class="dot"></span> Real-time backend interview lab</div>
+      <h1>WebSockets for Interviews</h1>
+      <p class="lead">Learn WebSockets as both a coding topic and a system-design topic, with the operational details interviewers expect beyond a basic chat demo.</p>
+      <div class="meta-row"><span class="pill blue">Study + timed coding · 4–6 h</span><span class="pill">Difficulty - Intermediate</span><span class="pill purple">WebSockets - FastAPI - Real Time</span></div>
+      <div class="callout key"><div class="c-ico">&#127919;</div><div class="c-body"><div class="c-title">Interview outcome</div><p>Explain the WebSocket protocol and handshake, implement and test a FastAPI endpoint, and design reliable real-time systems with auth, heartbeats, backpressure, reconnection, ordering, and horizontal scaling.</p></div></div><h2 id="protocol">1 - HTTP request vs WebSocket connection</h2><div class="table-wrap"><table><thead><tr><th>HTTP</th><th>WebSocket</th></tr></thead><tbody><tr><td>Request/response; client initiates each request.</td><td>Long-lived full-duplex connection; either side can send frames after upgrade.</td></tr><tr><td>Natural stateless scaling and caching semantics.</td><td>Per-connection state, disconnect handling, and capacity limits matter.</td></tr><tr><td>Use for CRUD, commands, polling, and ordinary APIs.</td><td>Use for interactive bidirectional real-time communication.</td></tr></tbody></table></div><h2 id="handshake">2 - Handshake and lifecycle</h2><ol><li>Client sends an HTTP upgrade request.</li><li>Server authenticates/validates and accepts or rejects.</li><li>The protocol switches to WebSocket frames.</li><li>Both sides send text/binary/control frames.</li><li>Either side closes; application cleans up connection state.</li></ol><div class="code-block"><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> websocket_app.py</span><button class="copy-btn">Copy</button></div><pre><code>from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from pydantic import BaseModel, ValidationError
+
+app = FastAPI()
+
+class ClientEvent(BaseModel):
+    type: str
+    payload: dict
+
+@app.websocket(&quot;/ws&quot;)
+async def websocket_endpoint(ws: WebSocket) -&gt; None:
+    user = await authenticate_ws(ws)
+    if user is None:
+        await ws.close(code=1008)
+        return
+
+    await ws.accept()
+    try:
+        while True:
+            raw = await ws.receive_json()
+            try:
+                event = ClientEvent.model_validate(raw)
+            except ValidationError:
+                await ws.send_json({&quot;type&quot;: &quot;error&quot;, &quot;code&quot;: &quot;invalid_event&quot;})
+                continue
+            reply = await handle_event(user, event)
+            await ws.send_json(reply)
+    except WebSocketDisconnect:
+        await connection_registry.remove(user.id, ws)</code></pre></div><h2 id="auth">3 - Authentication and authorization</h2><p>Authenticate during the handshake using a secure cookie, short-lived token, or supported subprotocol mechanism; do not put long-lived secrets into logged URLs. Authorization is per message/action and may change during a long connection. Close denied connections with an appropriate policy code and avoid leaking details.</p><h2 id="reliability">4 - Reliability concerns</h2><div class="table-wrap"><table><thead><tr><th>Concern</th><th>Design response</th></tr></thead><tbody><tr><td>Dead connections</td><td>Ping/pong or application heartbeat; idle timeout; cleanup on disconnect.</td></tr><tr><td>Slow client</td><td>Bounded outbound queue; drop/coalesce noncritical events or disconnect; never let memory grow unbounded.</td></tr><tr><td>Reconnect</td><td>Client backoff with jitter; session/resume token; last acknowledged sequence.</td></tr><tr><td>Duplicate events</td><td>Message ID and idempotent server handling.</td></tr><tr><td>Ordering</td><td>Per-session/channel sequence number; define whether global ordering is required.</td></tr><tr><td>Cancellation</td><td>Stop producer tasks when the socket closes; structured task ownership.</td></tr><tr><td>Large messages</td><td>Maximum frame/message size, schema limits, compression caution.</td></tr></tbody></table></div><h2 id="scale">5 - Horizontal scaling</h2><p>A single process can keep an in-memory connection registry, but multiple workers need shared routing information and a broker such as Redis Pub/Sub, NATS, or Kafka depending durability and ordering needs. Load balancers must support WebSocket upgrades and long-lived timeouts. Sticky sessions can simplify routing but do not replace shared state or failover design.</p><div class="table-wrap"><table><thead><tr><th>Layer</th><th>Question to answer</th></tr></thead><tbody><tr><td>Load balancer</td><td>Upgrade support, idle timeout, connection draining.</td></tr><tr><td>Gateway workers</td><td>Maximum connections, file descriptors, memory per connection, event-loop lag.</td></tr><tr><td>Broker</td><td>Fan-out, durability, ordering, replay and backpressure.</td></tr><tr><td>Application state</td><td>Ephemeral presence vs durable messages and acknowledgements.</td></tr><tr><td>Client</td><td>Reconnect, deduplication, resume and offline UX.</td></tr></tbody></table></div><h2 id="alternatives">6 - WebSocket vs SSE vs polling</h2><div class="table-wrap"><table><thead><tr><th>Technique</th><th>Use when</th><th>Trade-off</th></tr></thead><tbody><tr><td>WebSocket</td><td>Bidirectional interactive messages, games, collaboration, voice/control.</td><td>More stateful operational complexity.</td></tr><tr><td>Server-Sent Events</td><td>Server-to-client streaming over HTTP is enough.</td><td>One-way; simpler reconnect/event IDs.</td></tr><tr><td>Long polling</td><td>Compatibility or low-frequency updates.</td><td>Repeated requests and higher overhead/latency.</td></tr><tr><td>Normal HTTP + async job status</td><td>Long background work with occasional progress.</td><td>Often simpler and more durable than keeping a socket open.</td></tr></tbody></table></div><h2 id="testing">7 - Testing a FastAPI WebSocket</h2><div class="code-block"><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> test_websocket.py</span><button class="copy-btn">Copy</button></div><pre><code>from fastapi.testclient import TestClient
+
+
+def test_websocket_message(client: TestClient) -&gt; None:
+    with client.websocket_connect(&quot;/ws&quot;, cookies={&quot;session&quot;: &quot;test&quot;}) as ws:
+        ws.send_json({&quot;type&quot;: &quot;ping&quot;, &quot;payload&quot;: {}})
+        assert ws.receive_json()[&quot;type&quot;] == &quot;pong&quot;
+
+
+def test_invalid_event(client: TestClient) -&gt; None:
+    with client.websocket_connect(&quot;/ws&quot;, cookies={&quot;session&quot;: &quot;test&quot;}) as ws:
+        ws.send_json({&quot;unexpected&quot;: True})
+        assert ws.receive_json()[&quot;code&quot;] == &quot;invalid_event&quot;</code></pre></div><h2 id="questions">8 - High-signal interview questions</h2><details class="recall"><summary><span class="q-ico">Q</span> When would you choose WebSockets over HTTP? <span class="chev">&rsaquo;</span></summary><div class="a">When the product requires a long-lived bidirectional low-latency channel. For ordinary commands or one-way updates, HTTP or SSE may be simpler.</div></details><details class="recall"><summary><span class="q-ico">Q</span> How do you handle slow consumers? <span class="chev">&rsaquo;</span></summary><div class="a">Use bounded per-connection queues and a policy to coalesce, drop noncritical updates, or disconnect. Backpressure must prevent unbounded memory growth.</div></details><details class="recall"><summary><span class="q-ico">Q</span> How do you scale across workers? <span class="chev">&rsaquo;</span></summary><div class="a">Keep connections on gateway workers and distribute events through a broker/shared routing layer; define presence, ordering, durability, and reconnect behavior.</div></details><details class="recall"><summary><span class="q-ico">Q</span> How do you authenticate a WebSocket? <span class="chev">&rsaquo;</span></summary><div class="a">Validate identity before accepting using a secure supported credential, then authorize every message/action and handle credential expiry or revocation.</div></details><details class="recall"><summary><span class="q-ico">Q</span> What happens when the client disconnects during a model stream? <span class="chev">&rsaquo;</span></summary><div class="a">Cancellation should propagate to producer tasks and downstream requests where possible; clean up queues/state and record whether work should resume or terminate.</div></details><h2 id="quiz">9 - Knowledge check</h2><div class="quiz"><div class="q">1 - What is the first defense against a slow client?</div><label class="opt">Unlimited buffering</label><label class="opt" data-correct="true">A bounded outbound queue and explicit overflow policy</label><label class="opt">More JSON fields</label><label class="opt">Disable authentication</label><div class="explain">Backpressure protects memory and service health.</div></div><div class="quiz"><div class="q">2 - Which is often simpler for one-way token streaming?</div><label class="opt" data-correct="true">SSE</label><label class="opt">A database trigger only</label><label class="opt">FTP</label><label class="opt">A process pool</label><div class="explain">SSE can be simpler when only server-to-client streaming is required.</div></div><h2 id="practice">10 - Focused practice</h2><div class="callout tip"><div class="c-ico">1</div><div class="c-body"><div class="c-title">Implement</div><p>Build an authenticated echo/chat WebSocket with typed messages, validation errors, disconnect cleanup, and tests.</p></div></div><div class="callout warn"><div class="c-ico">2</div><div class="c-body"><div class="c-title">Reliability</div><p>Add heartbeat, bounded outbound queue, producer cancellation, sequence IDs, and reconnect/resume behavior.</p></div></div><div class="callout danger"><div class="c-ico">3</div><div class="c-body"><div class="c-title">System design</div><p>Design a real-time interview platform for 50,000 concurrent users. Cover gateway capacity, load balancing, broker, presence, ordering, recordings/events, reconnect, security, and observability.</p></div></div><h2 id="plan">11 - Five-session plan</h2><div class="timeline"><div class="step"><h4>Session 1</h4><p>Protocol, handshake, frames and lifecycle.</p></div><div class="step"><h4>Session 2</h4><p>FastAPI endpoint, typed messages and tests.</p></div><div class="step"><h4>Session 3</h4><p>Auth, heartbeat, disconnect, cancellation and backpressure.</p></div><div class="step"><h4>Session 4</h4><p>Horizontal scaling, broker, ordering, resume and alternatives.</p></div><div class="step"><h4>Session 5</h4><p>Timed implementation plus real-time system-design mock.</p></div></div><h2 id="refs">12 - Official references</h2><ul><li><a href="https://fastapi.tiangolo.com/advanced/websockets/">FastAPI WebSockets</a></li><li><a href="https://fastapi.tiangolo.com/advanced/testing-websockets/">Testing WebSockets</a></li><li><a href="https://fastapi.tiangolo.com/reference/websockets/">FastAPI WebSocket reference</a></li></ul>
+      <div class="page-nav"><a href="fastapi-interview.html"><div class="dir">Previous</div><div class="ttl">FastAPI for Interviews</div></a><a class="next" href="langchain-interview.html"><div class="dir">Next</div><div class="ttl">LangChain for interviews</div></a></div>
+    </main><div class="toc-rail"><nav class="toc"></nav></div></div>
+  </div>
+</div>
+<script src="../assets/app.js"></script><script src="../assets/sitenav.js"></script><script src="../assets/enhance.js"></script>
+</body></html>
