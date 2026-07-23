@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>01 · LLMs: The Foundation — RAG · MCP · Agents · LLMs</title>
+<!-- Interview Preparation brand metadata -->
+<link rel="icon" href="../assets/brand/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="../assets/brand/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../assets/brand/favicon.ico">
+<link rel="apple-touch-icon" href="../assets/brand/apple-touch-icon.png" sizes="180x180">
+<link rel="manifest" href="../assets/brand/site.webmanifest">
+<link rel="mask-icon" href="../assets/brand/safari-pinned-tab.svg" color="#6f47f5">
+<link rel="image_src" href="../assets/brand/social-card.png">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="msapplication-TileColor" content="#5b35e8">
+<meta name="msapplication-config" content="../assets/brand/browserconfig.xml">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Interview Preparation">
+<meta property="og:title" content="01 · LLMs: The Foundation — RAG · MCP · Agents · LLMs">
+<meta property="og:description" content="A solid mental model of what a Large Language Model is — next-token prediction, tokens, the context window, its three big limitations, and your first API call.">
+<meta property="og:image" content="../assets/brand/social-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Interview Preparation glass-style logo">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="01 · LLMs: The Foundation — RAG · MCP · Agents · LLMs">
+<meta name="twitter:description" content="A solid mental model of what a Large Language Model is — next-token prediction, tokens, the context window, its three big limitations, and your first API call.">
+<meta name="twitter:image" content="../assets/brand/social-card.png">
+<!-- /Interview Preparation brand metadata -->
+<meta name="description" content="A solid mental model of what a Large Language Model is — next-token prediction, tokens, the context window, its three big limitations, and your first API call.">
+<link rel="stylesheet" href="../genai-portal/assets/styles.css">
+<link href="../genai-portal/assets/office-theme.css" rel="stylesheet"/>
+</head>
+<body data-page="lr-01">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+      <a href="index.html" style="display:flex;align-items:center;gap:12px;text-decoration:none;color:inherit">
+        <span class="brand-mark" aria-hidden="true"><span>I</span><span>P</span></span>
+        <div class="brand-text"><strong>Interview</strong><span>Preparation</span></div>
+      </a>
+    </div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search the guide…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">RAG · MCP · Agents · LLMs / <b>01 · LLMs: The Foundation</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Part 01 · Foundation</div>
+        <h1>LLMs: The Foundation</h1>
+        <p class="lead">Before RAG, agents, or MCP make any sense, you need a solid mental model of what a Large Language Model is — and, crucially, what it <em>can't</em> do on its own.</p>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~15 min read</span>
+          <span class="pill">Difficulty · Beginner</span>
+          <span class="pill purple">Prereq · none</span>
+        </div>
+
+        <h2 id="what">1 · What is an LLM, really?</h2>
+        <p>An <strong>LLM (Large Language Model)</strong> is a program trained on a massive amount of text — books, websites, code, articles — until it becomes extremely good at one deceptively simple task: <strong>predicting what text comes next.</strong></p>
+        <p>That's it. ChatGPT, Claude, Gemini, Llama — under the hood, they are all giant "autocomplete" engines. The magic is that when you make autocomplete <em>big enough</em> and train it on <em>enough</em> text, it starts to look like reasoning, writing, translating, and answering questions.</p>
+
+        <div class="callout note">
+          <div class="c-ico">💡</div>
+          <div class="c-body"><div class="c-title">Analogy</div>
+          <p>Imagine someone who has read nearly everything ever written, but has a strange memory: they remember <em>patterns</em> of how words and ideas fit together, not the exact source. Ask them anything and they'll give a fluent, plausible answer drawn from those patterns. That's an LLM — brilliant at language, but with no live access to facts beyond what it absorbed during training.</p></div>
+        </div>
+
+        <h2 id="predict">2 · The core trick: predicting the next token</h2>
+        <p>When you send text to an LLM, it doesn't "look up" an answer. It calculates, for every possible next word, a probability — and picks one. Then it adds that word to the input and repeats. One word at a time.</p>
+
+        <div class="diagram draw-anim">
+          <svg viewBox="0 0 700 240" width="100%" style="max-width:660px" role="img" aria-label="Next-token prediction">
+            <defs>
+              <marker id="a1" markerWidth="9" markerHeight="9" refX="7" refY="3" orient="auto"><path d="M0,0 L7,3 L0,6 Z" fill="var(--accent)"/></marker>
+            </defs>
+            <text class="flow-sub" x="20" y="30">Input prompt:</text>
+            <rect class="flow-node" x="20" y="42" width="360" height="40" rx="9"/>
+            <text class="flow-label" x="36" y="67">"The capital of France is"</text>
+            <path class="ln flow-arrow" d="M390,62 L470,62" stroke="var(--accent)" stroke-width="2" marker-end="url(#a1)" fill="none"/>
+            <rect class="flow-node-accent" x="475" y="36" width="205" height="54" rx="10"/>
+            <text class="flow-label" x="577" y="58" text-anchor="middle">LLM</text>
+            <text class="flow-sub" x="577" y="76" text-anchor="middle">computes probabilities</text>
+
+            <text class="flow-sub" x="475" y="125">Predicted next token (with probability):</text>
+            <rect class="flow-node" x="475" y="135" width="205" height="26" rx="7"/><text x="485" y="153" style="fill:var(--accent);font:600 13px var(--font-mono)">"Paris"     0.94</text>
+            <rect class="flow-node" x="475" y="166" width="205" height="26" rx="7"/><text class="flow-sub" x="485" y="184" style="font-family:var(--font-mono);font-size:12px">"a"          0.03</text>
+            <rect class="flow-node" x="475" y="197" width="205" height="26" rx="7"/><text class="flow-sub" x="485" y="215" style="font-family:var(--font-mono);font-size:12px">"located"    0.01</text>
+
+            <text class="flow-sub" x="20" y="125">It picks the most likely →</text>
+            <rect class="flow-node-accent" x="20" y="135" width="360" height="40" rx="9"/>
+            <text class="flow-label" x="36" y="160">"The capital of France is <tspan style="fill:var(--accent)">Paris</tspan>"</text>
+            <text class="flow-sub" x="20" y="205">…then feeds it back in and predicts the next word again.</text>
+          </svg>
+          <div class="diagram-caption">Generation is a loop: predict one token, append it, predict again — until the model decides to stop.</div>
+        </div>
+
+        <p>This is why an LLM can produce a confident answer that is completely wrong — it's optimizing for "plausible-sounding next word," not "verified truth." This behavior is called <strong>hallucination</strong>, and fixing it is exactly what RAG (Part 02) is for.</p>
+
+        <h2 id="tokens">3 · Tokens &amp; the context window</h2>
+        <p>LLMs don't read whole words or letters — they read <strong>tokens</strong>. A token is a chunk of text, roughly ¾ of a word on average. "Understanding" might be one token; "antidisestablishmentarianism" might be five.</p>
+
+        <p>Here's how a sentence gets split into tokens (each chip ≈ one token):</p>
+        <div class="demo-stage" style="margin:16px 0 22px">
+          <span class="chip show tok">Lear</span><span class="chip show tok">ning</span><span class="chip show tok"> RAG</span><span class="chip show tok"> is</span><span class="chip show tok"> easier</span><span class="chip show tok"> than</span><span class="chip show tok"> it</span><span class="chip show tok"> sounds</span><span class="chip show tok">.</span>
+        </div>
+
+        <p>The <strong>context window</strong> is the maximum number of tokens the model can "see" at once — your prompt <em>plus</em> its reply must fit inside it. Think of it as the model's short-term memory / desk space.</p>
+
+        <div class="table-wrap">
+        <table>
+          <tr><th>Term</th><th>Meaning</th><th>Why you care</th></tr>
+          <tr><td>Token</td><td>A chunk of text (~¾ word)</td><td>You're billed per token; limits are in tokens</td></tr>
+          <tr><td>Context window</td><td>Max tokens in one request</td><td>You can't paste a 500-page book in one go</td></tr>
+          <tr><td>Prompt</td><td>The text you send in</td><td>This is your main control surface</td></tr>
+          <tr><td>Completion</td><td>The text the model generates</td><td>The answer you get back</td></tr>
+          <tr><td>Temperature</td><td>Randomness dial (0 = focused, 1 = creative)</td><td>Use low temp for facts, higher for brainstorming</td></tr>
+        </table>
+        </div>
+
+        <div class="callout tip">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">Key insight that motivates RAG</div>
+          <p>The context window is limited. Even large windows can't hold your entire company wiki, every PDF you own, or a live database. So instead of stuffing <em>everything</em> in, we'll learn to retrieve <em>only the relevant pieces</em> and put just those into the prompt. That's RAG in one sentence.</p></div>
+        </div>
+
+        <h2 id="limits">4 · The three big limitations (and their cures)</h2>
+        <div class="table-wrap">
+        <table>
+          <tr><th>Limitation</th><th>What it means</th><th>The cure (where we go next)</th></tr>
+          <tr><td><strong>Frozen knowledge</strong></td><td>It only knows what it saw in training — nothing after its cutoff date, and nothing private to you.</td><td><strong>RAG</strong> (Part 02)</td></tr>
+          <tr><td><strong>Can't take actions</strong></td><td>It generates text. It can't send an email, query a DB, or browse — by itself.</td><td><strong>Agents &amp; tools</strong> (Part 03)</td></tr>
+          <tr><td><strong>Every integration is custom</strong></td><td>Connecting it to each tool/data source means writing bespoke glue code every time.</td><td><strong>MCP</strong> (Part 04)</td></tr>
+        </table>
+        </div>
+
+        <h2 id="call">5 · Calling an LLM — your first code</h2>
+        <p>Everything we build later starts with a single API call. Here's the simplest possible version with two popular providers. You'll need an API key (free credits are usually available on signup).</p>
+
+        <h3>Option A — Anthropic Claude</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> python</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-com"># pip install anthropic</span>
+<span class="tok-kw">import</span> anthropic
+
+client = anthropic.Anthropic(api_key=<span class="tok-str">"YOUR_KEY"</span>)
+
+msg = client.messages.create(
+    model=<span class="tok-str">"claude-opus-4-8"</span>,        <span class="tok-com"># latest, most capable</span>
+    max_tokens=<span class="tok-num">300</span>,
+    messages=[
+        {<span class="tok-str">"role"</span>: <span class="tok-str">"user"</span>, <span class="tok-str">"content"</span>: <span class="tok-str">"Explain RAG in one sentence."</span>}
+    ],
+)
+<span class="tok-fn">print</span>(msg.content[<span class="tok-num">0</span>].text)</code></pre>
+        </div>
+
+        <h3>Option B — OpenAI</h3>
+        <div class="code-block">
+          <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> python</span><button class="copy-btn">Copy</button></div>
+          <pre><code><span class="tok-com"># pip install openai</span>
+<span class="tok-kw">from</span> openai <span class="tok-kw">import</span> OpenAI
+
+client = OpenAI(api_key=<span class="tok-str">"YOUR_KEY"</span>)
+
+resp = client.chat.completions.create(
+    model=<span class="tok-str">"gpt-4o"</span>,
+    messages=[
+        {<span class="tok-str">"role"</span>: <span class="tok-str">"user"</span>, <span class="tok-str">"content"</span>: <span class="tok-str">"Explain RAG in one sentence."</span>}
+    ],
+)
+<span class="tok-fn">print</span>(resp.choices[<span class="tok-num">0</span>].message.content)</code></pre>
+        </div>
+
+        <div class="callout note">
+          <div class="c-ico">🧩</div>
+          <div class="c-body"><div class="c-title">The "messages" pattern</div>
+          <p>Notice both use a list of messages with <code>role</code> + <code>content</code>. Roles are usually <code>system</code> (instructions/persona), <code>user</code> (the human), and <code>assistant</code> (the model's past replies). This conversation format is the backbone of every chat app, agent, and RAG system you'll build.</p></div>
+        </div>
+
+        <div class="callout warn">
+          <div class="c-ico">⚠️</div>
+          <div class="c-body"><div class="c-title">Never hard-code keys in real projects</div>
+          <p>Use an environment variable instead: <code>import os</code> → <code>api_key=os.environ["ANTHROPIC_API_KEY"]</code>, and set it in your shell with <code>export ANTHROPIC_API_KEY=...</code> (macOS/Linux) or <code>setx ANTHROPIC_API_KEY ...</code> (Windows).</p></div>
+        </div>
+
+        <h2 id="bridge">6 · Why this leads to RAG, Agents &amp; MCP</h2>
+        <p>You now have the foundation. The rest of this guide is about overcoming the three limitations:</p>
+
+        <div class="cssflow">
+          <div class="fnode accent">LLM<small>next-token predictor · frozen · can't act</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">+ Retrieval → <strong>RAG</strong><small>inject your own data (Part 02)</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">+ Tools &amp; a loop → <strong>Agents</strong><small>let it act (Part 03)</small></div>
+          <div class="farrow"></div>
+          <div class="fnode">+ A standard protocol → <strong>MCP</strong><small>stop rewriting glue (Part 04)</small></div>
+        </div>
+
+        <ul>
+          <li>The LLM doesn't know <em>your</em> data → we'll <strong>retrieve</strong> it and inject it (<a href="02-rag.html">RAG</a>).</li>
+          <li>The LLM can't <em>act</em> → we'll give it <strong>tools</strong> and a loop (<a href="03-agents.html">Agents</a>).</li>
+          <li>Wiring tools is repetitive → we'll use a <strong>standard protocol</strong> (<a href="04-mcp.html">MCP</a>).</li>
+        </ul>
+        <p>Then we'll put it all together and build two real apps.</p>
+
+        <div class="callout key">
+          <div class="c-ico">🎯</div>
+          <div class="c-body"><div class="c-title">One-line summary to remember</div>
+          <p>An LLM is a next-token predictor with frozen, general knowledge and no ability to act. Everything else in this guide is about feeding it the right context and connecting it to the real world.</p></div>
+        </div>
+
+        <div class="page-nav">
+          <a href="index.html"><div class="dir">← Back to</div><div class="ttl">Guide home</div></a>
+          <a class="next" href="02-rag.html"><div class="dir">Next up →</div><div class="ttl">02 · RAG</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+
+<script>
+window.PORTAL = {
+  homeHref: "../genai-portal/index.html",
+  navLabel: "Your learning path",
+  here: "01-llms.html",
+  base: "",
+  pages: [
+    { file: "index.html",               title: "Guide home",                     num: "✦", kw: "overview start home index" },
+    { file: "01-llms.html",             title: "LLMs — The Foundation",          num: "01", kw: "llm token context window prediction hallucination temperature prompt" },
+    { file: "02-rag.html",              title: "RAG — Retrieval-Augmented Generation", num: "02", kw: "rag retrieval embedding chunk vector grounding" },
+    { file: "03-agents.html",           title: "Agents & Tool Use",              num: "03", kw: "agent tool loop react planning function calling" },
+    { file: "04-mcp.html",              title: "MCP — Model Context Protocol",   num: "04", kw: "mcp protocol server client tools resources" },
+    { file: "05-build-simple-rag.html", title: "Build: A Simple RAG App",        num: "05", kw: "build rag project simple embeddings" },
+    { file: "06-build-pdf-qna.html",    title: "Build: PDF Q&A RAG App",         num: "06", kw: "pdf qna question answering rag chunk" },
+    { file: "07-eda-agent-ollama.html", title: "Build: EDA Agent with Ollama",   num: "07", kw: "eda agent ollama local pandas analysis" }
+  ]
+};
+</script>
+<script src="../genai-portal/assets/sitenav.js"></script>
+<script src="../genai-portal/assets/portal-page.js"></script>
+<script src="../genai-portal/assets/enhance.js"></script>
+</body>
+</html>
