@@ -7,7 +7,7 @@
    This module owns the sidebar (.nav) and the cross-site search box. It builds
    from a single central registry of GROUPS → pages, each page carrying a
    canonical path relative to the SITE ROOT (the folder that contains
-   genai-portal/, learn-rag-mcp/ and teach-agents/). At run time it detects how
+   , learn-rag-mcp/ and teach-agents/). At run time it detects how
    deep the current page sits and rewrites every href with the right number of
    "../" hops, so the same registry works from any folder.
 
@@ -26,34 +26,34 @@
       label: "DSA Interview Preparation",
       mark: "D",
       blurb: "Python · Patterns · Coding Rounds",
-      home: "genai-portal/dsa-prep/index.html",
+      home: "dsa-prep/index.html",
       pages: [
-        { path: "genai-portal/dsa-prep/index.html", title: "Contents", num: "✦", kw: "dsa data structures algorithms interview python leetcode patterns coding round overview contents textbook" },
-        { path: "genai-portal/dsa-prep/00-interview-strategy.html", title: "Interview Strategy", num: "00", track: "Foundations", kw: "interview strategy umpire clarify brute force optimize test complexity study route diagnostic think aloud coding round process" },
-        { path: "genai-portal/dsa-prep/01-python-dsa-foundations.html", title: "Python DSA Foundations", num: "01", track: "Foundations", kw: "python objects references mutability aliasing list deque heapq dict set amortized append timsort recursion limit big o auxiliary space copy" },
-        { path: "genai-portal/dsa-prep/02-arrays.html", title: "Arrays", num: "02", track: "Core structures", kw: "array list numpy prefix suffix kadane in-place marking rotation matrix two pointers subarray product except self maximum subarray spiral set matrix zeroes" },
-        { path: "genai-portal/dsa-prep/03-linked-lists.html", title: "Linked Lists", num: "03", track: "Core structures", kw: "linked list node pointer dummy sentinel fast slow reversal cycle floyd merge reorder lru cache k-group random pointer intersection palindrome" },
-        { path: "genai-portal/dsa-prep/04-hashing.html", title: "Hashing", num: "04", track: "Core structures", kw: "hash map set frequency complement prefix sum group anagrams top k" },
-        { path: "genai-portal/dsa-prep/05-strings.html", title: "Strings", num: "05", track: "Core structures", kw: "string immutability palindrome parsing kmp expand around center decode" },
-        { path: "genai-portal/dsa-prep/06-two-pointers.html", title: "Two Pointers", num: "06", track: "Core patterns", kw: "two pointers opposite ends compaction 3sum container water sort colors subsequence" },
-        { path: "genai-portal/dsa-prep/07-sliding-window-prefix-sums.html", title: "Sliding Window & Prefix Sums", num: "07", track: "Core patterns", kw: "sliding window fixed variable monotonic deque prefix sum difference array subarray" },
-        { path: "genai-portal/dsa-prep/08-stacks-queues-deques.html", title: "Stacks, Queues & Deques", num: "08", track: "Core patterns", kw: "stack queue deque monotonic delimiters expression evaluation circular buffer" },
-        { path: "genai-portal/dsa-prep/09-sorting-intervals-selection.html", title: "Sorting, Intervals & Selection", num: "09", track: "Core patterns", kw: "sorting timsort quickselect merge sort intervals stability counting bucket" },
-        { path: "genai-portal/dsa-prep/10-binary-search.html", title: "Binary Search", num: "10", track: "Core patterns", kw: "binary search lower upper bound rotated array peak monotonic answer koko" },
-        { path: "genai-portal/dsa-prep/11-recursion-backtracking.html", title: "Recursion & Backtracking", num: "11", track: "Core patterns", kw: "recursion backtracking choice tree pruning subsets permutations combination sum n queens" },
-        { path: "genai-portal/dsa-prep/12-trees-bst.html", title: "Trees & BST", num: "12", track: "Non-linear structures", kw: "tree bst dfs bfs level order lca serialize validate diameter path sum" },
-        { path: "genai-portal/dsa-prep/13-heaps-priority-queues.html", title: "Heaps & Priority Queues", num: "13", track: "Non-linear structures", kw: "heap priority queue top k two heaps k way merge median stream scheduling" },
-        { path: "genai-portal/dsa-prep/14-tries.html", title: "Tries", num: "14", track: "Non-linear structures", kw: "trie prefix search wildcard binary trie word search suggestions" },
-        { path: "genai-portal/dsa-prep/15-graphs-grids.html", title: "Graphs & Grids", num: "15", track: "Non-linear structures", kw: "graph grid bfs dfs connected components multi source shortest path islands clone" },
-        { path: "genai-portal/dsa-prep/16-advanced-graphs.html", title: "Advanced Graphs", num: "16", track: "Non-linear structures", kw: "topological sort union find dijkstra bellman ford mst weighted shortest path" },
-        { path: "genai-portal/dsa-prep/17-greedy.html", title: "Greedy", num: "17", track: "Optimization", kw: "greedy exchange argument interval scheduling reachability partition jump game gas station" },
-        { path: "genai-portal/dsa-prep/18-dynamic-programming-1d.html", title: "Dynamic Programming — 1D", num: "18", track: "Optimization", kw: "dynamic programming 1d state recurrence memoization tabulation rolling house robber coin change lis" },
-        { path: "genai-portal/dsa-prep/19-dynamic-programming-2d.html", title: "Dynamic Programming — 2D", num: "19", track: "Optimization", kw: "dynamic programming 2d grid knapsack edit distance interval dp path counting lcs" },
-        { path: "genai-portal/dsa-prep/20-bit-math-matrix.html", title: "Bit, Math & Matrix", num: "20", track: "Optimization", kw: "bit manipulation xor mask math gcd sieve modular matrix rotate image game of life" },
-        { path: "genai-portal/dsa-prep/21-data-structure-design.html", title: "Data Structure Design", num: "21", track: "Applied interview work", kw: "data structure design lru lfu min stack median stream twitter time based key value snapshot" },
-        { path: "genai-portal/dsa-prep/22-python-numpy-pandas-performance.html", title: "Python, NumPy & Pandas Performance", num: "22", track: "Applied interview work", kw: "numpy pandas vectorization broadcasting memory contiguity itertuples apply categorical chunked cosine similarity top k" },
-        { path: "genai-portal/dsa-prep/23-role-tracks-mocks-revision.html", title: "Role Tracks, Mocks & Revision", num: "23", track: "Study tracks", kw: "role tracks mocks revision signal structure map 30 60 90 spaced repetition flashcards readiness" },
-        { path: "genai-portal/dsa-prep/24-advanced-dsa-optional.html", title: "Advanced DSA — Optional", num: "24", track: "Study tracks", kw: "advanced fenwick tree segment tree coordinate compression sweep line reservoir sampling meet in the middle" }
+        { path: "dsa-prep/index.html", title: "Contents", num: "✦", kw: "dsa data structures algorithms interview python leetcode patterns coding round overview contents textbook" },
+        { path: "dsa-prep/00-interview-strategy.html", title: "Interview Strategy", num: "00", track: "Foundations", kw: "interview strategy umpire clarify brute force optimize test complexity study route diagnostic think aloud coding round process" },
+        { path: "dsa-prep/01-python-dsa-foundations.html", title: "Python DSA Foundations", num: "01", track: "Foundations", kw: "python objects references mutability aliasing list deque heapq dict set amortized append timsort recursion limit big o auxiliary space copy" },
+        { path: "dsa-prep/02-arrays.html", title: "Arrays", num: "02", track: "Core structures", kw: "array list numpy prefix suffix kadane in-place marking rotation matrix two pointers subarray product except self maximum subarray spiral set matrix zeroes" },
+        { path: "dsa-prep/03-linked-lists.html", title: "Linked Lists", num: "03", track: "Core structures", kw: "linked list node pointer dummy sentinel fast slow reversal cycle floyd merge reorder lru cache k-group random pointer intersection palindrome" },
+        { path: "dsa-prep/04-hashing.html", title: "Hashing", num: "04", track: "Core structures", kw: "hash map set frequency complement prefix sum group anagrams top k" },
+        { path: "dsa-prep/05-strings.html", title: "Strings", num: "05", track: "Core structures", kw: "string immutability palindrome parsing kmp expand around center decode" },
+        { path: "dsa-prep/06-two-pointers.html", title: "Two Pointers", num: "06", track: "Core patterns", kw: "two pointers opposite ends compaction 3sum container water sort colors subsequence" },
+        { path: "dsa-prep/07-sliding-window-prefix-sums.html", title: "Sliding Window & Prefix Sums", num: "07", track: "Core patterns", kw: "sliding window fixed variable monotonic deque prefix sum difference array subarray" },
+        { path: "dsa-prep/08-stacks-queues-deques.html", title: "Stacks, Queues & Deques", num: "08", track: "Core patterns", kw: "stack queue deque monotonic delimiters expression evaluation circular buffer" },
+        { path: "dsa-prep/09-sorting-intervals-selection.html", title: "Sorting, Intervals & Selection", num: "09", track: "Core patterns", kw: "sorting timsort quickselect merge sort intervals stability counting bucket" },
+        { path: "dsa-prep/10-binary-search.html", title: "Binary Search", num: "10", track: "Core patterns", kw: "binary search lower upper bound rotated array peak monotonic answer koko" },
+        { path: "dsa-prep/11-recursion-backtracking.html", title: "Recursion & Backtracking", num: "11", track: "Core patterns", kw: "recursion backtracking choice tree pruning subsets permutations combination sum n queens" },
+        { path: "dsa-prep/12-trees-bst.html", title: "Trees & BST", num: "12", track: "Non-linear structures", kw: "tree bst dfs bfs level order lca serialize validate diameter path sum" },
+        { path: "dsa-prep/13-heaps-priority-queues.html", title: "Heaps & Priority Queues", num: "13", track: "Non-linear structures", kw: "heap priority queue top k two heaps k way merge median stream scheduling" },
+        { path: "dsa-prep/14-tries.html", title: "Tries", num: "14", track: "Non-linear structures", kw: "trie prefix search wildcard binary trie word search suggestions" },
+        { path: "dsa-prep/15-graphs-grids.html", title: "Graphs & Grids", num: "15", track: "Non-linear structures", kw: "graph grid bfs dfs connected components multi source shortest path islands clone" },
+        { path: "dsa-prep/16-advanced-graphs.html", title: "Advanced Graphs", num: "16", track: "Non-linear structures", kw: "topological sort union find dijkstra bellman ford mst weighted shortest path" },
+        { path: "dsa-prep/17-greedy.html", title: "Greedy", num: "17", track: "Optimization", kw: "greedy exchange argument interval scheduling reachability partition jump game gas station" },
+        { path: "dsa-prep/18-dynamic-programming-1d.html", title: "Dynamic Programming — 1D", num: "18", track: "Optimization", kw: "dynamic programming 1d state recurrence memoization tabulation rolling house robber coin change lis" },
+        { path: "dsa-prep/19-dynamic-programming-2d.html", title: "Dynamic Programming — 2D", num: "19", track: "Optimization", kw: "dynamic programming 2d grid knapsack edit distance interval dp path counting lcs" },
+        { path: "dsa-prep/20-bit-math-matrix.html", title: "Bit, Math & Matrix", num: "20", track: "Optimization", kw: "bit manipulation xor mask math gcd sieve modular matrix rotate image game of life" },
+        { path: "dsa-prep/21-data-structure-design.html", title: "Data Structure Design", num: "21", track: "Applied interview work", kw: "data structure design lru lfu min stack median stream twitter time based key value snapshot" },
+        { path: "dsa-prep/22-python-numpy-pandas-performance.html", title: "Python, NumPy & Pandas Performance", num: "22", track: "Applied interview work", kw: "numpy pandas vectorization broadcasting memory contiguity itertuples apply categorical chunked cosine similarity top k" },
+        { path: "dsa-prep/23-role-tracks-mocks-revision.html", title: "Role Tracks, Mocks & Revision", num: "23", track: "Study tracks", kw: "role tracks mocks revision signal structure map 30 60 90 spaced repetition flashcards readiness" },
+        { path: "dsa-prep/24-advanced-dsa-optional.html", title: "Advanced DSA — Optional", num: "24", track: "Study tracks", kw: "advanced fenwick tree segment tree coordinate compression sweep line reservoir sampling meet in the middle" }
       ]
     },
     {
@@ -61,10 +61,10 @@
       label: "Global Study Plan",
       mark: "P",
       blurb: "Hours, order and weekly cadence",
-      home: "genai-portal/study-plan.html",
+      home: "study-plan.html",
       direct: true,
       pages: [
-        { path: "genai-portal/study-plan.html", title: "Global Study Plan", num: "P", kw: "study plan roadmap hours schedule time weekly daily ai engineer interview route" }
+        { path: "study-plan.html", title: "Global Study Plan", num: "P", kw: "study plan roadmap hours schedule time weekly daily ai engineer interview route" }
       ]
     },
     {
@@ -72,31 +72,31 @@
       label: "GenAI Mastery",
       mark: "G",
       blurb: "DS → Senior GenAI Engineer",
-      home: "genai-portal/index.html",
+      home: "index.html",
       pages: [
-        { path: "genai-portal/index.html", title: "Overview", num: "✦", kw: "home overview curriculum start hub" },
+        { path: "index.html", title: "Overview", num: "✦", kw: "home overview curriculum start hub" },
         // Foundations
-        { path: "genai-portal/modules/01_foundations.html", title: "Foundations of LLMs", num: "01", track: "Foundations", kw: "llm token transformer attention prompt context window temperature decoding next token prediction" },
-        { path: "genai-portal/modules/02_transformers.html", title: "Transformers Deep Dive", num: "02", track: "Foundations", kw: "transformer attention self-attention multi-head positional encoding qkv softmax feedforward residual layernorm" },
-        { path: "genai-portal/modules/03_local_llms.html", title: "Local LLMs & Ollama", num: "03", track: "Foundations", kw: "ollama local llama qwen gemma quantization gguf gpu vram modelfile" },
+        { path: "modules/01_foundations.html", title: "Foundations of LLMs", num: "01", track: "Foundations", kw: "llm token transformer attention prompt context window temperature decoding next token prediction" },
+        { path: "modules/02_transformers.html", title: "Transformers Deep Dive", num: "02", track: "Foundations", kw: "transformer attention self-attention multi-head positional encoding qkv softmax feedforward residual layernorm" },
+        { path: "modules/03_local_llms.html", title: "Local LLMs & Ollama", num: "03", track: "Foundations", kw: "ollama local llama qwen gemma quantization gguf gpu vram modelfile" },
         // Retrieval
-        { path: "genai-portal/modules/04_embeddings.html", title: "Embeddings", num: "04", track: "Retrieval", kw: "embedding vector cosine similarity semantic dense sparse sentence-transformers" },
-        { path: "genai-portal/modules/05_vector_databases.html", title: "Vector Databases", num: "05", track: "Retrieval", kw: "vector database faiss qdrant pgvector hnsw ann index recall" },
-        { path: "genai-portal/modules/06_rag_basics.html", title: "RAG Basics", num: "06", track: "Retrieval", kw: "rag retrieval augmented generation chunking context grounding" },
-        { path: "genai-portal/modules/07_advanced_rag.html", title: "Advanced RAG", num: "07", track: "Retrieval", kw: "hybrid search reranking query expansion parent document graph rag agentic rag context compression" },
+        { path: "modules/04_embeddings.html", title: "Embeddings", num: "04", track: "Retrieval", kw: "embedding vector cosine similarity semantic dense sparse sentence-transformers" },
+        { path: "modules/05_vector_databases.html", title: "Vector Databases", num: "05", track: "Retrieval", kw: "vector database faiss qdrant pgvector hnsw ann index recall" },
+        { path: "modules/06_rag_basics.html", title: "RAG Basics", num: "06", track: "Retrieval", kw: "rag retrieval augmented generation chunking context grounding" },
+        { path: "modules/07_advanced_rag.html", title: "Advanced RAG", num: "07", track: "Retrieval", kw: "hybrid search reranking query expansion parent document graph rag agentic rag context compression" },
         // Agents
-        { path: "genai-portal/modules/08_agents.html", title: "Agentic AI", num: "08", track: "Agents", kw: "agent react tool calling planning reflection memory loop" },
-        { path: "genai-portal/modules/09_mcp.html", title: "Model Context Protocol", num: "09", track: "Agents", kw: "mcp model context protocol server client tool resource prompt" },
-        { path: "genai-portal/modules/13_multi_agents.html", title: "Multi-Agent Systems", num: "13", track: "Agents", kw: "crewai multi agent orchestration supervisor handoff" },
+        { path: "modules/08_agents.html", title: "Agentic AI", num: "08", track: "Agents", kw: "agent react tool calling planning reflection memory loop" },
+        { path: "modules/09_mcp.html", title: "Model Context Protocol", num: "09", track: "Agents", kw: "mcp model context protocol server client tool resource prompt" },
+        { path: "modules/13_multi_agents.html", title: "Multi-Agent Systems", num: "13", track: "Agents", kw: "crewai multi agent orchestration supervisor handoff" },
         // Frameworks
-        { path: "genai-portal/modules/10_langchain.html", title: "LangChain", num: "10", track: "Frameworks", kw: "langchain lcel chains runnable retriever memory" },
-        { path: "genai-portal/modules/11_llamaindex.html", title: "LlamaIndex", num: "11", track: "Frameworks", kw: "llamaindex index node document query engine" },
-        { path: "genai-portal/modules/12_langgraph.html", title: "LangGraph", num: "12", track: "Frameworks", kw: "langgraph state node edge conditional routing parallel human in the loop asyncio pydantic" },
-        { path: "genai-portal/langgraph-asyncio.html", title: "AsyncIO for LangGraph", num: "12A", track: "Frameworks", kw: "python asyncio event loop coroutine task taskgroup gather cancellation timeout semaphore backpressure ainvoke astream async node interview" },
-        { path: "genai-portal/langgraph-pydantic.html", title: "Pydantic for LangGraph", num: "12B", track: "Frameworks", kw: "pydantic v2 basemodel field validator model validator configdict strict schema discriminated union langgraph state interview" },
+        { path: "modules/10_langchain.html", title: "LangChain", num: "10", track: "Frameworks", kw: "langchain lcel chains runnable retriever memory" },
+        { path: "modules/11_llamaindex.html", title: "LlamaIndex", num: "11", track: "Frameworks", kw: "llamaindex index node document query engine" },
+        { path: "modules/12_langgraph.html", title: "LangGraph", num: "12", track: "Frameworks", kw: "langgraph state node edge conditional routing parallel human in the loop asyncio pydantic" },
+        { path: "langgraph-asyncio.html", title: "AsyncIO for LangGraph", num: "12A", track: "Frameworks", kw: "python asyncio event loop coroutine task taskgroup gather cancellation timeout semaphore backpressure ainvoke astream async node interview" },
+        { path: "langgraph-pydantic.html", title: "Pydantic for LangGraph", num: "12B", track: "Frameworks", kw: "pydantic v2 basemodel field validator model validator configdict strict schema discriminated union langgraph state interview" },
         // Production
-        { path: "genai-portal/modules/14_production_genai.html", title: "Production GenAI", num: "14", track: "Production", kw: "observability tracing cost guardrails rate limiting evaluation testing security" },
-        { path: "genai-portal/modules/15_capstone_projects.html", title: "Capstone Projects", num: "15", track: "Production", kw: "capstone project pdf rag sql agent elasticsearch mcp multi-agent enterprise" }
+        { path: "modules/14_production_genai.html", title: "Production GenAI", num: "14", track: "Production", kw: "observability tracing cost guardrails rate limiting evaluation testing security" },
+        { path: "modules/15_capstone_projects.html", title: "Capstone Projects", num: "15", track: "Production", kw: "capstone project pdf rag sql agent elasticsearch mcp multi-agent enterprise" }
       ]
     },
     {
@@ -138,16 +138,16 @@
       label: "ATS Agent Build Lab",
       mark: "T",
       blurb: "Applied recruitment agents",
-      home: "genai-portal/ats-agent-lab/index.html",
+      home: "ats-agent-lab/index.html",
       pages: [
-        { path: "genai-portal/ats-agent-lab/index.html", title: "Lab overview", num: "✦", kw: "ats recruitment hackathon agent lab overview six agents" },
-        { path: "genai-portal/ats-agent-lab/01-system-map.html", title: "System map & stack", num: "01", kw: "architecture layers fastapi pydantic postgres react stack bounded agents" },
-        { path: "genai-portal/ats-agent-lab/02-shared-client.html", title: "Shared LLM client", num: "02", kw: "anthropic client json pydantic retry repair timeout tracing" },
-        { path: "genai-portal/ats-agent-lab/03-recruitment-agents.html", title: "Recruiting agents", num: "03", kw: "jd creation resume screening candidate matching skills evidence" },
-        { path: "genai-portal/ats-agent-lab/04-interview-agents.html", title: "Interview agents", num: "04", kw: "scheduling questions feedback summarization deterministic conflict" },
-        { path: "genai-portal/ats-agent-lab/05-production-safety.html", title: "Safety & human control", num: "05", kw: "security prompt injection privacy rbac human in loop guardrails audit" },
-        { path: "genai-portal/ats-agent-lab/06-optimization-evals.html", title: "Optimization & evals", num: "06", kw: "tokens caching latency cost evaluation llmops testing metrics" },
-        { path: "genai-portal/ats-agent-lab/07-build-from-scratch.html", title: "Build from scratch", num: "07", kw: "python fastapi tutorial capstone build agent service code" }
+        { path: "ats-agent-lab/index.html", title: "Lab overview", num: "✦", kw: "ats recruitment hackathon agent lab overview six agents" },
+        { path: "ats-agent-lab/01-system-map.html", title: "System map & stack", num: "01", kw: "architecture layers fastapi pydantic postgres react stack bounded agents" },
+        { path: "ats-agent-lab/02-shared-client.html", title: "Shared LLM client", num: "02", kw: "anthropic client json pydantic retry repair timeout tracing" },
+        { path: "ats-agent-lab/03-recruitment-agents.html", title: "Recruiting agents", num: "03", kw: "jd creation resume screening candidate matching skills evidence" },
+        { path: "ats-agent-lab/04-interview-agents.html", title: "Interview agents", num: "04", kw: "scheduling questions feedback summarization deterministic conflict" },
+        { path: "ats-agent-lab/05-production-safety.html", title: "Safety & human control", num: "05", kw: "security prompt injection privacy rbac human in loop guardrails audit" },
+        { path: "ats-agent-lab/06-optimization-evals.html", title: "Optimization & evals", num: "06", kw: "tokens caching latency cost evaluation llmops testing metrics" },
+        { path: "ats-agent-lab/07-build-from-scratch.html", title: "Build from scratch", num: "07", kw: "python fastapi tutorial capstone build agent service code" }
       ]
     },
 
@@ -157,57 +157,57 @@
       label: "Focused Interview Labs",
       mark: "F",
       blurb: "Python backend and GenAI",
-      home: "genai-portal/interview-labs/index.html",
+      home: "interview-labs/index.html",
       pages: [
-        { path: "genai-portal/interview-labs/index.html", title: "Labs overview", num: "✦", kw: "focused interview labs python backend fastapi websocket langchain rag mcp overview" },
-        { path: "genai-portal/interview-labs/python-sync-async-interview.html", title: "Sync vs Async Python", num: "P1", track: "Python Backend", kw: "python synchronous asynchronous asyncio event loop coroutine task thread process gil timeout cancellation backpressure interview" },
-        { path: "genai-portal/interview-labs/fastapi-interview.html", title: "FastAPI", num: "P2", track: "Python Backend", kw: "fastapi asgi starlette pydantic dependency injection request lifecycle def async def testing security deployment interview" },
-        { path: "genai-portal/interview-labs/websockets-interview.html", title: "WebSockets", num: "P3", track: "Python Backend", kw: "websocket web socket handshake frames fastapi real time heartbeat reconnect backpressure broker scaling interview" },
-        { path: "genai-portal/interview-labs/langchain-interview.html", title: "LangChain", num: "G1", track: "GenAI", kw: "langchain create agent tools middleware runtime runnable lcel structured output streaming testing interview" },
-        { path: "genai-portal/interview-labs/rag-interview.html", title: "RAG", num: "G2", track: "GenAI", kw: "rag retrieval chunking hybrid reranking evaluation security debugging system design interview" },
-        { path: "genai-portal/interview-labs/mcp-interview.html", title: "MCP", num: "G3", track: "GenAI", kw: "mcp model context protocol host client server tools resources prompts transport security interview" }
+        { path: "interview-labs/index.html", title: "Labs overview", num: "✦", kw: "focused interview labs python backend fastapi websocket langchain rag mcp overview" },
+        { path: "interview-labs/python-sync-async-interview.html", title: "Sync vs Async Python", num: "P1", track: "Python Backend", kw: "python synchronous asynchronous asyncio event loop coroutine task thread process gil timeout cancellation backpressure interview" },
+        { path: "interview-labs/fastapi-interview.html", title: "FastAPI", num: "P2", track: "Python Backend", kw: "fastapi asgi starlette pydantic dependency injection request lifecycle def async def testing security deployment interview" },
+        { path: "interview-labs/websockets-interview.html", title: "WebSockets", num: "P3", track: "Python Backend", kw: "websocket web socket handshake frames fastapi real time heartbeat reconnect backpressure broker scaling interview" },
+        { path: "interview-labs/langchain-interview.html", title: "LangChain", num: "G1", track: "GenAI", kw: "langchain create agent tools middleware runtime runnable lcel structured output streaming testing interview" },
+        { path: "interview-labs/rag-interview.html", title: "RAG", num: "G2", track: "GenAI", kw: "rag retrieval chunking hybrid reranking evaluation security debugging system design interview" },
+        { path: "interview-labs/mcp-interview.html", title: "MCP", num: "G3", track: "GenAI", kw: "mcp model context protocol host client server tools resources prompts transport security interview" }
       ]
     },
 
     /* COMPLETE_INTERVIEW_HUB_START */
     {
-      id: "completeinterview", label: "Complete Interview Hub", mark: "Q", blurb: "55-page synchronized interview site", home: "genai-portal/interview-hub/index.html",
+      id: "completeinterview", label: "Complete Interview Hub", mark: "Q", blurb: "55-page synchronized interview site", home: "interview-hub/index.html",
       pages: [
-        { path: "genai-portal/interview-hub/index.html", title: "Complete interview hub", num: "✦", kw: "complete genai interview hub 173 questions answers mocks projects system design role roadmap 30 60 90 rag agents evaluation llmops guardrails python behavioral" }
+        { path: "interview-hub/index.html", title: "Complete interview hub", num: "✦", kw: "complete genai interview hub 173 questions answers mocks projects system design role roadmap 30 60 90 rag agents evaluation llmops guardrails python behavioral" }
       ]
     },
     /* COMPLETE_INTERVIEW_HUB_END */
 
     /* INTERVIEW_PREP_START */
     {
-      id: "interviewprep", label: "GenAI Interview Prep", mark: "I", blurb: "India-focused question bank", home: "genai-portal/interview-prep/index.html",
+      id: "interviewprep", label: "GenAI Interview Prep", mark: "I", blurb: "India-focused question bank", home: "interview-prep/index.html",
       pages: [
-        { path: "genai-portal/interview-prep/index.html", title: "Question bank overview", num: "✦", kw: "interview questions india genai preparation answers" },
-        { path: "genai-portal/interview-prep/00-neural-networks.html", title: "Neural Networks", num: "00", kw: "neural network neuron weights bias activation forward pass loss backpropagation optimizer gradients pytorch ai engineer interview" },
-        { path: "genai-portal/interview-prep/01-llm-foundations-prompting.html", title: "Foundations & prompting", num: "01", kw: "llm transformer tokens context temperature hallucination prompt structured output function calling fine tuning" },
-        { path: "genai-portal/interview-prep/02-embeddings-rag.html", title: "Embeddings & RAG", num: "02", kw: "embeddings cosine vector database pgvector hnsw chunking hybrid search reranking retrieval evaluation" },
-        { path: "genai-portal/interview-prep/03-agents-mcp.html", title: "Agents, LangGraph & MCP", num: "03", kw: "agents workflows react tool calling langgraph mcp memory multi agent human in loop idempotency" },
-        { path: "genai-portal/interview-prep/04-evaluation-llmops.html", title: "Evaluation & LLMOps", num: "04", kw: "evaluation golden dataset llm judge tracing langfuse prompt version drift release gate monitoring" },
-        { path: "genai-portal/interview-prep/05-production-performance.html", title: "Production, latency & cost", num: "05", kw: "model selection latency streaming caching concurrency batching tokens cost backpressure deployment slo" },
-        { path: "genai-portal/interview-prep/06-security-responsible-ai.html", title: "Security & responsible AI", num: "06", kw: "prompt injection rbac rag sql injection pii tools secrets responsible ai bias guardrails" },
-        { path: "genai-portal/interview-prep/07-python-backend-cloud.html", title: "Python, backend & cloud", num: "07", kw: "python async fastapi pydantic celery temporal idempotency multi tenancy docker kubernetes rate limit testing" },
-        { path: "genai-portal/interview-prep/08-project-behavioral.html", title: "Project & behavioural", num: "08", kw: "project architecture stack failure optimization tradeoff stakeholder ownership day to day current 90 days" },
-        { path: "genai-portal/interview-prep/09-sql-for-genai.html", title: "SQL for GenAI roles", num: "09", kw: "sql joins window functions cte indexing explain query plan transactions postgres pgvector vector search text to sql rls multi tenant interview" },
+        { path: "interview-prep/index.html", title: "Question bank overview", num: "✦", kw: "interview questions india genai preparation answers" },
+        { path: "interview-prep/00-neural-networks.html", title: "Neural Networks", num: "00", kw: "neural network neuron weights bias activation forward pass loss backpropagation optimizer gradients pytorch ai engineer interview" },
+        { path: "interview-prep/01-llm-foundations-prompting.html", title: "Foundations & prompting", num: "01", kw: "llm transformer tokens context temperature hallucination prompt structured output function calling fine tuning" },
+        { path: "interview-prep/02-embeddings-rag.html", title: "Embeddings & RAG", num: "02", kw: "embeddings cosine vector database pgvector hnsw chunking hybrid search reranking retrieval evaluation" },
+        { path: "interview-prep/03-agents-mcp.html", title: "Agents, LangGraph & MCP", num: "03", kw: "agents workflows react tool calling langgraph mcp memory multi agent human in loop idempotency" },
+        { path: "interview-prep/04-evaluation-llmops.html", title: "Evaluation & LLMOps", num: "04", kw: "evaluation golden dataset llm judge tracing langfuse prompt version drift release gate monitoring" },
+        { path: "interview-prep/05-production-performance.html", title: "Production, latency & cost", num: "05", kw: "model selection latency streaming caching concurrency batching tokens cost backpressure deployment slo" },
+        { path: "interview-prep/06-security-responsible-ai.html", title: "Security & responsible AI", num: "06", kw: "prompt injection rbac rag sql injection pii tools secrets responsible ai bias guardrails" },
+        { path: "interview-prep/07-python-backend-cloud.html", title: "Python, backend & cloud", num: "07", kw: "python async fastapi pydantic celery temporal idempotency multi tenancy docker kubernetes rate limit testing" },
+        { path: "interview-prep/08-project-behavioral.html", title: "Project & behavioural", num: "08", kw: "project architecture stack failure optimization tradeoff stakeholder ownership day to day current 90 days" },
+        { path: "interview-prep/09-sql-for-genai.html", title: "SQL for GenAI roles", num: "09", kw: "sql joins window functions cte indexing explain query plan transactions postgres pgvector vector search text to sql rls multi tenant interview" },
       ]
     },
     {
-      id: "scenariopractice", label: "Scenario Design Studio", mark: "S", blurb: "Architecture interview practice", home: "genai-portal/scenario-practice/index.html",
+      id: "scenariopractice", label: "Scenario Design Studio", mark: "S", blurb: "Architecture interview practice", home: "scenario-practice/index.html",
       pages: [
-        { path: "genai-portal/scenario-practice/index.html", title: "Scenario studio overview", num: "✦", kw: "system design scenario practice genai architecture" },
-        { path: "genai-portal/scenario-practice/framework.html", title: "Answer framework", num: "00", kw: "clarify design scale secure measure framework" },
-        { path: "genai-portal/scenario-practice/01-enterprise-knowledge-assistant.html", title: "Enterprise knowledge assistant", num: "01", kw: "enterprise rag chatbot permissions citations hybrid retrieval latency" },
-        { path: "genai-portal/scenario-practice/02-customer-support-agent.html", title: "Customer support agent", num: "02", kw: "customer support agent tools workflow human handoff pii latency load" },
-        { path: "genai-portal/scenario-practice/03-secure-text-to-sql.html", title: "Secure text-to-SQL", num: "03", kw: "text to sql analytics semantic layer read only parameterized ast injection rbac" },
-        { path: "genai-portal/scenario-practice/04-ats-recruiter-copilot.html", title: "ATS recruiter copilot", num: "04", kw: "ats recruiter resume screening matching interview scheduling bias human review audit" },
-        { path: "genai-portal/scenario-practice/05-multilingual-voice-assistant.html", title: "Multilingual voice assistant", num: "05", kw: "voice assistant speech streaming multilingual latency barge in agent tools" },
-        { path: "genai-portal/scenario-practice/06-invoice-document-workflow.html", title: "Invoice document workflow", num: "06", kw: "invoice document ai ocr extraction validation workflow human review queue" },
-        { path: "genai-portal/scenario-practice/07-high-scale-shopping-assistant.html", title: "High-scale shopping assistant", num: "07", kw: "shopping assistant recommendations catalog search agent high scale personalization latency cache" },
-        { path: "genai-portal/scenario-practice/08-regulated-financial-research.html", title: "Financial research copilot", num: "08", kw: "financial research copilot compliance citations audit human approval market data secure rag" },
+        { path: "scenario-practice/index.html", title: "Scenario studio overview", num: "✦", kw: "system design scenario practice genai architecture" },
+        { path: "scenario-practice/framework.html", title: "Answer framework", num: "00", kw: "clarify design scale secure measure framework" },
+        { path: "scenario-practice/01-enterprise-knowledge-assistant.html", title: "Enterprise knowledge assistant", num: "01", kw: "enterprise rag chatbot permissions citations hybrid retrieval latency" },
+        { path: "scenario-practice/02-customer-support-agent.html", title: "Customer support agent", num: "02", kw: "customer support agent tools workflow human handoff pii latency load" },
+        { path: "scenario-practice/03-secure-text-to-sql.html", title: "Secure text-to-SQL", num: "03", kw: "text to sql analytics semantic layer read only parameterized ast injection rbac" },
+        { path: "scenario-practice/04-ats-recruiter-copilot.html", title: "ATS recruiter copilot", num: "04", kw: "ats recruiter resume screening matching interview scheduling bias human review audit" },
+        { path: "scenario-practice/05-multilingual-voice-assistant.html", title: "Multilingual voice assistant", num: "05", kw: "voice assistant speech streaming multilingual latency barge in agent tools" },
+        { path: "scenario-practice/06-invoice-document-workflow.html", title: "Invoice document workflow", num: "06", kw: "invoice document ai ocr extraction validation workflow human review queue" },
+        { path: "scenario-practice/07-high-scale-shopping-assistant.html", title: "High-scale shopping assistant", num: "07", kw: "shopping assistant recommendations catalog search agent high scale personalization latency cache" },
+        { path: "scenario-practice/08-regulated-financial-research.html", title: "Financial research copilot", num: "08", kw: "financial research copilot compliance citations audit human approval market data secure rag" },
       ]
     },
     /* INTERVIEW_PREP_END */
@@ -216,54 +216,51 @@
       label: "Deep Dives",
       mark: "D",
       blurb: "Focused topic guides",
-      home: "genai-portal/rag-deep-dive.html",
+      home: "rag-deep-dive.html",
       pages: [
-        { path: "genai-portal/rag-deep-dive.html", title: "RAG, End-to-End", num: "📚", kw: "rag pipeline chunking reranking retrieval evaluation end to end" },
-        { path: "genai-portal/langfuse.html", title: "Langfuse — Observability", num: "📡", kw: "langfuse observability trace cost latency quality scores" },
-        { path: "genai-portal/guardrails.html", title: "Guardrails", num: "🛡️", kw: "guardrails safety scope pii hallucination policy" },
-        { path: "genai-portal/memory.html", title: "Memory in LLMs", num: "🧠", kw: "memory context window stateless chat history" },
-        { path: "genai-portal/langgraph.html", title: "LangGraph & components", num: "🕸️", kw: "langgraph state node edge checkpointer human in the loop asyncio pydantic" },
-        { path: "genai-portal/claude-agent.html", title: "How a Claude Agent Works", num: "🤖", kw: "claude agent sdk tool runner loop context safety" },
-        { path: "genai-portal/hermes.html", title: "Hermes — open local models", num: "🔱", kw: "hermes nous ollama open function calling local models" }
+        { path: "rag-deep-dive.html", title: "RAG, End-to-End", num: "📚", kw: "rag pipeline chunking reranking retrieval evaluation end to end" },
+        { path: "langfuse.html", title: "Langfuse — Observability", num: "📡", kw: "langfuse observability trace cost latency quality scores" },
+        { path: "guardrails.html", title: "Guardrails", num: "🛡️", kw: "guardrails safety scope pii hallucination policy" },
+        { path: "memory.html", title: "Memory in LLMs", num: "🧠", kw: "memory context window stateless chat history" },
+        { path: "langgraph.html", title: "LangGraph & components", num: "🕸️", kw: "langgraph state node edge checkpointer human in the loop asyncio pydantic" },
+        { path: "claude-agent.html", title: "How a Claude Agent Works", num: "🤖", kw: "claude agent sdk tool runner loop context safety" },
+        { path: "hermes.html", title: "Hermes — open local models", num: "🔱", kw: "hermes nous ollama open function calling local models" }
       ]
     }
   ];
 
-  /* ---------- Locate this page within the registry & compute depth ---------- */
-  // Normalise the current path to a site-root-relative form by matching the
-  // tail against known registry paths. We compare by the last 1-3 segments.
-  var loc = location.pathname.replace(/\\/g, "/");
-  var here = loc.substring(loc.lastIndexOf("/") + 1) || "index.html";
-  // segments after the site root are unknown, so identify the current page by
-  // matching folder + file against registry entries.
-  var folder = (function () {
-    var parts = loc.split("/").filter(Boolean);
-    return parts.length >= 2 ? parts[parts.length - 2] : "";
-  })();
+  /* ---------- Resolve the repository root from this script URL ---------- */
+  // This makes navigation independent of the GitHub repository name. It works
+  // at username.github.io/repository/, on a custom domain, and from local files.
+  var navScript = document.currentScript;
+  if (!navScript || !/\/sitenav\.js(?:[?#].*)?$/.test(navScript.src || "")) {
+    var scripts = document.getElementsByTagName("script");
+    for (var si = scripts.length - 1; si >= 0; si -= 1) {
+      if (/\/sitenav\.js(?:[?#].*)?$/.test(scripts[si].src || "")) { navScript = scripts[si]; break; }
+    }
+  }
+  var SITE_ROOT = navScript && navScript.src
+    ? new URL("../", navScript.src)
+    : new URL("./", document.baseURI);
 
-  function isCurrent(pagePath) {
-    var segs = pagePath.split("/");
-    var file = segs[segs.length - 1];
-    var dir = segs.length >= 2 ? segs[segs.length - 2] : "";
-    if (file !== here) return false;
-    // disambiguate index.html (exists in 3 folders) by the parent folder
-    if (file === "index.html") return dir === folder;
-    return true;
+  function pageURL(pagePath) { return new URL(pagePath, SITE_ROOT); }
+  function href(pagePath) { return pageURL(pagePath).href; }
+  function normalizedPath(pathname) {
+    var p = decodeURIComponent(pathname || "").replace(/\\/g, "/");
+    if (p.endsWith("/")) p += "index.html";
+    return p.replace(/\/{2,}/g, "/");
   }
 
-  // How many "../" to reach the site root from the current page.
-  // Depth = number of path segments below the site root - 1 (for the file).
-  // We can't know the absolute root, so derive it from the matched current page.
+  var currentPath = normalizedPath(location.pathname);
   var current = null, currentGroup = null;
+  function isCurrent(pagePath) {
+    return currentPath === normalizedPath(pageURL(pagePath).pathname);
+  }
   GROUPS.forEach(function (g) {
-    g.pages.forEach(function (p) { if (isCurrent(p.path)) { current = p; currentGroup = g; } });
+    g.pages.forEach(function (p) {
+      if (isCurrent(p.path)) { current = p; currentGroup = g; }
+    });
   });
-  // Fallback: if not found (new/unknown page), assume genai-portal/ depth.
-  var currentPathFromRoot = current ? current.path : (folder ? folder + "/" + here : here);
-  var depth = currentPathFromRoot.split("/").length - 1;   // dirs above the file
-  var UP = depth > 0 ? new Array(depth + 1).join("../") : "";
-
-  function href(pagePath) { return UP + pagePath; }
 
   /* ---------- Build the grouped sidebar ---------- */
   function trackChunks(pages) {
@@ -342,7 +339,7 @@
 
     var intro = document.createElement("section");
     intro.className = "mobile-nav-intro";
-    var currentLabel = currentGroup ? currentGroup.label : "GenAI Learning Hub";
+    var currentLabel = currentGroup ? currentGroup.label : "Switch job Learning Platform";
     var currentCount = currentGroup ? currentGroup.pages.length : GROUPS.length;
     var countLabel = currentGroup ? (currentCount + (currentCount === 1 ? " page" : " pages") + " in this path") : (currentCount + " learning paths");
     intro.innerHTML =
@@ -397,7 +394,7 @@
   /* ---------- Brand link → this section's home (or hub root) ---------- */
   function fixBrand() {
     var brandLink = document.querySelector(".brand a, a.brand");
-    if (brandLink) brandLink.setAttribute("href", href("genai-portal/index.html"));
+    if (brandLink) brandLink.setAttribute("href", href("index.html"));
   }
 
   /* ---------- Footer credit (subtle, on every page) ---------- */
@@ -408,7 +405,7 @@
     var f = document.createElement("footer");
     f.className = "site-footer";
     f.innerHTML =
-      '<span>© ' + year + ' GenAI Learning Hub</span>' +
+      '<span>© ' + year + ' Switch job</span>' +
       '<span class="sep">·</span>' +
       '<span>Developed by Deepankar Kotnala</span>';
     content.appendChild(f);

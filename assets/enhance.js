@@ -36,7 +36,7 @@
 
   function homeHref() {
     if (window.SiteNav && typeof window.SiteNav.href === "function") {
-      return window.SiteNav.href("genai-portal/index.html");
+      return window.SiteNav.href("index.html");
     }
     return (window.PORTAL && window.PORTAL.homeHref) || "index.html";
   }
@@ -76,7 +76,7 @@
       return '<a href="' + href + '"' + (active ? ' class="active" aria-current="page"' : '') + '>' + label + '</a>';
     }
 
-    var isHome = /\/genai-portal\/?(?:index\.html)?$/.test(path);
+    var isHome = path.replace(/\/$/, "/index.html") === home.pathname.toLowerCase().replace(/\/$/, "/index.html");
     var isLearn = /\/(?:modules|learn-rag-mcp|teach-agents)\//.test(path) || /\/(?:memory|rag-deep-dive|langgraph|langfuse|guardrails|hermes|claude-agent)\.html$/.test(path);
     var isPractice = /\/(?:scenario-practice|interview-labs|ats-agent-lab)\//.test(path);
     var isInterview = /\/(?:dsa-prep|interview-prep|interview-hub|google-prep)\//.test(path);
@@ -116,7 +116,7 @@
       return '<a href="' + href + '"' + (active ? ' class="active" aria-current="page"' : '') + '>' + label + '</a>';
     }
 
-    var isHome = /\/genai-portal\/?(?:index\.html)?$/.test(path);
+    var isHome = path.replace(/\/$/, "/index.html") === home.pathname.toLowerCase().replace(/\/$/, "/index.html");
     var isLearn = /\/(?:modules|learn-rag-mcp|teach-agents)\//.test(path) || /\/(?:memory|rag-deep-dive|langgraph|langfuse|guardrails|hermes|claude-agent)\.html$/.test(path);
     var isPractice = /\/(?:scenario-practice|interview-labs|ats-agent-lab)\//.test(path);
     var isInterview = /\/(?:interview-prep|interview-hub|google-prep)\//.test(path);
@@ -419,7 +419,7 @@
     var title = (document.title + " " + ((document.querySelector("h1") || {}).textContent || "")).toLowerCase();
     var source = path + " " + title;
 
-    if (/genai-portal\/index\.html/.test(path) || /learning hub/.test(title) && document.querySelector(".hero")) {
+    if (((document.body && document.body.dataset.page === "00") || /learning hub/.test(title)) && document.querySelector(".hero")) {
       return {
         kicker: "Learning system",
         title: "A path that compounds",
