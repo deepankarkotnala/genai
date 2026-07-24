@@ -176,13 +176,20 @@ img, svg { max-width: 100%; }
   display: flex; align-items: center; gap: 9px;
   padding: 5px 10px; border-radius: 7px; font-size: 13px;
   color: var(--text-secondary); position: relative; line-height: 1.3;
+  transition: background .22s ease, color .22s ease, transform .17s ease;
 }
 .nav a:hover { background: var(--surface); color: var(--text); text-decoration: none; }
 .nav a.active { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
-.nav a.active::before {
+/* Rounded left bar kept mounted but collapsed, so it grows in smoothly rather
+   than popping when the active item changes. */
+.nav a::before {
   content: ""; position: absolute; left: 0; top: 5px; bottom: 5px; width: 3px;
   background: var(--accent); border-radius: 3px;
+  opacity: 0; transform: scaleY(.34); transform-origin: center;
+  transition: transform .24s cubic-bezier(.4, 0, .2, 1), opacity .2s ease;
 }
+.nav a:hover::before { opacity: .45; transform: scaleY(.7); }
+.nav a.active::before { opacity: 1; transform: scaleY(1); }
 .nav .num {
   font-size: 10px; font-variant-numeric: tabular-nums; color: var(--text-muted);
   background: var(--surface); border: 1px solid var(--border);
@@ -861,7 +868,8 @@ a { text-underline-offset: .18em; text-decoration-thickness: .08em; }
   box-shadow: inset 0 0 0 1px rgba(16, 124, 65, .10);
 }
 [data-theme="dark"] .nav a.active { color: #c3b4ff; }
-.nav a.active::before { left: -1px; top: 8px; bottom: 8px; width: 3px; box-shadow: 0 0 12px rgba(16, 124, 65, .45); }
+.nav a::before { left: -1px; top: 8px; bottom: 8px; width: 3px; }
+.nav a.active::before { box-shadow: 0 0 12px rgba(16, 124, 65, .45); }
 .nav .num { background: rgba(255, 255, 255, .46); }
 [data-theme="dark"] .nav .num { background: rgba(255, 255, 255, .045); }
 
@@ -1031,17 +1039,39 @@ a { text-underline-offset: .18em; text-decoration-thickness: .08em; }
 }
 .toc-title { padding: 0 3px 8px; font-size: 10px; letter-spacing: .11em; }
 .toc a {
+  position: relative;
   margin: 1px 0;
-  padding: 7px 9px;
+  padding: 7px 9px 7px 15px;
   border: 0;
   border-radius: 9px;
   font-size: 12px;
   line-height: 1.35;
-  transition: background .17s ease, color .17s ease, transform .17s ease;
+  transition: background .22s ease, color .22s ease, transform .17s ease, box-shadow .22s ease;
+}
+/* Excel-style rounded left bar — mirrors the sidebar nav. Always present but
+   collapsed, so it grows in smoothly as the active section changes on scroll. */
+.toc a::before {
+  content: "";
+  position: absolute;
+  left: 2px; top: 7px; bottom: 7px;
+  width: 3px; border-radius: 3px;
+  background: var(--accent);
+  opacity: 0; transform: scaleY(.34); transform-origin: center;
+  transition: transform .24s cubic-bezier(.4, 0, .2, 1), opacity .2s ease;
 }
 .toc a:hover { transform: translateX(2px); background: var(--surface); }
-.toc a.active { color: var(--accent-strong); background: var(--accent-soft); }
-[data-theme="dark"] .toc a.active { color: #c5b7ff; }
+.toc a:hover::before { opacity: .45; transform: scaleY(.7); }
+.toc a.active {
+  color: var(--accent-strong);
+  background: linear-gradient(90deg, rgba(16, 124, 65, .14), rgba(16, 124, 65, .07));
+  box-shadow: inset 0 0 0 1px rgba(16, 124, 65, .10);
+}
+.toc a.active::before { opacity: 1; transform: scaleY(1); box-shadow: 0 0 12px rgba(16, 124, 65, .45); }
+[data-theme="dark"] .toc a.active {
+  color: #c5b7ff;
+  background: linear-gradient(90deg, rgba(143, 136, 199, .105), rgba(125, 161, 200, .025));
+  box-shadow: none;
+}
 
 /* ---- Hero and curriculum landing experiences ---- */
 .hero {
@@ -3616,7 +3646,10 @@ html[data-theme="dark"] .nav a.active {
   background: linear-gradient(90deg, rgba(143, 136, 199, .105), rgba(125, 161, 200, .025));
 }
 html[data-theme="dark"] .nav .num { background: rgba(178, 191, 210, .055); }
-html[data-theme="dark"] .toc-textbook a.active { background: rgba(143, 136, 199, .105); }
+html[data-theme="dark"] .toc-textbook a.active {
+  background: linear-gradient(90deg, rgba(143, 136, 199, .105), rgba(125, 161, 200, .025));
+  box-shadow: none;
+}
 
 /* Desktop density: smaller typography and controls, wider reading canvas. */
 @media (min-width: 861px) {
@@ -3955,26 +3988,39 @@ html[data-theme="dark"] .toc-textbook a.active { background: rgba(143, 136, 199,
     gap: 5px;
     min-height: 25px;
     margin: 1px 0;
-    padding: 4px 5px;
+    padding: 4px 5px 4px 9px;
     border: 0;
     border-radius: 6px;
     color: var(--text-muted);
     font-size: 9.3px;
     line-height: 1.18;
+    transition: background .22s ease, color .22s ease, box-shadow .22s ease;
   }
+  /* Excel-style rounded left bar — same theme as the sidebar nav. Kept mounted
+     but collapsed so it grows in smoothly as scroll moves the active topic. */
   .toc.toc-textbook a::before {
     content: "";
     position: absolute;
-    left: 0;
+    left: 2px;
     top: 6px;
     bottom: 6px;
-    width: 2px;
+    width: 3px;
     border-radius: 3px;
-    background: transparent;
+    background: var(--accent);
+    opacity: 0;
+    transform: scaleY(.34);
+    transform-origin: center;
+    transition: transform .24s cubic-bezier(.4, 0, .2, 1), opacity .2s ease;
   }
   .toc.toc-textbook a:hover { transform: none; color: var(--text-secondary); background: var(--surface); }
-  .toc.toc-textbook a.active { color: var(--accent-strong); background: var(--accent-soft); font-weight: 650; }
-  .toc.toc-textbook a.active::before { background: var(--accent); }
+  .toc.toc-textbook a:hover::before { opacity: .45; transform: scaleY(.7); }
+  .toc.toc-textbook a.active {
+    color: var(--accent-strong);
+    background: linear-gradient(90deg, rgba(16, 124, 65, .14), rgba(16, 124, 65, .07));
+    box-shadow: inset 0 0 0 1px rgba(16, 124, 65, .10);
+    font-weight: 650;
+  }
+  .toc.toc-textbook a.active::before { opacity: 1; transform: scaleY(1); box-shadow: 0 0 10px rgba(16, 124, 65, .45); }
   .toc-num {
     color: var(--text-muted);
     font-family: var(--font-mono);

@@ -311,7 +311,11 @@ a:hover { color: var(--accent-hover); text-shadow: none !important; }
   font-weight: 600;
   box-shadow: none !important;
 }
-.nav a.active::before {
+/* Rounded left bar kept mounted but collapsed so it grows in smoothly instead
+   of popping; hover reveals a faint hint. Matches the chapter-contents rail. */
+.nav a::before {
+  content: "";
+  position: absolute;
   left: 0;
   top: 5px;
   bottom: 5px;
@@ -319,7 +323,13 @@ a:hover { color: var(--accent-hover); text-shadow: none !important; }
   border-radius: 2px;
   background: var(--excel);
   box-shadow: none !important;
+  opacity: 0;
+  transform: scaleY(.34);
+  transform-origin: center;
+  transition: transform .24s cubic-bezier(.4, 0, .2, 1), opacity .2s ease;
 }
+.nav a:hover::before { opacity: .45; transform: scaleY(.7); }
+.nav a.active::before { opacity: 1; transform: scaleY(1); }
 .nav .num {
   min-width: 23px;
   height: 19px;
@@ -641,11 +651,12 @@ body.sidebar-resizing .sidebar-resizer::after {
 .toc-filter input { font-size: 10.5px; }
 .toc-list { max-height: none; overflow: visible; padding-right: 0; }
 .toc a {
+  position: relative;
   display: grid;
   grid-template-columns: 20px minmax(0, 1fr);
   gap: 5px;
   margin: 0;
-  padding: 6px 7px;
+  padding: 6px 7px 6px 11px;
   border: 0;
   border-radius: 4px;
   color: var(--text-muted);
@@ -653,13 +664,38 @@ body.sidebar-resizing .sidebar-resizer::after {
   font-size: 10.5px;
   line-height: 1.35;
   transform: none !important;
+  transition: background .22s ease, color .22s ease;
+}
+/* Rounded left bar — identical to the sidebar nav highlight. Kept mounted but
+   collapsed so it grows in smoothly as scroll moves the active topic. The
+   .toc-textbook variant is listed explicitly so it wins over the higher-
+   specificity base rules in styles.css. */
+.toc a::before,
+.toc.toc-textbook a::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 5px;
+  bottom: 5px;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--excel);
+  box-shadow: none;
+  opacity: 0;
+  transform: scaleY(.34);
+  transform-origin: center;
+  transition: transform .24s cubic-bezier(.4, 0, .2, 1), opacity .2s ease;
 }
 .toc a:hover { color: var(--text); background: var(--bg-elevated); transform: none !important; }
+.toc a:hover::before,
+.toc.toc-textbook a:hover::before { opacity: .45; transform: scaleY(.7); }
 .toc a.active {
   color: var(--text) !important;
-  background: var(--bg-elevated) !important;
-  box-shadow: inset 2px 0 0 var(--excel) !important;
+  background: var(--excel-soft) !important;
+  box-shadow: none !important;
 }
+.toc a.active::before,
+.toc.toc-textbook a.active::before { opacity: 1; transform: scaleY(1); box-shadow: none; }
 .toc-num { color: var(--excel); font-family: var(--font-mono); font-size: 9px; }
 .toc-label { white-space: normal; }
 /* The compact "Jump to section" toggle is a mobile-only control (see the
@@ -1116,7 +1152,7 @@ body.focus-mode .focus-lbl { display: inline !important; font-size: 11px; }
     gap: 8px;
     min-height: 36px;
     margin: 1px 0;
-    padding: 7px 9px;
+    padding: 7px 9px 7px 12px;
     border: 0;
     border-radius: 7px;
     background: transparent;
