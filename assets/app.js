@@ -163,11 +163,38 @@
         return `<a href="#${h.id}" data-toc="${h.id}" title="${escapeTOCText(full)}"><span class="toc-num">${num}</span><span class="toc-label">${escapeTOCText(label)}</span></a>`;
       }).join("")}<div class="toc-empty" hidden>No matching topic</div></div>`;
 
+    // Compact "Jump to section" toggle — only shown on narrow screens (CSS).
+    // Turns the section list into a tap-to-open dropdown instead of a
+    // horizontal side-scrolling strip that blocks the page on mobile.
+    const toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "toc-toggle";
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.setAttribute("aria-label", "Jump to a section on this page");
+    toggle.innerHTML =
+      '<svg class="toc-toggle-ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>' +
+      '<span class="toc-toggle-label">Jump to section</span>' +
+      '<svg class="toc-toggle-caret" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+    rail.insertBefore(toggle, rail.firstChild);
+    const toggleLabel = toggle.querySelector(".toc-toggle-label");
+
     const links = [...rail.querySelectorAll("[data-toc]")];
     const list = rail.querySelector(".toc-list");
     const filter = rail.querySelector(".toc-filter input");
     const empty = rail.querySelector(".toc-empty");
     const top = rail.querySelector(".toc-top");
+
+    function setTocOpen(open) {
+      rail.classList.toggle("toc-open", open);
+      toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+    toggle.addEventListener("click", event => {
+      event.stopPropagation();
+      setTocOpen(!rail.classList.contains("toc-open"));
+    });
+    links.forEach(link => link.addEventListener("click", () => setTocOpen(false)));
+    document.addEventListener("click", event => { if (!rail.contains(event.target)) setTocOpen(false); });
+    document.addEventListener("keydown", event => { if (event.key === "Escape") setTocOpen(false); });
 
     if (top) top.addEventListener("click", () => window.scrollTo({ top: 0, behavior: "smooth" }));
     if (filter) filter.addEventListener("input", () => {
@@ -187,10 +214,40 @@
           links.forEach(l => l.classList.toggle("active", l.dataset.toc === en.target.id));
           const active = links.find(l => l.dataset.toc === en.target.id);
           if (active && list) active.scrollIntoView({ block: "nearest" });
+          if (active && toggleLabel) {
+            const activeLabel = active.querySelector(".toc-label");
+            toggleLabel.textContent = activeLabel ? activeLabel.textContent : "Jump to section";
+          }
         }
       });
     }, { rootMargin: "-72px 0px -72% 0px" });
     heads.forEach(h => obs.observe(h));
+
+    // Auto-hide the mobile TOC bar: slide it away on scroll-down, reveal it on
+    // scroll-up. Near the very top of the page it always stays visible. (CSS
+    // only applies the hidden transform on mobile, so this is a no-op on the
+    // desktop side rail.)
+    const railEl = document.querySelector(".toc-rail");
+    if (railEl) {
+      let lastY = window.scrollY;
+      let ticking = false;
+      const evaluate = () => {
+        ticking = false;
+        const y = Math.max(0, window.scrollY);
+        const delta = y - lastY;
+        if (Math.abs(delta) < 6) return;
+        if (y <= 100 || delta < 0) {
+          railEl.classList.remove("toc-rail-hidden");
+        } else {
+          railEl.classList.add("toc-rail-hidden");
+          setTocOpen(false);
+        }
+        lastY = y;
+      };
+      window.addEventListener("scroll", () => {
+        if (!ticking) { ticking = true; window.requestAnimationFrame(evaluate); }
+      }, { passive: true });
+    }
   }
 
   /* ---------- Copy buttons ---------- */

@@ -29,6 +29,7 @@
       home: "dsa-prep/index.html",
       pages: [
         { path: "dsa-prep/index.html", title: "Contents", num: "✦", kw: "dsa data structures algorithms interview python leetcode patterns coding round overview contents textbook" },
+        { path: "dsa-prep/complexity.html", title: "Time & Space Complexity", num: "0", track: "Foundations", kw: "big o time complexity space complexity auxiliary memory constant linear logarithmic quadratic exponential factorial worst average best amortized in place growth rate operations counting recursion stack two sum trade off" },
         { path: "dsa-prep/00-interview-strategy.html", title: "Interview Strategy", num: "00", track: "Foundations", kw: "interview strategy umpire clarify brute force optimize test complexity study route diagnostic think aloud coding round process" },
         { path: "dsa-prep/01-python-dsa-foundations.html", title: "Python DSA Foundations", num: "01", track: "Foundations", kw: "python objects references mutability aliasing list deque heapq dict set amortized append timsort recursion limit big o auxiliary space copy" },
         { path: "dsa-prep/02-arrays.html", title: "Arrays", num: "02", track: "Core structures", kw: "array list numpy prefix suffix kadane in-place marking rotation matrix two pointers subarray product except self maximum subarray spiral set matrix zeroes" },
