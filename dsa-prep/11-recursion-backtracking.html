@@ -3,94 +3,1382 @@
 <span class="brand-mark" aria-hidden="true"><img src="../assets/brand/switch-job-logo.svg" alt=""/></span>
 <div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
 </a>
-</div><div class="search-wrap"><div class="search-box"><input data-search="" placeholder="Search everything…  ( / )" type="text"/></div><div class="search-results"></div></div><nav class="nav"></nav></aside><div class="backdrop"></div><div class="main"><header class="topbar"><button aria-label="Menu" class="icon-btn menu-btn">☰</button><div class="crumbs">DSA Interview Preparation / 11 · Recursion &amp; Backtracking</div><button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button></header><div class="content-wrap"><main class="content"><div class="eyebrow"><span class="dot"></span> Chapter 11 · Core patterns</div><h1>Recursion &amp; Backtracking</h1><p class="lead">Explore a choice tree, undo decisions cleanly, and prune impossible branches. This chapter keeps the language direct: first understand the mental model, then practise one reusable pattern at a time.</p><div class="dsa-chead"><span class="dsa-chapter-no">Outcome</span><p class="dsa-outcome">Explore a choice tree, undo decisions cleanly, and prune impossible branches.</p><div class="dsa-tags"><span class="dsa-tag core">Core curriculum</span><span class="dsa-tag sde">Python</span><span class="dsa-tag ds">Interview ready</span></div><div class="dsa-facts"><div class="dsa-fact"><span class="k">Study time</span><span class="v">8–12 hours</span></div><div class="dsa-fact"><span class="k">Prerequisites</span><span class="v">Ch 01–02</span></div><div class="dsa-fact"><span class="k">Patterns</span><span class="v">5</span></div><div class="dsa-fact"><span class="k">Practice set</span><span class="v">10</span></div><div class="dsa-fact"><span class="k">Difficulty</span><span class="v">Foundation → Hard</span></div><div class="dsa-fact"><span class="k">Progress</span><span class="v" data-dsa-progress="">0 / 10</span></div></div></div><div class="dsa-toolbar"><button class="dsa-btn" type="button" data-dsa-practice="">🙈 Practice mode</button><button class="dsa-btn" type="button" data-dsa-reset="">↺ Reset progress</button><span class="dsa-progress-line" data-dsa-progress="">0 / 10 solved</span></div><h2 id="foundations">1 · Foundations</h2><p><strong>Mental model.</strong> Explore a choice tree, undo decisions cleanly, and prune impossible branches. Do not memorize isolated solutions. Learn what information must be remembered, when it changes, and why that makes the algorithm correct.</p><div class="grid grid-2"><div class="card"><h4>Use it when</h4><p>The input has the recognition signals listed below and a simpler brute-force solution repeats the same work.</p></div><div class="card"><h4>Avoid it when</h4><p>The assumptions do not hold. For example, binary search needs monotonicity, greedy needs a proof, and sliding windows usually need a condition that changes predictably as pointers move.</p></div></div><h3 id="python-model">Python model and trade-offs</h3><p>Prefer built-ins such as <code>dict</code>, <code>set</code>, <code>list</code>, <code>deque</code>, <code>heapq</code>, and <code>bisect</code> when they match the job. Always separate output space from auxiliary working space, and mention mutation when the input is modified.</p><div class="callout note"><div class="c-ico">✓</div><div class="c-body"><div class="c-title">Simple interview routine</div><p>Clarify constraints → describe brute force → identify the repeated work → choose a pattern → state the invariant → code → test tiny and awkward cases.</p></div></div><h2 id="patterns">2 · Pattern library</h2><div class="dsa-patterns"><div class="dsa-pattern"><h4><span class="pnum">1</span>Choose/Explore/Unchoose</h4><dl><dt>Signal</dt><dd>The prompt repeatedly asks for choose/explore/unchoose.</dd><dt>Invariant</dt><dd>Keep only the state needed for choose/explore/unchoose.</dd><dt>Cost</dt><dd>Usually O(n) or O(n log n); state the exact bound before coding.</dd></dl></div><div class="dsa-pattern"><h4><span class="pnum">2</span>Subsets</h4><dl><dt>Signal</dt><dd>The prompt repeatedly asks for subsets.</dd><dt>Invariant</dt><dd>Keep only the state needed for subsets.</dd><dt>Cost</dt><dd>Usually O(n) or O(n log n); state the exact bound before coding.</dd></dl></div><div class="dsa-pattern"><h4><span class="pnum">3</span>Permutations</h4><dl><dt>Signal</dt><dd>The prompt repeatedly asks for permutations.</dd><dt>Invariant</dt><dd>Keep only the state needed for permutations.</dd><dt>Cost</dt><dd>Usually O(n) or O(n log n); state the exact bound before coding.</dd></dl></div><div class="dsa-pattern"><h4><span class="pnum">4</span>Combination Search</h4><dl><dt>Signal</dt><dd>The prompt repeatedly asks for combination search.</dd><dt>Invariant</dt><dd>Keep only the state needed for combination search.</dd><dt>Cost</dt><dd>Usually O(n) or O(n log n); state the exact bound before coding.</dd></dl></div><div class="dsa-pattern"><h4><span class="pnum">5</span>Constraint Pruning</h4><dl><dt>Signal</dt><dd>The prompt repeatedly asks for constraint pruning.</dd><dt>Invariant</dt><dd>Keep only the state needed for constraint pruning.</dd><dt>Cost</dt><dd>Usually O(n) or O(n log n); state the exact bound before coding.</dd></dl></div></div><h2 id="ladder">3 · Guided practice — 10</h2><p>Each row gives a learning path rather than a copied problem statement. Open the official problem separately, then use the hints and invariant here to build your own solution.</p><div class="dsa-ladder"><details class="dsa-prob" data-pid="dsa-11-1"><summary><span class="p-idx">1</span><span class="p-title"><span class="lc">LC 78</span>Subsets</span><span class="p-badges"><span class="diff medium">Medium</span><span class="badge-canonical">Core practice</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span><span class="p-sub">Binary Choices · learn the invariant, then code</span></summary><div class="p-body"><p class="wu-clarify"><strong>Goal.</strong> Practice Subsets using binary choices. Focus on recognizing the pattern before writing code.</p><div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Write down the input size and the brute-force complexity first.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Ask what information from earlier work would let you avoid repeating it.</div></details></div><p class="wu-approach"><span class="wu-section">Approach</span> Start with the simplest correct idea. Then identify the repeated work and replace it with binary choices. State what your main variables mean after every iteration or recursive call.</p><div class="wu-solution code-block"><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>pattern_template.py</span><button class="copy-btn">Copy</button></div><pre><code>def solve(data):
-    # 1. Define the state for: binary choices
-    state = {}
-    answer = None
+</div><div class="search-wrap"><div class="search-box"><input data-search="" placeholder="Search everything…  ( / )" type="text"/></div><div class="search-results"></div></div><nav class="nav"></nav></aside><div class="backdrop"></div><div class="main"><header class="topbar"><button aria-label="Menu" class="icon-btn menu-btn">☰</button><div class="crumbs">DSA Interview Preparation / 11 · Recursion &amp; Backtracking</div><button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button></header><div class="content-wrap"><main class="content">
+<div class="eyebrow"><span class="dot"></span> Chapter 11 · Core patterns</div>
+<h1>Recursion &amp; Backtracking</h1>
+<p class="lead">Recursion solves a problem by solving smaller copies of itself; backtracking is recursion that explores every choice and <em>undoes</em> the ones that don't work. Together they generate subsets, permutations, and solutions to hard constraint puzzles — every problem here has a full, tested solution in LeetCode's <code>class Solution</code> format.</p>
+<div class="dsa-chead">
+<span class="dsa-chapter-no">Outcome</span>
+<p class="dsa-outcome">Write clean recursion with correct base cases, add memoization, and apply the choose → recurse → un-choose backtracking template to subsets, permutations, combinations, partitions, and constraint satisfaction — pruning aggressively.</p>
+<div class="dsa-tags"><span class="dsa-tag core">Core for every role</span><span class="dsa-tag sde">SDE</span><span class="dsa-tag sde">Python</span><span class="dsa-tag ds">Data Science</span><span class="dsa-tag ds">ML / AI / GenAI</span></div>
+<div class="dsa-facts">
+<div class="dsa-fact"><span class="k">Study time</span><span class="v">10–13 hours</span></div>
+<div class="dsa-fact"><span class="k">Prerequisites</span><span class="v">Ch 02, 05, 10</span></div>
+<div class="dsa-fact"><span class="k">Patterns</span><span class="v">6</span></div>
+<div class="dsa-fact"><span class="k">Canonical problems</span><span class="v">34</span></div>
+<div class="dsa-fact"><span class="k">Difficulty</span><span class="v">Easy → Hard</span></div>
+<div class="dsa-fact"><span class="k">Progress</span><span class="v" data-dsa-progress="">0 / 34</span></div>
+</div>
+</div>
+<div class="dsa-toolbar">
+<button class="dsa-btn" type="button" data-dsa-practice="">🙈 Practice mode</button>
+<button class="dsa-btn" type="button" data-dsa-reset="">↺ Reset progress</button>
+<span class="dsa-progress-line" data-dsa-progress="">0 / 34 solved</span>
+</div>
+<h2 id="foundations">1 · Foundations</h2>
+<p class="dsa-note-sm" style="margin-bottom:6px">New to recursion? Read this section top to bottom — each idea builds on the one before it. Already fluent? Skip to <a href="#patterns">§2 Pattern library</a>.</p>
 
-    for item in data:
-        # 2. Update state while preserving the invariant
-        pass
+<h3 id="what-is-recursion">What is recursion?</h3>
+<p>A <strong>recursive</strong> function solves a problem by calling itself on a smaller version, until it hits a case small enough to answer directly. Two parts are non-negotiable: a <strong>base case</strong> that stops the recursion, and a <strong>recursive case</strong> that moves toward it. Miss the base case and you get infinite recursion — a <code>RecursionError</code>.</p>
+<div class="dsa-eg">Example — factorial, the classic recursion</div>
+<div class="code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>factorial.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>def factorial(n):
+    if n == 0:          # base case
+        return 1
+    return n * factorial(n - 1)   # recursive case: smaller n
 
-    return answer</code></pre></div><p><strong>Interview check.</strong> Explain correctness with one invariant, name edge cases, and give time plus auxiliary-space complexity. Then implement the official problem from the linked title in your own words.</p></div></details><details class="dsa-prob" data-pid="dsa-11-2"><summary><span class="p-idx">2</span><span class="p-title"><span class="lc">LC 46</span>Permutations</span><span class="p-badges"><span class="diff medium">Medium</span><span class="badge-canonical">Core practice</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span><span class="p-sub">Used Set · learn the invariant, then code</span></summary><div class="p-body"><p class="wu-clarify"><strong>Goal.</strong> Practice Permutations using used set. Focus on recognizing the pattern before writing code.</p><div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Write down the input size and the brute-force complexity first.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Ask what information from earlier work would let you avoid repeating it.</div></details></div><p class="wu-approach"><span class="wu-section">Approach</span> Start with the simplest correct idea. Then identify the repeated work and replace it with used set. State what your main variables mean after every iteration or recursive call.</p><div class="wu-solution code-block"><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>pattern_template.py</span><button class="copy-btn">Copy</button></div><pre><code>def solve(data):
-    # 1. Define the state for: used set
-    state = {}
-    answer = None
+print(factorial(5))     # 120</code></pre>
+</div>
+<div class="dsa-result"><span class="rk">Output</span>120</div>
+<div class="dsa-key"><span>Every recursive call is pushed onto the <b>call stack</b>. That stack is both the magic (it remembers where to resume) and the cost (deep recursion uses O(depth) memory, and Python caps it near 1000 frames).</span></div>
 
-    for item in data:
-        # 2. Update state while preserving the invariant
-        pass
+<h3 id="memoization">Memoization: don't recompute</h3>
+<p>Naive recursion can be catastrophically slow when it solves the same subproblem repeatedly — <code>fib(n)</code> is O(2ⁿ) because it recomputes the same Fibonacci values over and over. <strong>Memoization</strong> caches each result the first time, turning the recursion tree into O(n). This is the doorway to dynamic programming (Ch 18).</p>
+<div class="dsa-eg">Example — Fibonacci, memoized</div>
+<div class="code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>fib_memo.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>def fib(n, memo={}):
+    if n &lt; 2:
+        return n
+    if n not in memo:
+        memo[n] = fib(n - 1, memo) + fib(n - 2, memo)   # cache each result once
+    return memo[n]
 
-    return answer</code></pre></div><p><strong>Interview check.</strong> Explain correctness with one invariant, name edge cases, and give time plus auxiliary-space complexity. Then implement the official problem from the linked title in your own words.</p></div></details><details class="dsa-prob" data-pid="dsa-11-3"><summary><span class="p-idx">3</span><span class="p-title"><span class="lc">LC 77</span>Combinations</span><span class="p-badges"><span class="diff medium">Medium</span><span class="badge-canonical">Core practice</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span><span class="p-sub">Start Index · learn the invariant, then code</span></summary><div class="p-body"><p class="wu-clarify"><strong>Goal.</strong> Practice Combinations using start index. Focus on recognizing the pattern before writing code.</p><div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Write down the input size and the brute-force complexity first.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Ask what information from earlier work would let you avoid repeating it.</div></details></div><p class="wu-approach"><span class="wu-section">Approach</span> Start with the simplest correct idea. Then identify the repeated work and replace it with start index. State what your main variables mean after every iteration or recursive call.</p><div class="wu-solution code-block"><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>pattern_template.py</span><button class="copy-btn">Copy</button></div><pre><code>def solve(data):
-    # 1. Define the state for: start index
-    state = {}
-    answer = None
+print(fib(30))          # 832040  (fast: each fib(k) computed once)</code></pre>
+</div>
+<div class="dsa-note-sm"><code>functools.lru_cache</code> does the same automatically — decorate a function and its calls are cached.</div>
 
-    for item in data:
-        # 2. Update state while preserving the invariant
-        pass
+<h3 id="what-is-backtracking">What is backtracking?</h3>
+<p><strong>Backtracking</strong> is recursion that builds a solution one choice at a time, and when a choice leads nowhere, <em>undoes</em> it and tries the next. It explores a <em>decision tree</em>: at each node you <strong>choose</strong> an option, <strong>recurse</strong> deeper, then <strong>un-choose</strong> (restore state) so the next option starts clean.</p>
+<div class="dsa-eg">Example — all subsets via choose / recurse / un-choose</div>
+<div class="code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>subsets.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>def subsets(nums):
+    res = []
+    def backtrack(start, path):
+        res.append(path[:])              # record a COPY of the current choice
+        for i in range(start, len(nums)):
+            path.append(nums[i])         # choose
+            backtrack(i + 1, path)       # recurse on the rest
+            path.pop()                   # un-choose (backtrack)
+    backtrack(0, [])
+    return res
 
-    return answer</code></pre></div><p><strong>Interview check.</strong> Explain correctness with one invariant, name edge cases, and give time plus auxiliary-space complexity. Then implement the official problem from the linked title in your own words.</p></div></details><details class="dsa-prob" data-pid="dsa-11-4"><summary><span class="p-idx">4</span><span class="p-title"><span class="lc">LC 39</span>Combination Sum</span><span class="p-badges"><span class="diff medium">Medium</span><span class="badge-canonical">Core practice</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span><span class="p-sub">Reuse Choices · learn the invariant, then code</span></summary><div class="p-body"><p class="wu-clarify"><strong>Goal.</strong> Practice Combination Sum using reuse choices. Focus on recognizing the pattern before writing code.</p><div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Write down the input size and the brute-force complexity first.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Ask what information from earlier work would let you avoid repeating it.</div></details></div><p class="wu-approach"><span class="wu-section">Approach</span> Start with the simplest correct idea. Then identify the repeated work and replace it with reuse choices. State what your main variables mean after every iteration or recursive call.</p><div class="wu-solution code-block"><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>pattern_template.py</span><button class="copy-btn">Copy</button></div><pre><code>def solve(data):
-    # 1. Define the state for: reuse choices
-    state = {}
-    answer = None
+print(subsets([1, 2, 3]))
+# [[], [1], [1,2], [1,2,3], [1,3], [2], [2,3], [3]]</code></pre>
+</div>
+<div class="dsa-result"><span class="rk">Output</span>[[], [1], [1, 2], [1, 2, 3], [1, 3], [2], [2, 3], [3]]</div>
+<p class="dsa-note-sm">Note <code>path[:]</code> — you must record a <em>copy</em>, because <code>path</code> keeps mutating as the recursion continues. Forgetting this is the #1 backtracking bug.</p>
 
-    for item in data:
-        # 2. Update state while preserving the invariant
-        pass
+<h3 id="pruning">Pruning: skip doomed branches early</h3>
+<p>The decision tree is usually exponential, so the art is cutting branches that can't lead to a solution — a <strong>constraint check</strong> before recursing (a segment > 255 in an IP address, a queen under attack, a running sum already over target). Good pruning is often the difference between "times out" and "instant".</p>
+<div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">Recursion &amp; backtracking pitfalls</div><p>Always define a base case that's actually reached. Record a <strong>copy</strong> of the path (<code>path[:]</code>), not the live list. After recursing, <strong>undo</strong> every change you made (pop the element, unmark the cell, remove from the set). Handle duplicates by <strong>sorting then skipping equal siblings</strong>. And remember Python's ~1000-frame recursion limit for very deep problems.</p></div></div>
+<h2 id="patterns">2 · Pattern library</h2>
+<p>Almost every problem here is one of these six. Learn the signal and the core move, and the code follows.</p>
+<div class="dsa-patterns">
+<div class="dsa-pattern"><h4><span class="pnum">1</span>Linear / divide-and-conquer recursion</h4><dl><dt>Signal</dt><dd>reverse, power, split at a point</dd><dt>Move</dt><dd>base case + reduce to a smaller call</dd><dt>Cost</dt><dd>O(n) or O(log n)</dd></dl></div>
+<div class="dsa-pattern"><h4><span class="pnum">2</span>Memoized recursion (top-down DP)</h4><dl><dt>Signal</dt><dd>overlapping subproblems, "count the ways"</dd><dt>Move</dt><dd>cache results keyed by the arguments</dd><dt>Cost</dt><dd>states × work</dd></dl></div>
+<div class="dsa-pattern"><h4><span class="pnum">3</span>Subsets (include / exclude)</h4><dl><dt>Signal</dt><dd>"all subsets / power set / partitions"</dd><dt>Move</dt><dd>start index; record the path at every node</dd><dt>Cost</dt><dd>O(n·2ⁿ)</dd></dl></div>
+<div class="dsa-pattern"><h4><span class="pnum">4</span>Permutations (used marker)</h4><dl><dt>Signal</dt><dd>"all orderings / arrangements"</dd><dt>Move</dt><dd>track used elements; recurse to full length</dd><dt>Cost</dt><dd>O(n·n!)</dd></dl></div>
+<div class="dsa-pattern"><h4><span class="pnum">5</span>Combinations / combination sum</h4><dl><dt>Signal</dt><dd>choose k / reach a target sum</dd><dt>Move</dt><dd>start index, prune, i vs i+1 for reuse</dd><dt>Cost</dt><dd>exponential, pruned</dd></dl></div>
+<div class="dsa-pattern"><h4><span class="pnum">6</span>Constraint satisfaction / grid</h4><dl><dt>Signal</dt><dd>N-Queens, Sudoku, word search, valid placements</dd><dt>Move</dt><dd>place → mark → recurse → unmark; prune on rules</dd><dt>Cost</dt><dd>exponential, pruned hard</dd></dl></div>
+</div>
+<h2 id="ladder">3 · Problem ladder — 34</h2>
+<p>Grouped into <strong>Easy → Medium → Hard</strong> tiers: recursion fundamentals, then the backtracking templates, then constraint solvers. Every solution is complete and tested in LeetCode's <code>class Solution</code> format. Expand a row for the full write-up; use <span class="dsa-kbd">🙈 Practice mode</span> to hide solutions and rebuild from the pattern.</p>
+<div class="dsa-ladder">
+<div class="dsa-tier"><span class="tdot easy"></span>Tier 1 · Easy — recursion fundamentals <span class="cnt">(6)</span></div>
+<details class="dsa-prob" data-pid="lc-509">
+<summary>
+<span class="p-idx">1</span>
+<span class="p-title"><span class="lc">LC 509</span>Fibonacci Number</span>
+<span class="p-badges"><span class="diff easy">Easy</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Recursion + memoization</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Return the n-th Fibonacci number. <a href="https://leetcode.com/problems/fibonacci-number/" target="_blank" rel="noopener">LeetCode 509 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> F(0)=0, F(1)=1? (Yes.) n can be up to ~30–40? (Yes — memoize to stay fast.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">The definition is recursive: F(n) = F(n−1) + F(n−2).</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Plain recursion recomputes subproblems exponentially — cache results in a dict.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> The recursive definition translates directly, but naive recursion is exponential because it recomputes the same values. A memo dict (top-down DP) stores each result the first time it's computed, collapsing the work to O(n).</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>fibonacci.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>class Solution:
+    def fib(self, n: int) -&gt; int:
+        memo = {}
+        def f(k):
+            if k &lt; 2:
+                return k
+            if k not in memo:
+                memo[k] = f(k - 1) + f(k - 2)
+            return memo[k]
+        return f(n)
+</code></pre>
+</div>
+<p><strong>Time</strong> O(n) with memo · <strong>Space</strong> O(n). Memoisation is the bridge from recursion to dynamic programming (Ch 18).</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-70">
+<summary>
+<span class="p-idx">2</span>
+<span class="p-title"><span class="lc">LC 70</span>Climbing Stairs</span>
+<span class="p-badges"><span class="diff easy">Easy</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Recursion + memoization</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> You can climb 1 or 2 steps at a time. Count the distinct ways to reach step <code>n</code>. <a href="https://leetcode.com/problems/climbing-stairs/" target="_blank" rel="noopener">LeetCode 70 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Steps of size 1 or 2 only? (Yes.) Order matters (1+2 ≠ 2+1)? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">To reach step n you came from n−1 or n−2, so ways(n) = ways(n−1) + ways(n−2).</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">That's Fibonacci — memoize to avoid the exponential blowup.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> The number of ways to reach step <code>n</code> is the sum of the ways to reach the two steps below it — the Fibonacci recurrence. Memoize the recursion so each subproblem is solved once.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>climbing_stairs.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>class Solution:
+    def climbStairs(self, n: int) -&gt; int:
+        memo = {}
+        def ways(k):
+            if k &lt;= 2:
+                return k
+            if k not in memo:
+                memo[k] = ways(k - 1) + ways(k - 2)
+            return memo[k]
+        return ways(n)
+</code></pre>
+</div>
+<p><strong>Time</strong> O(n) · <strong>Space</strong> O(n). Recognising a problem as 'this recurrence' is the core recursion skill.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-344">
+<summary>
+<span class="p-idx">3</span>
+<span class="p-title"><span class="lc">LC 344</span>Reverse String</span>
+<span class="p-badges"><span class="diff easy">Easy</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Recursion instead of a loop</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Reverse a list of characters in place — here, recursively. <a href="https://leetcode.com/problems/reverse-string/" target="_blank" rel="noopener">LeetCode 344 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> In place? (Yes.) Recursion is the point (loops also work)? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Swap the outer pair, then recurse on the inner substring.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Base case: the pointers meet or cross.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> A recursion drill: swap the two ends, then recurse inward on the smaller range. The base case (pointers meeting) stops it. Every loop has a recursive twin — seeing that equivalence builds recursion intuition.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>reverse_string.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
 
-    return answer</code></pre></div><p><strong>Interview check.</strong> Explain correctness with one invariant, name edge cases, and give time plus auxiliary-space complexity. Then implement the official problem from the linked title in your own words.</p></div></details><details class="dsa-prob" data-pid="dsa-11-5"><summary><span class="p-idx">5</span><span class="p-title"><span class="lc">LC 40</span>Combination Sum II</span><span class="p-badges"><span class="diff medium">Medium</span><span class="badge-canonical">Core practice</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span><span class="p-sub">Skip Duplicates · learn the invariant, then code</span></summary><div class="p-body"><p class="wu-clarify"><strong>Goal.</strong> Practice Combination Sum II using skip duplicates. Focus on recognizing the pattern before writing code.</p><div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Write down the input size and the brute-force complexity first.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Ask what information from earlier work would let you avoid repeating it.</div></details></div><p class="wu-approach"><span class="wu-section">Approach</span> Start with the simplest correct idea. Then identify the repeated work and replace it with skip duplicates. State what your main variables mean after every iteration or recursive call.</p><div class="wu-solution code-block"><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>pattern_template.py</span><button class="copy-btn">Copy</button></div><pre><code>def solve(data):
-    # 1. Define the state for: skip duplicates
-    state = {}
-    answer = None
+class Solution:
+    def reverseString(self, s: List[str]) -&gt; None:
+        def helper(l, r):
+            if l &gt;= r:
+                return
+            s[l], s[r] = s[r], s[l]
+            helper(l + 1, r - 1)          # recurse inward
+        helper(0, len(s) - 1)
+</code></pre>
+</div>
+<p><strong>Time</strong> O(n) · <strong>Space</strong> O(n) call stack. Recursion here costs stack space that the iterative two-pointer version avoids — a real trade-off to state.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-206">
+<summary>
+<span class="p-idx">4</span>
+<span class="p-title"><span class="lc">LC 206</span>Reverse Linked List</span>
+<span class="p-badges"><span class="diff easy">Easy</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Recursion on a linked structure</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Reverse a singly linked list — recursively — and return the new head. <a href="https://leetcode.com/problems/reverse-linked-list/" target="_blank" rel="noopener">LeetCode 206 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Recursive version wanted? (Yes.) Long lists risk stack overflow? (Yes — note the iterative alternative.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Recurse to the end; the last node becomes the new head.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">On the way back, make the next node point back to the current one.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Recurse to the tail (the new head). As each call returns, flip the link so <code>head.next</code> points back at <code>head</code>, and detach <code>head.next</code>. The reversal happens during the unwinding of the stack.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>reverse_list.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import Optional
 
-    for item in data:
-        # 2. Update state while preserving the invariant
-        pass
+class Solution:
+    def reverseList(self, head: Optional[ListNode]) -&gt; Optional[ListNode]:
+        if not head or not head.next:
+            return head                   # base case: empty or single node
+        new_head = self.reverseList(head.next)
+        head.next.next = head             # flip the link on the way back up
+        head.next = None
+        return new_head
+</code></pre>
+</div>
+<p><strong>Time</strong> O(n) · <strong>Space</strong> O(n) stack. Elegant, but a 10⁵-node list would overflow — prefer iteration there (Ch 03).</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-21">
+<summary>
+<span class="p-idx">5</span>
+<span class="p-title"><span class="lc">LC 21</span>Merge Two Sorted Lists</span>
+<span class="p-badges"><span class="diff easy">Easy</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Recursion · pick the smaller head</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Merge two sorted linked lists into one sorted list — recursively. <a href="https://leetcode.com/problems/merge-two-sorted-lists/" target="_blank" rel="noopener">LeetCode 21 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Reuse existing nodes? (Yes.) Recursive form? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">The merged head is the smaller of the two current heads.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">The rest is the merge of the remaining lists — a recursive call.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> At each step the smaller head leads, and its <code>next</code> is the merge of the rest — a clean recursive definition. Base cases return the non-empty list when one runs out. The recursion depth is the total length.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>merge_two.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import Optional
 
-    return answer</code></pre></div><p><strong>Interview check.</strong> Explain correctness with one invariant, name edge cases, and give time plus auxiliary-space complexity. Then implement the official problem from the linked title in your own words.</p></div></details><details class="dsa-prob" data-pid="dsa-11-6"><summary><span class="p-idx">6</span><span class="p-title"><span class="lc">LC 17</span>Letter Combinations of a Phone Number</span><span class="p-badges"><span class="diff medium">Medium</span><span class="badge-canonical">Core practice</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span><span class="p-sub">Mapping Choices · learn the invariant, then code</span></summary><div class="p-body"><p class="wu-clarify"><strong>Goal.</strong> Practice Letter Combinations of a Phone Number using mapping choices. Focus on recognizing the pattern before writing code.</p><div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Write down the input size and the brute-force complexity first.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Ask what information from earlier work would let you avoid repeating it.</div></details></div><p class="wu-approach"><span class="wu-section">Approach</span> Start with the simplest correct idea. Then identify the repeated work and replace it with mapping choices. State what your main variables mean after every iteration or recursive call.</p><div class="wu-solution code-block"><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>pattern_template.py</span><button class="copy-btn">Copy</button></div><pre><code>def solve(data):
-    # 1. Define the state for: mapping choices
-    state = {}
-    answer = None
+class Solution:
+    def mergeTwoLists(self, list1: Optional[ListNode], list2: Optional[ListNode]) -&gt; Optional[ListNode]:
+        if not list1:
+            return list2
+        if not list2:
+            return list1
+        if list1.val &lt;= list2.val:
+            list1.next = self.mergeTwoLists(list1.next, list2)
+            return list1
+        list2.next = self.mergeTwoLists(list1, list2.next)
+        return list2
+</code></pre>
+</div>
+<p><strong>Time</strong> O(n + m) · <strong>Space</strong> O(n + m) stack. A tidy divide-and-conquer flavour; iterative merge avoids the stack cost.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-231">
+<summary>
+<span class="p-idx">6</span>
+<span class="p-title"><span class="lc">LC 231</span>Power of Two</span>
+<span class="p-badges"><span class="diff easy">Easy</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Recursion · halve toward the base case</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Return whether an integer is a power of two. <a href="https://leetcode.com/problems/power-of-two/" target="_blank" rel="noopener">LeetCode 231 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Handle n ≤ 0 (never a power of two)? (Yes.) 1 counts (2⁰)? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">A power of two is 1, or an even number that stays a power of two when halved.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Recurse on n // 2; reject odd numbers > 1 and non-positives.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Recurse toward the base case <code>n == 1</code>: any positive even number is a power of two iff half of it is; an odd number greater than 1 (or a non-positive) is not. A simple linear recursion. (The O(1) bit trick <code>n &amp; (n−1) == 0</code> is worth mentioning.)</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>power_of_two.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>class Solution:
+    def isPowerOfTwo(self, n: int) -&gt; bool:
+        if n == 1:
+            return True
+        if n &lt;= 0 or n % 2 != 0:
+            return False
+        return self.isPowerOfTwo(n // 2)
+</code></pre>
+</div>
+<p><strong>Time</strong> O(log n) · <strong>Space</strong> O(log n) stack. Good practice at spotting the base case and the shrinking recursive step.</p>
+</div>
+</details>
+<div class="dsa-tier"><span class="tdot medium"></span>Tier 2 · Medium — the backtracking templates <span class="cnt">(22)</span></div>
+<details class="dsa-prob" data-pid="lc-78">
+<summary>
+<span class="p-idx">7</span>
+<span class="p-title"><span class="lc">LC 78</span>Subsets</span>
+<span class="p-badges"><span class="diff medium">Medium</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Backtracking · the include/exclude tree</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Return all subsets (the power set) of a list of distinct integers. <a href="https://leetcode.com/problems/subsets/" target="_blank" rel="noopener">LeetCode 78 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Elements distinct? (Yes.) Any order of subsets? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Each element is either in a subset or not — a binary decision tree.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Use a start index so you never reuse earlier elements; record the path at every node.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> The foundational backtracking template. Recurse with a <code>start</code> index; at each node the current path <em>is</em> a valid subset, so record a copy. Then try adding each later element, recurse, and undo. Every node of the decision tree is a subset.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>subsets.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
 
-    for item in data:
-        # 2. Update state while preserving the invariant
-        pass
+class Solution:
+    def subsets(self, nums: List[int]) -&gt; List[List[int]]:
+        res = []
+        def bt(start, path):
+            res.append(path[:])           # every prefix is a valid subset
+            for i in range(start, len(nums)):
+                path.append(nums[i])
+                bt(i + 1, path)
+                path.pop()
+        bt(0, [])
+        return res
+</code></pre>
+</div>
+<p><strong>Time</strong> O(n·2ⁿ) · <strong>Space</strong> O(n) recursion. The choose → recurse → un-choose rhythm here repeats through the whole chapter.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-90">
+<summary>
+<span class="p-idx">8</span>
+<span class="p-title"><span class="lc">LC 90</span>Subsets II</span>
+<span class="p-badges"><span class="diff medium">Medium</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Backtracking · skip duplicate branches</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Return all unique subsets when the input may contain duplicates. <a href="https://leetcode.com/problems/subsets-ii/" target="_blank" rel="noopener">LeetCode 90 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Duplicates in input? (Yes.) Result must be unique? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Sort so equal values are adjacent.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">At the same recursion depth, skip a value equal to the previous one you already tried.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Sort first, then use the subsets template with one guard: at a given depth, if the current value equals the previous one (<code>i &gt; start and nums[i] == nums[i-1]</code>), skip it — that branch was already explored. This prevents duplicate subsets without a set.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>subsets_ii.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
 
-    return answer</code></pre></div><p><strong>Interview check.</strong> Explain correctness with one invariant, name edge cases, and give time plus auxiliary-space complexity. Then implement the official problem from the linked title in your own words.</p></div></details><details class="dsa-prob" data-pid="dsa-11-7"><summary><span class="p-idx">7</span><span class="p-title"><span class="lc">LC 22</span>Generate Parentheses</span><span class="p-badges"><span class="diff medium">Medium</span><span class="badge-canonical">Core practice</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span><span class="p-sub">Valid-Prefix Pruning · learn the invariant, then code</span></summary><div class="p-body"><p class="wu-clarify"><strong>Goal.</strong> Practice Generate Parentheses using valid-prefix pruning. Focus on recognizing the pattern before writing code.</p><div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Write down the input size and the brute-force complexity first.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Ask what information from earlier work would let you avoid repeating it.</div></details></div><p class="wu-approach"><span class="wu-section">Approach</span> Start with the simplest correct idea. Then identify the repeated work and replace it with valid-prefix pruning. State what your main variables mean after every iteration or recursive call.</p><div class="wu-solution code-block"><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>pattern_template.py</span><button class="copy-btn">Copy</button></div><pre><code>def solve(data):
-    # 1. Define the state for: valid-prefix pruning
-    state = {}
-    answer = None
+class Solution:
+    def subsetsWithDup(self, nums: List[int]) -&gt; List[List[int]]:
+        nums.sort()
+        res = []
+        def bt(start, path):
+            res.append(path[:])
+            for i in range(start, len(nums)):
+                if i &gt; start and nums[i] == nums[i - 1]:
+                    continue              # skip duplicate at the same depth
+                path.append(nums[i])
+                bt(i + 1, path)
+                path.pop()
+        bt(0, [])
+        return res
+</code></pre>
+</div>
+<p><strong>Time</strong> O(n·2ⁿ) · <strong>Space</strong> O(n). 'Sort, then skip equal siblings' is the universal duplicate-handling trick in backtracking.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-46">
+<summary>
+<span class="p-idx">9</span>
+<span class="p-title"><span class="lc">LC 46</span>Permutations</span>
+<span class="p-badges"><span class="diff medium">Medium</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Backtracking · a used[] marker</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Return all permutations of a list of distinct integers. <a href="https://leetcode.com/problems/permutations/" target="_blank" rel="noopener">LeetCode 46 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Distinct elements? (Yes.) All orderings? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">A permutation uses every element exactly once, in some order.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Track which indices are used; recurse until the path has all n elements.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Build the permutation position by position. A <code>used</code> array marks which elements are already in the path; at each level try every unused element, recurse, then release it. When the path length reaches <code>n</code>, record it.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>permutations.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
 
-    for item in data:
-        # 2. Update state while preserving the invariant
-        pass
+class Solution:
+    def permute(self, nums: List[int]) -&gt; List[List[int]]:
+        res = []
+        used = [False] * len(nums)
+        def bt(path):
+            if len(path) == len(nums):
+                res.append(path[:]); return
+            for i in range(len(nums)):
+                if used[i]:
+                    continue
+                used[i] = True
+                path.append(nums[i])
+                bt(path)
+                path.pop()
+                used[i] = False
+        bt([])
+        return res
+</code></pre>
+</div>
+<p><strong>Time</strong> O(n·n!) · <strong>Space</strong> O(n). The <code>used</code> marker (vs a start index) is what distinguishes permutations from combinations.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-47">
+<summary>
+<span class="p-idx">10</span>
+<span class="p-title"><span class="lc">LC 47</span>Permutations II</span>
+<span class="p-badges"><span class="diff medium">Medium</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Backtracking · dedup with used[]</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Return all unique permutations when the input may contain duplicates. <a href="https://leetcode.com/problems/permutations-ii/" target="_blank" rel="noopener">LeetCode 47 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Duplicates present? (Yes.) Unique permutations only? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Sort so equal values are adjacent.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Skip a duplicate value unless its identical predecessor is already used in this path.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Sort, then permute with a duplicate guard: skip <code>nums[i]</code> if it equals <code>nums[i-1]</code> and that predecessor is <em>not</em> currently used — meaning we're at the same tree level and would repeat a branch. This canonicalises the order duplicates are placed.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>permutations_ii.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
 
-    return answer</code></pre></div><p><strong>Interview check.</strong> Explain correctness with one invariant, name edge cases, and give time plus auxiliary-space complexity. Then implement the official problem from the linked title in your own words.</p></div></details><details class="dsa-prob" data-pid="dsa-11-8"><summary><span class="p-idx">8</span><span class="p-title"><span class="lc">LC 79</span>Word Search</span><span class="p-badges"><span class="diff medium">Medium</span><span class="badge-canonical">Core practice</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span><span class="p-sub">Grid Backtracking · learn the invariant, then code</span></summary><div class="p-body"><p class="wu-clarify"><strong>Goal.</strong> Practice Word Search using grid backtracking. Focus on recognizing the pattern before writing code.</p><div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Write down the input size and the brute-force complexity first.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Ask what information from earlier work would let you avoid repeating it.</div></details></div><p class="wu-approach"><span class="wu-section">Approach</span> Start with the simplest correct idea. Then identify the repeated work and replace it with grid backtracking. State what your main variables mean after every iteration or recursive call.</p><div class="wu-solution code-block"><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>pattern_template.py</span><button class="copy-btn">Copy</button></div><pre><code>def solve(data):
-    # 1. Define the state for: grid backtracking
-    state = {}
-    answer = None
+class Solution:
+    def permuteUnique(self, nums: List[int]) -&gt; List[List[int]]:
+        nums.sort()
+        res = []
+        used = [False] * len(nums)
+        def bt(path):
+            if len(path) == len(nums):
+                res.append(path[:]); return
+            for i in range(len(nums)):
+                if used[i] or (i &gt; 0 and nums[i] == nums[i - 1] and not used[i - 1]):
+                    continue              # skip duplicate branches
+                used[i] = True
+                path.append(nums[i])
+                bt(path)
+                path.pop()
+                used[i] = False
+        bt([])
+        return res
+</code></pre>
+</div>
+<p><strong>Time</strong> O(n·n!) · <strong>Space</strong> O(n). The <code>not used[i-1]</code> condition is subtle — draw two duplicates to see why it dedups.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-77">
+<summary>
+<span class="p-idx">11</span>
+<span class="p-title"><span class="lc">LC 77</span>Combinations</span>
+<span class="p-badges"><span class="diff medium">Medium</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Backtracking · fixed-size, start index</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Return all combinations of <code>k</code> numbers chosen from 1..<code>n</code>. <a href="https://leetcode.com/problems/combinations/" target="_blank" rel="noopener">LeetCode 77 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Order within a combination irrelevant? (Yes.) Choose exactly k? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Use a start index so combinations are built in increasing order (no reorderings).</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Stop and record when the path reaches size k.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> The combinations template: recurse with a start index, appending each candidate and moving the start forward so you never pick a smaller number later (which would create a reordering). Record the path when it has <code>k</code> elements.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>combinations.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
 
-    for item in data:
-        # 2. Update state while preserving the invariant
-        pass
+class Solution:
+    def combine(self, n: int, k: int) -&gt; List[List[int]]:
+        res = []
+        def bt(start, path):
+            if len(path) == k:
+                res.append(path[:]); return
+            for i in range(start, n + 1):
+                path.append(i)
+                bt(i + 1, path)
+                path.pop()
+        bt(1, [])
+        return res
+</code></pre>
+</div>
+<p><strong>Time</strong> O(k·C(n,k)) · <strong>Space</strong> O(k). The start index is what turns 'permutations' into 'combinations'.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-39">
+<summary>
+<span class="p-idx">12</span>
+<span class="p-title"><span class="lc">LC 39</span>Combination Sum</span>
+<span class="p-badges"><span class="diff medium">Medium</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Backtracking · reuse allowed, prune</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Return all unique combinations of candidates (each reusable unlimited times) that sum to <code>target</code>. <a href="https://leetcode.com/problems/combination-sum/" target="_blank" rel="noopener">LeetCode 39 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Reuse the same number multiple times? (Yes.) Candidates distinct? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Recurse on the remaining target; sort to allow early pruning.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Since reuse is allowed, recurse with the same index i (not i+1).</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Backtrack on the remaining target. Sort candidates so you can <code>break</code> once one exceeds the remainder. Crucially, recurse with the <em>same</em> index <code>i</code> because each number may be reused; a combination completes when the remainder hits 0.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>combination_sum.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
 
-    return answer</code></pre></div><p><strong>Interview check.</strong> Explain correctness with one invariant, name edge cases, and give time plus auxiliary-space complexity. Then implement the official problem from the linked title in your own words.</p></div></details><details class="dsa-prob" data-pid="dsa-11-9"><summary><span class="p-idx">9</span><span class="p-title"><span class="lc">LC 51</span>N-Queens</span><span class="p-badges"><span class="diff hard">Hard</span><span class="badge-canonical">Core practice</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span><span class="p-sub">Column/Diagonal Sets · learn the invariant, then code</span></summary><div class="p-body"><p class="wu-clarify"><strong>Goal.</strong> Practice N-Queens using column/diagonal sets. Focus on recognizing the pattern before writing code.</p><div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Write down the input size and the brute-force complexity first.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Ask what information from earlier work would let you avoid repeating it.</div></details></div><p class="wu-approach"><span class="wu-section">Approach</span> Start with the simplest correct idea. Then identify the repeated work and replace it with column/diagonal sets. State what your main variables mean after every iteration or recursive call.</p><div class="wu-solution code-block"><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>pattern_template.py</span><button class="copy-btn">Copy</button></div><pre><code>def solve(data):
-    # 1. Define the state for: column/diagonal sets
-    state = {}
-    answer = None
+class Solution:
+    def combinationSum(self, candidates: List[int], target: int) -&gt; List[List[int]]:
+        candidates.sort()
+        res = []
+        def bt(start, path, remaining):
+            if remaining == 0:
+                res.append(path[:]); return
+            for i in range(start, len(candidates)):
+                if candidates[i] &gt; remaining:
+                    break
+                path.append(candidates[i])
+                bt(i, path, remaining - candidates[i])   # reuse allowed -&gt; i, not i+1
+                path.pop()
+        bt(0, [], target)
+        return res
+</code></pre>
+</div>
+<p><strong>Time</strong> exponential (bounded by the target) · <strong>Space</strong> O(target). Recursing on <code>i</code> vs <code>i+1</code> is the single line that allows/forbids reuse.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-40">
+<summary>
+<span class="p-idx">13</span>
+<span class="p-title"><span class="lc">LC 40</span>Combination Sum II</span>
+<span class="p-badges"><span class="diff medium">Medium</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Backtracking · each used once, dedup</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Return unique combinations summing to <code>target</code> where each candidate is used at most once and the input may have duplicates. <a href="https://leetcode.com/problems/combination-sum-ii/" target="_blank" rel="noopener">LeetCode 40 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Each number used once? (Yes.) Duplicates in input? (Yes.) Unique combinations? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Sort; recurse with i+1 so each element is used once.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Skip a duplicate value at the same depth (i > start and equal to previous).</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Combine the two guards you've learned: recurse with <code>i+1</code> (each element used once) and skip duplicate siblings (<code>i &gt; start and equal</code>) so no combination repeats. Sorting enables both the skip and the early <code>break</code> when a value exceeds the remainder.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>combination_sum_ii.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
 
-    for item in data:
-        # 2. Update state while preserving the invariant
-        pass
+class Solution:
+    def combinationSum2(self, candidates: List[int], target: int) -&gt; List[List[int]]:
+        candidates.sort()
+        res = []
+        def bt(start, path, remaining):
+            if remaining == 0:
+                res.append(path[:]); return
+            for i in range(start, len(candidates)):
+                if i &gt; start and candidates[i] == candidates[i - 1]:
+                    continue
+                if candidates[i] &gt; remaining:
+                    break
+                path.append(candidates[i])
+                bt(i + 1, path, remaining - candidates[i])   # each used once -&gt; i+1
+                path.pop()
+        bt(0, [], target)
+        return res
+</code></pre>
+</div>
+<p><strong>Time</strong> O(2ⁿ) worst · <strong>Space</strong> O(n). It's Combination Sum with 'use once' + the sort-and-skip dedup — two familiar pieces combined.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-216">
+<summary>
+<span class="p-idx">14</span>
+<span class="p-title"><span class="lc">LC 216</span>Combination Sum III</span>
+<span class="p-badges"><span class="diff medium">Medium</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Backtracking · size and sum constraints</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Find all combinations of <code>k</code> distinct digits (1–9) that sum to <code>n</code>. <a href="https://leetcode.com/problems/combination-sum-iii/" target="_blank" rel="noopener">LeetCode 216 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Digits 1–9, each once? (Yes.) Exactly k of them summing to n? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Two constraints at once: exactly k numbers AND sum n.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Recurse with a start index over 1..9; prune when a digit exceeds the remainder.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Backtrack over digits 1–9 with a start index (each used once). The base case checks <em>both</em> constraints: path length <code>k</code> and remaining sum 0. Break early when the current digit exceeds the remaining target.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>combination_sum_iii.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
 
-    return answer</code></pre></div><p><strong>Interview check.</strong> Explain correctness with one invariant, name edge cases, and give time plus auxiliary-space complexity. Then implement the official problem from the linked title in your own words.</p></div></details><details class="dsa-prob" data-pid="dsa-11-10"><summary><span class="p-idx">10</span><span class="p-title"><span class="lc">LC 131</span>Palindrome Partitioning</span><span class="p-badges"><span class="diff medium">Medium</span><span class="badge-canonical">Core practice</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span><span class="p-sub">Partition Choices · learn the invariant, then code</span></summary><div class="p-body"><p class="wu-clarify"><strong>Goal.</strong> Practice Palindrome Partitioning using partition choices. Focus on recognizing the pattern before writing code.</p><div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Write down the input size and the brute-force complexity first.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Ask what information from earlier work would let you avoid repeating it.</div></details></div><p class="wu-approach"><span class="wu-section">Approach</span> Start with the simplest correct idea. Then identify the repeated work and replace it with partition choices. State what your main variables mean after every iteration or recursive call.</p><div class="wu-solution code-block"><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>pattern_template.py</span><button class="copy-btn">Copy</button></div><pre><code>def solve(data):
-    # 1. Define the state for: partition choices
-    state = {}
-    answer = None
+class Solution:
+    def combinationSum3(self, k: int, n: int) -&gt; List[List[int]]:
+        res = []
+        def bt(start, path, remaining):
+            if len(path) == k:
+                if remaining == 0:
+                    res.append(path[:])
+                return
+            for i in range(start, 10):
+                if i &gt; remaining:
+                    break
+                path.append(i)
+                bt(i + 1, path, remaining - i)
+                path.pop()
+        bt(1, [], n)
+        return res
+</code></pre>
+</div>
+<p><strong>Time</strong> O(C(9,k)) · <strong>Space</strong> O(k). Handling two simultaneous constraints in the base case is the new wrinkle.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-17">
+<summary>
+<span class="p-idx">15</span>
+<span class="p-title"><span class="lc">LC 17</span>Letter Combinations of a Phone Number</span>
+<span class="p-badges"><span class="diff medium">Medium</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Backtracking · one digit per level</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Given phone digits 2–9, return all letter combinations they could spell. <a href="https://leetcode.com/problems/letter-combinations-of-a-phone-number/" target="_blank" rel="noopener">LeetCode 17 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Standard phone keypad mapping? (Yes.) Empty input → empty list? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Each digit contributes one letter to each combination — a level per digit.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Recurse over the letters of the current digit, appending and undoing.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> A per-position backtrack: at level <code>i</code>, try each letter mapped to <code>digits[i]</code>, append it, recurse to the next digit, then undo. When the path length equals the number of digits, record the string. The decision tree has one level per digit.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>letter_combinations.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
 
-    for item in data:
-        # 2. Update state while preserving the invariant
-        pass
+class Solution:
+    def letterCombinations(self, digits: str) -&gt; List[str]:
+        if not digits:
+            return []
+        mapping = {"2":"abc","3":"def","4":"ghi","5":"jkl",
+                   "6":"mno","7":"pqrs","8":"tuv","9":"wxyz"}
+        res = []
+        def bt(i, path):
+            if i == len(digits):
+                res.append("".join(path)); return
+            for ch in mapping[digits[i]]:
+                path.append(ch)
+                bt(i + 1, path)
+                path.pop()
+        bt(0, [])
+        return res
+</code></pre>
+</div>
+<p><strong>Time</strong> O(4ⁿ) · <strong>Space</strong> O(n). The cleanest 'Cartesian product via backtracking' example.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-22">
+<summary>
+<span class="p-idx">16</span>
+<span class="p-title"><span class="lc">LC 22</span>Generate Parentheses</span>
+<span class="p-badges"><span class="diff medium">Medium</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Backtracking · prune by validity</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Generate all combinations of <code>n</code> pairs of well-formed parentheses. <a href="https://leetcode.com/problems/generate-parentheses/" target="_blank" rel="noopener">LeetCode 22 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Only valid (balanced) strings? (Yes.) Exactly n pairs? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Build the string left to right, tracking counts of '(' and ')' used.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">You may add '(' while under n, and ')' only while it wouldn't exceed the opens.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Backtrack character by character with two counters. Add '(' whenever fewer than <code>n</code> are open; add ')' only when there's an unmatched '(' to close (<code>closed &lt; opened</code>). These two rules prune every invalid branch, so you only ever build well-formed strings.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>generate_parens.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
 
-    return answer</code></pre></div><p><strong>Interview check.</strong> Explain correctness with one invariant, name edge cases, and give time plus auxiliary-space complexity. Then implement the official problem from the linked title in your own words.</p></div></details></div><h2 id="playbook">4 · Interview playbook</h2><ul><li>Say the brute-force complexity before optimizing.</li><li>Name the exact invariant your loop or recursion preserves.</li><li>Test empty input, one item, duplicates, boundaries, and the smallest valid case.</li><li>Use descriptive names. A clear solution is better than a compressed trick.</li><li>After coding, re-check mutation, auxiliary space, and worst-case behavior.</li></ul><h2 id="role-notes">5 · Role notes</h2><div class="grid grid-2"><div class="card"><h4>SDE / Python backend</h4><p>Be ready to implement the pattern cleanly and discuss production-friendly alternatives from the standard library.</p></div><div class="card"><h4>Data Science / ML / AI / GenAI</h4><p>This chapter is useful across roles because it trains clear state management and complexity reasoning.</p></div></div><h2 id="review">6 · Review</h2><div class="dsa-cheat"><strong>Cheat sheet</strong><ul><li><strong>Choose/Explore/Unchoose:</strong> recognize the signal, define the state, and state the invariant.</li><li><strong>Subsets:</strong> recognize the signal, define the state, and state the invariant.</li><li><strong>Permutations:</strong> recognize the signal, define the state, and state the invariant.</li><li><strong>Combination Search:</strong> recognize the signal, define the state, and state the invariant.</li><li><strong>Constraint Pruning:</strong> recognize the signal, define the state, and state the invariant.</li></ul></div><h3 id="mastery">Mastery checklist</h3><ul class="dsa-check"><li><input type="checkbox" data-check="recursion-backtracking-recognize"> I can recognize the main patterns without looking at the solution.</li><li><input type="checkbox" data-check="recursion-backtracking-invariant"> I can explain one invariant for each pattern.</li><li><input type="checkbox" data-check="recursion-backtracking-complexity"> I can state time and auxiliary space accurately.</li><li><input type="checkbox" data-check="recursion-backtracking-practice"> I solved at least six practice items from scratch.</li></ul><div class="page-nav"><a class="prev" href="10-binary-search.html"><div class="dir">← Previous</div><div class="ttl">Previous chapter</div></a><a class="next" href="12-trees-bst.html"><div class="dir">Next →</div><div class="ttl">Next chapter</div></a></div></main><div class="toc-rail"><nav class="toc"></nav></div></div></div></div><script src="../assets/app.js"></script><script src="../assets/sitenav.js"></script><script src="../assets/enhance.js"></script><script src="../assets/dsa-question-bank.js"></script><script src="../assets/dsa-prep.js"></script></body></html>
+class Solution:
+    def generateParenthesis(self, n: int) -&gt; List[str]:
+        res = []
+        def bt(path, opened, closed):
+            if len(path) == 2 * n:
+                res.append("".join(path)); return
+            if opened &lt; n:                # can still open
+                path.append("("); bt(path, opened + 1, closed); path.pop()
+            if closed &lt; opened:           # can close only what's open
+                path.append(")"); bt(path, opened, closed + 1); path.pop()
+        bt([], 0, 0)
+        return res
+</code></pre>
+</div>
+<p><strong>Time</strong> O(4ⁿ/√n) (Catalan) · <strong>Space</strong> O(n). Pruning by a validity invariant — not generate-then-filter — is the lesson.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-784">
+<summary>
+<span class="p-idx">17</span>
+<span class="p-title"><span class="lc">LC 784</span>Letter Case Permutation</span>
+<span class="p-badges"><span class="diff medium">Medium</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Backtracking · branch on letters only</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Return every string formable by toggling the case of each letter (digits stay fixed). <a href="https://leetcode.com/problems/letter-case-permutation/" target="_blank" rel="noopener">LeetCode 784 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Digits unchanged? (Yes.) Branch on letters both ways? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">At each position, a digit has one choice; a letter has two (lower/upper).</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Recurse position by position.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Backtrack over positions. A digit is appended as-is (one branch); a letter branches twice, once lowercase and once uppercase. Each root-to-leaf path is one result. A focused variant of the include/exclude tree.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>letter_case.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
+
+class Solution:
+    def letterCasePermutation(self, s: str) -&gt; List[str]:
+        res = []
+        def bt(i, path):
+            if i == len(s):
+                res.append("".join(path)); return
+            ch = s[i]
+            if ch.isalpha():
+                path.append(ch.lower()); bt(i + 1, path); path.pop()
+                path.append(ch.upper()); bt(i + 1, path); path.pop()
+            else:
+                path.append(ch); bt(i + 1, path); path.pop()
+        bt(0, [])
+        return res
+</code></pre>
+</div>
+<p><strong>Time</strong> O(2ᴸ · n) · <strong>Space</strong> O(n). Branching factor varies by character — a nice twist on the standard template.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-79">
+<summary>
+<span class="p-idx">18</span>
+<span class="p-title"><span class="lc">LC 79</span>Word Search</span>
+<span class="p-badges"><span class="diff medium">Medium</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Grid backtracking · mark and restore</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Return whether a word can be formed from adjacent (up/down/left/right) cells, using each cell at most once. <a href="https://leetcode.com/problems/word-search/" target="_blank" rel="noopener">LeetCode 79 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Cells reused within a word? (No.) Only 4-directional moves? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">DFS from each cell that matches the first letter.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Mark a cell visited before recursing, and restore it afterward.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Backtracking on a grid. From each starting cell, match the word letter by letter, exploring the four neighbours. Temporarily overwrite the current cell (mark visited) so the same cell isn't reused, then restore it as the recursion unwinds. Succeed when the whole word is matched.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>word_search.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
+
+class Solution:
+    def exist(self, board: List[List[str]], word: str) -&gt; bool:
+        rows, cols = len(board), len(board[0])
+        def bt(r, c, i):
+            if i == len(word):
+                return True
+            if r &lt; 0 or r &gt;= rows or c &lt; 0 or c &gt;= cols or board[r][c] != word[i]:
+                return False
+            tmp = board[r][c]
+            board[r][c] = "#"             # mark visited
+            found = (bt(r + 1, c, i + 1) or bt(r - 1, c, i + 1)
+                     or bt(r, c + 1, i + 1) or bt(r, c - 1, i + 1))
+            board[r][c] = tmp             # restore on the way back
+            return found
+        for r in range(rows):
+            for c in range(cols):
+                if bt(r, c, 0):
+                    return True
+        return False
+</code></pre>
+</div>
+<p><strong>Time</strong> O(rows·cols·4ᴸ) · <strong>Space</strong> O(L) stack. Mark-recurse-restore is the grid analogue of choose-recurse-unchoose.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-131">
+<summary>
+<span class="p-idx">19</span>
+<span class="p-title"><span class="lc">LC 131</span>Palindrome Partitioning</span>
+<span class="p-badges"><span class="diff medium">Medium</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Backtracking · partition points</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Return all ways to split the string so every piece is a palindrome. <a href="https://leetcode.com/problems/palindrome-partitioning/" target="_blank" rel="noopener">LeetCode 131 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Every substring in a partition must be a palindrome? (Yes.) All partitions? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">At each position, try every prefix that is a palindrome as the next piece.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Recurse on the remainder from where that piece ends.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Backtrack over cut points. From the current start, try each prefix; if it's a palindrome, add it and recurse from its end. When the start reaches the end of the string, the accumulated pieces form one valid partition. Only palindromic prefixes branch, pruning the rest.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>palindrome_partition.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
+
+class Solution:
+    def partition(self, s: str) -&gt; List[List[str]]:
+        res = []
+        def bt(start, path):
+            if start == len(s):
+                res.append(path[:]); return
+            for end in range(start + 1, len(s) + 1):
+                piece = s[start:end]
+                if piece == piece[::-1]:      # only recurse on palindromic prefixes
+                    path.append(piece)
+                    bt(end, path)
+                    path.pop()
+        bt(0, [])
+        return res
+</code></pre>
+</div>
+<p><strong>Time</strong> O(n·2ⁿ) · <strong>Space</strong> O(n). Choosing 'where to cut next' is the partition-style backtracking pattern (see Restore IP Addresses).</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-93">
+<summary>
+<span class="p-idx">20</span>
+<span class="p-title"><span class="lc">LC 93</span>Restore IP Addresses</span>
+<span class="p-badges"><span class="diff medium">Medium</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Backtracking · segments with validity</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Return all valid IP addresses formable by inserting dots into a digit string. <a href="https://leetcode.com/problems/restore-ip-addresses/" target="_blank" rel="noopener">LeetCode 93 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Exactly four parts, each 0–255, no leading zeros? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Each of the 4 parts takes 1–3 digits; validate as you go.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Prune segments with a leading zero (unless '0') or value > 255.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Partition the string into four segments by backtracking. At each step try segment lengths 1–3, rejecting invalid ones (leading zero, or > 255). When four valid parts exactly consume the string, join them with dots. The four-part cap and validity checks prune aggressively.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>restore_ip.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
+
+class Solution:
+    def restoreIpAddresses(self, s: str) -&gt; List[str]:
+        res = []
+        def bt(start, parts):
+            if len(parts) == 4:
+                if start == len(s):
+                    res.append(".".join(parts))
+                return
+            for length in range(1, 4):
+                if start + length &gt; len(s):
+                    break
+                seg = s[start:start + length]
+                if (seg[0] == "0" and len(seg) &gt; 1) or int(seg) &gt; 255:
+                    continue              # no leading zeros, 0..255
+                parts.append(seg)
+                bt(start + length, parts)
+                parts.pop()
+        bt(0, [])
+        return res
+</code></pre>
+</div>
+<p><strong>Time</strong> O(1) (bounded by 3⁴ splits) · <strong>Space</strong> O(1). Same 'partition into pieces' shape as palindrome partitioning, with per-piece validity.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-50">
+<summary>
+<span class="p-idx">21</span>
+<span class="p-title"><span class="lc">LC 50</span>Pow(x, n)</span>
+<span class="p-badges"><span class="diff medium">Medium</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Divide and conquer · fast exponentiation</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Compute <code>x</code> raised to the integer power <code>n</code> in O(log n). <a href="https://leetcode.com/problems/powx-n/" target="_blank" rel="noopener">LeetCode 50 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> n can be negative? (Yes — invert x.) O(log n) required (not n multiplications)? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">x^n = (x^(n/2))² — halve the exponent each step.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Multiply by an extra x when the exponent is odd; handle negative n by inverting x.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Fast exponentiation by squaring: compute <code>x^(n//2)</code> once, square it, and multiply by an extra <code>x</code> if <code>n</code> is odd. Halving the exponent each recursive call gives O(log n) instead of O(n). Negative exponents invert the base first.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>pow.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>class Solution:
+    def myPow(self, x: float, n: int) -&gt; float:
+        if n &lt; 0:
+            x, n = 1 / x, -n
+        def fast(base, exp):
+            if exp == 0:
+                return 1.0
+            half = fast(base, exp // 2)
+            return half * half * (base if exp % 2 else 1)
+        return fast(x, n)
+</code></pre>
+</div>
+<p><strong>Time</strong> O(log n) · <strong>Space</strong> O(log n) stack. Divide-and-conquer recursion where each call solves <em>half</em> the problem, not one-less.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-241">
+<summary>
+<span class="p-idx">22</span>
+<span class="p-title"><span class="lc">LC 241</span>Different Ways to Add Parentheses</span>
+<span class="p-badges"><span class="diff medium">Medium</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Divide and conquer at each operator</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Given an arithmetic expression, return all results from every way of parenthesising it. <a href="https://leetcode.com/problems/different-ways-to-add-parentheses/" target="_blank" rel="noopener">LeetCode 241 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Only + − * and non-negative integers? (Yes.) Return all possible values? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Split the expression at each operator into left and right subexpressions.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Recursively compute all values of each side, then combine every pair.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Divide and conquer on operators. For each operator, recursively compute all values of the left and right subexpressions, then combine every left value with every right value under that operator. A base case (a pure number) returns a single value. Memoise on the substring to reuse overlapping subexpressions.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>diff_ways.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
+
+class Solution:
+    def diffWaysToCompute(self, expression: str) -&gt; List[int]:
+        memo = {}
+        def compute(expr):
+            if expr.isdigit():
+                return [int(expr)]
+            if expr in memo:
+                return memo[expr]
+            res = []
+            for i, ch in enumerate(expr):
+                if ch in "+-*":
+                    left = compute(expr[:i])
+                    right = compute(expr[i + 1:])
+                    for a in left:
+                        for b in right:
+                            res.append(a + b if ch == "+" else a - b if ch == "-" else a * b)
+            memo[expr] = res
+            return res
+        return compute(expression)
+</code></pre>
+</div>
+<p><strong>Time</strong> ~Catalan · <strong>Space</strong> O(result). Recursion that returns a <em>list</em> of possibilities per subproblem — a powerful generalisation.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-60">
+<summary>
+<span class="p-idx">23</span>
+<span class="p-title"><span class="lc">LC 60</span>Permutation Sequence</span>
+<span class="p-badges"><span class="diff medium">Medium</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Factorial number system (not brute force)</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Return the <code>k</code>-th permutation (1-indexed) of the numbers 1..<code>n</code>. <a href="https://leetcode.com/problems/permutation-sequence/" target="_blank" rel="noopener">LeetCode 60 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> 1-indexed k? (Yes.) n up to ~9? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Don't generate all permutations. The first digit is determined by k // (n−1)!.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Peel off one digit at a time, updating k with the remainder.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Use the factorial number system instead of enumerating. There are <code>(n−1)!</code> permutations for each choice of first element, so <code>k // (n−1)!</code> selects it; take the remainder and repeat for the next position, removing each chosen digit. Directly constructs the k-th permutation in O(n²).</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>permutation_sequence.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>import math
+
+class Solution:
+    def getPermutation(self, n: int, k: int) -&gt; str:
+        nums = list(range(1, n + 1))
+        k -= 1                            # 0-indexed
+        res = []
+        for i in range(n, 0, -1):
+            f = math.factorial(i - 1)
+            idx = k // f                  # which number leads this block
+            res.append(str(nums.pop(idx)))
+            k %= f
+        return "".join(res)
+</code></pre>
+</div>
+<p><strong>Time</strong> O(n²) · <strong>Space</strong> O(n). A reminder that sometimes the smart move is to <em>skip</em> the backtracking and compute the answer arithmetically.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-526">
+<summary>
+<span class="p-idx">24</span>
+<span class="p-title"><span class="lc">LC 526</span>Beautiful Arrangement</span>
+<span class="p-badges"><span class="diff medium">Medium</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Backtracking with a divisibility rule</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Count permutations of 1..<code>n</code> where each value at position <code>i</code> divides <code>i</code> or vice versa. <a href="https://leetcode.com/problems/beautiful-arrangement/" target="_blank" rel="noopener">LeetCode 526 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Position and value are both 1..n? (Yes.) Count arrangements (not list)? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Fill positions 1..n; only place a number that satisfies the divisibility rule.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Backtrack, counting completed arrangements.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Backtrack position by position. At position <code>pos</code>, try each unused number that satisfies <code>num % pos == 0 or pos % num == 0</code>; recurse and undo. Reaching past position <code>n</code> counts one valid arrangement. The divisibility constraint prunes most branches early.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>beautiful_arrangement.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>class Solution:
+    def countArrangement(self, n: int) -&gt; int:
+        used = [False] * (n + 1)
+        def bt(pos):
+            if pos &gt; n:
+                return 1
+            count = 0
+            for num in range(1, n + 1):
+                if not used[num] and (num % pos == 0 or pos % num == 0):
+                    used[num] = True
+                    count += bt(pos + 1)
+                    used[num] = False
+            return count
+        return bt(1)
+</code></pre>
+</div>
+<p><strong>Time</strong> O(k) over valid arrangements · <strong>Space</strong> O(n). Constraint-guided placement is the same skeleton as N-Queens, just a different rule.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-698">
+<summary>
+<span class="p-idx">25</span>
+<span class="p-title"><span class="lc">LC 698</span>Partition to K Equal Sum Subsets</span>
+<span class="p-badges"><span class="diff medium">Medium</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Backtracking · fill buckets with pruning</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Return whether the array can be split into <code>k</code> subsets of equal sum. <a href="https://leetcode.com/problems/partition-to-k-equal-sum-subsets/" target="_blank" rel="noopener">LeetCode 698 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Each element used once? (Yes.) k subsets with the same total? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Target = total / k; fail fast if it doesn't divide or the max exceeds it.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Fill one bucket to target, then recurse on the next; prune when the first element of a bucket fails.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Backtrack by filling buckets one at a time to <code>target = total/k</code>. When a bucket reaches the target, recurse to fill the next. Sort descending and prune hard: skip used or overflowing elements, and if the <em>first</em> element placed in a bucket can't lead to a solution, the whole branch is hopeless — <code>break</code>.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>k_equal_subsets.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
+
+class Solution:
+    def canPartitionKSubsets(self, nums: List[int], k: int) -&gt; bool:
+        total = sum(nums)
+        if total % k != 0:
+            return False
+        target = total // k
+        nums.sort(reverse=True)
+        if nums[0] &gt; target:
+            return False
+        used = [False] * len(nums)
+        def bt(count, cur, start):
+            if count == k:
+                return True
+            if cur == target:
+                return bt(count + 1, 0, 0)     # bucket full, start the next
+            for i in range(start, len(nums)):
+                if used[i] or cur + nums[i] &gt; target:
+                    continue
+                used[i] = True
+                if bt(count, cur + nums[i], i + 1):
+                    return True
+                used[i] = False
+                if cur == 0:              # prune: first element of a bucket failing is fatal
+                    break
+            return False
+        return bt(0, 0, 0)
+</code></pre>
+</div>
+<p><strong>Time</strong> O(k·2ⁿ) worst · <strong>Space</strong> O(n). The descending sort and the 'first-element' prune are what make it pass — pruning is a first-class part of backtracking.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-967">
+<summary>
+<span class="p-idx">26</span>
+<span class="p-title"><span class="lc">LC 967</span>Numbers With Same Consecutive Differences</span>
+<span class="p-badges"><span class="diff medium">Medium</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Backtracking · build digit by digit</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Return all <code>n</code>-digit numbers where adjacent digits differ by exactly <code>k</code>. <a href="https://leetcode.com/problems/numbers-with-same-consecutive-differences/" target="_blank" rel="noopener">LeetCode 967 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> No leading zeros? (Yes — start 1–9.) k can be 0? (Yes — dedup the two branches.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Grow the number one digit at a time from each valid first digit.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">The next digit is last ± k, kept within 0–9.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Backtrack building the number digit by digit. From each first digit 1–9, extend by appending <code>last + k</code> or <code>last − k</code> when in range (a set dedups them when <code>k == 0</code>). Record the number once it reaches <code>n</code> digits.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>consec_diff.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
+
+class Solution:
+    def numsSameConsecDiff(self, n: int, k: int) -&gt; List[int]:
+        res = []
+        def bt(num, length):
+            if length == n:
+                res.append(num); return
+            last = num % 10
+            for nxt in {last + k, last - k}:      # set dedups when k == 0
+                if 0 &lt;= nxt &lt;= 9:
+                    bt(num * 10 + nxt, length + 1)
+        for first in range(1, 10):
+            bt(first, 1)
+        return res
+</code></pre>
+</div>
+<p><strong>Time</strong> O(2ⁿ) · <strong>Space</strong> O(n). Building a number as a growing integer (rather than a string) keeps it clean.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-494">
+<summary>
+<span class="p-idx">27</span>
+<span class="p-title"><span class="lc">LC 494</span>Target Sum</span>
+<span class="p-badges"><span class="diff medium">Medium</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Recursion + memoization</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Count the ways to assign + or − to each number so the expression equals <code>target</code>. <a href="https://leetcode.com/problems/target-sum/" target="_blank" rel="noopener">LeetCode 494 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Every number gets a sign? (Yes.) Count assignments (not list)? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">At each number, branch on + and −.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Memoize on (index, running total) — many branches revisit the same state.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Recurse over the numbers, branching on adding or subtracting each. The base case checks whether the running total equals the target. Because different sign choices reach the same <code>(index, total)</code> state, memoise on that pair to collapse the exponential tree — the recursion-to-DP transition.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>target_sum.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
+
+class Solution:
+    def findTargetSumWays(self, nums: List[int], target: int) -&gt; int:
+        memo = {}
+        def bt(i, total):
+            if i == len(nums):
+                return 1 if total == target else 0
+            if (i, total) not in memo:
+                memo[(i, total)] = bt(i + 1, total + nums[i]) + bt(i + 1, total - nums[i])
+            return memo[(i, total)]
+        return bt(0, 0)
+</code></pre>
+</div>
+<p><strong>Time</strong> O(n·sum) with memo · <strong>Space</strong> O(n·sum). A perfect illustration of memoisation turning O(2ⁿ) branching into polynomial time.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-386">
+<summary>
+<span class="p-idx">28</span>
+<span class="p-title"><span class="lc">LC 386</span>Lexicographical Numbers</span>
+<span class="p-badges"><span class="diff medium">Medium</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">DFS over a 10-ary number tree</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Return 1..<code>n</code> in lexicographical (dictionary) order, ideally in O(n). <a href="https://leetcode.com/problems/lexicographical-numbers/" target="_blank" rel="noopener">LeetCode 386 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Dictionary order (1,10,11,...,2,...)? (Yes.) O(n) time, O(1) extra? (Target.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Think of numbers as nodes in a 10-ary tree: children of x are 10x..10x+9.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">A pre-order DFS visits them in lexicographical order.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Model the numbers as a tree where each node <code>x</code> has children <code>10x, 10x+1, …, 10x+9</code>. A pre-order DFS starting from 1..9 visits them in exactly lexicographical order — appending each node before descending, pruning children that exceed <code>n</code>.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lexical_order.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
+
+class Solution:
+    def lexicalOrder(self, n: int) -&gt; List[int]:
+        res = []
+        def dfs(cur):
+            if cur &gt; n:
+                return
+            res.append(cur)
+            for d in range(10):
+                nxt = cur * 10 + d
+                if nxt &gt; n:
+                    break
+                dfs(nxt)
+        for start in range(1, 10):
+            if start &gt; n:
+                break
+            dfs(start)
+        return res
+</code></pre>
+</div>
+<p><strong>Time</strong> O(n) · <strong>Space</strong> O(log n) depth. Seeing numbers as a traversable tree is the insight — recursion follows naturally.</p>
+</div>
+</details>
+<div class="dsa-tier"><span class="tdot hard"></span>Tier 3 · Hard — constraint solvers <span class="cnt">(6)</span></div>
+<details class="dsa-prob" data-pid="lc-51">
+<summary>
+<span class="p-idx">29</span>
+<span class="p-title"><span class="lc">LC 51</span>N-Queens</span>
+<span class="p-badges"><span class="diff hard">Hard</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Backtracking · place a queen per row</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Place <code>n</code> queens on an n×n board so none attack each other; return all distinct board layouts. <a href="https://leetcode.com/problems/n-queens/" target="_blank" rel="noopener">LeetCode 51 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Return all solutions as boards? (Yes.) One queen per row by construction? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Place one queen per row; track attacked columns and both diagonals in sets.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">A cell is safe if its column, r−c diagonal, and r+c diagonal are all free.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Backtrack row by row. Three sets track occupied columns and the two diagonal families (<code>r−c</code> and <code>r+c</code>). For each safe column, place a queen, mark the sets, recurse to the next row, then undo. A completed board (row == n) is recorded.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>n_queens.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
+
+class Solution:
+    def solveNQueens(self, n: int) -&gt; List[List[str]]:
+        res = []
+        cols, diag1, diag2 = set(), set(), set()
+        board = [["."] * n for _ in range(n)]
+        def bt(r):
+            if r == n:
+                res.append(["".join(row) for row in board]); return
+            for c in range(n):
+                if c in cols or (r - c) in diag1 or (r + c) in diag2:
+                    continue
+                cols.add(c); diag1.add(r - c); diag2.add(r + c)
+                board[r][c] = "Q"
+                bt(r + 1)
+                board[r][c] = "."
+                cols.discard(c); diag1.discard(r - c); diag2.discard(r + c)
+        bt(0)
+        return res
+</code></pre>
+</div>
+<p><strong>Time</strong> O(n!) with pruning · <strong>Space</strong> O(n). The diagonal encodings <code>r−c</code> / <code>r+c</code> make O(1) attack checks — the classic constraint-satisfaction backtrack.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-52">
+<summary>
+<span class="p-idx">30</span>
+<span class="p-title"><span class="lc">LC 52</span>N-Queens II</span>
+<span class="p-badges"><span class="diff hard">Hard</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Backtracking · count, don't build</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Return the <em>number</em> of distinct N-Queens solutions. <a href="https://leetcode.com/problems/n-queens-ii/" target="_blank" rel="noopener">LeetCode 52 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Only the count needed? (Yes.) Same constraints as N-Queens? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Same backtracking as N-Queens, but return a count instead of boards.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">No need to materialise the board — just tally completed placements.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Identical constraint backtracking to LC 51, but since only the count matters, drop the board and return 1 at a full placement, summing counts up the recursion. Lighter and slightly faster without board bookkeeping.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>n_queens_ii.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>class Solution:
+    def totalNQueens(self, n: int) -&gt; int:
+        cols, diag1, diag2 = set(), set(), set()
+        def bt(r):
+            if r == n:
+                return 1
+            count = 0
+            for c in range(n):
+                if c in cols or (r - c) in diag1 or (r + c) in diag2:
+                    continue
+                cols.add(c); diag1.add(r - c); diag2.add(r + c)
+                count += bt(r + 1)
+                cols.discard(c); diag1.discard(r - c); diag2.discard(r + c)
+            return count
+        return bt(0)
+</code></pre>
+</div>
+<p><strong>Time</strong> O(n!) · <strong>Space</strong> O(n). When you only need <em>how many</em>, skip constructing solutions and just count.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-37">
+<summary>
+<span class="p-idx">31</span>
+<span class="p-title"><span class="lc">LC 37</span>Sudoku Solver</span>
+<span class="p-badges"><span class="diff hard">Hard</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Backtracking · fill cells, undo on failure</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Fill a partially completed 9×9 Sudoku so every row, column, and 3×3 box contains 1–9. <a href="https://leetcode.com/problems/sudoku-solver/" target="_blank" rel="noopener">LeetCode 37 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Exactly one solution guaranteed? (Yes.) Modify the board in place? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Precompute the empty cells and the used-digit sets for rows/cols/boxes.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Try each legal digit in the next empty cell; recurse, and undo if it fails.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Collect the empty cells and maintain per-row, per-column, and per-box sets of used digits for O(1) legality checks. Backtrack over the empty cells: try each legal digit, mark the sets, recurse to the next cell; on failure, restore and try the next digit. Returning True on the last cell locks in the solution.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>sudoku_solver.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
+
+class Solution:
+    def solveSudoku(self, board: List[List[str]]) -&gt; None:
+        rows = [set() for _ in range(9)]
+        cols = [set() for _ in range(9)]
+        boxes = [set() for _ in range(9)]
+        empties = []
+        for r in range(9):
+            for c in range(9):
+                if board[r][c] == ".":
+                    empties.append((r, c))
+                else:
+                    d = board[r][c]
+                    rows[r].add(d); cols[c].add(d); boxes[(r // 3) * 3 + c // 3].add(d)
+        def bt(idx):
+            if idx == len(empties):
+                return True
+            r, c = empties[idx]
+            b = (r // 3) * 3 + c // 3
+            for d in "123456789":
+                if d in rows[r] or d in cols[c] or d in boxes[b]:
+                    continue
+                board[r][c] = d
+                rows[r].add(d); cols[c].add(d); boxes[b].add(d)
+                if bt(idx + 1):
+                    return True
+                board[r][c] = "."
+                rows[r].discard(d); cols[c].discard(d); boxes[b].discard(d)
+            return False
+        bt(0)
+</code></pre>
+</div>
+<p><strong>Time</strong> exponential worst · <strong>Space</strong> O(1) board. Constraint tracking + backtracking is the template for every 'fill the grid legally' puzzle.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-212">
+<summary>
+<span class="p-idx">32</span>
+<span class="p-title"><span class="lc">LC 212</span>Word Search II</span>
+<span class="p-badges"><span class="diff hard">Hard</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Trie + grid backtracking</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Given a board and a list of words, return all words that can be formed by adjacent cells. <a href="https://leetcode.com/problems/word-search-ii/" target="_blank" rel="noopener">LeetCode 212 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Many words to search at once? (Yes — a trie shares prefixes.) Each cell used once per word? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Searching each word separately is slow; put all words in a trie and DFS once.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Walk the board following trie edges; when you hit a word marker, record it.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Build a trie of all words, then DFS the grid once, descending the trie as letters match. When a trie node marks the end of a word, record it (and remove the marker to avoid duplicates). Marking cells visited during the DFS prevents reuse. The trie prunes dead prefixes across all words simultaneously.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>word_search_ii.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
+
+class Solution:
+    def findWords(self, board: List[List[str]], words: List[str]) -&gt; List[str]:
+        trie = {}
+        for w in words:
+            node = trie
+            for ch in w:
+                node = node.setdefault(ch, {})
+            node["#"] = w                 # store the whole word at the leaf
+        rows, cols = len(board), len(board[0])
+        res = []
+        def bt(r, c, node):
+            ch = board[r][c]
+            if ch not in node:
+                return
+            nxt = node[ch]
+            if "#" in nxt:
+                res.append(nxt.pop("#"))  # found; remove to avoid duplicates
+            board[r][c] = "#"
+            for dr, dc in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nr, nc = r + dr, c + dc
+                if 0 &lt;= nr &lt; rows and 0 &lt;= nc &lt; cols and board[nr][nc] != "#":
+                    bt(nr, nc, nxt)
+            board[r][c] = ch
+        for r in range(rows):
+            for c in range(cols):
+                bt(r, c, trie)
+        return res
+</code></pre>
+</div>
+<p><strong>Time</strong> O(cells · 4·3^(L−1)) · <strong>Space</strong> O(total word length). Combining a trie (Ch 14) with grid backtracking is a powerful multi-pattern technique.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-301">
+<summary>
+<span class="p-idx">33</span>
+<span class="p-title"><span class="lc">LC 301</span>Remove Invalid Parentheses</span>
+<span class="p-badges"><span class="diff hard">Hard</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">BFS over removals (minimum edits)</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Remove the minimum number of parentheses to make the string valid; return all such results. <a href="https://leetcode.com/problems/remove-invalid-parentheses/" target="_blank" rel="noopener">LeetCode 301 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Return every distinct minimal-removal result? (Yes.) Non-parenthesis chars stay? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">The fewest removals = the first BFS level that contains any valid string.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Each level removes exactly one character from every current string.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> BFS level by level: each level generates all strings with one more character removed. The first level containing any valid string is, by construction, the minimum-removal set — collect all valid strings there. A set dedups identical results. (A DFS counting excess parentheses is the O-optimal alternative.)</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>remove_invalid_parens.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
+
+class Solution:
+    def removeInvalidParentheses(self, s: str) -&gt; List[str]:
+        def is_valid(string):
+            count = 0
+            for ch in string:
+                if ch == "(":
+                    count += 1
+                elif ch == ")":
+                    count -= 1
+                    if count &lt; 0:
+                        return False
+            return count == 0
+        level = {s}
+        while True:                       # BFS: first level with any valid string is minimal-removal
+            valid = [x for x in level if is_valid(x)]
+            if valid:
+                return valid
+            nxt = set()
+            for item in level:
+                for i in range(len(item)):
+                    if item[i] in "()":
+                        nxt.add(item[:i] + item[i + 1:])
+            level = nxt
+</code></pre>
+</div>
+<p><strong>Time</strong> O(2ⁿ) worst · <strong>Space</strong> O(2ⁿ). Framing 'minimum removals' as the first valid BFS level is a clean way to guarantee minimality.</p>
+</div>
+</details>
+<details class="dsa-prob" data-pid="lc-140">
+<summary>
+<span class="p-idx">34</span>
+<span class="p-title"><span class="lc">LC 140</span>Word Break II</span>
+<span class="p-badges"><span class="diff hard">Hard</span><svg class="p-chev" width="14" height="14" viewbox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"></path></svg></span>
+<span class="p-sub">Backtracking + memoization</span>
+</summary>
+<div class="p-body">
+<p class="wu-clarify"><strong>Problem.</strong> Return all sentences formable by inserting spaces so every word is in the dictionary. <a href="https://leetcode.com/problems/word-break-ii/" target="_blank" rel="noopener">LeetCode 140 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Return all valid sentences? (Yes.) Words reusable? (Yes.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">From each start, try every dictionary word that is a prefix, then recurse on the rest.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Memoize the list of sentences buildable from each start index.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Recurse from a start index: for each dictionary word matching the prefix, prepend it to every sentence buildable from the remainder. Memoise the results per start index so shared suffixes aren't recomputed — turning a potentially exponential re-exploration into reuse of cached sentence lists.</p>
+<div class="wu-solution code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>word_break_ii.py</span><button class="copy-btn">Copy</button></div>
+<pre><code>from typing import List
+
+class Solution:
+    def wordBreak(self, s: str, wordDict: List[str]) -&gt; List[str]:
+        words = set(wordDict)
+        memo = {}
+        def bt(start):
+            if start == len(s):
+                return [""]
+            if start in memo:
+                return memo[start]
+            res = []
+            for end in range(start + 1, len(s) + 1):
+                word = s[start:end]
+                if word in words:
+                    for rest in bt(end):
+                        res.append(word if rest == "" else word + " " + rest)
+            memo[start] = res
+            return res
+        return bt(0)
+</code></pre>
+</div>
+<p><strong>Time</strong> O(n² + output) · <strong>Space</strong> O(output). Backtracking that returns and memoises <em>lists of answers</em> — the same shape as Different Ways to Add Parentheses.</p>
+</div>
+</details>
+</div>
+<h2 id="playbook">4 · Interview playbook</h2>
+<ul>
+<li><strong>State the base case first,</strong> then the recursive step that shrinks toward it — and make sure it's reachable.</li>
+<li><strong>The backtracking rhythm:</strong> choose → recurse → un-choose. Record a <em>copy</em> of the path at leaves, and undo every mutation on the way back.</li>
+<li><strong>Pick the template:</strong> start index → subsets/combinations; used[] marker → permutations; <code>i</code> vs <code>i+1</code> decides reuse.</li>
+<li><strong>Dedup</strong> by sorting and skipping equal siblings at the same depth.</li>
+<li><strong>Prune early</strong> with a constraint check, and memoize when subproblems repeat — that's the leap to DP.</li>
+</ul>
+
+<h2 id="role-notes">5 · Role notes</h2>
+<div class="grid grid-2">
+<div class="card"><h4>SDE / Python backend</h4><p>Recursion powers parsers, tree/graph traversal, and config expansion; backtracking drives constraint solvers, permission/route enumeration, and test-case generation. Memoization is the everyday performance fix.</p></div>
+<div class="card"><h4>Data Science / ML / AI / GenAI</h4><p>Recursive search underlies decision trees and beam/DFS search; backtracking generates candidate structures (feature subsets, schedules); memoized recursion is the mental model for DP over sequences.</p></div>
+</div>
+
+<h2 id="review">6 · Review</h2>
+<div class="dsa-cheat">
+<strong>Cheat sheet</strong>
+<ul>
+<li>Smaller-copy problem → <strong>recursion</strong> (base case + recursive step).</li>
+<li>Overlapping subproblems / "count the ways" → <strong>memoized recursion</strong>.</li>
+<li>All subsets / partitions → <strong>start index; record path at every node</strong>.</li>
+<li>All orderings → <strong>used[] marker; recurse to full length</strong>.</li>
+<li>Choose k / target sum → <strong>start index + prune</strong>; reuse ⇒ recurse on <code>i</code>, else <code>i+1</code>.</li>
+<li>Duplicates → <strong>sort, then skip equal siblings</strong>.</li>
+<li>N-Queens / Sudoku / word search → <strong>place → mark → recurse → unmark</strong>, prune on constraints.</li>
+<li>Always record <code>path[:]</code> (a copy), and undo every change.</li>
+</ul>
+</div>
+
+<h3 id="concept-checks">Concept checks</h3>
+<div class="quiz">
+<div class="q">In the subsets backtracking template, why append <code>path[:]</code> instead of <code>path</code>?</div>
+<div class="opt" data-correct="true"><code>path</code> is a single list that keeps mutating; storing it directly means every recorded subset would later reflect those mutations (all end up empty or wrong)</div>
+<div class="opt" data-correct="false">Because slicing is faster than appending</div>
+<div class="opt" data-correct="false">Because the result must be immutable</div>
+<div class="explain">Backtracking reuses one <code>path</code> list, appending and popping as it explores. If you store a reference to it, all stored results point at the same list, which is later emptied by the pops. <code>path[:]</code> snapshots the current contents.</div>
+</div>
+<div class="quiz">
+<div class="q">What single change to the recursive call decides whether Combination Sum allows reusing an element?</div>
+<div class="opt" data-correct="true">Recursing with the same index <code>i</code> allows reuse; recursing with <code>i+1</code> uses each element at most once</div>
+<div class="opt" data-correct="false">Sorting the candidates first</div>
+<div class="opt" data-correct="false">Whether you record path[:] or path</div>
+<div class="explain">The start index controls which elements a deeper call may pick. Passing <code>i</code> lets the same element be chosen again (LC 39); passing <code>i+1</code> moves past it, so each element is used once (LC 40).</div>
+</div>
+
+<h3 id="mastery">Mastery checklist</h3>
+<ul class="dsa-check">
+<li><input type="checkbox" data-check="rb-base"> I can write recursion with a correct, reachable base case.</li>
+<li><input type="checkbox" data-check="rb-memo"> I can add memoization and explain the speedup.</li>
+<li><input type="checkbox" data-check="rb-subsets"> I can generate subsets/combinations with a start index.</li>
+<li><input type="checkbox" data-check="rb-perms"> I can generate permutations with a used[] marker and dedup duplicates.</li>
+<li><input type="checkbox" data-check="rb-prune"> I prune doomed branches with constraint checks before recursing.</li>
+<li><input type="checkbox" data-check="rb-constraint"> I can solve N-Queens/Sudoku/word search with place-mark-recurse-unmark.</li>
+</ul>
+
+<div class="page-nav">
+<a class="prev" href="10-binary-search.html"><div class="dir">← Previous</div><div class="ttl">10 · Binary Search</div></a>
+<a class="next" href="12-trees-bst.html"><div class="dir">Next →</div><div class="ttl">12 · Trees &amp; BST</div></a>
+</div>
+</main><div class="toc-rail"><nav class="toc"></nav></div></div></div></div><script src="../assets/app.js"></script><script src="../assets/sitenav.js"></script><script src="../assets/enhance.js"></script><script src="../assets/dsa-question-bank.js"></script><script src="../assets/dsa-prep.js"></script></body></html>
