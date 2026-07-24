@@ -155,6 +155,44 @@
     });
   }
 
+  /* ---------- High-frequency interview indicator (★) ----------
+     Marks the pattern-defining problems most asked at FAANG/MAANG and major
+     India companies, so learners can prioritise the highest-leverage practice.
+     The curated set lives in dsa-question-bank.js (window.DSA_INTERVIEW_MUST). */
+  var MUST_TIP = "High-frequency interview problem — commonly asked at FAANG/MAANG and major India companies. Prioritise these to learn the core patterns fast.";
+  function markInterviewMust() {
+    var must = window.DSA_INTERVIEW_MUST;
+    if (!must || !must.length) return;
+    var set = {};
+    must.forEach(function (n) { set["lc-" + n] = true; });
+
+    var marked = 0;
+    document.querySelectorAll(".dsa-prob[data-pid]").forEach(function (prob) {
+      if (!set[prob.getAttribute("data-pid")]) return;
+      var badges = prob.querySelector(".p-badges");
+      if (!badges || badges.querySelector(".p-must")) return;
+      prob.classList.add("is-must");
+      var star = document.createElement("span");
+      star.className = "p-must";
+      star.textContent = "★";
+      star.setAttribute("title", MUST_TIP);
+      star.setAttribute("aria-label", "High-frequency interview problem");
+      var diff = badges.querySelector(".diff");
+      if (diff) badges.insertBefore(star, diff);
+      else badges.insertBefore(star, badges.firstChild);
+      marked++;
+    });
+
+    // One-line legend above the problem list so the star is self-explanatory.
+    var ladder = document.querySelector(".dsa-ladder");
+    if (marked && ladder && !document.querySelector(".dsa-must-legend")) {
+      var legend = document.createElement("p");
+      legend.className = "dsa-must-legend";
+      legend.innerHTML = '<span class="p-must" aria-hidden="true">★</span> marks <strong>high-frequency interview problems</strong> — the pattern-defining questions most asked at FAANG/MAANG and major India companies. Short on time? Start with these.';
+      ladder.insertAdjacentElement("beforebegin", legend);
+    }
+  }
+
   /* ---------- Contents page: filters + per-chapter progress ---------- */
   function chapterProgress(chapterId, bank) {
     if (!bank) return null;

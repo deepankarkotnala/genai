@@ -644,6 +644,8 @@
   function injectTopicDiagram() {
     var content = document.querySelector(".content");
     if (!content || content.querySelector(".concept-lab")) return;
+    // Pages can opt out of the auto topic diagram when it isn't relevant to them.
+    if (document.body && document.body.hasAttribute("data-no-concept-lab")) return;
 
     var section = buildTopicDiagram(topicSpec());
     var hero = content.querySelector(".hero");
@@ -847,7 +849,7 @@
     addOfficeRibbon();
     addHomeButton();
     addFocusButton();
-    injectTopicDiagram();
+    // injectTopicDiagram();  // Learning-loop concept diagram removed site-wide (felt unnecessary).
     setupReadingProgress();
     setupSectionGuidance();
     setupDiagramAnimation();

@@ -54,3 +54,46 @@ window.DSA_QUESTION_BANK = [
   { id: "lc-104", source: "LeetCode", number: 104, title: "Maximum Depth of Binary Tree", slug: "maximum-depth-of-binary-tree", difficulty: "Easy", canonicalChapter: "12-trees-bst", relatedChapters: [], patterns: ["DFS recursion"], roles: ["SDE", "Python"], estimatedMinutes: 12, editorialLevel: "listed", page: "12-trees-bst.html", anchor: "lc-104" },
   { id: "lc-215", source: "LeetCode", number: 215, title: "Kth Largest Element in an Array", slug: "kth-largest-element-in-an-array", difficulty: "Medium", canonicalChapter: "13-heaps-priority-queues", relatedChapters: ["09-sorting-intervals-selection"], patterns: ["Bounded heap", "Quickselect"], roles: ["SDE", "Data Science", "ML/AI"], estimatedMinutes: 20, editorialLevel: "listed", page: "13-heaps-priority-queues.html", anchor: "lc-215" }
 ];
+
+/* =========================================================================
+   High-frequency interview set — the pattern-defining problems most asked at
+   FAANG / MAANG and major Indian product companies (the Blind-75 / NeetCode
+   core plus common India favourites). dsa-prep.js renders these with a small
+   ★ indicator so learners can focus on the highest-leverage problems first and
+   skip lower-yield practice. Keyed by LeetCode number — edit freely; a number
+   that isn't present on any page is simply ignored.
+   ========================================================================= */
+window.DSA_INTERVIEW_MUST = [
+  // Arrays & hashing
+  1, 49, 53, 56, 57, 121, 128, 152, 169, 217, 238, 271, 347,
+  // Two pointers
+  11, 15, 42, 75, 125, 167,
+  // Sliding window
+  3, 76, 239, 424, 438, 567,
+  // Stacks & queues
+  20, 22, 84, 150, 155, 496, 503, 739,
+  // Binary search
+  4, 33, 34, 35, 74, 153, 704, 875,
+  // Linked lists
+  2, 19, 21, 23, 25, 138, 141, 142, 143, 146, 206,
+  // Trees & BST
+  98, 100, 102, 104, 105, 110, 116, 124, 173, 199, 226, 230, 235, 236, 297, 543, 572, 662,
+  // Tries
+  208, 211, 212,
+  // Heaps / priority queues
+  295, 355, 621, 703, 973,
+  // Recursion & backtracking
+  17, 39, 40, 46, 47, 51, 77, 78, 79, 90, 131, 216,
+  // Graphs & grids
+  127, 130, 133, 200, 207, 210, 261, 269, 323, 547, 684, 785, 802, 994,
+  // Greedy
+  45, 55, 134, 846,
+  // Dynamic programming
+  62, 63, 70, 72, 91, 139, 198, 213, 300, 309, 322, 416, 494, 647, 1143,
+  // Intervals
+  252, 253, 435, 452,
+  // Math, matrix & bits
+  43, 48, 50, 54, 66, 73, 136, 190, 191, 202, 268, 338, 371,
+  // Design
+  380, 460, 5
+];

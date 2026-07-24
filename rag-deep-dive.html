@@ -50,6 +50,16 @@
   .ragflow .rf small { display:block; font-weight:400; color:var(--text-muted); font-size:12px; }
   .ragflow .rf.accent { border-color:var(--accent); background:var(--accent-soft); }
   .ragflow .arr { width:2px; height:18px; background:var(--border-strong); align-self:center; }
+  /* Desktop: use the horizontal width — flow the numbered stages into a compact
+     multi-column grid instead of one tall column. Mobile keeps the vertical
+     arrow-connected flow below 861px (this block is off there). */
+  @media (min-width: 861px) {
+    .ragflow { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+               gap:10px; align-items:stretch; margin:20px 0; }
+    .ragflow .arr { display:none; }
+    .ragflow .rf { padding:10px 13px; }
+    .ragflow .rf small { font-size:11.5px; }
+  }
   .legend { display:flex; gap:14px; flex-wrap:wrap; font-size:12.5px; color:var(--text-muted); margin:8px 0 0; }
   .legend span { display:inline-flex; align-items:center; gap:6px; }
   .legend i { width:11px; height:11px; border-radius:3px; display:inline-block; }
@@ -646,71 +656,6 @@ Instructions:
 <script src="assets/app.js"></script>
 <script src="assets/sitenav.js"></script>
 <script src="assets/enhance.js"></script>
-<script>
-/* This standalone page supplies its own section sidebar + section search,
-   then lets app.js build the right-rail TOC + scroll-spy + theme + copy. */
-(function () {
-  function build() {
-    var content = document.querySelector(".content");
-    var nav = document.querySelector(".nav");
-    if (!content || !nav) return;
-    var heads = [].slice.call(content.querySelectorAll("h2[id]"));
-
-    // sidebar: one entry per top-level section
-    var html = '<a href="index.html"><span class="num">＊</span> Hub home</a>' +
-               '<div class="nav-group-label">RAG, end-to-end</div>';
-    heads.forEach(function (h) {
-      var txt = h.textContent.trim();
-      var m = txt.match(/^(\d+)\s*·\s*(.*)$/);
-      var num = m ? m[1] : "•";
-      var label = m ? m[2] : txt;
-      html += '<a href="#' + h.id + '" data-sec="' + h.id + '">' +
-              '<span class="num sec-num">' + num + '</span> ' + label + '</a>';
-    });
-    nav.innerHTML = html;
-
-    // scroll-spy highlight on the sidebar (mirrors the TOC rail behaviour)
-    var links = [].slice.call(nav.querySelectorAll("[data-sec]"));
-    if (window.IntersectionObserver) {
-      var obs = new IntersectionObserver(function (entries) {
-        entries.forEach(function (en) {
-          if (en.isIntersecting) {
-            links.forEach(function (l) { l.classList.toggle("active", l.getAttribute("data-sec") === en.target.id); });
-          }
-        });
-      }, { rootMargin: "-80px 0px -70% 0px" });
-      heads.forEach(function (h) { obs.observe(h); });
-    }
-
-    // close mobile drawer on click
-    var app = document.querySelector(".app");
-    links.forEach(function (a) { a.addEventListener("click", function () { if (app) app.classList.remove("nav-open"); }); });
-
-    // section search in the sidebar
-    var input = document.querySelector("[data-secsearch]");
-    var out = document.querySelector("[data-secresults]");
-    if (input && out) {
-      input.addEventListener("input", function () {
-        var q = input.value.trim().toLowerCase();
-        if (!q) { out.innerHTML = ""; return; }
-        var hits = heads.filter(function (h) { return h.textContent.toLowerCase().indexOf(q) > -1; }).slice(0, 8);
-        out.innerHTML = hits.length
-          ? hits.map(function (h) {
-              return '<a class="search-result" href="#' + h.id + '">' + h.textContent.trim() + '</a>';
-            }).join("")
-          : '<div class="search-empty">No section matches "' + q + '"</div>';
-      });
-      document.addEventListener("keydown", function (e) {
-        if (e.key === "/" && document.activeElement !== input && !/input|textarea/i.test(document.activeElement.tagName)) {
-          e.preventDefault(); input.focus();
-        }
-        if (e.key === "Escape") { input.blur(); out.innerHTML = ""; }
-      });
-    }
-  }
-  if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", build);
-  else build();
-})();
-</script>
+<script src="assets/section-nav.js"></script>
 </body>
 </html>

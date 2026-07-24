@@ -328,8 +328,7 @@
       html += '<div class="ih-page-grid">';
       pages.forEach(function (page) {
         html += '<a class="ih-page-card" href="?page=' + encodeURIComponent(page.path) + '" data-ih-page="' + escapeHTML(page.path) + '">' +
-          '<div class="pc-top"><span class="pc-icon">' + escapeHTML(group.icon) + '</span><span class="pc-path">' + escapeHTML(page.path) + '</span></div>' +
-          '<h3>' + escapeHTML(page.title) + '</h3><p>' + escapeHTML(page.desc || "Open the complete source page.") + '</p><span class="pc-arrow">→</span></a>';
+          '<h3>' + escapeHTML(page.title) + '</h3><p>' + escapeHTML(page.desc || "Open the complete source page.") + '</p></a>';
       });
       html += "</div></section>";
     });

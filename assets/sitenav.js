@@ -22,6 +22,17 @@
   /* ---------- Central registry (paths are relative to the SITE ROOT) ---------- */
   var GROUPS = [
     {
+      id: "studyplan",
+      label: "Study Plan",
+      mark: "P",
+      blurb: "Hours, order and weekly cadence",
+      home: "study-plan.html",
+      direct: true,
+      pages: [
+        { path: "study-plan.html", title: "Study Plan", num: "P", kw: "study plan roadmap hours schedule time weekly daily ai engineer interview route" }
+      ]
+    },
+    {
       id: "dsa",
       label: "DSA Interview Preparation",
       mark: "D",
@@ -58,24 +69,12 @@
       ]
     },
     {
-      id: "studyplan",
-      label: "Global Study Plan",
-      mark: "P",
-      blurb: "Hours, order and weekly cadence",
-      home: "study-plan.html",
-      direct: true,
-      pages: [
-        { path: "study-plan.html", title: "Global Study Plan", num: "P", kw: "study plan roadmap hours schedule time weekly daily ai engineer interview route" }
-      ]
-    },
-    {
       id: "mastery",
       label: "GenAI Mastery",
       mark: "G",
       blurb: "DS → Senior GenAI Engineer",
       home: "index.html",
       pages: [
-        { path: "index.html", title: "Overview", num: "✦", kw: "home overview curriculum start hub" },
         // Foundations
         { path: "modules/01_foundations.html", title: "Foundations of LLMs", num: "01", track: "Foundations", kw: "llm token transformer attention prompt context window temperature decoding next token prediction" },
         { path: "modules/02_transformers.html", title: "Transformers Deep Dive", num: "02", track: "Foundations", kw: "transformer attention self-attention multi-head positional encoding qkv softmax feedforward residual layernorm" },
@@ -220,6 +219,8 @@
       home: "rag-deep-dive.html",
       pages: [
         { path: "rag-deep-dive.html", title: "RAG, End-to-End", num: "📚", kw: "rag pipeline chunking reranking retrieval evaluation end to end" },
+        { path: "llm-evals.html", title: "LLM Evals", num: "✅", kw: "llm evals evaluation vibe testing golden dataset llm as judge faithfulness groundedness rag agent safety operational benchmarks mmlu ragas deepeval interview ai engineer" },
+        { path: "llmops.html", title: "LLMOps", num: "⚙️", kw: "llmops mlops lifecycle prompt versioning experiment tracking deployment observability tracing cost token latency optimization guardrails feedback loop tooling langfuse langsmith interview" },
         { path: "langfuse.html", title: "Langfuse — Observability", num: "📡", kw: "langfuse observability trace cost latency quality scores" },
         { path: "guardrails.html", title: "Guardrails", num: "🛡️", kw: "guardrails safety scope pii hallucination policy" },
         { path: "memory.html", title: "Memory in LLMs", num: "🧠", kw: "memory context window stateless chat history" },
@@ -286,7 +287,7 @@
                 '<a class="navgroup-head" href="' + href(g.pages[0].path) + '">' +
                 '<span class="ng-mk">' + g.mark + '</span>' +
                 '<span class="ng-copy"><span class="ng-label">' + g.label + '</span><span class="ng-blurb">' + g.blurb + '</span></span>' +
-                '<span class="ng-direct-arrow" aria-hidden="true">→</span></a></div>';
+                '</a></div>';
         return;
       }
       html += '<div class="navgroup' + (open ? " open" : "") + '" data-group="' + g.id + '">';

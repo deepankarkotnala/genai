@@ -1,0 +1,334 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>LLM Evals — Evaluating LLM Apps for Interviews · GenAI Mastery</title>
+<!-- Interview Preparation brand metadata -->
+<link rel="icon" href="assets/brand/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/brand/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="assets/brand/favicon.ico">
+<link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png" sizes="180x180">
+<link rel="manifest" href="assets/brand/site.webmanifest">
+<link rel="mask-icon" href="assets/brand/safari-pinned-tab.svg" color="#6f47f5">
+<link rel="image_src" href="assets/brand/social-card.png">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="msapplication-TileColor" content="#2563eb">
+<meta name="msapplication-config" content="assets/brand/browserconfig.xml">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Interview Preparation">
+<meta property="og:title" content="LLM Evals — Evaluating LLM Apps for Interviews · GenAI Mastery">
+<meta property="og:description" content="How to evaluate LLM and agent applications for production — why vibe testing fails, why LLM evaluation is hard, evaluation methods (rule-based, reference, human, LLM-as-judge), golden datasets, RAG/agent/safety/operational evals, and the interview questions that follow.">
+<meta property="og:image" content="assets/brand/social-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Switch job learning platform logo">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="LLM Evals — Evaluating LLM Apps for Interviews · GenAI Mastery">
+<meta name="twitter:description" content="How to evaluate LLM and agent applications for production — why vibe testing fails, evaluation methods, golden datasets, RAG/agent/safety/operational evals, and interview questions.">
+<meta name="twitter:image" content="assets/brand/social-card.png">
+<!-- /Interview Preparation brand metadata -->
+<meta name="description" content="How to evaluate LLM and agent applications for production — why vibe testing fails, why LLM evaluation is hard, evaluation methods (rule-based, reference, human, LLM-as-judge), golden datasets, RAG/agent/safety/operational evals, and the interview questions that follow.">
+<link rel="stylesheet" href="assets/styles.css">
+<link href="assets/office-theme.css" rel="stylesheet"/>
+<style>
+  .qa { border:1px solid var(--border); border-left:4px solid var(--accent); border-radius:var(--radius);
+        padding:14px 18px; margin:14px 0; background:var(--bg-elevated); }
+  .qa .q { font-weight:750; margin:0 0 6px; }
+  .qa .a { margin:0; color:var(--text-secondary); }
+  .case { border:1px solid var(--border); border-left:4px solid var(--red); border-radius:var(--radius);
+          padding:14px 18px; background:var(--bg-elevated); }
+  .case h4 { margin:0 0 6px; }
+  .case .lesson { margin:8px 0 0; font-size:13px; color:var(--text-muted); }
+  .case-grid { display:grid; gap:14px; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); margin:18px 0; }
+  .yt-btn { display:inline-flex; align-items:center; gap:9px; margin:4px 0 8px; padding:10px 16px;
+            border:1px solid var(--border); border-radius:10px; background:var(--bg-elevated);
+            color:var(--text); font-weight:650; font-size:13.5px; text-decoration:none;
+            transition:border-color .15s, transform .1s, box-shadow .15s; }
+  .yt-btn:hover { border-color:#ff0000; transform:translateY(-1px); box-shadow:var(--shadow-sm); text-decoration:none; }
+  .yt-btn svg { flex:none; }
+  .yt-btn .yt-sub { font-weight:500; color:var(--text-muted); font-size:12px; }
+</style>
+</head>
+<body data-page="llm-evals" data-no-concept-lab>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="index.html" aria-label="Switch job home">
+<span class="brand-mark" aria-hidden="true"><img src="assets/brand/switch-job-logo.svg" alt=""/></span>
+<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-secsearch placeholder="Jump to a section…  ( / )">
+      </div>
+      <div class="search-results" data-secresults></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Deep Dives / <b>LLM Evals — evaluating LLM apps</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Evaluation · proving an LLM app actually works</div>
+        <h1>LLM Evals</h1>
+        <p class="lead">Anyone can <em>build</em> a RAG chatbot or an agent. The rare, in-demand skill is <strong>proving it works</strong> — testing an LLM application with repeatable evidence instead of gut feel, so it can be put in front of real users. This page is the interview-focused view of LLM evaluation: why it matters, why it's hard, the methods, and the questions you'll be asked.</p>
+        <div class="meta-row">
+          <span class="pill blue">⏱ Deep study · 6–9 h</span>
+          <span class="pill">Interview-focused</span>
+          <span class="pill purple">RAG · agents · safety · ops</span>
+        </div>
+
+        <a class="yt-btn" href="https://www.youtube.com/watch?v=6W92_t9FveA&list=PLEneLIDJFpcA" target="_blank" rel="noopener noreferrer">
+          <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="#ff0000" d="M23.5 6.2a3.02 3.02 0 0 0-2.12-2.14C19.5 3.55 12 3.55 12 3.55s-7.5 0-9.38.51A3.02 3.02 0 0 0 .5 6.2 31.6 31.6 0 0 0 0 12a31.6 31.6 0 0 0 .5 5.8 3.02 3.02 0 0 0 2.12 2.14c1.88.51 9.38.51 9.38.51s7.5 0 9.38-.51a3.02 3.02 0 0 0 2.12-2.14A31.6 31.6 0 0 0 24 12a31.6 31.6 0 0 0-.5-5.8z"/><path fill="#fff" d="M9.6 15.6V8.4l6.2 3.6-6.2 3.6z"/></svg>
+          <span>CampusX LLMEvals <span class="yt-sub">— video playlist</span></span>
+        </a>
+
+        <div class="callout key">
+          <div class="c-ico">🎯</div>
+          <div class="c-body"><div class="c-title">The one-line answer interviewers want</div>
+          <p><strong>LLM evaluation is measuring the quality of an LLM application's output along several dimensions</strong> — correctness, relevance, faithfulness/groundedness, structure, safety, latency and cost — using a <em>repeatable</em> method, rather than manually eyeballing a few responses.</p></div>
+        </div>
+
+        <!-- 1 -->
+        <h2 id="ai-engineer">1 · Who is an AI Engineer (and why evals are their edge)</h2>
+        <p>An <strong>AI Engineer</strong> is someone who builds applications and products <em>on top of</em> foundation models (LLMs) — RAG systems, chatbots, agents — rather than training models from scratch. Most people entering the field learn the <em>build</em> half. Far fewer learn to <em>test and evaluate</em> what they built for production. In interviews, being able to talk about evaluation is what separates "I made a demo" from "I can ship something that serves millions of users."</p>
+
+        <!-- 2 -->
+        <h2 id="vibe-testing">2 · The flaw of "vibe testing"</h2>
+        <p><strong>Vibe testing</strong> is how almost everyone starts: casually trying an app with a few prompts and judging it by feel. <em>"I asked it 5–10 questions, the answers looked good, so it works."</em> No metrics, no fixed test set — just a subjective impression.</p>
+        <div class="callout warn">
+          <div class="c-ico">⚠️</div>
+          <div class="c-body"><div class="c-title">Why it breaks in production</div>
+          <p>Vibe testing is <strong>informal, subjective and not repeatable</strong>. It's fine for a personal project. It is not fine for a production application: you can't put something in front of users when your only evidence is "it felt right when I tried it." You can't catch regressions, compare versions, or prove quality to a stakeholder.</p></div>
+        </div>
+
+        <!-- 3 -->
+        <h2 id="case-studies">3 · What happens without evals — three case studies</h2>
+        <p>Real, widely-cited failures of shipping LLM apps without proper evaluation and guardrails. Interviewers love these because they show you understand the <em>stakes</em>.</p>
+        <div class="case-grid">
+          <div class="case">
+            <h4>Air Canada chatbot</h4>
+            <p>A grieving user asked the airline's chatbot about a bereavement fare. The bot <strong>hallucinated</strong> a policy — book now at full price, get a refund later. When the user claimed the refund, Air Canada refused, arguing the chatbot was a "separate entity." The tribunal ruled the chatbot is the company's responsibility. Air Canada lost, refunded the money, and was publicly embarrassed.</p>
+            <p class="lesson">Lesson: hallucinated policy is <em>your</em> liability. Faithfulness/grounding evals catch this.</p>
+          </div>
+          <div class="case">
+            <h4>Chevrolet dealer bot</h4>
+            <p>A dealership deployed a chatbot. A user <strong>jailbroke</strong> it — emotionally convincing it to agree to anything the customer said — then asked to buy a car for $1. The bot agreed and called it a binding offer. Screenshots went viral, and it became a PR disaster.</p>
+            <p class="lesson">Lesson: no scope/guardrail + no adversarial eval = brand damage. See <a href="guardrails.html">Guardrails →</a>.</p>
+          </div>
+          <div class="case">
+            <h4>The ChatGPT lawyer</h4>
+            <p>A lawyer used ChatGPT to find legal precedents for a lawsuit. It <strong>confidently fabricated fake cases</strong> — fake names, fake dates. He didn't verify, and filed them. When opposing counsel found the cases didn't exist, the judge fined the lawyer and firm $5,000; they lost and went viral.</p>
+            <p class="lesson">Lesson: fluent ≠ correct. Never trust unverified output; measure factuality.</p>
+          </div>
+        </div>
+
+        <!-- 4 -->
+        <h2 id="why-hard">4 · Why LLM evaluation is genuinely hard</h2>
+        <p>This is the highest-value conceptual question in an evals interview. It comes down to two differences from traditional software testing.</p>
+        <div class="grid grid-2">
+          <div class="card"><h4>Deterministic vs. probabilistic</h4><p>Traditional software is <strong>deterministic</strong> — for a given input the output is always the same (a calculator: <code>2 + 2</code> is always <code>4</code>). LLM apps are <strong>probabilistic</strong> — the same input can produce different outputs, and neither has to be wrong. Ask "What is overfitting?" today and in six months and you may get different-but-valid answers. So you can't assert on exact string equality.</p></div>
+          <div class="card"><h4>Correctness vs. multi-dimensional quality</h4><p>Software has one benchmark: correctness. An LLM answer has <strong>many</strong>: factuality, completeness, relevance, groundedness, tone, format compliance, safety — plus latency and cost. Which dimensions matter varies per application. That multi-axis, context-dependent quality is what makes LLM apps far trickier to evaluate.</p></div>
+        </div>
+        <div class="callout note">
+          <div class="c-ico">💡</div>
+          <div class="c-body"><div class="c-title">Consequence for how you test</div>
+          <p>Because output isn't a fixed string, you evaluate <em>properties</em> of the output (is it grounded? is it relevant? does it match the schema?) rather than exact matches — using references, rubrics, classifiers or a judge model. That's the whole game.</p></div>
+        </div>
+
+        <!-- 5 -->
+        <h2 id="landscape">5 · The evals landscape — a map</h2>
+        <p>Two big categories. Know which one an interview question is about.</p>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Layer</th><th>What you evaluate</th><th>How</th></tr>
+            <tr><td><strong>Foundation-model evals</strong></td><td>A base LLM's general capability when a new model is released</td><td>Standardized <strong>benchmarks</strong> — e.g. MMLU (knowledge), GSM8K/MATH (reasoning), HumanEval (code), HellaSwag, TruthfulQA; plus arenas / leaderboards (LMSYS Chatbot Arena)</td></tr>
+            <tr><td><strong>Application evals</strong></td><td>The actual app <em>you</em> built on top of an LLM (RAG, agent, classifier)</td><td>Your own task-specific dataset + metrics — this is what an AI Engineer owns day-to-day</td></tr>
+          </table>
+        </div>
+        <div class="callout tip">
+          <div class="c-ico">🗺️</div>
+          <div class="c-body"><div class="c-title">A sensible learning order (the full topic roadmap)</div>
+          <p>Intro to evals → the landscape of techniques &amp; tools → evaluating foundation models (benchmarks) → evaluating LLM <em>applications</em> → building a custom eval pipeline (golden dataset + rubrics) → <a href="#rag-evals">RAG-specific evals</a> → <a href="#agent-evals">agent-based evals</a> → <a href="#safety-evals">safety evals</a> → <a href="#operational-evals">operational evals</a> (post-deployment monitoring). The rest of this page follows that order.</p></div>
+        </div>
+
+        <!-- 6 -->
+        <h2 id="methods">6 · Evaluation methods</h2>
+        <p>Four families. Real pipelines combine them — cheap deterministic checks first, expensive judgement last.</p>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Method</th><th>What it does</th><th>Best for</th><th>Watch out for</th></tr>
+            <tr><td><strong>Rule-based / deterministic</strong></td><td>Exact match, regex, JSON-schema validation, "contains", numeric tolerance</td><td>Structured output, format compliance, classification labels</td><td>Can't judge open-ended text quality</td></tr>
+            <tr><td><strong>Reference-based</strong></td><td>Compare to a known good answer — similarity, semantic (embedding) similarity, BLEU/ROUGE</td><td>Tasks with a "correct" answer (extraction, translation, QA)</td><td>Needs curated references; penalizes valid paraphrases</td></tr>
+            <tr><td><strong>Human evaluation</strong></td><td>Domain experts rate outputs against a rubric</td><td>Ground truth, nuanced/domain quality, calibrating the other methods</td><td>Slow, expensive, doesn't scale</td></tr>
+            <tr><td><strong>LLM-as-a-judge</strong></td><td>A second (often stronger) LLM scores the output against criteria and returns a score + reason</td><td>Open-ended quality: relevance, faithfulness, tone, at scale</td><td>Can be biased/inconsistent — anchor with a rubric &amp; a few human-labeled examples</td></tr>
+          </table>
+        </div>
+        <div class="code-block"><div class="code-head"><span class="lang">python · LLM-as-a-judge (the pattern to know)</span><button class="copy-btn">Copy</button></div>
+<pre><code>import json
+from openai import OpenAI
+oai = OpenAI()
+
+def judge_faithfulness(context: str, answer: str) -> dict:
+    """Score 1-5 whether the answer is supported ONLY by the context."""
+    r = oai.chat.completions.create(
+        model="gpt-4o", temperature=0,                 # temp=0 for stable scoring
+        response_format={"type": "json_object"},
+        messages=[
+            {"role": "system", "content":
+                "You are a strict evaluator. Given CONTEXT and ANSWER, rate how "
+                "fully the ANSWER is supported by the CONTEXT. "
+                "5 = every claim supported; 1 = mostly unsupported/hallucinated. "
+                'Return JSON: {"score": 1-5, "reason": "..."}'},
+            {"role": "user", "content": f"CONTEXT:\n{context}\n\nANSWER:\n{answer}"},
+        ])
+    return json.loads(r.choices[0].message.content)</code></pre></div>
+
+        <!-- 7 -->
+        <h2 id="pipeline">7 · Building a custom eval pipeline</h2>
+        <p>The core deliverable of an application-evals project, and a very common "how would you build it?" question.</p>
+        <ol>
+          <li><strong>Curate a golden dataset.</strong> 30–50 representative, reviewed examples (input + expected answer / expected supporting docs). Cover the common cases <em>and</em> the tricky/edge ones. This is the single most important asset — quality of evals = quality of this set.</li>
+          <li><strong>Define a rubric &amp; metrics.</strong> Pick 4–6 dimensions that matter for <em>this</em> app (e.g. factuality, completeness, groundedness, format, tone) and how each is scored.</li>
+          <li><strong>Run the app over the dataset</strong> and score each output with the right method per metric.</li>
+          <li><strong>Produce scorecards</strong> and failure-category summaries; compare two configurations (prompt A vs B, model X vs Y) on the same set.</li>
+          <li><strong>Inspect where an aggregate hides a critical failure</strong> — a high average can mask a small number of dangerous answers.</li>
+        </ol>
+        <div class="code-block"><div class="code-head"><span class="lang">python · minimal eval harness</span><button class="copy-btn">Copy</button></div>
+<pre><code>golden = [
+    {"q": "What is the bereavement fare policy?", "must_contain": ["apply before travel"]},
+    # ... 30-50 reviewed examples
+]
+
+def evaluate(app_fn):
+    rows = []
+    for ex in golden:
+        out = app_fn(ex["q"])
+        rule_ok = all(s.lower() in out["answer"].lower() for s in ex.get("must_contain", []))
+        judge   = judge_faithfulness(out["context"], out["answer"])
+        rows.append({"q": ex["q"], "rule_pass": rule_ok,
+                     "faithfulness": judge["score"], "latency_ms": out["latency_ms"]})
+    return rows   # -> aggregate into a scorecard, then compare configs</code></pre></div>
+        <div class="callout warn">
+          <div class="c-ico">🚩</div>
+          <div class="c-body"><div class="c-title">Interview trap: "the highest average score is best"</div>
+          <p>Not necessarily. Always look at the <em>worst</em> outputs and failure classes — one confidently-wrong safety/factuality answer can matter more than a 0.03 bump in mean score.</p></div>
+        </div>
+
+        <!-- 8 -->
+        <h2 id="rag-evals">8 · RAG-specific evals</h2>
+        <p>Evaluate <strong>retrieval separately from generation</strong> so you know <em>where</em> a failure comes from. The metrics you must be able to name:</p>
+        <div class="grid grid-2">
+          <div class="card"><h4>Retrieval quality</h4><ul style="margin:6px 0 0;padding-left:18px">
+            <li><strong>Context precision</strong> — of retrieved chunks, how many are relevant.</li>
+            <li><strong>Context recall</strong> — of the evidence needed, how much was retrieved.</li>
+            <li>Empty / irrelevant / duplicate / stale retrieval.</li>
+          </ul></div>
+          <div class="card"><h4>Generation quality</h4><ul style="margin:6px 0 0;padding-left:18px">
+            <li><strong>Faithfulness / groundedness</strong> — answer supported by retrieved context (no hallucination).</li>
+            <li><strong>Answer relevance</strong> — does it actually address the question.</li>
+            <li><strong>Citation correctness</strong> — cited sources really back the claim.</li>
+          </ul></div>
+        </div>
+        <div class="callout note">
+          <div class="c-ico">🔗</div>
+          <div class="c-body"><div class="c-title">Go deeper</div>
+          <p>The full RAG evaluation and improvement workflow (RAGAS-style metrics, chunking/retriever comparison) is in <a href="rag-deep-dive.html#evaluation">RAG, End-to-End →</a>. Frameworks: <strong>RAGAS</strong>, <strong>DeepEval</strong>, TruLens.</p></div>
+        </div>
+
+        <!-- 9 -->
+        <h2 id="agent-evals">9 · Agent-based evals</h2>
+        <p>Agents add a dimension: it's not just the final answer, it's the <em>path</em> taken. Evaluate:</p>
+        <ul>
+          <li><strong>Task completion</strong> — did the agent actually achieve the goal (end-to-end success rate).</li>
+          <li><strong>Trajectory / tool-selection accuracy</strong> — did it pick the right tools with the right parameters, in a sensible order.</li>
+          <li><strong>Efficiency</strong> — unnecessary steps, loops, repeated calls, retries, abandoned runs.</li>
+          <li><strong>Handoffs</strong> — in multi-agent systems, whether control passed correctly between agents.</li>
+        </ul>
+        <div class="callout note">
+          <div class="c-ico">🔗</div>
+          <div class="c-body"><div class="c-title">Where you see the trajectory</div>
+          <p>You measure all of this from <strong>traces</strong> — one trace per request with every agent step and tool call. That's the observability layer: see <a href="langfuse.html">Langfuse →</a> and <a href="llmops.html#observability">LLMOps §Observability →</a>.</p></div>
+        </div>
+
+        <!-- 10 -->
+        <h2 id="safety-evals">10 · Safety evals</h2>
+        <p>Evaluate whether the app resists misuse and stays within policy — the thing missing in the Chevrolet and Air Canada cases.</p>
+        <ul>
+          <li><strong>Jailbreak / prompt-injection resistance</strong> — run a red-team set of adversarial prompts and measure how many break scope.</li>
+          <li><strong>Toxicity / harmful content</strong>, <strong>PII leakage</strong>, <strong>off-topic (scope) violations</strong>.</li>
+          <li><strong>Refusal correctness</strong> — refuses what it should, doesn't over-refuse benign requests.</li>
+        </ul>
+        <p>This pairs with runtime <a href="guardrails.html">Guardrails →</a>: guardrails <em>prevent</em> at runtime; safety evals <em>measure</em> how well they work.</p>
+
+        <!-- 11 -->
+        <h2 id="operational-evals">11 · Operational evals (post-deployment)</h2>
+        <p>Once it's live, quality isn't only about the text — it's about the system. Monitor:</p>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Metric</th><th>Meaning</th></tr>
+            <tr><td><strong>Latency</strong></td><td>End-to-end time to a full response</td></tr>
+            <tr><td><strong>Time to first token (TTFT)</strong></td><td>How long before streaming starts — dominates perceived speed</td></tr>
+            <tr><td><strong>Tokens per second</strong></td><td>Generation throughput once streaming begins</td></tr>
+            <tr><td><strong>Tokens &amp; cost per request</strong></td><td>Input + output tokens → $ per request / per user</td></tr>
+            <tr><td><strong>Throughput / system load</strong></td><td>Requests handled concurrently; queueing under load</td></tr>
+            <tr><td><strong>Quality drift</strong></td><td>Scores trending down over time as data/models/usage change</td></tr>
+          </table>
+        </div>
+        <div class="callout note">
+          <div class="c-ico">🔗</div>
+          <div class="c-body"><div class="c-title">Optimizing these</div>
+          <p>Reducing latency, tokens and cost without hurting quality is its own topic — see <a href="llmops.html#cost">LLMOps §Cost &amp; latency →</a> and <a href="modules/14_production_genai.html">14 · Production GenAI →</a>.</p></div>
+        </div>
+
+        <!-- 12 -->
+        <h2 id="tools">12 · Tools you should be able to name</h2>
+        <ul>
+          <li><strong>App-eval frameworks:</strong> RAGAS (RAG), DeepEval, TruLens, OpenAI Evals, promptfoo.</li>
+          <li><strong>Tracing + eval platforms:</strong> Langfuse, LangSmith, Arize Phoenix, Braintrust.</li>
+          <li><strong>Benchmarks (foundation models):</strong> MMLU, GSM8K, HumanEval, TruthfulQA, LMSYS Arena.</li>
+        </ul>
+
+        <!-- 13 -->
+        <h2 id="interview">13 · Interview cheat-sheet</h2>
+        <div class="qa"><p class="q">Q. Why can't you unit-test an LLM app the way you test normal software?</p><p class="a">Because LLMs are probabilistic (same input → different valid outputs), so exact-match assertions fail; and quality is multi-dimensional (factuality, relevance, groundedness, tone, latency, cost), not a single correctness bit. You test <em>properties</em> of the output using references, rubrics, classifiers or a judge model.</p></div>
+        <div class="qa"><p class="q">Q. What is a golden dataset and why does it matter?</p><p class="a">A curated, reviewed set of representative input/expected-output examples used to score the app repeatably and compare versions. It's the foundation — your evals are only as good as this set. ~30–50 examples covering common and edge cases is a solid POC size.</p></div>
+        <div class="qa"><p class="q">Q. What is LLM-as-a-judge and what are its risks?</p><p class="a">Using a second LLM to score outputs against criteria, returning a score + reason. It scales open-ended judgement. Risks: bias (position/verbosity/self-preference) and inconsistency — mitigate with temperature 0, a clear rubric, structured output, and calibration against a few human-labeled examples.</p></div>
+        <div class="qa"><p class="q">Q. How do you evaluate a RAG system?</p><p class="a">Separate retrieval from generation. Retrieval: context precision/recall on a set with known supporting docs. Generation: faithfulness/groundedness, answer relevance, citation correctness. This tells you whether a failure is a retrieval problem or a generation problem.</p></div>
+        <div class="qa"><p class="q">Q. How is evaluating an agent different?</p><p class="a">You evaluate the trajectory, not just the final answer: task-completion rate, tool-selection accuracy, efficiency (loops/retries/wasted steps) and correct handoffs — all read from execution traces.</p></div>
+        <div class="qa"><p class="q">Q. A model update improved your average score. Ship it?</p><p class="a">Not on the average alone. Check the worst cases and failure categories for regressions — especially safety and factuality — plus latency and cost. A higher mean can hide a new critical failure.</p></div>
+        <div class="qa"><p class="q">Q. Give a real example of shipping without evals going wrong.</p><p class="a">Air Canada's chatbot hallucinated a refund policy and the airline was held liable; a Chevrolet dealer bot was jailbroken into "selling" a car for $1; a lawyer filed ChatGPT-fabricated legal cases and was fined. All preventable with grounding/safety evals and guardrails.</p></div>
+
+        <div class="page-nav">
+          <a href="guardrails.html"><div class="dir">← Related</div><div class="ttl">Guardrails</div></a>
+          <a class="next" href="llmops.html"><div class="dir">Operate it →</div><div class="ttl">LLMOps</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/app.js"></script>
+<script src="assets/sitenav.js"></script>
+<script src="assets/enhance.js"></script>
+<script src="assets/section-nav.js"></script>
+</body>
+</html>

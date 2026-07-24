@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>LLMOps — Operating LLM Apps for Interviews · GenAI Mastery</title>
+<!-- Interview Preparation brand metadata -->
+<link rel="icon" href="assets/brand/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/brand/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="assets/brand/favicon.ico">
+<link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png" sizes="180x180">
+<link rel="manifest" href="assets/brand/site.webmanifest">
+<link rel="mask-icon" href="assets/brand/safari-pinned-tab.svg" color="#6f47f5">
+<link rel="image_src" href="assets/brand/social-card.png">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="msapplication-TileColor" content="#2563eb">
+<meta name="msapplication-config" content="assets/brand/browserconfig.xml">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Interview Preparation">
+<meta property="og:title" content="LLMOps — Operating LLM Apps for Interviews · GenAI Mastery">
+<meta property="og:description" content="LLMOps for GenAI developer interviews — what it is and how it differs from MLOps, the lifecycle (prompt/model versioning, experiment tracking, deployment, observability, evaluation, cost/latency, guardrails, feedback loops), tooling, and the questions you'll be asked.">
+<meta property="og:image" content="assets/brand/social-card.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Switch job learning platform logo">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="LLMOps — Operating LLM Apps for Interviews · GenAI Mastery">
+<meta name="twitter:description" content="LLMOps for GenAI developer interviews — lifecycle, versioning, experiment tracking, observability, evaluation, cost/latency, guardrails, tooling and interview questions.">
+<meta name="twitter:image" content="assets/brand/social-card.png">
+<!-- /Interview Preparation brand metadata -->
+<meta name="description" content="LLMOps for GenAI developer interviews — what it is and how it differs from MLOps, the lifecycle (prompt/model versioning, experiment tracking, deployment, observability, evaluation, cost/latency, guardrails, feedback loops), tooling, and the questions you'll be asked.">
+<link rel="stylesheet" href="assets/styles.css">
+<link href="assets/office-theme.css" rel="stylesheet"/>
+<style>
+  .qa { border:1px solid var(--border); border-left:4px solid var(--accent); border-radius:var(--radius);
+        padding:14px 18px; margin:14px 0; background:var(--bg-elevated); }
+  .qa .q { font-weight:750; margin:0 0 6px; }
+  .qa .a { margin:0; color:var(--text-secondary); }
+  .stage-grid { display:grid; gap:14px; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); margin:18px 0; }
+  .stage { border:1px solid var(--border); border-left:4px solid var(--accent); border-radius:var(--radius);
+           padding:14px 16px; background:var(--bg-elevated); }
+  .stage h4 { margin:0 0 5px; }
+  .stage p { margin:0; font-size:13px; color:var(--text-secondary); }
+
+  /* Lifecycle diagram: compact horizontal row on desktop; mobile keeps the
+     shared vertical .cssflow layout untouched (below 861px this block is off). */
+  @media (min-width: 861px) {
+    .cssflow.lifecycle { flex-direction: row; flex-wrap: wrap; justify-content: center;
+                         align-items: stretch; gap: 12px 0; margin: 18px 0; }
+    .cssflow.lifecycle .fnode { flex: 1 1 0; min-width: 92px; max-width: 168px;
+                                padding: 9px 10px; font-size: 11.75px; }
+    .cssflow.lifecycle .fnode small { font-size: 10px; margin-top: 1px; }
+    .cssflow.lifecycle .farrow { align-self: center; flex: none;
+                                 width: 18px; height: 2px !important;
+                                 background: linear-gradient(90deg, var(--accent), var(--border-strong)); }
+    .cssflow.lifecycle .farrow::after { top: 50%; bottom: auto; left: auto; right: -1px;
+                                        transform: translateY(-50%);
+                                        border-top: 5px solid transparent;
+                                        border-bottom: 5px solid transparent;
+                                        border-left: 7px solid var(--accent);
+                                        border-right: 0; }
+  }
+</style>
+</head>
+<body data-page="llmops" data-no-concept-lab>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="index.html" aria-label="Switch job home">
+<span class="brand-mark" aria-hidden="true"><img src="assets/brand/switch-job-logo.svg" alt=""/></span>
+<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-secsearch placeholder="Jump to a section…  ( / )">
+      </div>
+      <div class="search-results" data-secresults></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Deep Dives / <b>LLMOps — operating LLM apps</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Operations · running an LLM app in production</div>
+        <h1>LLMOps</h1>
+        <p class="lead"><strong>LLMOps</strong> is the set of practices and tooling for taking an LLM application from a notebook demo to a reliable production system — and keeping it good. It covers how you version prompts and models, track experiments, deploy, observe, evaluate, control cost and latency, and improve from real usage. This page is the interview-focused map.</p>
+        <div class="meta-row">
+          <span class="pill blue">⏱ Deep study · 5–8 h</span>
+          <span class="pill">Interview-focused</span>
+          <span class="pill purple">Lifecycle + tooling</span>
+        </div>
+
+        <div class="callout key">
+          <div class="c-ico">🎯</div>
+          <div class="c-body"><div class="c-title">The one-line answer interviewers want</div>
+          <p><strong>LLMOps is MLOps adapted to applications built on foundation models.</strong> The model is usually a third-party API you don't train, so the operational focus shifts from training pipelines to <em>prompts, retrieval, evaluation, observability, guardrails, and cost/latency</em> of the app around the model.</p></div>
+        </div>
+
+        <!-- 1 -->
+        <h2 id="what">1 · What LLMOps is — and how it differs from MLOps</h2>
+        <p>Classic MLOps is built around <em>training your own model</em>: data pipelines, feature stores, training runs, model registries, retraining on drift. In most GenAI apps you <strong>don't train the model</strong> — you call a foundation model (Claude, GPT, an open model) and build value <em>around</em> it. That changes what "ops" means.</p>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Concern</th><th>Classic MLOps</th><th>LLMOps</th></tr>
+            <tr><td>Core artifact</td><td>A trained model + its weights</td><td>A <strong>prompt + config + retrieval + tools</strong> around a hosted model</td></tr>
+            <tr><td>"Training"</td><td>Model training / fine-tuning</td><td>Prompt engineering, RAG design, occasional fine-tuning</td></tr>
+            <tr><td>Output</td><td>Deterministic-ish numeric predictions</td><td>Probabilistic free text → needs <a href="llm-evals.html">multi-dimensional evals</a></td></tr>
+            <tr><td>Main runtime risks</td><td>Data/concept drift</td><td>Hallucination, prompt injection, cost blow-ups, latency</td></tr>
+            <tr><td>Cost driver</td><td>GPU training + serving</td><td><strong>Tokens per request</strong> × volume (API cost)</td></tr>
+          </table>
+        </div>
+
+        <!-- 2 -->
+        <h2 id="lifecycle">2 · The LLMOps lifecycle</h2>
+        <p>A continuous loop, not a one-way pipeline. Each stage below is a common interview probe.</p>
+        <div class="diagram">
+          <div class="cssflow lifecycle">
+            <div class="fnode">Prompt / model / config</div>
+            <div class="farrow"></div>
+            <div class="fnode accent">Experiment &amp; track <small>compare configs</small></div>
+            <div class="farrow"></div>
+            <div class="fnode accent">Evaluate <small>golden set + metrics</small></div>
+            <div class="farrow"></div>
+            <div class="fnode">Deploy <small>with guardrails</small></div>
+            <div class="farrow"></div>
+            <div class="fnode accent">Observe <small>traces · cost · latency</small></div>
+            <div class="farrow"></div>
+            <div class="fnode">Feedback → improve</div>
+          </div>
+          <div class="diagram-caption">The operating loop: experiment → evaluate → deploy → observe → feed real failures back into the next experiment.</div>
+        </div>
+
+        <!-- 3 -->
+        <h2 id="versioning">3 · Prompt, model &amp; config management</h2>
+        <p>In LLMOps the prompt <em>is</em> the code. Treat it that way:</p>
+        <ul>
+          <li><strong>Version prompts and system instructions</strong> — every change is traceable and rollback-able, like git for prompts.</li>
+          <li><strong>Pin the model &amp; parameters</strong> — model name/version, temperature, max tokens, tool descriptions. A provider silently updating a model can change behavior; pin and re-evaluate on upgrade.</li>
+          <li><strong>Separate config from code</strong> — so non-engineers can iterate on prompts without redeploying, and so you can A/B them.</li>
+        </ul>
+
+        <!-- 4 -->
+        <h2 id="experiments">4 · Experiment tracking</h2>
+        <p>Replace informal trial-and-error with reproducible comparisons. Every result should trace back to the exact prompt, model, parameters, tool descriptions, dataset and agent instructions that produced it.</p>
+        <div class="callout tip">
+          <div class="c-ico">🧪</div>
+          <div class="c-body"><div class="c-title">Concrete example</div>
+          <p>Test 3 prompt versions × 2 models = 6 configurations over the same test set; record inputs, outputs, quality score, latency, tokens and cost; build a comparison matrix; pick the best on agreed criteria — and prove it by re-running the chosen config and getting the same result.</p></div>
+        </div>
+        <div class="callout warn">
+          <div class="c-ico">⚠️</div>
+          <div class="c-body"><div class="c-title">Interview trap</div>
+          <p>The highest quality score is <em>not</em> automatically the best choice — weigh it against latency and cost, and against the business need. Combinations also explode fast, so control the grid.</p></div>
+        </div>
+
+        <!-- 5 -->
+        <h2 id="evaluation">5 · Evaluation in the loop</h2>
+        <p>Evaluation isn't a one-off — it's a gate. Run your eval suite on every prompt/model change (CI for prompts), and monitor quality after deploy.</p>
+        <div class="callout note">
+          <div class="c-ico">🔗</div>
+          <div class="c-body"><div class="c-title">Full treatment</div>
+          <p>Methods, golden datasets, LLM-as-judge, and RAG/agent/safety metrics are covered in <a href="llm-evals.html">LLM Evals →</a>. In LLMOps terms: <strong>offline evals</strong> (pre-deploy, on a golden set) gate releases; <strong>online evals</strong> (post-deploy, on live traces + user feedback) catch drift.</p></div>
+        </div>
+
+        <!-- 6 -->
+        <h2 id="deployment">6 · Deployment &amp; serving concerns</h2>
+        <div class="stage-grid">
+          <div class="stage"><h4>Model routing &amp; fallback</h4><p>Route simple tasks to a cheaper/smaller model; fall back to another provider if one is down or rate-limited.</p></div>
+          <div class="stage"><h4>Caching</h4><p>Cache identical/similar requests and reuse prompt prefixes (prompt caching) to cut cost and latency.</p></div>
+          <div class="stage"><h4>Rate limits &amp; retries</h4><p>Handle provider 429s with backoff; make retries idempotent so you don't double-charge or double-act.</p></div>
+          <div class="stage"><h4>Streaming</h4><p>Stream tokens so time-to-first-token is low and the UX feels fast even when total latency is high.</p></div>
+        </div>
+
+        <!-- 7 -->
+        <h2 id="observability">7 · Observability &amp; tracing</h2>
+        <p>You cannot operate what you cannot see. The core unit is a <strong>trace</strong>: one request captured end-to-end, including every agent step, tool call, prompt, response, token count and latency.</p>
+        <ul>
+          <li><strong>Debugging</strong> — replay a failed request and see exactly which step went wrong.</li>
+          <li><strong>Metrics</strong> — success/failure rate, latency per step, tokens and cost per agent/tool, retries and loops.</li>
+          <li><strong>Quality scores &amp; user feedback</strong> attached to traces for online evaluation.</li>
+        </ul>
+        <div class="callout note">
+          <div class="c-ico">🔗</div>
+          <div class="c-body"><div class="c-title">Go deeper</div>
+          <p>The hands-on tracing/scoring workflow is in <a href="langfuse.html">Langfuse — Observability →</a>. Alternatives: LangSmith, Arize Phoenix.</p></div>
+        </div>
+
+        <!-- 8 -->
+        <h2 id="cost">8 · Cost, token &amp; latency optimization</h2>
+        <p>A direct, measurable part of the job — and a frequent interview topic. The levers:</p>
+        <div class="table-wrap">
+          <table>
+            <tr><th>Lever</th><th>Effect</th></tr>
+            <tr><td>Prompt compression / trimming context</td><td>Fewer input tokens → lower cost &amp; latency</td></tr>
+            <tr><td>Right-size the model (small model for simple tasks)</td><td>Large cost savings on low-risk work</td></tr>
+            <tr><td>Cap &amp; control output length</td><td>Output tokens are often the bigger cost</td></tr>
+            <tr><td>Caching / prompt caching</td><td>Avoid paying for repeated work</td></tr>
+            <tr><td>Remove unnecessary agent/tool steps</td><td>Fewer LLM calls per request</td></tr>
+            <tr><td>Streaming</td><td>Better perceived latency (TTFT)</td></tr>
+          </table>
+        </div>
+        <div class="callout warn">
+          <div class="c-ico">⚠️</div>
+          <div class="c-body"><div class="c-title">The key trade-off to state out loud</div>
+          <p>Every optimization has a point where it starts to hurt quality. The right method is: measure a baseline (quality, tokens, latency, cost), apply one change at a time, and find the threshold where quality degradation becomes unacceptable. Optimize <em>to</em> that line, not past it.</p></div>
+        </div>
+
+        <!-- 9 -->
+        <h2 id="safety">9 · Guardrails &amp; safety in operations</h2>
+        <p>Runtime protection is an ops responsibility: input/output guardrails, PII redaction, prompt-injection defense, scope enforcement — plus logging every guardrail trip so you can measure false-positive rate and tune it.</p>
+        <div class="callout note">
+          <div class="c-ico">🔗</div>
+          <div class="c-body"><div class="c-title">Full rulebook</div>
+          <p>See <a href="guardrails.html">Guardrails →</a> for what to enforce and how to implement it, and <a href="llm-evals.html#safety-evals">LLM Evals §Safety →</a> for measuring how well it holds up.</p></div>
+        </div>
+
+        <!-- 10 -->
+        <h2 id="feedback">10 · Feedback loops &amp; continuous improvement</h2>
+        <p>What closes the loop: capture real failures (thumbs-down, escalations, low-scoring traces), fold them into the <a href="llm-evals.html#pipeline">golden dataset</a>, and re-run experiments. Production usage becomes the source of your next eval cases — this is how an LLM app gets better over time without retraining a model.</p>
+
+        <!-- 11 -->
+        <h2 id="tools">11 · Tooling landscape</h2>
+        <ul>
+          <li><strong>Observability / tracing:</strong> Langfuse, LangSmith, Arize Phoenix.</li>
+          <li><strong>Evaluation:</strong> RAGAS, DeepEval, promptfoo, OpenAI Evals (see <a href="llm-evals.html#tools">LLM Evals</a>).</li>
+          <li><strong>Orchestration:</strong> LangChain, LlamaIndex, LangGraph (see <a href="langgraph.html">LangGraph →</a>).</li>
+          <li><strong>Experiment/registry:</strong> MLflow, Weights &amp; Biases, LangSmith datasets.</li>
+          <li><strong>Serving/gateway:</strong> vLLM, LiteLLM, provider gateways (routing, caching, rate limiting).</li>
+        </ul>
+
+        <!-- 12 -->
+        <h2 id="interview">12 · Interview cheat-sheet</h2>
+        <div class="qa"><p class="q">Q. What is LLMOps and how is it different from MLOps?</p><p class="a">LLMOps is MLOps for apps built on foundation models. You usually don't train the model, so the focus moves from training pipelines and retraining-on-drift to prompts/config versioning, retrieval, evaluation, observability, guardrails, and token cost/latency of the app around a hosted model.</p></div>
+        <div class="qa"><p class="q">Q. Walk me through the LLMOps lifecycle.</p><p class="a">Experiment with prompts/models/config → evaluate on a golden set → deploy with guardrails → observe via traces (cost, latency, quality) → feed real failures back into the next experiment. It's a continuous loop.</p></div>
+        <div class="qa"><p class="q">Q. Why version prompts and pin models?</p><p class="a">The prompt is the behavior-defining code, so changes need history and rollback. Models change under you — a silent provider update can shift outputs — so you pin the version and re-run evals before adopting a new one.</p></div>
+        <div class="qa"><p class="q">Q. How do you reduce LLM cost without wrecking quality?</p><p class="a">Baseline first, then apply one lever at a time: trim/compress context, cap output length, right-size the model per task, cache, and cut unnecessary agent steps — stopping at the threshold where quality starts to degrade.</p></div>
+        <div class="qa"><p class="q">Q. What's the difference between offline and online evaluation?</p><p class="a">Offline runs on a curated golden set before deploy and gates releases (CI for prompts). Online runs on live traffic — trace scores and user feedback — to catch quality drift and surface new failure cases in production.</p></div>
+        <div class="qa"><p class="q">Q. What does a trace contain and why does it matter?</p><p class="a">One request end-to-end: each step, tool call, prompt, response, tokens and latency. It's the foundation for debugging, cost/latency metrics, and attaching quality scores — you can't operate or improve what you can't see.</p></div>
+
+        <div class="page-nav">
+          <a href="llm-evals.html"><div class="dir">← Related</div><div class="ttl">LLM Evals</div></a>
+          <a class="next" href="langfuse.html"><div class="dir">Observe it →</div><div class="ttl">Langfuse · Observability</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/app.js"></script>
+<script src="assets/sitenav.js"></script>
+<script src="assets/enhance.js"></script>
+<script src="assets/section-nav.js"></script>
+</body>
+</html>
