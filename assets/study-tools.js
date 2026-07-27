@@ -101,7 +101,7 @@
     if (meta && !document.querySelector(".study-commitment")) {
       var guide = document.createElement("div");
       guide.className = "study-commitment";
-      guide.innerHTML = '<div class="study-commitment-copy"><span class="study-commitment-icon" aria-hidden="true">◷</span><div><strong>Recommended study pace</strong><p>Aim for at least <b>2–4 focused hours daily</b>, with an <b>8-hour weekend block</b>. This module is planned for ' + formatMinutes(module.minutes, false) + ' including notes, practice and recall.</p></div></div><a class="study-progress-link" href="../progress.html">Open progress tracker →</a>';
+      guide.innerHTML = '<div class="study-commitment-copy"><span class="study-commitment-icon" aria-hidden="true">◷</span><div><strong>Recommended study pace</strong><p>Aim for at least <b>2–4 focused hours daily</b>, with an <b>8-hour weekend block</b>. This module is planned for ' + formatMinutes(module.minutes, false) + ' including notes, practice and recall.</p></div></div>';
       meta.insertAdjacentElement("afterend", guide);
     }
 

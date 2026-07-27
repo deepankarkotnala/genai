@@ -311,7 +311,6 @@ img, svg { max-width: 100%; }
   border-radius: var(--radius); padding: 20px; box-shadow: var(--shadow-sm);
   transition: transform .18s, box-shadow .18s, border-color .18s;
 }
-.card.hover:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); border-color: var(--border-strong); }
 .card h3, .card h4 { margin-top: 0; }
 .card .ico { font-size: 22px; margin-bottom: 8px; display: block; }
 .card p { margin-bottom: 0; font-size: 14px; }
@@ -1250,7 +1249,7 @@ body[data-page="00"] .readmap { margin-top: 20px; }
   transition: opacity .25s ease;
 }
 .card:hover::before, .glass-spotlight:hover::before { opacity: 1; }
-.card.hover:hover, .page-nav a:hover {
+.card:hover, .page-nav a:hover {
   transform: translateY(-5px);
   border-color: rgba(16, 124, 65, .25);
   box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, .56);
@@ -1659,76 +1658,21 @@ body.reader-narrow { --content-max: 760px; --reading-line: 62ch; }
 body.reader-high-contrast { --text-secondary: #393746; --text-muted: #6d6a79; }
 [data-theme="dark"] body.reader-high-contrast { --text-secondary: #dedbe8; --text-muted: #b3afbf; }
 
+/* Focus mode itself is defined in ONE place — `assets/office-theme.css`, which
+   every page in the portal loads after this file. It used to be defined here
+   as well (as a floating exit pill with no navigation bar) and a third time in
+   `assets/dsa-prep.css`, and those three implementations only agreed because of
+   the order they happened to load in. Keep the shared reading variables here
+   and let office-theme.css own the layout, so no page can drift out of parity.
+
+   The measure widens because the focused canvas uses the whole screen; the
+   canvas width, the navigation bar and the exit control all live over there. */
 body.focus-mode {
-  --content-max: 1220px;
+  --content-max: none;
   --reading-line: 94ch;
-  --reader-content-width: 1220px;
   --reader-line-length: 94ch;
 }
-body.focus-mode .app { grid-template-columns: minmax(0, 1fr); }
-body.focus-mode .main { width: 100%; min-width: 0; }
-body.focus-mode .sidebar,
-body.focus-mode .sidebar-resizer,
-body.focus-mode .backdrop,
-body.focus-mode .toc-rail,
-body.focus-mode .toc,
-body.focus-mode .reading-progress,
-body.focus-mode .scroll-top,
-body.focus-mode .site-footer { display: none !important; }
-body.focus-mode .content-wrap {
-  grid-template-columns: minmax(0, 1fr);
-  width: 100%;
-  max-width: 1380px;
-  margin-inline: auto;
-  padding-inline: clamp(22px, 5vw, 86px);
-}
-body.focus-mode .content {
-  width: 100%;
-  max-width: min(100%, var(--reader-content-width));
-  margin-inline: auto;
-  padding-top: clamp(28px, 4vw, 54px);
-}
-/* Focus mode keeps only a small, unobtrusive exit control instead of the
-   full navigation bar. The lesson remains the clear visual center. */
-body.focus-mode .topbar {
-  position: fixed;
-  inset: 12px 14px auto auto;
-  z-index: 90;
-  width: auto;
-  height: auto;
-  margin: 0;
-  padding: 0;
-  border: 0;
-  background: transparent;
-  box-shadow: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
-  pointer-events: none;
-}
-body.focus-mode .topbar > *:not(.focus-btn) { display: none !important; }
-body.focus-mode .topbar .focus-btn {
-  display: inline-flex !important;
-  min-width: 0;
-  height: 34px;
-  padding: 0 10px;
-  gap: 6px;
-  border-radius: 999px;
-  font-size: 11.5px;
-  pointer-events: auto;
-  opacity: .82;
-  box-shadow: 0 8px 24px rgba(36, 27, 78, .12), inset 0 1px 0 var(--glass-line);
-}
-body.focus-mode .topbar .focus-btn:hover,
-body.focus-mode .topbar .focus-btn:focus-visible { opacity: 1; }
-body.focus-mode .topbar .focus-btn svg { width: 14px; height: 14px; }
 body.focus-mode .hero { padding: clamp(28px, 4vw, 44px); }
-
-@media (max-width: 680px) {
-  body.focus-mode .content-wrap { padding-inline: clamp(15px, 5vw, 24px); }
-  body.focus-mode .topbar { inset: 9px 9px auto auto; }
-  body.focus-mode .topbar .focus-btn { width: 34px; padding: 0; }
-  body.focus-mode .topbar .focus-lbl { display: none; }
-}
 
 /* ---- Responsive system ---- */
 @media (max-width: 1180px) {
@@ -2489,6 +2433,19 @@ html[data-theme="dark"][data-reading-contrast="high"] .content :is(.card, .callo
 /* Neural-network interview prerequisite */
 .nn-study-map .card { min-height: 150px; }
 .nn-study-map .ico { font-family: var(--font-mono); }
+/* The six map cards jump to the section that teaches them, so they are anchors.
+   Reset the link colour and add a hover/focus affordance so they still read as
+   cards rather than inline links. */
+.nn-study-map a.card { display: flex; flex-direction: column; color: inherit; cursor: pointer; }
+.nn-study-map a.card:hover h4,
+.nn-study-map a.card:focus-visible h4 { color: var(--accent); }
+.nn-study-map a.card:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+.nn-map-jump {
+  margin-top: auto; padding-top: 12px; font-size: 12px; font-weight: 650;
+  letter-spacing: .01em; color: var(--text-muted); transition: color .18s;
+}
+.nn-study-map a.card:hover .nn-map-jump,
+.nn-study-map a.card:focus-visible .nn-map-jump { color: var(--accent); }
 .nn-formula {
   display: flex;
   align-items: center;
@@ -4049,4 +4006,13 @@ html[data-theme="dark"] .toc-textbook a.active {
 @media (min-width: 861px) and (max-width: 1080px) {
   :root { --toc-w: 148px; --sidebar-w: 184px; }
   .toc.toc-textbook a { grid-template-columns: 19px minmax(0, 1fr); gap: 4px; font-size: 8.9px; }
+}
+
+/* Desktop density: render the left navigation sidebar and the centre article at
+   90% (fonts, spacing and elements together). The right-hand chapter-contents
+   TOC rail is intentionally left at full size. Desktop only — mobile unchanged. */
+@media (min-width: 861px) {
+  html .app { grid-template-columns: calc(var(--sidebar-w) * 0.9) minmax(0, 1fr); }
+  .app > .sidebar { zoom: 0.9; height: calc(100vh / 0.9); }
+  .content-wrap > .content { zoom: 0.9; }
 }

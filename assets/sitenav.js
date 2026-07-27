@@ -87,13 +87,13 @@
         // Agents
         { path: "modules/08_agents.html", title: "Agentic AI", num: "08", track: "Agents", kw: "agent react tool calling planning reflection memory loop" },
         { path: "modules/09_mcp.html", title: "Model Context Protocol", num: "09", track: "Agents", kw: "mcp model context protocol server client tool resource prompt" },
-        { path: "modules/13_multi_agents.html", title: "Multi-Agent Systems", num: "13", track: "Agents", kw: "crewai multi agent orchestration supervisor handoff" },
         // Frameworks
         { path: "modules/10_langchain.html", title: "LangChain", num: "10", track: "Frameworks", kw: "langchain lcel chains runnable retriever memory" },
         { path: "modules/11_llamaindex.html", title: "LlamaIndex", num: "11", track: "Frameworks", kw: "llamaindex index node document query engine" },
         { path: "modules/12_langgraph.html", title: "LangGraph", num: "12", track: "Frameworks", kw: "langgraph state node edge conditional routing parallel human in the loop asyncio pydantic" },
         { path: "langgraph-asyncio.html", title: "AsyncIO for LangGraph", num: "12A", track: "Frameworks", kw: "python asyncio event loop coroutine task taskgroup gather cancellation timeout semaphore backpressure ainvoke astream async node interview" },
         { path: "langgraph-pydantic.html", title: "Pydantic for LangGraph", num: "12B", track: "Frameworks", kw: "pydantic v2 basemodel field validator model validator configdict strict schema discriminated union langgraph state interview" },
+        { path: "modules/13_multi_agents.html", title: "Multi-Agent Systems", num: "13", track: "Frameworks", kw: "crewai multi agent orchestration supervisor handoff" },
         // Production
         { path: "modules/14_production_genai.html", title: "Production GenAI", num: "14", track: "Production", kw: "observability tracing cost guardrails rate limiting evaluation testing security" },
         { path: "modules/15_capstone_projects.html", title: "Capstone Projects", num: "15", track: "Production", kw: "capstone project pdf rag sql agent elasticsearch mcp multi-agent enterprise" }
@@ -169,15 +169,6 @@
       ]
     },
 
-    /* COMPLETE_INTERVIEW_HUB_START */
-    {
-      id: "completeinterview", label: "Complete Interview Hub", mark: "Q", blurb: "55-page synchronized interview site", home: "interview-hub/index.html",
-      pages: [
-        { path: "interview-hub/index.html", title: "Complete interview hub", num: "✦", kw: "complete genai interview hub 173 questions answers mocks projects system design role roadmap 30 60 90 rag agents evaluation llmops guardrails python behavioral" }
-      ]
-    },
-    /* COMPLETE_INTERVIEW_HUB_END */
-
     /* INTERVIEW_PREP_START */
     {
       id: "interviewprep", label: "GenAI Interview Prep", mark: "I", blurb: "India-focused question bank", home: "interview-prep/index.html",
@@ -211,6 +202,15 @@
       ]
     },
     /* INTERVIEW_PREP_END */
+
+    /* COMPLETE_INTERVIEW_HUB_START */
+    {
+      id: "completeinterview", label: "Complete Interview Hub", mark: "Q", blurb: "55-page synchronized interview site", home: "interview-hub/index.html",
+      pages: [
+        { path: "interview-hub/index.html", title: "Complete interview hub", num: "✦", kw: "complete genai interview hub 173 questions answers mocks projects system design role roadmap 30 60 90 rag agents evaluation llmops guardrails python behavioral" }
+      ]
+    },
+    /* COMPLETE_INTERVIEW_HUB_END */
     {
       id: "deepdives",
       label: "Deep Dives",

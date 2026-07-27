@@ -61,6 +61,12 @@
     return page.indexOf("dsa-") === 0;
   }
 
+  // True while a modal <dialog> is on screen. Page-level keyboard shortcuts
+  // must stand down for it, or they steal keys the dialog needs.
+  function modalOpen() {
+    return !!document.querySelector("dialog[open]");
+  }
+
   function addDsaWorkspaceNav() {
     var bar = document.querySelector(".topbar");
     if (!bar || !isDsaPage() || bar.querySelector(".dsa-workspace-nav")) return;
@@ -89,8 +95,7 @@
       item("Home", "index.html", isHome) +
       item("Learn", "modules/01_foundations.html", isLearn) +
       item("Practice", "scenario-practice/index.html", isPractice) +
-      item("Interview", "interview-hub/index.html", isInterview) +
-      item("Progress", "progress.html", isProgress);
+      item("Interview", "interview-hub/index.html", isInterview);
 
     var crumbs = bar.querySelector(".crumbs");
     if (crumbs) crumbs.insertAdjacentElement("beforebegin", nav);
@@ -130,11 +135,11 @@
       item("Learn", "modules/01_foundations.html", isLearn) +
       item("Practice", "scenario-practice/index.html", isPractice) +
       item("Interview", "interview-hub/index.html", isInterview) +
-      item("Progress", "progress.html", isProgress) +
       '<span class="ribbon-spacer"></span>' +
       '<span class="ribbon-status"><i aria-hidden="true"></i>Offline-ready workspace</span>';
 
     bar.insertAdjacentElement("afterend", ribbon);
+    document.body.classList.add("has-ribbon");
   }
 
   function addHomeButton() {
@@ -172,8 +177,41 @@
     button.className = "focus-btn";
     button.setAttribute("aria-label", "Toggle distraction-free focus mode");
 
+    // In focus mode a single navigation bar is pinned to the top of the
+    // viewport and the exit control plus the theme toggle live inside it, so
+    // nothing floats above the lesson. Which element becomes that bar depends
+    // on where the page keeps its workspace links: the injected ribbon on
+    // portal pages, or the top bar itself on DSA chapters. Marking the winner
+    // with `.focus-nav` lets office-theme.css style one selector instead of
+    // one rule set per page family, which is what kept the two drifting apart.
+    function navBar() {
+      return document.querySelector(".office-ribbon") || bar;
+    }
+
+    function dock(active) {
+      var nav = navBar();
+      var theme = document.querySelector(".topbar [data-theme-toggle], .office-ribbon [data-theme-toggle]");
+      var host = active ? nav : bar;
+
+      // Only ever one bar is marked, and the mark is cleared on exit so the
+      // page returns to its two-row breadcrumb + ribbon layout.
+      var marked = document.querySelectorAll(".focus-nav");
+      for (var i = 0; i < marked.length; i++) {
+        if (!active || marked[i] !== nav) marked[i].classList.remove("focus-nav");
+      }
+      if (active) nav.classList.add("focus-nav");
+
+      if (theme) {
+        if (theme.parentNode !== host) host.appendChild(theme);
+        host.insertBefore(button, theme);
+      } else {
+        host.appendChild(button);
+      }
+    }
+
     function apply(active, persist) {
       document.body.classList.toggle("focus-mode", active);
+      dock(active);
       button.setAttribute("aria-pressed", active ? "true" : "false");
       button.setAttribute("aria-label", active ? "Exit focus mode" : "Enter focus mode");
       button.title = active ? "Exit focus mode (Esc)" : "Enter focus mode (F)";
@@ -192,6 +230,11 @@
     });
 
     document.addEventListener("keydown", function (event) {
+      // A modal dialog owns the keyboard while it is open: Esc must close the
+      // dialog (the browser's own behaviour) rather than exit focus mode, and
+      // typing "f" while reading must not toggle the layout underneath it.
+      if (modalOpen()) return;
+
       if (event.key === "Escape" && document.body.classList.contains("focus-mode")) {
         event.preventDefault();
         apply(false, true);
@@ -204,10 +247,6 @@
       event.preventDefault();
       button.click();
     });
-
-    var theme = bar.querySelector("[data-theme-toggle]");
-    if (theme) bar.insertBefore(button, theme);
-    else bar.appendChild(button);
   }
 
   function readReaderSettings() {
@@ -843,12 +882,50 @@
     });
   }
 
+  // An "additional read" for a single term in the prose: a `.term-link` button
+  // opens the <dialog> named by its data-term-dialog. The native dialog gives us
+  // the backdrop, Esc to close, the focus trap and top-layer stacking for free,
+  // so this only wires the click and a click-outside-to-dismiss.
+  function setupTermDialogs() {
+    var triggers = document.querySelectorAll("[data-term-dialog]");
+
+    for (var i = 0; i < triggers.length; i++) {
+      (function (trigger) {
+        var dialog = document.getElementById(trigger.getAttribute("data-term-dialog"));
+        if (!dialog || typeof dialog.showModal !== "function") return;
+
+        trigger.addEventListener("click", function () {
+          dialog.showModal();
+        });
+
+        // Returning focus to the word keeps keyboard reading position.
+        dialog.addEventListener("close", function () {
+          trigger.focus();
+        });
+
+        // A click on the backdrop lands on the dialog itself, never on its
+        // children, so comparing the target is enough to tell them apart.
+        dialog.addEventListener("click", function (event) {
+          if (event.target === dialog) dialog.close();
+        });
+
+        var close = dialog.querySelector("[data-term-close]");
+        if (close) {
+          close.addEventListener("click", function () {
+            dialog.close();
+          });
+        }
+      })(triggers[i]);
+    }
+  }
+
   function init() {
     clearLegacyReadingClasses();
     addDsaWorkspaceNav();
     addOfficeRibbon();
     addHomeButton();
     addFocusButton();
+    setupTermDialogs();
     // injectTopicDiagram();  // Learning-loop concept diagram removed site-wide (felt unnecessary).
     setupReadingProgress();
     setupSectionGuidance();

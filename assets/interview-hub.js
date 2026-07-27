@@ -29,6 +29,32 @@
       ]
     },
     {
+      /* Pages that live in THIS site, not in the mirrored repository. The
+         workspace "Interview" tab lands here, so the local question bank has to
+         be findable from this catalogue too — otherwise searching for a topic
+         such as "neural networks" reports no matching interview content even
+         though the page exists one section above. These entries link straight
+         to the local file instead of being fetched and re-rendered. */
+      id: "onsite",
+      label: "On This Site",
+      icon: "I",
+      local: true,
+      blurb: "The India-focused GenAI Interview Prep question bank hosted in this workspace. These open directly instead of loading from the mirrored source.",
+      pages: [
+        { path: "interview-prep/index.html", href: "../interview-prep/index.html", local: true, title: "GenAI Interview Question Bank", desc: "Topic-wise question bank overview with all ten local interview topics.", kw: "question bank overview india genai preparation answers topics" },
+        { path: "interview-prep/00-neural-networks.html", href: "../interview-prep/00-neural-networks.html", local: true, title: "Neural Networks for AI Engineers", desc: "Neurons, forward pass, loss, backpropagation, optimizers, dense vs sparse layers and the bridge to transformers.", kw: "neural network neurons deep learning perceptron mlp forward pass loss backpropagation gradient optimizer activation relu gelu softmax batchnorm layernorm overfitting dense fully connected sparse mixture of experts moe pytorch" },
+        { path: "interview-prep/01-llm-foundations-prompting.html", href: "../interview-prep/01-llm-foundations-prompting.html", local: true, title: "LLM Foundations & Prompting", desc: "Model mental model, decoding, hallucinations, prompt design, structured output and RAG vs fine-tuning.", kw: "llm transformer tokens context window temperature decoding hallucination prompt structured output function calling fine tuning" },
+        { path: "interview-prep/02-embeddings-rag.html", href: "../interview-prep/02-embeddings-rag.html", local: true, title: "Embeddings, Vector Search & RAG", desc: "Embeddings, chunking, vector indexes, hybrid retrieval, reranking and RAG evaluation.", kw: "embeddings cosine vector database pgvector hnsw chunking hybrid search reranking retrieval evaluation" },
+        { path: "interview-prep/03-agents-mcp.html", href: "../interview-prep/03-agents-mcp.html", local: true, title: "Agents, Tool Use, LangGraph & MCP", desc: "Agent vs workflow, ReAct, tools, LangGraph, MCP, memory and human control.", kw: "agents workflows react tool calling langgraph mcp memory multi agent human in the loop idempotency" },
+        { path: "interview-prep/04-evaluation-llmops.html", href: "../interview-prep/04-evaluation-llmops.html", local: true, title: "Evaluation, Observability & LLMOps", desc: "Golden datasets, LLM judges, tracing, release gates, drift and incident debugging.", kw: "evaluation golden dataset llm judge tracing langfuse prompt version drift release gate monitoring llmops" },
+        { path: "interview-prep/05-production-performance.html", href: "../interview-prep/05-production-performance.html", local: true, title: "Production Architecture, Latency & Cost", desc: "Model selection, latency budgets, streaming, caching, concurrency, SLOs and cost.", kw: "model selection latency streaming caching concurrency batching tokens cost backpressure deployment slo" },
+        { path: "interview-prep/06-security-responsible-ai.html", href: "../interview-prep/06-security-responsible-ai.html", local: true, title: "Security, Prompt Injection & Responsible AI", desc: "Prompt injection, data authorization, secure tools, PII, bias and defense in depth.", kw: "prompt injection rbac sql injection pii tools secrets responsible ai bias guardrails security" },
+        { path: "interview-prep/07-python-backend-cloud.html", href: "../interview-prep/07-python-backend-cloud.html", local: true, title: "Python, FastAPI, Data & Cloud Engineering", desc: "Async Python, FastAPI structure, Pydantic, queues, idempotency, containers and testing.", kw: "python async fastapi pydantic celery temporal idempotency multi tenancy docker kubernetes rate limit testing" },
+        { path: "interview-prep/08-project-behavioral.html", href: "../interview-prep/08-project-behavioral.html", local: true, title: "Project Deep-Dive & Behavioural Questions", desc: "Project walkthroughs, stack choices, incidents, stakeholder communication and 90-day plans.", kw: "project architecture stack failure optimization tradeoff stakeholder ownership behavioural star 90 days" },
+        { path: "interview-prep/09-sql-for-genai.html", href: "../interview-prep/09-sql-for-genai.html", local: true, title: "SQL & Data Systems for GenAI Roles", desc: "Joins, windows, query plans, transactions, JSONB, pgvector and safe text-to-SQL design.", kw: "sql joins window functions cte indexing explain query plan transactions postgres jsonb pgvector text to sql rls multi tenant" }
+      ]
+    },
+    {
       id: "core",
       label: "Core Track",
       icon: "C",
@@ -242,11 +268,13 @@
     if (path === "index.html") return true;
     return ALLOWED_DIRS.some(function (dir) { return path.indexOf(dir + "/") === 0; }) && /\.html?$/i.test(path);
   }
+  function groupById(id) { return GROUPS.find(function (group) { return group.id === id; }); }
   function groupForPath(path) {
-    if (path === "index.html") return GROUPS[0];
+    var start = groupById("start");
+    if (path === "index.html") return start;
     var dir = path.split("/")[0];
     var id = { pages: "core", projects: "projects", qbank: "qbank", systemdesign: "design", mocks: "mocks" }[dir];
-    return GROUPS.find(function (group) { return group.id === id; }) || GROUPS[0];
+    return groupById(id) || start;
   }
   function allPages() {
     return GROUPS.reduce(function (out, group) {
@@ -259,7 +287,10 @@
       return out;
     }, []);
   }
-  function pageForPath(path) { return allPages().find(function (page) { return page.path === path; }); }
+  /* Only mirrored pages can be discovered, fetched or cached — local ones are
+     plain links, so they must stay out of every source-page count. */
+  function remotePages() { return allPages().filter(function (page) { return !page.local; }); }
+  function pageForPath(path) { return remotePages().find(function (page) { return page.path === path; }); }
 
   function setStatus(text, state) {
     if (!els.status) return;
@@ -289,9 +320,9 @@
       var data = await response.json();
       var paths = (data.tree || []).filter(function (item) { return item.type === "blob" && /\.html?$/i.test(item.path); }).map(function (item) { return item.path; });
       mergeDiscoveredPaths(paths);
-      return { live: true, count: allPages().length };
+      return { live: true, count: remotePages().length };
     } catch (error) {
-      return { live: false, count: allPages().length, error: error };
+      return { live: false, count: remotePages().length, error: error };
     }
   }
 
@@ -307,7 +338,7 @@
   function pageMatches(page, group) {
     if (currentGroup !== "all" && page.groupId !== currentGroup) return false;
     if (!searchTerm) return true;
-    var haystack = [page.title, page.path, page.desc, group.label, group.blurb].join(" ").toLowerCase();
+    var haystack = [page.title, page.path, page.desc, page.kw, group.label, group.blurb].join(" ").toLowerCase();
     return searchTerm.split(/\s+/).every(function (word) { return !word || haystack.indexOf(word) !== -1; });
   }
 
@@ -327,6 +358,12 @@
       html += '<div class="ih-group-head"><div><div class="eyebrow"><span class="dot"></span>' + escapeHTML(group.label) + '</div><h2>' + escapeHTML(group.label) + '</h2></div><p>' + escapeHTML(group.blurb) + '</p></div>';
       html += '<div class="ih-page-grid">';
       pages.forEach(function (page) {
+        if (page.local) {
+          html += '<a class="ih-page-card is-local" href="' + escapeHTML(page.href) + '">' +
+            '<span class="ih-card-badge">In this workspace</span>' +
+            '<h3>' + escapeHTML(page.title) + '</h3><p>' + escapeHTML(page.desc || "Open this page in the workspace.") + '</p></a>';
+          return;
+        }
         html += '<a class="ih-page-card" href="?page=' + encodeURIComponent(page.path) + '" data-ih-page="' + escapeHTML(page.path) + '">' +
           '<h3>' + escapeHTML(page.title) + '</h3><p>' + escapeHTML(page.desc || "Open the complete source page.") + '</p></a>';
       });
@@ -630,7 +667,7 @@
   }
 
   async function cacheAllPages() {
-    var pages = allPages();
+    var pages = remotePages();
     var button = els.sync;
     var complete = 0;
     var failed = 0;

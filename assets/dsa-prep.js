@@ -250,6 +250,7 @@
 
   /* ---------- Init ---------- */
   function init() {
+    markInterviewMust();
     mountProblemControls();
     setupPractice();
     setupReset();

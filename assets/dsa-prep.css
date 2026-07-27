@@ -72,6 +72,13 @@
 .diff.medium { color: var(--diff-medium); background: var(--diff-medium-soft); }
 .diff.hard { color: var(--diff-hard); background: var(--diff-hard-soft); }
 
+/* High-frequency interview indicator (★): the pattern-defining problems most
+   asked at FAANG/MAANG and major India companies. Injected by dsa-prep.js. */
+.p-must { display: inline-flex; align-items: center; justify-content: center; font-size: 13px; line-height: 1; color: #e0a100; cursor: help; -webkit-user-select: none; user-select: none; }
+.dsa-must-legend { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 0 0 14px; padding: 9px 13px; font-size: 13px; color: var(--text-muted); background: rgba(224, 161, 0, 0.09); border: 1px solid rgba(224, 161, 0, 0.28); border-radius: 10px; }
+.dsa-must-legend .p-must { font-size: 14px; }
+.dsa-must-legend strong { color: var(--text); font-weight: 700; }
+
 /* =========================================================================
    Contents (index) — compact textbook rows
    ========================================================================= */
@@ -328,7 +335,11 @@ body[data-page^="dsa-"] {
 /* DSA uses one restrained header row. The workspace links occupy the space
    that the breadcrumb used to take, so there is no stacked ribbon or empty
    strip above the lesson in focus mode. */
-body[data-page^="dsa-"] .topbar {
+/* Scoped to the normal view so that in focus mode the single canonical bar in
+   office-theme.css governs the height, gap and padding on DSA chapters exactly
+   as it does on every other page — including at narrow widths, where the shared
+   rules shrink the bar to 42px. */
+body[data-page^="dsa-"]:not(.focus-mode) .topbar {
   top: 0;
   width: 100%;
   height: 48px;
@@ -390,49 +401,28 @@ body[data-page^="dsa-"] .topbar .menu-btn { flex: 0 0 auto; }
   background: var(--accent);
 }
 
-/* Keep focus mode inside the same top row instead of floating a separate
-   control below it. Hiding the menu is enough because the sidebar is gone. */
-body[data-page^="dsa-"].focus-mode .topbar {
-  position: sticky;
-  inset: auto;
-  top: 0;
-  width: 100%;
-  margin: 0;
-}
-body[data-page^="dsa-"].focus-mode .topbar .menu-btn { display: none !important; }
-body[data-page^="dsa-"].focus-mode .focus-btn {
-  position: static;
-  inset: auto;
-  z-index: auto;
-  height: 28px;
-  min-height: 28px;
-  padding: 0 8px;
-  border: 1px solid transparent !important;
-  border-radius: 5px;
-  color: var(--accent) !important;
-  background: transparent !important;
-  box-shadow: none !important;
-}
-body[data-page^="dsa-"].focus-mode .focus-btn:hover {
-  border-color: var(--border) !important;
-  background: var(--surface) !important;
-}
-body[data-page^="dsa-"].focus-mode .focus-lbl { display: inline !important; }
+/* Focus mode is NOT re-implemented here. It used to be, which meant the DSA
+   chapters and the rest of the portal each carried their own copy of the same
+   design and had to be kept in step by hand. `assets/office-theme.css` now owns
+   it for every page; these rules only describe the normal, two-rail reading
+   view, so they step aside with `:not(.focus-mode)` rather than competing. */
 
 /* Let cards and diagrams use the widescreen while prose remains readable.
    The shared theme already limits direct paragraphs to a comfortable line
    length; only the surrounding surfaces become wider. */
-body[data-page^="dsa-"] .content {
+body[data-page^="dsa-"]:not(.focus-mode) .content {
   width: 100%;
   max-width: var(--dsa-reading-max);
   margin-inline: auto;
   padding: clamp(28px, 3vw, 46px) clamp(24px, 4vw, 76px) 88px;
 }
-body[data-page^="dsa-"] .content > p,
-body[data-page^="dsa-"] .content > ul,
-body[data-page^="dsa-"] .content > ol,
-body[data-page^="dsa-"] .content > blockquote,
-body[data-page^="dsa-"] .content > .lead {
+/* Also scoped to the normal view: in focus mode the shared rules let prose run
+   the full width of the canvas along with the tables and cards. */
+body[data-page^="dsa-"]:not(.focus-mode) .content > p,
+body[data-page^="dsa-"]:not(.focus-mode) .content > ul,
+body[data-page^="dsa-"]:not(.focus-mode) .content > ol,
+body[data-page^="dsa-"]:not(.focus-mode) .content > blockquote,
+body[data-page^="dsa-"]:not(.focus-mode) .content > .lead {
   max-width: 88ch;
 }
 
@@ -443,16 +433,8 @@ body[data-page="dsa-index"] .content-wrap {
 }
 body[data-page="dsa-index"] .toc-rail { display: none !important; }
 
-body[data-page^="dsa-"].focus-mode .content-wrap {
-  grid-template-columns: minmax(0, 1fr);
-}
-body[data-page^="dsa-"].focus-mode .content {
-  max-width: var(--dsa-reading-max);
-  padding-inline: clamp(24px, 4.5vw, 88px);
-}
-
 @media (max-width: 760px) {
-  body[data-page^="dsa-"] .topbar {
+  body[data-page^="dsa-"]:not(.focus-mode) .topbar {
     padding-inline: 8px;
     gap: 5px;
   }
@@ -460,60 +442,9 @@ body[data-page^="dsa-"].focus-mode .content {
     padding-inline: 9px;
     font-size: 10.75px;
   }
-  body[data-page^="dsa-"] .topbar .focus-lbl { display: none !important; }
-  body[data-page^="dsa-"] .content,
-  body[data-page^="dsa-"].focus-mode .content {
+  body[data-page^="dsa-"]:not(.focus-mode) .topbar .focus-lbl { display: none !important; }
+  body[data-page^="dsa-"]:not(.focus-mode) .content {
     padding: 24px clamp(16px, 5vw, 24px) 72px;
-  }
-}
-
-/* The shared focus preset normally collapses the header to one floating exit
-   pill. DSA keeps the workspace tabs as the actual top bar instead. */
-body[data-page^="dsa-"].focus-mode .topbar {
-  position: sticky;
-  inset: auto;
-  top: 0;
-  z-index: 90;
-  width: 100%;
-  height: 48px;
-  min-height: 48px;
-  padding: 0 clamp(12px, 1.8vw, 28px);
-  border-bottom: 1px solid var(--border);
-  background: color-mix(in srgb, var(--bg) 92%, transparent);
-  box-shadow: none;
-  backdrop-filter: saturate(160%) blur(12px);
-  -webkit-backdrop-filter: saturate(160%) blur(12px);
-  pointer-events: auto;
-}
-body[data-page^="dsa-"].focus-mode .topbar > .dsa-workspace-nav {
-  display: flex !important;
-}
-body[data-page^="dsa-"].focus-mode .topbar > [data-theme-toggle] {
-  display: grid !important;
-  pointer-events: auto;
-}
-body[data-page^="dsa-"].focus-mode .topbar > .focus-btn {
-  display: inline-flex !important;
-  pointer-events: auto;
-  opacity: 1;
-}
-body[data-page^="dsa-"].focus-mode .content-wrap {
-  width: 100%;
-  max-width: none;
-  margin: 0;
-  padding: 0;
-}
-
-@media (max-width: 680px) {
-  body[data-page^="dsa-"].focus-mode .topbar {
-    inset: auto;
-    top: 0;
-    width: 100%;
-    padding-inline: 8px;
-  }
-  body[data-page^="dsa-"].focus-mode .topbar .focus-btn {
-    width: 30px;
-    padding: 0;
   }
 }
 
