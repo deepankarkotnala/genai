@@ -67,11 +67,14 @@ def main():
         raise SystemExit("Put the image at assets/brand/source-icon.png first.")
     sq = load_square()
 
-    opaque(sq, 180).save(os.path.join(HERE, "apple-touch-icon.png"))          # iOS home screen
-    opaque(sq, 192).save(os.path.join(HERE, "icon-192.png"))                   # Android/PWA
-    opaque(sq, 512).save(os.path.join(HERE, "icon-512.png"))
-    opaque(sq, 512, pad_frac=0.11).save(os.path.join(HERE, "icon-maskable-512.png"))  # safe zone
-    opaque(sq, 150).save(os.path.join(HERE, "mstile-150x150.png"))             # Windows tile
+    # The source is the bare glyph on transparency, so the opaque platform
+    # icons supply their own breathing room; iOS and Windows both crop or
+    # round the square, and a glyph touching the edge looks clipped.
+    opaque(sq, 180, pad_frac=0.10).save(os.path.join(HERE, "apple-touch-icon.png"))   # iOS home screen
+    opaque(sq, 192, pad_frac=0.08).save(os.path.join(HERE, "icon-192.png"))            # Android/PWA
+    opaque(sq, 512, pad_frac=0.08).save(os.path.join(HERE, "icon-512.png"))
+    opaque(sq, 512, pad_frac=0.18).save(os.path.join(HERE, "icon-maskable-512.png"))   # safe zone
+    opaque(sq, 150, pad_frac=0.14).save(os.path.join(HERE, "mstile-150x150.png"))      # Windows tile
     transparent(sq, 32).save(os.path.join(HERE, "favicon-32.png"))             # tab (keeps alpha)
     transparent(sq, 16).save(os.path.join(HERE, "favicon-16.png"))
     # multi-resolution .ico for legacy/browser tabs
