@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+
+<html data-theme="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="#f4f5f8" name="theme-color"/>
+<title>Decision Trees — Switch job</title>
+<!-- Machine Learning brand metadata -->
+<link href="assets/brand/favicon.svg?v=20260727c" rel="icon" type="image/svg+xml"/>
+<link href="assets/brand/favicon-32.png?v=20260727c" rel="icon" sizes="32x32" type="image/png"/>
+<link href="assets/brand/favicon.ico?v=20260727c" rel="shortcut icon"/>
+<link href="assets/brand/apple-touch-icon.png?v=20260727c" rel="apple-touch-icon" sizes="180x180"/>
+<link href="assets/brand/site.webmanifest?v=20260727c" rel="manifest"/>
+<link color="#6f47f5" href="assets/brand/safari-pinned-tab.svg?v=20260727c" rel="mask-icon"/>
+<link href="assets/brand/social-card.png?v=20260727c" rel="image_src"/>
+<meta content="Switch job" name="application-name"/>
+<meta content="Switch job" name="apple-mobile-web-app-title"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="#2563eb" name="msapplication-TileColor"/>
+<meta content="assets/brand/browserconfig.xml?v=20260727c" name="msapplication-config"/>
+<meta content="website" property="og:type"/>
+<meta content="Switch job Learning Platform" property="og:site_name"/>
+<meta content="Decision Trees" property="og:title"/>
+<meta content="Gini versus entropy and why it rarely matters, a worked split computed by hand, cost-complexity pruning, and the five weaknesses ensembling does and does not fix." property="og:description"/>
+<meta content="assets/brand/social-card.png?v=20260727c" property="og:image"/>
+<meta content="1200" property="og:image:width"/>
+<meta content="630" property="og:image:height"/>
+<meta content="Switch job learning platform logo" property="og:image:alt"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="Decision Trees" name="twitter:title"/>
+<meta content="Gini versus entropy and why it rarely matters, a worked split computed by hand, cost-complexity pruning, and the five weaknesses ensembling does and does not fix." name="twitter:description"/>
+<meta content="assets/brand/social-card.png?v=20260727c" name="twitter:image"/>
+<link href="assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
+<!-- /Machine Learning brand metadata -->
+<meta content="Gini versus entropy and why it rarely matters, a worked split computed by hand, cost-complexity pruning, and the five weaknesses ensembling does and does not fix." name="description"/>
+<link href="assets/styles.css?v=20260727c" rel="stylesheet"/>
+<link href="assets/office-theme.css?v=20260727e" rel="stylesheet"/>
+<link href="assets/ml-visuals.css?v=20260728a" rel="stylesheet"/>
+</head>
+<body data-page="ml-15-decision-trees" data-prep-section="ml">
+<div class="app">
+<aside class="sidebar">
+<div class="brand">
+<a class="brand-link" href="index.html" aria-label="Switch job home">
+<span class="brand-mark" aria-hidden="true"><img src="assets/brand/switch-job-logo.png?v=20260727c" alt=""/></span>
+<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+</a>
+</div>
+<div class="search-wrap"><div class="search-box"><svg fill="none" height="15" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="15"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg><input data-search="" placeholder="Search everything…  ( / )" type="text"/></div><div class="search-results"></div></div>
+<nav class="nav"></nav>
+</aside>
+<div class="backdrop"></div>
+<div class="main">
+<header class="topbar">
+<button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
+<div class="crumbs">Machine Learning / Part D / Module 15</div>
+<button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
+</header>
+<div class="content-wrap">
+<main class="content prep-content">
+<div class="eyebrow"><span class="dot"></span> Module 15 · Part D Trees &amp; Ensembles</div>
+<h1>Decision Trees</h1>
+<p class="lead">The foundation of everything in Modules 16 to 18. A tree is a piecewise-constant function on an axis-aligned partition — that one sentence explains most of its properties.</p>
+<div class="meta-row"><span class="pill purple">Prerequisites · Modules 02, 05</span><span class="pill">Study time · 8 h</span><span class="pill blue">6 interview questions</span><span class="pill">Foundation</span></div>
+<div class="callout key"><div class="c-ico">🎯</div><div class="c-body"><div class="c-title">Your interview goal</div><p>Compute a Gini split by hand under pressure, explain why trees need no scaling in terms of the general principle, and know which tree weaknesses ensembling fixes and which persist into XGBoost.</p></div></div>
+<h2 id="what-to-learn">1 · What to learn</h2>
+<ol><li>The structure: root, internal nodes, branches, leaves; how a prediction is made by traversal.</li><li>Greedy recursive binary splitting, and why it is greedy — finding the globally optimal tree is NP-hard.</li><li><strong>Impurity measures for classification: Gini and entropy.</strong> Definitions, ranges, and their practical near-equivalence.</li><li><strong>Information gain</strong> and gain ratio; why plain information gain favours high-cardinality features.</li><li>Splitting criteria for regression: variance reduction / MSE, and MAE.</li><li>The exact split-finding algorithm: for each feature, sort candidate thresholds and evaluate the weighted impurity of the children.</li><li>Stopping criteria: <code>max_depth</code>, <code>min_samples_split</code>, <code>min_samples_leaf</code>, <code>max_leaf_nodes</code>, <code>min_impurity_decrease</code>.</li><li><strong>Pruning</strong>: pre- versus post-pruning; cost-complexity (weakest-link) pruning and <code>ccp_alpha</code>.</li><li>Handling categorical features, and the combinatorial explosion of subset splits.</li><li>Handling missing values: surrogate splits, and the learned-default-direction approach.</li><li>Why trees need <strong>no feature scaling</strong>.</li><li>Why single trees are <strong>high-variance</strong> — and why that motivates Modules 16 to 18.</li><li><strong>Axis-aligned splits</strong> and the resulting inability to represent a diagonal boundary compactly.</li><li><strong>Failure to extrapolate</strong> — trees predict a constant outside the training range.</li><li>Feature importance from trees, and its bias toward high-cardinality and continuous features.</li></ol>
+<h2 id="intuitions">2 · Core intuitions</h2>
+<h3>A tree partitions the feature space into boxes</h3>
+<p>Each split cuts one region into two along a single feature; the leaves are axis-aligned boxes, and the prediction is constant within each box — the majority class or the mean target. So a decision tree is a <strong>piecewise-constant function on an axis-aligned partition</strong>. That single sentence explains most of its properties: no scaling needed, no extrapolation, jagged boundaries, and easy interaction capture.</p>
+<h3>Splitting is greedy and locally optimal</h3>
+<p>At each node the algorithm evaluates every feature and every candidate threshold and takes the single best split <em>right now</em>, never looking ahead. Finding the globally optimal tree is NP-hard, so greediness is a necessity. The consequence: a split that looks mediocre alone but enables an excellent pair of subsequent splits will be passed over. This is a real limitation — trees struggle with XOR-like problems at shallow depth precisely because no single-feature split reduces impurity at the root.</p>
+<h3>Gini and entropy measure the same thing and rarely disagree</h3>
+<p>Gini is <code>1 - Σpᵢ²</code>, the probability that two randomly drawn samples from the node have different labels. Entropy is <code>-Σpᵢlog₂pᵢ</code>, the expected information content in bits. Both are zero for a pure node and maximal for a uniform mixture — in the binary case, Gini 0.5 and entropy 1.0. Their curves are nearly the same shape, so they select the same split the overwhelming majority of the time.</p>
+<p>The practical difference is that Gini avoids a logarithm and is therefore slightly faster, which is why it is the default in CART and <code>sklearn</code>. <strong>The correct interview answer is that the choice almost never matters and is not worth tuning</strong> — say that explicitly, because the question is often designed to see whether you will over-claim a difference.</p>
+<h3>Information gain favours high-cardinality features, and that is a trap</h3>
+<p>Gain is impurity reduction, and a feature with many distinct values can slice the data into many small, nearly-pure nodes — a customer-ID column can produce perfect purity while carrying zero generalizable signal. C4.5’s <strong>gain ratio</strong> normalizes by the split’s own entropy to correct for this. The same bias reappears in tree-based feature importance, which is why permutation importance on a held-out set is more trustworthy (Module 21).</p>
+<h3>Trees do not need scaling, and the general principle is what matters</h3>
+<p>A split is a threshold comparison within a single feature, and the algorithm only needs the <em>ranking</em> of that feature’s values to enumerate candidate thresholds. Any monotone transformation — scaling, log, rank — leaves that ranking unchanged and produces an identical tree. <strong>Trees never combine features into a single geometric quantity</strong>, which is exactly what distance- and gradient-based methods do and why <em>they</em> need scaling.</p>
+<h3>Trees are high-variance, and this is the most important fact about them</h3>
+<p>Change a few training rows and the root split can change, which changes every subsequent split, which restructures the whole tree. Two trees fitted on bootstrap samples of the same data can look entirely different while achieving similar accuracy. That instability is precisely what bagging exploits — averaging many high-variance, low-bias models reduces variance without adding much bias. So <strong>Module 15’s weakness is Module 16’s opportunity</strong>, and stating that link is a strong transition in an interview.</p>
+<h3>Trees cannot extrapolate</h3>
+<p>A leaf’s prediction is a constant computed from its training samples, so feeding in a value beyond the training range simply lands you in the outermost leaf and returns its constant. Train a regression tree on houses of 50–200 m² and predict for 500 m², and you get the same answer as for 200 m². Linear regression would extrapolate the trend — perhaps wrongly, but at least responsively. This is a genuine reason to prefer a linear model for a trending target, and why boosted trees struggle with time-series trends unless you detrend or add explicit trend features.</p>
+<h2 id="formulas">3 · Whiteboard formulas</h2>
+<div class="code-block" data-reveal="">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>decision_trees.txt</span><button class="copy-btn">Copy</button></div>
+<pre><code>Gini impurity        G = 1 - SUM_k p_k²          binary: max 0.5 at p=0.5
+Entropy              H = - SUM_k p_k log2 p_k    binary: max 1.0 at p=0.5
+Misclassification    E = 1 - max_k p_k           (rarely used for splitting - too flat)
+
+Weighted child impurity for a split:
+      I_split = (n_L/n)*I(left) + (n_R/n)*I(right)
+
+Information gain     IG = I(parent) - I_split
+Gain ratio (C4.5)    GainRatio = IG / SplitInfo,
+                     SplitInfo = - SUM_i (n_i/n) log2(n_i/n)   <- penalizes many-valued splits
+
+Regression split     minimize  SUM_left (y - ybar_L)² + SUM_right (y - ybar_R)²
+                     equivalently maximize variance reduction
+Leaf prediction      classification: majority class (or class proportions)
+                     regression:     mean of y in the leaf
+
+Cost-complexity pruning:
+      R_alpha(T) = R(T) + alpha * |leaves(T)|
+      alpha = 0 -> full tree ;  alpha up -> smaller tree ;  tune by CV (ccp_alpha)
+
+Split-finding cost   O(n*d*log n) per node with pre-sorting</code></pre>
+</div>
+<h2 id="worked-gini">4 · A worked Gini split — practise until mechanical</h2>
+<p>Parent node: 100 samples, 50 positive / 50 negative. Candidate split → Left: 60 samples (45 pos / 15 neg); Right: 40 samples (5 pos / 35 neg).</p>
+<div class="code-block" data-reveal="">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>gini_worked_example.txt</span><button class="copy-btn">Copy</button></div>
+<pre><code>G_parent = 1 - (0.5² + 0.5²) = 0.5
+
+G_left   = 1 - (0.75² + 0.25²)  = 1 - (0.5625 + 0.0625)   = 0.375
+G_right  = 1 - (0.125² + 0.875²) = 1 - (0.015625 + 0.765625) = 0.21875
+
+Weighted = (60/100)(0.375) + (40/100)(0.21875)
+         = 0.225 + 0.0875 = 0.3125
+
+Gini gain = 0.5 - 0.3125 = 0.1875</code></pre>
+</div>
+<div class="callout"><div class="c-ico">🧭</div><div class="c-body"><div class="c-title">Do not forget the weighting</div><p>Weighting by child size is essential — an unweighted average would over-value a split isolating a tiny pure node, which is exactly the pathology <code>min_samples_leaf</code> guards against. Being asked to compute a split by hand is common, and fumbling the arithmetic on a question you conceptually understand is an avoidable loss.</p></div></div>
+<h2 id="drill">5 · Hands-on drill</h2>
+<ol><li>Implement a decision tree from scratch: Gini computation, exhaustive split search over features and thresholds, recursive building, depth and leaf-size stopping rules, prediction by traversal. This is a common live-coding task, and building it once makes Modules 16 to 18 far easier.</li><li>Compute the worked Gini example above by hand, then verify with your implementation.</li><li>Fit trees at <code>max_depth</code> 1 through 20 and plot train and test accuracy — produce the overfitting curve yourself.</li><li>Fit the same tree specification on 10 bootstrap samples and visualize all ten. <strong>The structural variation you see <em>is</em> the high-variance argument for bagging.</strong></li><li>Train a regression tree on a linear trend and plot its step-function predictions, including beyond the training range. That flat line past the boundary is your extrapolation answer.</li><li>Use <code>cost_complexity_pruning_path</code> to obtain the <code>ccp_alpha</code> sequence and pick one by cross-validation.</li></ol>
+<div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">Gotchas that fail candidates</div><ul><li><strong>Claiming Gini and entropy give substantially different trees.</strong> They rarely do — say so.</li><li><strong>Saying trees need scaling.</strong></li><li><strong>Not knowing trees cannot extrapolate.</strong></li><li><strong>Treating tree feature importance as reliable</strong> without mentioning its high-cardinality bias.</li><li><strong>Not knowing the greedy-versus-optimal distinction</strong>, or why greediness is necessary.</li><li><strong>Confusing pre-pruning with post-pruning</strong>, or not knowing <code>ccp_alpha</code> exists.</li><li><strong>Saying a deep tree is interpretable.</strong> A depth-20 tree has up to a million leaves; nobody reads that.</li></ul></div></div>
+<h2 id="questions">6 · Interview questions</h2>
+<div class="prep-toolbar" data-sticky-prep=""><label class="prep-filter"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><input data-question-filter="" placeholder="Filter these questions…"/></label><button class="btn ghost" data-expand-answers="" type="button">Open all</button><span class="prep-count" data-question-count="">6 questions</span></div>
+<section aria-label="Decision tree interview questions" class="prep-question-list">
+<details class="prep-question" data-question="gini or entropy which is better" data-tags="impurity Gini entropy trap">
+<summary><span class="prep-q-no">01</span><span class="prep-q-title">Gini or entropy? Which is better?<span class="prep-tags"><span>impurity</span><span>Gini</span><span>entropy</span><span>trap</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>Neither, practically. Both measure node impurity, both are zero for a pure node and maximal for a uniform class mixture, and their curves are so similar in shape that they select the same split the great majority of the time — differences in resulting trees are usually negligible and rarely change test performance.</p><p>The real differences are minor: Gini (<code>1 - Σpₖ²</code>) avoids computing a logarithm, so it is slightly faster and is CART’s and <code>sklearn</code>’s default; entropy (<code>-Σpₖlog₂pₖ</code>) has the cleaner information-theoretic reading — the expected bits needed to encode the class — and is very marginally more sensitive near pure nodes. Gini also has a nice interpretation of its own: it is the probability that two samples drawn at random from the node have different labels.</p><p>My practical position is that this is <strong>not a hyperparameter worth tuning</strong>; I would spend that compute on <code>max_depth</code>, <code>min_samples_leaf</code> or feature engineering instead.</p><div class="prep-say"><strong>30-second version</strong><p>Practically neither — they pick the same split almost always. Gini avoids a logarithm so it is marginally faster and is the default; entropy has the cleaner information-theoretic reading. Not worth tuning.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Whether you will invent a difference to sound knowledgeable. Saying plainly that it rarely matters — while still knowing both definitions precisely — is the strong answer.</p></div></div></details>
+<details class="prep-question" data-question="compute the gini gain for this split" data-tags="arithmetic Gini worked example">
+<summary><span class="prep-q-no">02</span><span class="prep-q-title">Compute the Gini gain for this split. (Parent 50/50 of 100; Left 45/15 of 60; Right 5/35 of 40.)<span class="prep-tags"><span>arithmetic</span><span>Gini</span><span>worked example</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p><code>G_parent = 1 - (0.5² + 0.5²) = 0.5</code>. The left node has <code>p = 0.75/0.25</code>, so <code>G_left = 1 - (0.5625 + 0.0625) = 0.375</code>. The right node has <code>p = 0.125/0.875</code>, so <code>G_right = 1 - (0.015625 + 0.765625) = 0.21875</code>.</p><p>Weighted child impurity is <code>0.6(0.375) + 0.4(0.21875) = 0.225 + 0.0875 = 0.3125</code>. So <strong>Gini gain = 0.5 − 0.3125 = 0.1875</strong>.</p><p>Note the weighting by child size is essential — an unweighted average would over-value a split that isolates a tiny pure node, which is exactly the pathology <code>min_samples_leaf</code> guards against.</p><div class="prep-say"><strong>30-second version</strong><p>G_parent 0.5; G_left 0.375; G_right 0.21875; weighted 0.3125; gain 0.1875.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Arithmetic under pressure, and whether you remember to weight by node size. Practise it — these are free marks.</p></div></div></details>
+<details class="prep-question" data-question="why is a single decision tree high variance and what do we do about it" data-tags="variance ensembles bridge">
+<summary><span class="prep-q-no">03</span><span class="prep-q-title">Why is a single decision tree high-variance, and what do we do about it?<span class="prep-tags"><span>variance</span><span>ensembles</span><span>bridge</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>Because splitting is greedy and hierarchical. The root split is chosen from the whole dataset, and a small change in the training sample can change which feature or threshold wins — and once the root changes, every subsequent split is computed on different data, so the entire tree restructures. Fit the same specification on ten bootstrap samples and you get ten visibly different trees with similar accuracy. Deep trees make it worse, because leaves contain few samples so their predictions rest on very little data.</p><p>Remedies fall into two groups: <strong>constrain the single tree</strong> — <code>max_depth</code>, <code>min_samples_leaf</code>, <code>min_impurity_decrease</code>, or cost-complexity pruning via <code>ccp_alpha</code> — which trades variance for bias; or, far more effectively, <strong>average many trees</strong>, which is exactly what bagging and Random Forests do.</p><p>That is why single trees are almost never a production model while tree <em>ensembles</em> dominate tabular ML: the instability making one tree unreliable is precisely what makes averaging so effective, since averaging works best on models whose errors are uncorrelated.</p><div class="prep-say"><strong>30-second version</strong><p>Greedy hierarchical splitting means a small data change flips the root, which restructures everything below it. Fix by constraining depth and leaf size, or far better by averaging many trees — which is what bagging exploits.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Whether you can explain the mechanism of the instability and connect it to the motivation for ensembles. That connection is the natural bridge into Module 16 and interviewers listen for it.</p></div></div></details>
+<details class="prep-question" data-question="do decision trees need feature scaling why or why not" data-tags="scaling invariance trap">
+<summary><span class="prep-q-no">04</span><span class="prep-q-title">Do decision trees need feature scaling? Why or why not?<span class="prep-tags"><span>scaling</span><span>invariance</span><span>trap</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>No. Each split is a threshold test on a single feature — “is <code>xⱼ ≤ t</code>?” — and the algorithm only needs the <em>ordering</em> of that feature’s values to enumerate candidate thresholds. Any monotone transformation (standardization, min-max, log, rank) preserves that ordering, so it produces an identical tree with correspondingly transformed thresholds.</p><p>This extends to all tree ensembles: Random Forest, gradient boosting, XGBoost, LightGBM, CatBoost.</p><p>Contrast with methods that <em>do</em> need scaling — KNN, K-Means, SVM, PCA and gradient-descent-trained models — all of which combine multiple features into a single geometric quantity (a distance, an inner product, or a loss-surface direction), where relative magnitudes therefore matter. The general principle: <strong>scaling matters exactly when features are combined; trees never combine them.</strong></p><div class="prep-say"><strong>30-second version</strong><p>No — a split only needs the ranking of one feature’s values, which any monotone transform preserves. Scaling matters when features are combined into one quantity; trees never do that.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>A very common question with a precise answer. The general principle at the end is what distinguishes understanding from memorization.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> “Does a monotone transform of the <em>target</em> matter for a regression tree?” — yes, that is different. The leaf prediction is the mean of <code>y</code> and splits minimize squared error in <code>y</code>, so log-transforming the target changes which splits are chosen and what the leaves predict.</div></div></details>
+<details class="prep-question" data-question="explain pruning pre pruning versus post pruning ccp alpha" data-tags="pruning ccp_alpha regularization">
+<summary><span class="prep-q-no">05</span><span class="prep-q-title">Explain pruning. Pre-pruning vs post-pruning.<span class="prep-tags"><span>pruning</span><span>ccp_alpha</span><span>regularization</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>Pruning reduces a tree’s size to lower variance.</p><p><strong>Pre-pruning</strong> (early stopping) prevents growth during construction via <code>max_depth</code>, <code>min_samples_split</code>, <code>min_samples_leaf</code>, <code>max_leaf_nodes</code> or <code>min_impurity_decrease</code>. It is cheap since you never build the full tree, but it is myopic — it can stop at a split that looks unhelpful even though excellent splits lay just beneath it, which is the greediness problem in another form.</p><p><strong>Post-pruning</strong> grows the tree fully, then removes subtrees that do not pay for themselves. The standard method is <strong>cost-complexity (weakest-link) pruning</strong>: minimize <code>R_α(T) = R(T) + α|leaves(T)|</code>, which for each α identifies a specific optimal subtree, generating a nested sequence of trees as α increases; you then select α by cross-validation. In <code>sklearn</code> that is <code>ccp_alpha</code>, with <code>cost_complexity_pruning_path</code> giving the candidate values.</p><p>Post-pruning generally yields better trees because it evaluates a subtree by its full realized contribution rather than by a single split’s immediate gain; it just costs more to build the full tree first.</p><div class="prep-say"><strong>30-second version</strong><p>Pre-pruning stops growth via depth and leaf constraints — cheap but myopic. Post-pruning grows fully then removes subtrees by cost-complexity, minimizing R(T) + α|leaves|, with α chosen by CV via ccp_alpha.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Whether you know both, and specifically whether you know cost-complexity pruning and <code>ccp_alpha</code>. Many candidates only know <code>max_depth</code>.</p></div></div></details>
+<details class="prep-question" data-question="what are the main weaknesses of decision trees" data-tags="critique ensembles trap">
+<summary><span class="prep-q-no">06</span><span class="prep-q-title">What are the main weaknesses of decision trees?<span class="prep-tags"><span>critique</span><span>ensembles</span><span>trap</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>Five, each with a specific consequence. <strong>(1) High variance</strong> — small data changes restructure the tree, so single trees are unstable and rarely production-grade. <strong>(2) Greedy construction</strong> — locally optimal splits can miss globally better structures, which is why trees handle XOR-like interactions poorly at shallow depth. <strong>(3) Axis-aligned splits only</strong> — a diagonal boundary must be approximated by a staircase of many splits, so a relationship a linear model captures in one coefficient may take a large subtree. <strong>(4) No extrapolation</strong> — leaves predict constants, so anything beyond the training range returns the outermost leaf’s value, making plain trees a poor fit for trending targets. <strong>(5) Biased feature importance</strong> — impurity-based importance favours high-cardinality and continuous features, so it can mislead badly.</p><p>Worth adding that (1) is largely solved by ensembling — which is why the field moved to Random Forests and boosting — while <strong>(3) and (4) are structural and persist even in XGBoost</strong>. That is a genuinely useful thing to know when deciding whether to use a linear model or add engineered features.</p><div class="prep-say"><strong>30-second version</strong><p>High variance, greedy myopia, axis-aligned-only boundaries, no extrapolation, and biased importances. Ensembling largely fixes the variance; the axis-alignment and extrapolation limits persist all the way into XGBoost.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Depth of critique, and specifically whether you know which weaknesses ensembling fixes and which it does not. That distinction is the senior-level insight.</p></div></div></details>
+</section>
+<div class="page-nav"><a href="14-svm-kernels.html"><div class="dir">← Previous</div><div class="ttl">SVM &amp; Kernels</div></a><a class="next" href="16-bagging-random-forest.html"><div class="dir">Next →</div><div class="ttl">Bagging &amp; Random Forest</div></a></div>
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script src="assets/app.js?v=20260727c"></script>
+<script src="assets/ml-sitenav.js?v=20260727c"></script>
+<script src="assets/enhance.js?v=20260727c"></script>
+<script src="assets/interview-prep.js?v=20260727c"></script>
+</body>
+</html>

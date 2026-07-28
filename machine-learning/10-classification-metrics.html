@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+
+<html data-theme="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="#f4f5f8" name="theme-color"/>
+<title>Classification Metrics & the Confusion Matrix — Switch job</title>
+<!-- Machine Learning brand metadata -->
+<link href="assets/brand/favicon.svg?v=20260727c" rel="icon" type="image/svg+xml"/>
+<link href="assets/brand/favicon-32.png?v=20260727c" rel="icon" sizes="32x32" type="image/png"/>
+<link href="assets/brand/favicon.ico?v=20260727c" rel="shortcut icon"/>
+<link href="assets/brand/apple-touch-icon.png?v=20260727c" rel="apple-touch-icon" sizes="180x180"/>
+<link href="assets/brand/site.webmanifest?v=20260727c" rel="manifest"/>
+<link color="#6f47f5" href="assets/brand/safari-pinned-tab.svg?v=20260727c" rel="mask-icon"/>
+<link href="assets/brand/social-card.png?v=20260727c" rel="image_src"/>
+<meta content="Switch job" name="application-name"/>
+<meta content="Switch job" name="apple-mobile-web-app-title"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="#2563eb" name="msapplication-TileColor"/>
+<meta content="assets/brand/browserconfig.xml?v=20260727c" name="msapplication-config"/>
+<meta content="website" property="og:type"/>
+<meta content="Switch job Learning Platform" property="og:site_name"/>
+<meta content="Classification Metrics & the Confusion Matrix" property="og:title"/>
+<meta content="Precision and recall without hesitation, why ROC-AUC misleads on rare positives, calibration, MCC, and the closed-form threshold derived from a cost matrix." property="og:description"/>
+<meta content="assets/brand/social-card.png?v=20260727c" property="og:image"/>
+<meta content="1200" property="og:image:width"/>
+<meta content="630" property="og:image:height"/>
+<meta content="Switch job learning platform logo" property="og:image:alt"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="Classification Metrics & the Confusion Matrix" name="twitter:title"/>
+<meta content="Precision and recall without hesitation, why ROC-AUC misleads on rare positives, calibration, MCC, and the closed-form threshold derived from a cost matrix." name="twitter:description"/>
+<meta content="assets/brand/social-card.png?v=20260727c" name="twitter:image"/>
+<link href="assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
+<!-- /Machine Learning brand metadata -->
+<meta content="Precision and recall without hesitation, why ROC-AUC misleads on rare positives, calibration, MCC, and the closed-form threshold derived from a cost matrix." name="description"/>
+<link href="assets/styles.css?v=20260727c" rel="stylesheet"/>
+<link href="assets/office-theme.css?v=20260727e" rel="stylesheet"/>
+<link href="assets/ml-visuals.css?v=20260728a" rel="stylesheet"/>
+</head>
+<body data-page="ml-10-classification-metrics" data-prep-section="ml">
+<div class="app">
+<aside class="sidebar">
+<div class="brand">
+<a class="brand-link" href="index.html" aria-label="Switch job home">
+<span class="brand-mark" aria-hidden="true"><img src="assets/brand/switch-job-logo.png?v=20260727c" alt=""/></span>
+<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+</a>
+</div>
+<div class="search-wrap"><div class="search-box"><svg fill="none" height="15" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="15"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg><input data-search="" placeholder="Search everything…  ( / )" type="text"/></div><div class="search-results"></div></div>
+<nav class="nav"></nav>
+</aside>
+<div class="backdrop"></div>
+<div class="main">
+<header class="topbar">
+<button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
+<div class="crumbs">Machine Learning / Part C / Module 10</div>
+<button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
+</header>
+<div class="content-wrap">
+<main class="content prep-content">
+<div class="eyebrow"><span class="dot"></span> Module 10 · Part C Evaluation</div>
+<h1>Classification Metrics &amp; the Confusion Matrix</h1>
+<p class="lead">If you master one module beyond logistic regression, make it this one. Interviewers use metric questions to test business judgment, and a wrong metric invalidates an otherwise good project.</p>
+<div class="meta-row"><span class="pill purple">Prerequisites · Modules 03, 05, 07</span><span class="pill">Study time · 10 h</span><span class="pill blue">9 interview questions</span><span class="pill purple">Highest priority</span></div>
+<div class="callout key"><div class="c-ico">🎯</div><div class="c-body"><div class="c-title">Your interview goal</div><p>Draw the confusion matrix from memory, never confuse precision with recall, know exactly when ROC-AUC lies, and derive the optimal threshold from a stated cost matrix.</p></div></div>
+<h2 id="what-to-learn">1 · What to learn</h2>
+<ol><li>The confusion matrix: TP, FP, TN, FN — and being able to draw it correctly, labelled, from memory.</li><li>Accuracy, and the <strong>accuracy paradox</strong> on imbalanced data.</li><li><strong>Precision</strong> = TP/(TP+FP): of the ones I flagged, how many were right?</li><li><strong>Recall</strong> / sensitivity / TPR = TP/(TP+FN): of the real positives, how many did I catch?</li><li>Specificity / TNR = TN/(TN+FP); FPR = 1 − specificity.</li><li><strong>F1</strong> as the harmonic mean, and <strong>F-beta</strong> for asymmetric weighting.</li><li>The precision–recall trade-off, and why it is driven entirely by the threshold.</li><li><strong>ROC curve</strong> and ROC-AUC — including AUC’s probabilistic interpretation.</li><li><strong>Precision–Recall curve</strong> and PR-AUC / average precision — and when to prefer it.</li><li>Why ROC-AUC is misleadingly optimistic under severe imbalance.</li><li><strong>Log-loss</strong> and <strong>Brier score</strong> — probability-quality metrics, not label metrics.</li><li><strong>Calibration</strong>: reliability diagrams, expected calibration error, Platt scaling, isotonic regression.</li><li><strong>MCC</strong>, Cohen’s kappa, balanced accuracy — and when each is the right answer.</li><li>Threshold selection from an explicit <strong>cost matrix</strong>; expected-cost minimization.</li><li>Multi-class: per-class metrics, and <strong>macro versus micro versus weighted</strong> averaging.</li><li>Multi-label metrics: Hamming loss, subset accuracy, mAP.</li><li>Ranking metrics you should recognize: precision@k, recall@k, MAP, NDCG.</li></ol>
+<h2 id="confusion-matrix">2 · Draw the matrix, always</h2>
+<p>In any metric question, draw it first. It anchors the discussion and prevents the precision/recall mix-up that ends interviews.</p>
+<div class="code-block" data-reveal="">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>confusion_matrix.txt</span><button class="copy-btn">Copy</button></div>
+<pre><code>                        PREDICTED
+                    Positive      Negative
+              ┌───────────────┬───────────────┐
+   A  Positive│      TP       │      FN       │  ← Recall = TP/(TP+FN)
+   C          │  (correct hit)│    (miss)     │     "of real positives, caught?"
+   T          ├───────────────┼───────────────┤
+   U  Negative│      FP       │      TN       │  ← Specificity = TN/(TN+FP)
+   A          │  (false alarm)│(correct pass) │
+   L          └───────────────┴───────────────┘
+                      ↑
+              Precision = TP/(TP+FP)
+              "of my flags, how many were real?" </code></pre>
+</div>
+<div class="callout"><div class="c-ico">🧭</div><div class="c-body"><div class="c-title">The mnemonic that survives interview pressure</div><p><strong>Precision is a column</strong> — it divides by what you <em>predicted</em> positive. <strong>Recall is a row</strong> — it divides by what <em>actually is</em> positive.</p></div></div>
+<h2 id="intuitions">3 · Core intuitions</h2>
+<h3>Precision protects the user from false alarms; recall protects the business from misses</h3>
+<p>Every metric question reduces to: which error is more expensive here? Missing a cancer diagnosis (FN) is catastrophic; a false cancer alert (FP) costs an unnecessary biopsy — so recall dominates. Wrongly blocking a legitimate customer’s card (FP) causes churn; missing a small fraudulent charge (FN) costs the transaction value — so the balance depends on relative amounts, and the right answer is an expected-cost calculation, not a metric name.</p>
+<h3>The threshold, not the model, moves you along the trade-off</h3>
+<p>Lower the threshold and you flag more things: recall rises, precision falls. Raise it and the reverse. A single trained model gives you an entire curve of operating points, which is why threshold-free metrics (AUC) measure <em>ranking quality</em> while threshold-dependent metrics (precision, recall, F1) measure a <em>specific operating point</em>. This distinction is the backbone of the module.</p>
+<h3>ROC-AUC has a clean probabilistic meaning</h3>
+<p>It equals the probability that a randomly chosen positive is ranked above a randomly chosen negative. 0.5 is random, 1.0 is perfect ranking, and below 0.5 means your scores are inverted. It is threshold-free and invariant to class balance — that last property is both its strength and its trap.</p>
+<h3>Why ROC-AUC misleads under severe imbalance</h3>
+<p>ROC plots TPR against FPR, and FPR has the <em>large</em> negative count in its denominator. With 1,000,000 negatives and 1,000 positives:</p>
+<div class="table-wrap"><table><thead><tr><th>False positives</th><th>FPR</th><th>Precision</th></tr></thead><tbody><tr><td>1,000</td><td>0.001</td><td>0.50</td></tr><tr><td>11,000</td><td>0.011</td><td><strong>0.08</strong></td></tr></tbody></table></div>
+<p>That FPR shift from 0.001 to 0.011 is visually negligible on the ROC curve — while precision has collapsed from 0.50 to about 0.08 and your alert queue has become 92% junk. The PR curve, whose precision axis has the <em>predicted-positive</em> count in its denominator, shows it immediately. Hence: <strong>for rare-positive problems, use PR-AUC / average precision.</strong> Note also that the PR baseline is the positive rate — 0.001 here, not 0.5 — so a PR-AUC of 0.15 can be an excellent model.</p>
+<h3>F1 is a default, not a principle</h3>
+<p>It is the harmonic mean of precision and recall, so it punishes a large imbalance between them — you cannot get a good F1 by sacrificing one entirely. But it implicitly asserts precision and recall matter equally, which is rarely true. If recall is twice as important use F2; if precision matters more, F0.5. If you can quantify costs at all, skip F-beta and minimize expected cost directly. F1 also ignores TN entirely — usually appropriate for rare-positive problems, inappropriate when both classes matter.</p>
+<h3>Discrimination and calibration are different things</h3>
+<p>A model outputting <code>p/1000</code> for every case has identical ranking to one outputting <code>p</code> — the same AUC — but is uselessly miscalibrated. If a human or a rule consumes the <em>number</em>, you need calibration; if only the <em>order</em> matters, you need discrimination. Say which one the application needs.</p>
+<h3>MCC is the most honest single number for a binary confusion matrix</h3>
+<p>It uses all four cells, returns −1 to +1 with 0 as random, and unlike F1 it cannot be inflated by a degenerate predict-everything-positive strategy on imbalanced data. It is underused, and naming it scores well.</p>
+<h2 id="formulas">4 · Whiteboard formulas</h2>
+<div class="code-block" data-reveal="">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>classification_metrics.txt</span><button class="copy-btn">Copy</button></div>
+<pre><code>Accuracy          = (TP+TN) / (TP+TN+FP+FN)
+Precision (PPV)   = TP / (TP+FP)
+Recall/TPR/Sens.  = TP / (TP+FN)
+Specificity/TNR   = TN / (TN+FP)
+FPR               = FP / (FP+TN)  = 1 - specificity
+NPV               = TN / (TN+FN)
+
+F1                = 2·P·R / (P+R)                  (harmonic mean)
+F-beta            = (1+b²)·P·R / (b²·P + R)        b>1 favours recall
+Balanced accuracy = (Recall + Specificity)/2
+
+MCC = (TP·TN - FP·FN) / sqrt((TP+FP)(TP+FN)(TN+FP)(TN+FN))     in [-1, 1]
+
+Log-loss  = -(1/n) S [ y log p + (1-y) log(1-p) ]
+Brier     =  (1/n) S (p - y)²
+
+ROC    : TPR (y) vs FPR (x), swept over thresholds. Baseline = diagonal.
+         AUC = P(score of random positive > score of random negative)
+PR     : Precision (y) vs Recall (x). Baseline = POSITIVE CLASS RATE.
+
+Expected cost at threshold t:
+   E[cost](t) = FP(t)·C_FP + FN(t)·C_FN        <- minimize this over t
+Optimal threshold for a CALIBRATED model:
+   t* = C_FP / (C_FP + C_FN)</code></pre>
+</div>
+<div class="callout"><div class="c-ico">🧭</div><div class="c-body"><div class="c-title">Memorize that last line</div><p>If a false positive costs £10 and a false negative costs £190, then <code>t* = 10/200 = 0.05</code> — flag anything above a 5% predicted probability. Producing that formula in an applied round is a standout moment.</p></div></div>
+<h2 id="selection">5 · Metric selection guide</h2>
+<div class="table-wrap"><table><thead><tr><th>Situation</th><th>Primary metric</th><th>Why</th></tr></thead><tbody><tr><td>Balanced classes, symmetric costs</td><td>Accuracy, F1</td><td>Simple and meaningful</td></tr><tr><td>Rare positives (fraud, disease, defects)</td><td><strong>PR-AUC / average precision</strong></td><td>ROC-AUC hides FP growth</td></tr><tr><td>Missing a positive is catastrophic</td><td><strong>Recall</strong> (with a precision floor)</td><td>FN cost dominates</td></tr><tr><td>False alarms are expensive or annoying</td><td><strong>Precision</strong> (with a recall floor)</td><td>FP cost dominates</td></tr><tr><td>Costs are quantifiable</td><td><strong>Expected cost</strong> at a tuned threshold</td><td>Directly optimizes the objective</td></tr><tr><td>Score feeds a downstream calculation</td><td><strong>Log-loss / Brier</strong> + calibration</td><td>Need honest probabilities</td></tr><tr><td>Comparing models’ ranking ability</td><td>ROC-AUC (balanced) or PR-AUC (imbalanced)</td><td>Threshold-free</td></tr><tr><td>Multi-class, all classes equally important</td><td><strong>Macro-F1</strong></td><td>Rare classes weighted equally</td></tr><tr><td>Multi-class, overall correctness matters</td><td>Micro-F1 / accuracy</td><td>Weighted by frequency</td></tr><tr><td>Single honest summary on imbalanced data</td><td><strong>MCC</strong></td><td>Uses all four cells</td></tr><tr><td>Top-k results shown to a user</td><td>precision@k, NDCG</td><td>Matches what users see</td></tr></tbody></table></div>
+<h2 id="drill">6 · Hands-on drill</h2>
+<ol><li>Compute every metric above from a raw confusion matrix <strong>by hand, on paper</strong>, for TP=40, FP=60, FN=10, TN=9890. Then reproduce them with <code>sklearn</code> and check yourself.</li><li>On an imbalanced dataset, plot the ROC curve and the PR curve side by side for the same model. Then add 10× more negatives and re-plot both. <strong>The ROC curve will barely move; the PR curve will collapse.</strong> This single experiment is the best possible preparation for the ROC-versus-PR question.</li><li>Sweep the threshold from 0 to 1 and plot precision, recall and F1 against it. Locate the F1-maximal threshold and note how far it is from 0.5.</li><li>Define a cost matrix (<code>C_FP = 10</code>, <code>C_FN = 190</code>), compute expected cost across thresholds, find the minimizing threshold empirically, and confirm it lands near the <code>C_FP/(C_FP+C_FN)</code> prediction for a calibrated model.</li><li>Plot reliability diagrams for logistic regression, an SVM decision function, and untuned XGBoost. Then apply Platt scaling and isotonic regression to the latter two and re-plot.</li></ol>
+<div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">Gotchas that fail candidates</div><ul><li><strong>Reporting accuracy on an imbalanced problem</strong> without flagging it. An instant negative signal.</li><li><strong>Mixing up precision and recall</strong> under pressure. Use the row/column mnemonic.</li><li><strong>Defaulting to ROC-AUC</strong> for a 0.1%-positive problem.</li><li><strong>Reporting F1 without saying which class it is for</strong>, or macro/micro without saying which.</li><li><strong>Not knowing that AUC is threshold-free</strong> and therefore says nothing about your operating point.</li><li><strong>Tuning the threshold on the test set.</strong> Tune it on validation.</li><li><strong>Confusing calibration with accuracy.</strong></li><li><strong>Forgetting the PR baseline is not 0.5.</strong> A PR-AUC of 0.3 on a 1%-positive problem is 30× baseline.</li></ul></div></div>
+<h2 id="questions">7 · Interview questions</h2>
+<div class="prep-toolbar" data-sticky-prep=""><label class="prep-filter"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><input data-question-filter="" placeholder="Filter these questions…"/></label><button class="btn ghost" data-expand-answers="" type="button">Open all</button><span class="prep-count" data-question-count="">9 questions</span></div>
+<section aria-label="Classification metrics interview questions" class="prep-question-list">
+<details class="prep-question" data-question="draw the confusion matrix and define precision and recall" data-tags="fundamentals confusion matrix">
+<summary><span class="prep-q-no">01</span><span class="prep-q-title">Draw the confusion matrix and define precision and recall.<span class="prep-tags"><span>fundamentals</span><span>confusion matrix</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>Draw a 2×2 with actual on rows and predicted on columns: TP and FN on the positive-actual row, FP and TN on the negative-actual row.</p><p><strong>Precision = TP/(TP+FP)</strong> — of everything I predicted positive, what fraction really was. It is computed down the predicted-positive <em>column</em> and answers “can I trust my alerts?” <strong>Recall = TP/(TP+FN)</strong> — of all the actual positives, what fraction I caught. It is computed across the actual-positive <em>row</em> and answers “am I missing cases?”</p><p>They trade off through the threshold: lowering it flags more, raising recall and lowering precision.</p><div class="prep-say"><strong>30-second version</strong><p>Precision is TP/(TP+FP), down the predicted-positive column — can I trust my alerts. Recall is TP/(TP+FN), across the actual-positive row — am I missing cases. The threshold trades one for the other.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Absolute fundamentals. Any hesitation here is costly — practise until it is reflexive, and always draw the matrix.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> “What is specificity, and where is it used?” — <code>TN/(TN+FP)</code>, recall for the negative class. It is the standard companion to sensitivity in medical testing, and <code>1 − specificity</code> is the FPR forming the ROC curve’s x-axis.</div></div></details>
+<details class="prep-question" data-question="your fraud model has 99.9 percent accuracy are you happy" data-tags="accuracy paradox imbalance trap">
+<summary><span class="prep-q-no">02</span><span class="prep-q-title">Your fraud model has 99.9% accuracy. Are you happy?<span class="prep-tags"><span>accuracy paradox</span><span>imbalance</span><span>trap</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>No, and I would be suspicious. If fraud is 0.1% of transactions, a model predicting “never fraud” for everything achieves exactly 99.9% accuracy while catching zero fraud — so the number is entirely consistent with a completely useless model. That is the accuracy paradox: on imbalanced data, accuracy is dominated by the majority class and carries almost no information.</p><p>What I would ask for instead: the full confusion matrix; recall, for what fraction of fraud we catch; precision, since a human team has to work the alert queue; PR-AUC as the threshold-free summary; and the expected cost given the real cost of a missed fraud versus a false decline. Then I would set the threshold by minimizing that expected cost rather than defaulting to 0.5.</p><div class="prep-say"><strong>30-second version</strong><p>No — predicting “never fraud” scores 99.9% on a 0.1% base rate while catching nothing. I would want the confusion matrix, recall, precision, PR-AUC and a cost-tuned threshold.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Whether you spot the trap immediately. Probably the single most frequently asked ML interview question of the last decade, and still standard in 2026 — the expected-cost extension is what makes the answer strong rather than merely correct.</p></div></div></details>
+<details class="prep-question" data-question="roc auc versus pr auc when must you use pr" data-tags="ROC PR curve imbalance trap">
+<summary><span class="prep-q-no">03</span><span class="prep-q-title">ROC-AUC vs PR-AUC. When must you use PR?<span class="prep-tags"><span>ROC</span><span>PR curve</span><span>imbalance</span><span>trap</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>Use PR when the positive class is rare and you care about the quality of your positive predictions. The reason is in the denominators: FPR is <code>FP/(FP+TN)</code>, so with an enormous negative count even a large absolute increase in false positives barely moves FPR — the ROC curve stays high and looks great. Precision is <code>TP/(TP+FP)</code>, whose denominator is the predicted-positive set, so the same increase visibly destroys it.</p><p>Concretely with 1,000 positives and 1,000,000 negatives: going from 1,000 to 11,000 false positives shifts FPR from 0.001 to 0.011 — invisible on ROC — while precision falls from 0.50 to 0.08.</p><p>Two additional points: ROC-AUC is invariant to class balance, which makes it good for comparing models across datasets with different base rates but bad for judging real-world usability; and the PR curve’s baseline is the positive rate, not 0.5, so PR-AUC must be read relative to that base rate.</p><div class="prep-say"><strong>30-second version</strong><p>When positives are rare. FPR’s huge negative denominator hides false-positive growth, while precision’s predicted-positive denominator exposes it — 1,000 to 11,000 FPs moves FPR by 0.01 but drops precision from 0.50 to 0.08.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Whether you can explain the mechanism with numbers rather than just state the rule. The worked example is what makes this answer memorable.</p></div></div></details>
+<details class="prep-question" data-question="how do you choose the classification threshold cost matrix" data-tags="threshold expected cost applied">
+<summary><span class="prep-q-no">04</span><span class="prep-q-title">How do you choose the classification threshold?<span class="prep-tags"><span>threshold</span><span>expected cost</span><span>applied</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>From business cost, not from the model. If the costs of a false positive and false negative are quantifiable, minimize expected cost <code>E[cost](t) = FP(t)·C_FP + FN(t)·C_FN</code>, swept over <code>t</code> on a validation set. For a well-calibrated model this has a clean closed form: <strong><code>t* = C_FP/(C_FP + C_FN)</code></strong> — so if a false negative is 19× as expensive as a false positive, the optimal threshold is 0.05, not 0.5.</p><p>If costs are not quantifiable, use an operational constraint instead: fix the alert volume your review team can handle and take the top-k by score, or fix a minimum acceptable precision and maximize recall subject to it.</p><p>Two disciplines matter: tune the threshold on validation data, never on test; and re-check it after deployment, because the optimal threshold shifts when the base rate drifts.</p><div class="prep-say"><strong>30-second version</strong><p>From cost, not the model. Minimize FP·C_FP + FN·C_FN on validation; for a calibrated model that is t* = C_FP/(C_FP+C_FN). Absent costs, fix the reviewable alert volume and take the top-k.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Whether you understand that 0.5 is an arbitrary default. The closed-form threshold and the “re-check after drift” point are both strong differentiators.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> “What if the model is not calibrated?” — the closed form does not apply; calibrate first with Platt or isotonic on held-out data, or just find the empirical cost-minimizing threshold by direct sweep, which works regardless of calibration.</div></div></details>
+<details class="prep-question" data-question="why is f1 the harmonic mean rather than the arithmetic mean" data-tags="F1 metric design">
+<summary><span class="prep-q-no">05</span><span class="prep-q-title">Why is F1 the harmonic mean rather than the arithmetic mean?<span class="prep-tags"><span>F1</span><span>metric design</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>Because the harmonic mean is dominated by the smaller value, which is exactly the behaviour you want. Take precision 1.0 and recall 0.01 — a model that flags one thing, correctly, and misses 99% of positives. The arithmetic mean is 0.505, which flatters a useless model. The harmonic mean is <code>2(1×0.01)/1.01 ≈ 0.02</code>, correctly near-zero.</p><p>So F1 can only be high when <em>both</em> precision and recall are decent, preventing you from gaming it by collapsing one. Two caveats: F1 assumes they matter equally, so use F-beta when they do not; and F1 ignores TN entirely, which is appropriate for rare-positive detection and inappropriate when correctly identifying negatives has value.</p><div class="prep-say"><strong>30-second version</strong><p>Because the harmonic mean is dominated by the smaller value. Precision 1.0 with recall 0.01 gives an arithmetic mean of 0.505 but an F1 of 0.02 — so you cannot game it by collapsing one side.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Whether you understand why a metric is constructed the way it is. The numeric example is the fastest way to demonstrate it.</p></div></div></details>
+<details class="prep-question" data-question="pick a metric for cancer screening spam credit default recommendation feed" data-tags="applied metric selection ranking">
+<summary><span class="prep-q-no">06</span><span class="prep-q-title">Pick a metric for: cancer screening, spam filtering, credit default, and a recommendation feed.<span class="prep-tags"><span>applied</span><span>metric selection</span><span>ranking</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p><strong>Cancer screening</strong> — recall dominates, since a missed cancer is potentially fatal while a false positive costs a follow-up test. Maximize recall subject to a precision floor keeping the follow-up burden feasible; report sensitivity at a fixed specificity, which is the convention clinicians use.</p><p><strong>Spam filtering</strong> — precision dominates, because a legitimate email sent to spam is far worse for the user than one spam message reaching the inbox. Maximize recall subject to a very high precision constraint, and consider a three-way outcome (inbox / quarantine / spam) rather than a binary decision.</p><p><strong>Credit default</strong> — costs are directly monetizable, so use expected cost with the actual loss-given-default versus the foregone-interest cost of a wrongly declined applicant. Require <strong>calibrated probabilities</strong>, because the score feeds pricing and capital calculations, plus interpretability for regulatory reasons.</p><p><strong>Recommendation feed</strong> — this is a <strong>ranking</strong> problem, not a classification one, so use top-k metrics: precision@k, NDCG, MAP — because users only see the top few — and validate against an online engagement metric via A/B test, since offline ranking metrics correlate imperfectly with real behaviour.</p><div class="prep-say"><strong>30-second version</strong><p>Screening: recall with a precision floor. Spam: precision with a recall floor. Credit: expected cost plus calibration. Feed: it is ranking, so precision@k and NDCG, validated by A/B test.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Whether you can map business context to metric choice fluently. Recognizing the feed as ranking rather than classification is a specific differentiator.</p></div></div></details>
+<details class="prep-question" data-question="what is calibration how do you measure it and how do you fix it" data-tags="calibration Platt isotonic">
+<summary><span class="prep-q-no">07</span><span class="prep-q-title">What is calibration, how do you measure it, and how do you fix it?<span class="prep-tags"><span>calibration</span><span>Platt</span><span>isotonic</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>Calibrated means predicted probabilities match observed frequencies — among cases scored 0.7, about 70% are positive. It is distinct from discrimination: a model can rank perfectly (AUC 1.0) and still be badly calibrated, and vice versa.</p><p><strong>Measure</strong> with a reliability diagram (bin predictions, plot mean predicted probability against observed positive rate; the diagonal is perfect), expected calibration error (the average bin-wise gap), or the Brier score (which combines calibration and discrimination).</p><p><strong>Fix</strong> with a post-hoc mapping fitted on <strong>held-out</strong> data. Platt scaling fits a one-dimensional logistic regression on the model’s scores — parametric, works with little data, assumes a sigmoid-shaped distortion. Isotonic regression fits a non-parametric monotone mapping — more flexible, corrects any monotone distortion, needs more data and can overfit small sets.</p><p>Which models need it: SVMs badly, since hinge loss does not estimate probabilities at all; boosted trees usually, since they tend toward over-confidence; Random Forests mildly, typically under-confident at the extremes because of averaging; logistic regression usually not, since it is trained on a proper scoring rule.</p><div class="prep-say"><strong>30-second version</strong><p>Predicted probabilities matching observed frequencies — distinct from ranking ability. Measure with a reliability diagram, ECE or Brier; fix with Platt or isotonic regression on held-out data.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>A topic much more prominent in 2026 loops because scores increasingly drive automated cost-based decisions. Knowing which models are miscalibrated <em>in which direction</em> is a strong practitioner signal.</p></div></div></details>
+<details class="prep-question" data-question="macro versus micro versus weighted averaging multiclass" data-tags="multiclass averaging">
+<summary><span class="prep-q-no">08</span><span class="prep-q-title">Macro vs micro vs weighted averaging in multi-class problems.<span class="prep-tags"><span>multiclass</span><span>averaging</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p><strong>Macro</strong> computes the metric per class and takes an unweighted mean, so every class counts equally regardless of size — use it when rare classes matter as much as common ones, which is usually the case when evaluating fairness across categories.</p><p><strong>Micro</strong> pools all TP/FP/FN across classes and computes one global metric, so it is dominated by frequent classes; for single-label multi-class classification, <strong>micro-F1 equals overall accuracy</strong>.</p><p><strong>Weighted</strong> averages the per-class metric weighted by class support — a middle ground that reflects the population but can still hide poor performance on rare classes.</p><p>Rule of thumb: report macro when class importance is uniform, micro or accuracy when you care about overall correct-decision rate, and <em>always</em> report the per-class breakdown alongside, because a single averaged number can conceal one class sitting at zero recall.</p><div class="prep-say"><strong>30-second version</strong><p>Macro weights classes equally; micro pools counts and equals accuracy for single-label multi-class; weighted uses support. Always show the per-class breakdown too.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Precision on a routinely fudged topic. The “micro-F1 equals accuracy” identity is a good detail.</p></div></div></details>
+<details class="prep-question" data-question="what is mcc and why might you prefer it" data-tags="MCC imbalance breadth">
+<summary><span class="prep-q-no">09</span><span class="prep-q-title">What is MCC and why might you prefer it?<span class="prep-tags"><span>MCC</span><span>imbalance</span><span>breadth</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>The Matthews correlation coefficient is essentially the Pearson correlation between predicted and actual binary labels: <code>(TP·TN − FP·FN)/√((TP+FP)(TP+FN)(TN+FP)(TN+FN))</code>, ranging from −1 (perfectly wrong) through 0 (random) to +1 (perfect).</p><p>Its advantage is that it uses <strong>all four cells</strong> of the confusion matrix, so unlike F1 — which ignores TN — it cannot be inflated by a degenerate strategy on imbalanced data. A model predicting all-positive on a 1%-positive dataset gets a non-trivial F1 but an MCC of approximately 0.</p><p>It is therefore the most trustworthy single-number summary for imbalanced binary problems, and it is symmetric under swapping which class you call positive — which F1 is not.</p><div class="prep-say"><strong>30-second version</strong><p>The correlation between predicted and actual labels, from −1 to +1. It uses all four confusion-matrix cells, so unlike F1 it cannot be inflated by predicting everything positive on imbalanced data.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Breadth beyond the standard four metrics. Naming MCC unprompted, with the “uses all four cells” justification, is a clear positive signal.</p></div></div></details>
+</section>
+<div class="page-nav"><a href="09-gradient-descent-optimization.html"><div class="dir">← Previous</div><div class="ttl">Gradient Descent &amp; Optimization</div></a><a class="next" href="11-regression-metrics.html"><div class="dir">Next →</div><div class="ttl">Regression Metrics</div></a></div>
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script src="assets/app.js?v=20260727c"></script>
+<script src="assets/ml-sitenav.js?v=20260727c"></script>
+<script src="assets/enhance.js?v=20260727c"></script>
+<script src="assets/interview-prep.js?v=20260727c"></script>
+</body>
+</html>

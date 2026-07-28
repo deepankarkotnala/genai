@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+
+<html data-theme="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="#f4f5f8" name="theme-color"/>
+<title>Boosting I: AdaBoost & Gradient Boosting — Switch job</title>
+<!-- Machine Learning brand metadata -->
+<link href="assets/brand/favicon.svg?v=20260727c" rel="icon" type="image/svg+xml"/>
+<link href="assets/brand/favicon-32.png?v=20260727c" rel="icon" sizes="32x32" type="image/png"/>
+<link href="assets/brand/favicon.ico?v=20260727c" rel="shortcut icon"/>
+<link href="assets/brand/apple-touch-icon.png?v=20260727c" rel="apple-touch-icon" sizes="180x180"/>
+<link href="assets/brand/site.webmanifest?v=20260727c" rel="manifest"/>
+<link color="#6f47f5" href="assets/brand/safari-pinned-tab.svg?v=20260727c" rel="mask-icon"/>
+<link href="assets/brand/social-card.png?v=20260727c" rel="image_src"/>
+<meta content="Switch job" name="application-name"/>
+<meta content="Switch job" name="apple-mobile-web-app-title"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="#2563eb" name="msapplication-TileColor"/>
+<meta content="assets/brand/browserconfig.xml?v=20260727c" name="msapplication-config"/>
+<meta content="website" property="og:type"/>
+<meta content="Switch job Learning Platform" property="og:site_name"/>
+<meta content="Boosting I: AdaBoost & Gradient Boosting" property="og:title"/>
+<meta content="What each tree actually fits — the negative gradient, not the residuals — AdaBoost's alpha and exponential loss, shrinkage, and why boosting chases label noise." property="og:description"/>
+<meta content="assets/brand/social-card.png?v=20260727c" property="og:image"/>
+<meta content="1200" property="og:image:width"/>
+<meta content="630" property="og:image:height"/>
+<meta content="Switch job learning platform logo" property="og:image:alt"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="Boosting I: AdaBoost & Gradient Boosting" name="twitter:title"/>
+<meta content="What each tree actually fits — the negative gradient, not the residuals — AdaBoost's alpha and exponential loss, shrinkage, and why boosting chases label noise." name="twitter:description"/>
+<meta content="assets/brand/social-card.png?v=20260727c" name="twitter:image"/>
+<link href="assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
+<!-- /Machine Learning brand metadata -->
+<meta content="What each tree actually fits — the negative gradient, not the residuals — AdaBoost's alpha and exponential loss, shrinkage, and why boosting chases label noise." name="description"/>
+<link href="assets/styles.css?v=20260727c" rel="stylesheet"/>
+<link href="assets/office-theme.css?v=20260727e" rel="stylesheet"/>
+<link href="assets/ml-visuals.css?v=20260728a" rel="stylesheet"/>
+</head>
+<body data-page="ml-17-boosting-gradient-boosting" data-prep-section="ml">
+<div class="app">
+<aside class="sidebar">
+<div class="brand">
+<a class="brand-link" href="index.html" aria-label="Switch job home">
+<span class="brand-mark" aria-hidden="true"><img src="assets/brand/switch-job-logo.png?v=20260727c" alt=""/></span>
+<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+</a>
+</div>
+<div class="search-wrap"><div class="search-box"><svg fill="none" height="15" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="15"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg><input data-search="" placeholder="Search everything…  ( / )" type="text"/></div><div class="search-results"></div></div>
+<nav class="nav"></nav>
+</aside>
+<div class="backdrop"></div>
+<div class="main">
+<header class="topbar">
+<button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
+<div class="crumbs">Machine Learning / Part D / Module 17</div>
+<button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
+</header>
+<div class="content-wrap">
+<main class="content prep-content">
+<div class="eyebrow"><span class="dot"></span> Module 17 · Part D Trees &amp; Ensembles</div>
+<h1>Boosting I: AdaBoost &amp; Gradient Boosting</h1>
+<p class="lead">One sentence in this module decides the interview: each gradient-boosting tree is fitted to the <em>negative gradient of the loss with respect to the current predictions</em> — not “the residuals”.</p>
+<div class="meta-row"><span class="pill purple">Prerequisites · Modules 09, 15, 16</span><span class="pill">Study time · 8 h</span><span class="pill blue">6 interview questions</span><span class="pill purple">Highest priority</span></div>
+<div class="callout key"><div class="c-ico">🎯</div><div class="c-body"><div class="c-title">Your interview goal</div><p>Say precisely what each tree fits and why “residuals” is only true for squared error, explain AdaBoost's alpha, and know why boosting is uniquely vulnerable to label noise.</p></div></div>
+<h2 id="what-to-learn">1 · What to learn</h2>
+<ol><li>The boosting principle: combine many weak learners sequentially into a strong learner.</li><li>What “weak learner” formally means — better than random — and boosting’s PAC-learning origin.</li><li><strong>AdaBoost</strong>: reweighting misclassified samples, computing learner weights <code>α</code>, and the exponential loss it implicitly minimizes.</li><li><strong>Gradient boosting</strong>: fit each new learner to the <strong>negative gradient of the loss with respect to the current predictions</strong> — the pseudo-residuals.</li><li>Why “fit the residuals” is only literally true for squared error, and what it becomes for log-loss.</li><li>Gradient boosting as <strong>gradient descent in function space</strong> (the Module 09 connection).</li><li>The algorithm step by step: initialize with a constant, then iterate — compute pseudo-residuals, fit a tree, find leaf values, update with shrinkage.</li><li><strong>Shrinkage / learning rate</strong> and its trade against <code>n_estimators</code>.</li><li><strong>Stochastic gradient boosting</strong>: <code>subsample</code> and its regularizing effect.</li><li>Tree depth in boosting: why shallow (3–8), and depth as an interaction-order control.</li><li><strong>Early stopping</strong> on a validation set as the primary complexity control.</li><li>Loss functions for boosting: squared error, absolute error, Huber, log-loss, multi-class cross-entropy, Poisson, quantile.</li><li>Why boosting is sensitive to noisy labels and outliers.</li><li>AdaBoost versus gradient boosting: how they relate, and AdaBoost as a special case.</li></ol>
+<h2 id="intuitions">2 · Core intuitions</h2>
+<h3>Boosting builds a committee where each member specializes in the previous committee’s mistakes</h3>
+<p>Start with a weak model. Look at what it gets wrong. Train the next model to focus on exactly that. Add it to the ensemble with a small weight. Repeat. Each individual model is barely better than guessing, but the sum becomes highly accurate — the surprising theoretical result that started the field.</p>
+<h3>AdaBoost reweights the data; gradient boosting reweights the target</h3>
+<p>AdaBoost keeps a weight per training sample, increases the weights of misclassified points, and fits the next stump to that reweighted distribution, then adds it with weight <code>α = ½ln((1−ε)/ε)</code> where <code>ε</code> is its weighted error — so accurate learners get large <code>α</code>, and a learner at exactly 50% error gets <code>α = 0</code> and contributes nothing. Gradient boosting instead leaves sample weights alone and changes what the next tree is <em>trying to predict</em>: the negative gradient of the loss at the current predictions.</p>
+<h3>The single most important sentence in this module</h3>
+<div class="callout"><div class="c-ico">🧭</div><div class="c-body"><div class="c-title">Say “negative gradient”, not “residuals”</div><p>Each gradient-boosting tree is fitted to the <strong>negative gradient of the loss with respect to the current predictions</strong>. For squared error that happens to equal <code>y − F(x)</code>, the residual, which is why the intuitive story works for regression. But for log-loss it is <code>y − p</code>, and for absolute error it is <code>sign(y − F(x))</code>. Saying “residuals” for the general case is the most common way candidates reveal a shallow understanding.</p></div></div>
+<h3>It is gradient descent in function space</h3>
+<p>Ordinary gradient descent updates parameters: <code>w ← w − η∇_w J</code>. Gradient boosting updates the <em>function</em>: <code>F ← F − η∇_F J</code>. Since you cannot add a gradient to a function directly, you fit a weak learner to approximate it. The new tree is the descent direction; the learning rate is the step size. This framing makes every boosting hyperparameter interpretable and is the best possible answer to “how are they related?”</p>
+<h3>Shrinkage and <code>n_estimators</code> trade off, and shrinkage almost always wins</h3>
+<p>Multiplying each tree’s contribution by a small <code>η</code> (0.01–0.1) means each step is a small correction, so more steps are needed but the ensemble generalizes better — averaging many small corrections is more robust than taking a few large ones. So the standard recipe is: set a low learning rate, set <code>n_estimators</code> high, and let <strong>early stopping</strong> on a validation set decide when to stop. Halving the learning rate roughly doubles the required number of trees.</p>
+<h3>Shallow trees, deliberately</h3>
+<p>Boosting wants weak learners, so depths of 3–8 (or <code>num_leaves</code> around 31 in LightGBM) are typical, versus fully grown trees in a Random Forest. There is an elegant interpretation: a depth-<code>d</code> tree can represent interactions of order at most <code>d</code>, so <strong><code>max_depth</code> directly controls the interaction order</strong> your model can capture. Depth 1 (stumps) gives a purely additive model with no interactions; depth 2 allows pairwise interactions. Deeper trees in boosting overfit quickly because each is already fitting a residual signal that is mostly noise by later iterations.</p>
+<h3>Boosting chases noise, and this is its main structural weakness</h3>
+<p>Because each iteration focuses on what the ensemble currently gets wrong, and mislabeled points are permanently “wrong”, boosting keeps allocating capacity to them. AdaBoost is especially vulnerable, since exponential loss grows exponentially in the margin violation, so a single badly mislabeled outlier can dominate the weight distribution. Gradient boosting with log-loss is gentler, and Huber or absolute-error losses for regression make it more robust still. This is the crisp reason to prefer a Random Forest on known-noisy labels.</p>
+<h2 id="formulas">3 · Whiteboard formulas</h2>
+<div class="code-block" data-reveal="">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>boosting.txt</span><button class="copy-btn">Copy</button></div>
+<pre><code>=== AdaBoost (binary, y in {-1,+1}) ===
+init weights        w_i = 1/n
+for m = 1..M:
+    fit weak learner h_m to the weighted data
+    weighted error  eps_m = SUM_i w_i * 1[h_m(x_i) != y_i] / SUM_i w_i
+    learner weight  alpha_m = 0.5 * ln((1 - eps_m)/eps_m)
+                    eps=0.5 -> alpha=0 ;  eps->0 -> alpha->infinity
+    update weights  w_i <- w_i * exp(-alpha_m * y_i * h_m(x_i))   then renormalize
+final               F(x) = sign( SUM_m alpha_m * h_m(x) )
+implicit loss       exponential loss  L = exp(-y * F(x))
+
+=== Gradient Boosting (any differentiable loss L) ===
+init                F_0(x) = argmin_c SUM_i L(y_i, c)
+for m = 1..M:
+    pseudo-residual r_i = - [ dL(y_i, F(x_i)) / dF(x_i) ]  at F = F_{m-1}   <- THE key line
+    fit tree h_m to predict r_i
+    leaf values  gamma_j = argmin_gamma SUM_{x_i in leaf j} L(y_i, F_{m-1}(x_i) + gamma)
+    update       F_m(x) = F_{m-1}(x) + eta * h_m(x)      eta = learning rate (shrinkage)
+
+Negative gradient by loss:
+    squared error 0.5*(y-F)²   ->  r = y - F           <- the ACTUAL residual
+    log-loss (binary)          ->  r = y - p,  p = sigmoid(F)
+    absolute error |y-F|       ->  r = sign(y - F)
+    Huber                      ->  clipped residual
+
+Function-space view:  F <- F - eta * grad_F J     with h_m approximating -grad_F J</code></pre>
+</div>
+<h2 id="drill">4 · Hands-on drill</h2>
+<ol><li>Implement gradient boosting for regression from scratch on top of your Module 15 tree: initialize with the mean, loop computing residuals, fit a shallow tree, update with a learning rate. Confirm you match <code>GradientBoostingRegressor</code> closely.</li><li><strong>Extend it to log-loss and verify the pseudo-residual is <code>y − p</code>, not <code>y − F</code>.</strong> Doing this once permanently fixes the most-failed question in this module.</li><li>Plot training and validation loss against <code>n_estimators</code>. Watch training loss fall monotonically while validation loss bottoms out and then rises — the overfitting signature bagging does not have.</li><li>Grid the learning rate over {0.3, 0.1, 0.03, 0.01} and record the optimal <code>n_estimators</code> for each. Confirm the inverse relationship.</li><li>Corrupt 5% of labels and compare gradient boosting against Random Forest. <strong>Quantify boosting’s larger degradation</strong> — that number is your evidence for the noise-sensitivity question.</li><li>Implement AdaBoost with stumps and print the <code>α</code> sequence to see how learner weights evolve.</li></ol>
+<div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">Gotchas that fail candidates</div><ul><li><strong>Saying “each tree fits the residuals”</strong> without qualifying that this holds only for squared error.</li><li><strong>Not knowing what AdaBoost’s <code>α</code> means</strong>, or that <code>ε = 0.5</code> gives <code>α = 0</code>.</li><li><strong>Saying boosting reduces variance.</strong> It primarily reduces <strong>bias</strong>.</li><li><strong>Using deep trees in boosting.</strong></li><li><strong>Not using early stopping</strong>, or tuning <code>n_estimators</code> by grid search when early stopping is cheaper and better.</li><li><strong>Claiming boosting is parallelizable across trees.</strong> It is sequential by construction; parallelism happens <em>within</em> split finding.</li><li><strong>Not knowing boosting is sensitive to label noise.</strong></li></ul></div></div>
+<h2 id="questions">5 · Interview questions</h2>
+<div class="prep-toolbar" data-sticky-prep=""><label class="prep-filter"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><input data-question-filter="" placeholder="Filter these questions…"/></label><button class="btn ghost" data-expand-answers="" type="button">Open all</button><span class="prep-count" data-question-count="">6 questions</span></div>
+<section aria-label="Boosting and gradient boosting interview questions" class="prep-question-list">
+<details class="prep-question" data-question="in gradient boosting what exactly does each new tree fit" data-tags="negative gradient pseudo-residuals trap">
+<summary><span class="prep-q-no">01</span><span class="prep-q-title">In gradient boosting, what exactly does each new tree fit?<span class="prep-tags"><span>negative gradient</span><span>pseudo-residuals</span><span>trap</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>Each new tree is fitted to the <strong>negative gradient of the loss function with respect to the current model’s predictions</strong>, evaluated at the current ensemble — the pseudo-residuals <code>rᵢ = −∂L(yᵢ, F(xᵢ))/∂F(xᵢ)</code>. It is <em>not</em> “the residuals” in general.</p><p>For squared error the negative gradient works out to exactly <code>y − F(x)</code>, the ordinary residual, which is why the popular “fit the residuals” description is fine for regression with MSE. But for binary log-loss it is <code>y − p</code> where <code>p = σ(F(x))</code> — the difference between the label and the predicted <em>probability</em>, not the raw prediction. For absolute error it is <code>sign(y − F(x))</code>, which is why an MAE-boosted model behaves so differently.</p><p>The general formulation is what lets gradient boosting work with any differentiable loss — Poisson for counts, quantile for asymmetric costs, Huber for robustness — and that generality is the whole point of Friedman’s framing.</p><div class="prep-say"><strong>30-second version</strong><p>The negative gradient of the loss with respect to current predictions. That equals the residual only under squared error; under log-loss it is y − p, and under absolute error sign(y − F).</p></div><div class="prep-say"><strong>What’s being tested</strong><p>The single highest-signal question in the boosting module. Interviewers use it precisely because “residuals” is the memorized answer and “negative gradient, which reduces to the residual under MSE” is the understood one.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> “So what is the initial prediction <code>F₀</code>?” — the constant minimizing the loss: the mean of <code>y</code> for squared error, the median for absolute error, and the log-odds of the base rate for log-loss.</div></div></details>
+<details class="prep-question" data-question="explain adaboost alpha exponential loss" data-tags="AdaBoost exponential loss reweighting">
+<summary><span class="prep-q-no">02</span><span class="prep-q-title">Explain AdaBoost.<span class="prep-tags"><span>AdaBoost</span><span>exponential loss</span><span>reweighting</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>AdaBoost maintains a weight per training sample, starting uniform at <code>1/n</code>. At each round it fits a weak learner — classically a decision stump — to the weighted data, computes that learner’s weighted error <code>ε_m</code>, and assigns it an ensemble weight <code>α_m = ½ln((1−ε_m)/ε_m)</code>. Then it multiplies the weights of misclassified samples up and correctly classified samples down, via <code>wᵢ ← wᵢ·exp(−α_m yᵢ h_m(xᵢ))</code>, and renormalizes — so the next learner concentrates on what the current committee gets wrong. The final prediction is the sign of the α-weighted vote.</p><p>Two things worth noting about <code>α</code>: a learner at exactly 50% error gets <code>α = 0</code> and contributes nothing, while a near-perfect learner gets a very large <code>α</code> — so accuracy is rewarded superlinearly.</p><p>And it can be shown that AdaBoost performs coordinate-wise minimization of an <strong>exponential loss</strong> <code>exp(−y·F(x))</code>, which makes it a special case of the general gradient-boosting framework and also explains its notable sensitivity to mislabeled points, since exponential loss grows exponentially in the margin violation.</p><div class="prep-say"><strong>30-second version</strong><p>Reweight misclassified samples up each round, fit a stump to the reweighted data, and add it with weight α = ½ln((1−ε)/ε). It implicitly minimizes exponential loss, which is why it is so noise-sensitive.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Whether you know the mechanism, and whether you know the exponential-loss connection. That connection is what unifies this module.</p></div></div></details>
+<details class="prep-question" data-question="how do the learning rate and n estimators interact in boosting" data-tags="shrinkage early stopping tuning">
+<summary><span class="prep-q-no">03</span><span class="prep-q-title">How do the learning rate and <code>n_estimators</code> interact, and how do you set them?<span class="prep-tags"><span>shrinkage</span><span>early stopping</span><span>tuning</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>They trade off inversely: a lower learning rate means each tree contributes a smaller correction, so more trees are needed to reach the same training fit — roughly, halving the learning rate doubles the number of trees required.</p><p>Lower learning rates generalize better, because many small corrections are more robust than a few large ones. So the standard recipe is to fix a small learning rate (0.01–0.1 depending on compute budget), set <code>n_estimators</code> deliberately high, and let <strong>early stopping</strong> on a validation set determine where to actually stop.</p><p>That is strictly better than grid-searching <code>n_estimators</code>, because a single fit with early stopping finds the optimum for that learning rate at the cost of one training run rather than many. In practice I would tune the learning rate against my time budget — 0.1 for fast iteration, 0.01–0.03 for the final model — and always report which iteration early stopping selected, since a model that stopped at 80 trees out of 5,000 is telling you something about the signal in the data.</p><div class="prep-say"><strong>30-second version</strong><p>Inversely: halving the rate roughly doubles the trees needed. Fix a small rate, set n_estimators high, and let early stopping choose — which is strictly cheaper than grid-searching the tree count.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Practical tuning competence. The “use early stopping instead of grid-searching n_estimators” point is what makes it a practitioner’s answer.</p></div></div></details>
+<details class="prep-question" data-question="why does boosting use shallow trees while random forest uses deep ones" data-tags="depth bias-variance interaction order trap">
+<summary><span class="prep-q-no">04</span><span class="prep-q-title">Why does boosting use shallow trees while Random Forest uses deep ones?<span class="prep-tags"><span>depth</span><span>bias-variance</span><span>interaction order</span><span>trap</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>Because they are attacking opposite error components. Random Forest reduces <strong>variance</strong> by averaging, so it wants base learners with <strong>low bias</strong> — fully grown trees that individually fit the data well, whose high variance averaging then cancels. Boosting reduces <strong>bias</strong> by sequentially correcting errors, so it wants base learners that are deliberately <strong>weak</strong>: a shallow tree contributes a small, low-variance correction and the ensemble builds accuracy gradually.</p><p>If you used deep trees in boosting, the first tree would already fit most of the signal, subsequent trees would fit noise in the residuals, and the ensemble would overfit rapidly.</p><p>There is also a nice interpretive angle: a depth-<code>d</code> tree can capture interactions of order at most <code>d</code>, so <code>max_depth</code> in boosting directly controls the <strong>interaction order</strong> of the model — depth 1 gives a purely additive model, depth 2 allows pairwise interactions, and so on. Typical values are 3–8 for boosting (or <code>num_leaves ≈ 31</code> in LightGBM) versus unlimited depth in a Random Forest.</p><div class="prep-say"><strong>30-second version</strong><p>Bagging cuts variance so it wants low-bias deep learners; boosting cuts bias so it wants deliberately weak ones. Also, depth d caps the interaction order — depth 1 is purely additive.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Whether you can derive the hyperparameter choice from the bias–variance role of each method. The interaction-order interpretation is a strong extra.</p></div></div></details>
+<details class="prep-question" data-question="five percent of your labels are wrong random forest or gradient boosting" data-tags="label noise robustness trap">
+<summary><span class="prep-q-no">05</span><span class="prep-q-title">5% of your labels are wrong. Random Forest or gradient boosting?<span class="prep-tags"><span>label noise</span><span>robustness</span><span>trap</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>Random Forest, for a structural reason. Boosting explicitly concentrates each successive learner on what the current ensemble gets wrong, and a mislabeled point is permanently wrong — so boosting keeps allocating capacity to fitting noise, in the worst case building a large part of the ensemble around a handful of bad labels. AdaBoost is the most vulnerable, since its exponential loss grows exponentially in the margin violation, so one badly mislabeled outlier can dominate the weight distribution.</p><p>Bagging has the opposite behaviour: each tree sees a bootstrap sample including the bad label only ~63% of the time, and averaging dilutes its influence.</p><p>If I did want boosting’s accuracy despite the noise, the mitigations are a robust loss (Huber or absolute error rather than squared error), a lower learning rate with aggressive early stopping, <code>subsample</code> below 1, and stronger leaf regularization.</p><p>But the highest-value action is not a modelling choice at all — it is <strong>cleaning the labels</strong>, since 5% noise puts a ceiling on what any model can achieve, and finding the mislabeled rows (for example by flagging high-loss training examples for review) usually beats any algorithmic workaround.</p><div class="prep-say"><strong>30-second version</strong><p>Random Forest — boosting keeps chasing permanently-wrong points, while bagging sees each bad label in only ~63% of bootstraps and averages it away. But the real fix is cleaning the labels.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Whether you understand <em>why</em> boosting is noise-sensitive, and whether you recognize the data as the real problem. Both halves are needed for a full answer.</p></div></div></details>
+<details class="prep-question" data-question="how is gradient boosting related to gradient descent module 17" data-tags="function space unifying Newton">
+<summary><span class="prep-q-no">06</span><span class="prep-q-title">How is gradient boosting related to gradient descent?<span class="prep-tags"><span>function space</span><span>unifying</span><span>Newton</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>It <em>is</em> gradient descent, performed in <strong>function space</strong> rather than parameter space. Ordinary gradient descent parameterizes the model and steps <code>w ← w − η∇_w J</code>. Gradient boosting treats the prediction function <code>F</code> itself as the optimization variable and steps <code>F ← F − η∇_F J</code>.</p><p>The complication is that you cannot add a gradient to a function directly, so at each stage you compute the negative gradient at each training point — the pseudo-residuals — and fit a weak learner to approximate that vector, giving <code>F_m = F_{m−1} + η·h_m</code>. So the new tree plays the role of the descent direction, and boosting’s learning rate (shrinkage) is exactly the step size η.</p><p>The framing makes every hyperparameter interpretable: <code>n_estimators</code> is the number of descent steps, <code>learning_rate</code> is the step size, and early stopping is convergence monitoring. <strong>XGBoost extends the analogy to second order</strong>, using a Taylor expansion with both the gradient and the Hessian to choose leaf values, which makes it the function-space analogue of Newton’s method rather than plain gradient descent.</p><div class="prep-say"><strong>30-second version</strong><p>It is gradient descent in function space: the tree approximates the negative functional gradient and shrinkage is the step size. XGBoost extends it to second order, making it function-space Newton.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>The unifying insight of Modules 09 and 17. Landing the Newton’s-method extension sets you up perfectly for Module 18.</p></div></div></details>
+</section>
+<div class="page-nav"><a href="16-bagging-random-forest.html"><div class="dir">← Previous</div><div class="ttl">Bagging &amp; Random Forest</div></a><a class="next" href="18-xgboost-lightgbm-catboost.html"><div class="dir">Next →</div><div class="ttl">Boosting II: XGBoost &amp; LightGBM</div></a></div>
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script src="assets/app.js?v=20260727c"></script>
+<script src="assets/ml-sitenav.js?v=20260727c"></script>
+<script src="assets/enhance.js?v=20260727c"></script>
+<script src="assets/interview-prep.js?v=20260727c"></script>
+</body>
+</html>

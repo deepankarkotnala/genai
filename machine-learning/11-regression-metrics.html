@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+
+<html data-theme="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="#f4f5f8" name="theme-color"/>
+<title>Regression Metrics — Switch job</title>
+<!-- Machine Learning brand metadata -->
+<link href="assets/brand/favicon.svg?v=20260727c" rel="icon" type="image/svg+xml"/>
+<link href="assets/brand/favicon-32.png?v=20260727c" rel="icon" sizes="32x32" type="image/png"/>
+<link href="assets/brand/favicon.ico?v=20260727c" rel="shortcut icon"/>
+<link href="assets/brand/apple-touch-icon.png?v=20260727c" rel="apple-touch-icon" sizes="180x180"/>
+<link href="assets/brand/site.webmanifest?v=20260727c" rel="manifest"/>
+<link color="#6f47f5" href="assets/brand/safari-pinned-tab.svg?v=20260727c" rel="mask-icon"/>
+<link href="assets/brand/social-card.png?v=20260727c" rel="image_src"/>
+<meta content="Switch job" name="application-name"/>
+<meta content="Switch job" name="apple-mobile-web-app-title"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="#2563eb" name="msapplication-TileColor"/>
+<meta content="assets/brand/browserconfig.xml?v=20260727c" name="msapplication-config"/>
+<meta content="website" property="og:type"/>
+<meta content="Switch job Learning Platform" property="og:site_name"/>
+<meta content="Regression Metrics" property="og:title"/>
+<meta content="Which statistic each loss actually predicts, the RMSE/MAE gap as a free diagnostic, why MAPE biases you low, and how to encode an asymmetric business cost with quantile loss." property="og:description"/>
+<meta content="assets/brand/social-card.png?v=20260727c" property="og:image"/>
+<meta content="1200" property="og:image:width"/>
+<meta content="630" property="og:image:height"/>
+<meta content="Switch job learning platform logo" property="og:image:alt"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="Regression Metrics" name="twitter:title"/>
+<meta content="Which statistic each loss actually predicts, the RMSE/MAE gap as a free diagnostic, why MAPE biases you low, and how to encode an asymmetric business cost with quantile loss." name="twitter:description"/>
+<meta content="assets/brand/social-card.png?v=20260727c" name="twitter:image"/>
+<link href="assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
+<!-- /Machine Learning brand metadata -->
+<meta content="Which statistic each loss actually predicts, the RMSE/MAE gap as a free diagnostic, why MAPE biases you low, and how to encode an asymmetric business cost with quantile loss." name="description"/>
+<link href="assets/styles.css?v=20260727c" rel="stylesheet"/>
+<link href="assets/office-theme.css?v=20260727e" rel="stylesheet"/>
+<link href="assets/ml-visuals.css?v=20260728a" rel="stylesheet"/>
+</head>
+<body data-page="ml-11-regression-metrics" data-prep-section="ml">
+<div class="app">
+<aside class="sidebar">
+<div class="brand">
+<a class="brand-link" href="index.html" aria-label="Switch job home">
+<span class="brand-mark" aria-hidden="true"><img src="assets/brand/switch-job-logo.png?v=20260727c" alt=""/></span>
+<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+</a>
+</div>
+<div class="search-wrap"><div class="search-box"><svg fill="none" height="15" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="15"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg><input data-search="" placeholder="Search everything…  ( / )" type="text"/></div><div class="search-results"></div></div>
+<nav class="nav"></nav>
+</aside>
+<div class="backdrop"></div>
+<div class="main">
+<header class="topbar">
+<button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
+<div class="crumbs">Machine Learning / Part C / Module 11</div>
+<button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
+</header>
+<div class="content-wrap">
+<main class="content prep-content">
+<div class="eyebrow"><span class="dot"></span> Module 11 · Part C Evaluation</div>
+<h1>Regression Metrics</h1>
+<p class="lead">The deepest idea here makes several interview questions trivial: your loss choice decides <em>which statistic</em> you predict — the mean, the median, or a quantile.</p>
+<div class="meta-row"><span class="pill purple">Prerequisites · Modules 03, 06</span><span class="pill">Study time · 4 h</span><span class="pill blue">4 interview questions</span><span class="pill">THEORY · APPLIED</span></div>
+<div class="callout key"><div class="c-ico">🎯</div><div class="c-body"><div class="c-title">Your interview goal</div><p>Explain MAE versus RMSE in terms of the statistic each targets, read the RMSE/MAE gap as a diagnostic, and turn an asymmetric cost into a quantile objective.</p></div></div>
+<h2 id="what-to-learn">1 · What to learn</h2>
+<ol><li><strong>MSE</strong>, <strong>RMSE</strong>, <strong>MAE</strong> — definitions, units, and outlier sensitivity.</li><li>Why RMSE ≥ MAE always, and what the gap tells you about your error distribution.</li><li><strong>MAPE</strong> and its failure modes — undefined at zero, asymmetric penalty — plus SMAPE, WAPE, MASE.</li><li><code>R²</code> and adjusted <code>R²</code>; out-of-sample <code>R²</code> and why it can be negative.</li><li><strong>Huber loss</strong> and <strong>quantile loss</strong>.</li><li>Which statistic each loss actually predicts: MSE → the conditional <strong>mean</strong>, MAE → the conditional <strong>median</strong>, quantile loss → a conditional <strong>quantile</strong>. The highest-value idea in the module.</li><li><strong>RMSLE</strong> for multiplicative or skewed targets.</li><li>Aligning the metric with the business cost of over- versus under-prediction.</li><li>Residual analysis as evaluation, not just as an assumption check.</li><li>Time-series evaluation: naive and seasonal-naive baselines, backtesting, forecast horizons.</li></ol>
+<h2 id="intuitions">2 · Core intuitions</h2>
+<h3>Your loss choice decides which statistic you predict</h3>
+<p>Minimizing squared error over a set of numbers gives the <strong>mean</strong>; minimizing absolute error gives the <strong>median</strong>; minimizing asymmetric quantile (pinball) loss gives that <strong>quantile</strong>. So a model trained with MSE predicts the conditional mean of <code>y|x</code>, and one trained with MAE predicts the conditional median. On a right-skewed target — house prices, insurance claims, revenue — those are very different numbers, and choosing between them is a business decision, not a technical preference.</p>
+<h3>RMSE punishes large errors; MAE treats all errors linearly</h3>
+<p>Squaring means one error of 10 contributes as much as a hundred errors of 1. Choose RMSE when a few large misses are genuinely much worse than many small ones — a badly wrong ETA, a large capacity shortfall. Choose MAE when errors scale linearly with cost and you do not want a handful of anomalies to steer the model. Huber gives you both: quadratic near zero for a smooth gradient, linear in the tails for robustness, with the crossover set by δ.</p>
+<h3>The RMSE/MAE gap is a free diagnostic</h3>
+<p>RMSE ≥ MAE always, by Jensen’s inequality, with equality only when all errors are identical in magnitude. A large ratio means your error distribution is heavy-tailed — a few big misses. So reporting both, and commenting on the gap, tells the interviewer something a single number cannot: <strong>RMSE 40 with MAE 12 is a very different model from RMSE 14 with MAE 12</strong>, and only the first has an outlier problem worth investigating.</p>
+<h3>MAPE is asymmetric and often the wrong choice</h3>
+<p><code>|y−ŷ|/|y|</code> is undefined when <code>y = 0</code> and explodes as <code>y → 0</code>. Worse, it penalizes over-prediction more than under-prediction: predicting 150 when the truth is 100 gives 50% error, predicting 50 gives the same 50%, while predicting 0 caps out at 100%. So a MAPE-optimizing model is <strong>systematically biased low</strong>. It is popular because “percent error” communicates well — so if you must report it, pair it with WAPE (total absolute error over total actual, robust to near-zero rows) or MASE (scaled against a naive forecast).</p>
+<h3>Always report against a baseline</h3>
+<p>An RMSE of 4,200 is meaningless alone. RMSE of 4,200 versus 11,000 for “predict the mean” and 5,100 for “predict last month’s value” is a result. For time series the seasonal-naive baseline is the standard bar, and beating it is genuinely harder than people expect.</p>
+<h2 id="formulas">3 · Whiteboard formulas</h2>
+<div class="code-block" data-reveal="">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>regression_metrics.txt</span><button class="copy-btn">Copy</button></div>
+<pre><code>MSE    = (1/n) S (y - yhat)²                    units: target²
+RMSE   = sqrt(MSE)                              units: target      <- report this one
+MAE    = (1/n) S |y - yhat|                     units: target
+MAPE   = (100/n) S |y - yhat|/|y|               undefined at y=0
+WAPE   = S|y - yhat| / S|y|                     robust alternative
+RMSLE  = sqrt( (1/n) S (log(1+y) - log(1+yhat))² )   penalizes under-prediction more
+
+R²     = 1 - SSres/SStot                        can be < 0 out-of-sample
+
+Huber (delta):  0.5·e²              for |e| <= delta
+                delta|e| - 0.5·delta²   for |e| >  delta
+
+Quantile (pinball) loss for quantile tau:
+                max( tau·e , (tau-1)·e )        where e = y - yhat
+                tau=0.5 -> MAE/2 -> predicts the MEDIAN
+
+Which statistic does the minimizer predict?
+   MSE          -> conditional MEAN
+   MAE          -> conditional MEDIAN
+   pinball(tau) -> conditional tau-QUANTILE</code></pre>
+</div>
+<h2 id="drill">4 · Hands-on drill</h2>
+<ol><li>On a right-skewed target, train two models — one with MSE, one with MAE — and compare their predictions against the conditional mean and median. Confirm the theory holds.</li><li>Add 1% extreme outliers and re-measure both. Quantify how much more the MSE model moves.</li><li>Fit a quantile-regression model (or <code>LGBMRegressor(objective='quantile', alpha=0.9)</code>) and produce a 10th/50th/90th-percentile prediction interval. Being able to say “I shipped a P90 rather than a mean, because under-supply cost 5× over-supply” is a strong applied answer.</li><li>Compute RMSE, MAE and their ratio on a real dataset, and interpret the ratio.</li></ol>
+<div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">Gotchas that fail candidates</div><ul><li><strong>Reporting MSE rather than RMSE</strong> to a stakeholder. Squared units are uninterpretable.</li><li><strong>Using MAPE on data containing zeros or near-zeros.</strong></li><li><strong>Not knowing that MSE targets the mean and MAE the median.</strong> This is the differentiating fact.</li><li><strong>Reporting a metric with no baseline.</strong></li><li><strong>Assuming <code>R²</code> near 1 means a good model</strong> — it can be leakage, or a trivially predictable target.</li><li><strong>Ignoring the sign of the error</strong> when over- and under-prediction have different costs.</li></ul></div></div>
+<h2 id="questions">5 · Interview questions</h2>
+<div class="prep-toolbar" data-sticky-prep=""><label class="prep-filter"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><input data-question-filter="" placeholder="Filter these questions…"/></label><button class="btn ghost" data-expand-answers="" type="button">Open all</button><span class="prep-count" data-question-count="">4 questions</span></div>
+<section aria-label="Regression metrics interview questions" class="prep-question-list">
+<details class="prep-question" data-question="rmse or mae how do you choose mean median" data-tags="RMSE MAE mean vs median trap">
+<summary><span class="prep-q-no">01</span><span class="prep-q-title">RMSE or MAE? How do you choose?<span class="prep-tags"><span>RMSE</span><span>MAE</span><span>mean vs median</span><span>trap</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>It depends on how error cost scales and how you want outliers treated. RMSE squares errors, so large misses dominate — use it when one big error is much worse than several small ones, such as a severely wrong delivery ETA or a large inventory shortfall. MAE weights all errors linearly — use it when cost is proportional to error size and you do not want a handful of anomalies steering the model.</p><p>The deeper distinction: a model trained on squared error predicts the conditional <strong>mean</strong> of <code>y|x</code>, while one trained on absolute error predicts the conditional <strong>median</strong>. On a skewed target those differ substantially, so the choice is really “does the business want the average or the typical case?”</p><p>Practically I would report both, since RMSE ≥ MAE always and the size of the gap reveals how heavy-tailed the errors are. For robustness without giving up a smooth gradient, Huber.</p><div class="prep-say"><strong>30-second version</strong><p>RMSE if a few large misses are much worse; MAE if cost is linear in error. Deeper: MSE targets the conditional mean, MAE the conditional median — so on skewed targets it is a business question.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Whether you can go beyond “RMSE punishes outliers more”. The mean-versus-median point marks a genuinely strong answer.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> “So which is easier to optimize?” — MSE is differentiable everywhere and has a closed form for linear models; MAE has a discontinuous derivative at zero, needing subgradient or specialized methods. That convenience is a real reason MSE is the default, independent of whether it is the right cost.</div></div></details>
+<details class="prep-question" data-question="your stakeholder wants mape what do you say" data-tags="MAPE communication trap">
+<summary><span class="prep-q-no">02</span><span class="prep-q-title">Your stakeholder wants MAPE. What do you say?<span class="prep-tags"><span>MAPE</span><span>communication</span><span>trap</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>I would accept it as a <em>reporting</em> metric while flagging three problems and proposing a companion.</p><p>First, MAPE is undefined when the actual is zero and explodes as it approaches zero, so with any zeros or small values the metric is unstable or unusable. Second, it is <strong>asymmetric</strong>: over-prediction can incur an unbounded percentage error while under-prediction is capped at 100%, so a MAPE-optimized model is systematically biased toward under-predicting — exactly the wrong bias if under-supply is the expensive direction. Third, it weights low-value rows far more heavily than high-value ones, which usually inverts the business priority.</p><p>So I would report MAPE for communication but add <strong>WAPE</strong> — total absolute error over total actual — which is robust to small denominators and aggregates the way the business experiences error, and use RMSE or a quantile loss for model selection. For time series I would add <strong>MASE</strong>, which scales against a naive forecast and is comparable across series.</p><div class="prep-say"><strong>30-second version</strong><p>Accept it for reporting, but flag that it is undefined at zero, asymmetric so it biases predictions low, and over-weights small values. Pair it with WAPE, and select models on RMSE or a quantile loss.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Whether you can push back on a metric request constructively rather than capitulating or refusing. The asymmetry-induced bias is the key technical point.</p></div></div></details>
+<details class="prep-question" data-question="under predicting demand costs five times more than over predicting" data-tags="quantile regression asymmetric cost applied">
+<summary><span class="prep-q-no">03</span><span class="prep-q-title">Under-predicting demand costs you 5× what over-predicting does. How do you build for that?<span class="prep-tags"><span>quantile regression</span><span>asymmetric cost</span><span>applied</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>Encode the asymmetry in the objective rather than fixing it afterwards. The cleanest approach is <strong>quantile regression</strong> with a pinball loss at <code>τ = 5/6 ≈ 0.83</code>, which directly targets the quantile where the marginal costs of over- and under-prediction balance — most gradient-boosting libraries support this via a quantile objective, so it is a one-line change.</p><p>Alternatively use a custom asymmetric loss multiplying the under-prediction branch by 5, which XGBoost and LightGBM support through a custom gradient and Hessian.</p><p>A weaker but common fallback is to train a mean model and apply a learned safety-stock multiplier, but that is a post-hoc patch that does not adapt per row — a quantile model gives a <em>conditional</em> buffer, larger where uncertainty is genuinely larger.</p><p>Evaluate with the same asymmetric cost you optimized, plus realized total cost on a backtest — never plain RMSE, because a model better on RMSE can easily be worse on your actual cost.</p><div class="prep-say"><strong>30-second version</strong><p>Quantile regression with pinball loss at τ = 5/6, so the model targets the quantile where marginal costs balance — and evaluate on the asymmetric cost, not RMSE.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Whether you can align the loss function with an asymmetric business cost. Naming quantile regression and computing τ = 5/6 is exactly the answer senior interviewers want.</p></div></div></details>
+<details class="prep-question" data-question="your regression has r squared 0.95 is the model good" data-tags="R-squared scepticism trap">
+<summary><span class="prep-q-no">04</span><span class="prep-q-title">Your regression has <code>R² = 0.95</code>. Is the model good?<span class="prep-tags"><span>R-squared</span><span>scepticism</span><span>trap</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>Probably suspicious rather than good, and I would check four things before celebrating. <strong>(1) Is it out-of-sample?</strong> In-sample <code>R²</code> rises mechanically with feature count. <strong>(2) Leakage</strong> — a very high <code>R²</code> on a genuinely hard target is the classic leakage signature; I would look for a feature computed from or after the outcome. <strong>(3) Is the target trivially predictable?</strong> If <code>y</code> is nearly a linear function of an obvious input — predicting total price from quantity × unit price — then 0.95 is unimpressive; compare against a naive baseline first. <strong>(4) Autocorrelation</strong> — on a trending time series, <code>R²</code> against the mean is flattering because the mean is a terrible baseline; compare against a seasonal-naive forecast instead.</p><p>Separately, <code>R²</code> says nothing about whether errors are <em>usefully</em> small: I would want RMSE and MAE in the target’s own units plus a residual plot, because <code>R²</code> can be high while errors remain operationally unacceptable.</p><div class="prep-say"><strong>30-second version</strong><p>Suspicious rather than good. Check it is out-of-sample, rule out leakage, ask whether the target is trivially predictable, and compare against a proper baseline — then look at RMSE in real units.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Scepticism toward good news. Interviewers deliberately offer a flattering number to see whether you interrogate it.</p></div></div></details>
+</section>
+<div class="page-nav"><a href="10-classification-metrics.html"><div class="dir">← Previous</div><div class="ttl">Classification Metrics</div></a><a class="next" href="12-imbalanced-data.html"><div class="dir">Next →</div><div class="ttl">Imbalanced Data</div></a></div>
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script src="assets/app.js?v=20260727c"></script>
+<script src="assets/ml-sitenav.js?v=20260727c"></script>
+<script src="assets/enhance.js?v=20260727c"></script>
+<script src="assets/interview-prep.js?v=20260727c"></script>
+</body>
+</html>

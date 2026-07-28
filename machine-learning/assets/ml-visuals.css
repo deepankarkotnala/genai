@@ -1,0 +1,335 @@
+/* ============================================================
+   ml-visuals.css — animated SVG diagram toolkit + "ground up"
+   explainer blocks for the Machine Learning curriculum.
+
+   Everything here is theme-aware (light/dark) and honours
+   prefers-reduced-motion by freezing animations at a readable
+   final frame rather than hiding content.
+   ============================================================ */
+
+:root {
+  --mv-c1: #107c41;   /* primary / positive class / signal   */
+  --mv-c2: #4f63c8;   /* secondary / negative class / model  */
+  --mv-c3: #d9822b;   /* attention / error / residual        */
+  --mv-c4: #8666b5;   /* tertiary / third class             */
+  --mv-c5: #b34f73;   /* danger / wrong / overfit           */
+  --mv-ink: #201a2d;
+  --mv-ink-soft: #655d75;
+  --mv-ink-faint: #a49bb2;
+  --mv-grid: rgba(32, 26, 45, 0.10);
+  --mv-axis: rgba(32, 26, 45, 0.42);
+  --mv-panel: rgba(255, 255, 255, 0.62);
+  --mv-panel-line: rgba(32, 26, 45, 0.12);
+}
+
+[data-theme="dark"] {
+  --mv-c1: #4ec98a;
+  --mv-c2: #8ea2ff;
+  --mv-c3: #f0a860;
+  --mv-c4: #c1a4ea;
+  --mv-c5: #ec8bab;
+  --mv-ink: #faf8ff;
+  --mv-ink-soft: #c8bfd5;
+  --mv-ink-faint: #8d84a0;
+  --mv-grid: rgba(255, 255, 255, 0.085);
+  --mv-axis: rgba(255, 255, 255, 0.40);
+  --mv-panel: rgba(255, 255, 255, 0.05);
+  --mv-panel-line: rgba(255, 255, 255, 0.11);
+}
+
+/* ---------- figure shell ---------- */
+.mlviz {
+  position: relative;
+  margin: 28px 0;
+  padding: clamp(14px, 2.2vw, 22px) clamp(12px, 2vw, 20px) 14px;
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  background:
+    radial-gradient(circle at 8% 0%, color-mix(in srgb, var(--mv-c1) 9%, transparent), transparent 16rem),
+    linear-gradient(160deg, var(--bg-subtle), var(--bg-elevated));
+  box-shadow: var(--shadow-sm);
+  overflow: hidden;
+}
+.mlviz::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: .55;
+  background-image:
+    linear-gradient(var(--mv-grid) 1px, transparent 1px),
+    linear-gradient(90deg, var(--mv-grid) 1px, transparent 1px);
+  background-size: 26px 26px;
+  mask-image: linear-gradient(to bottom, rgba(0,0,0,.9), transparent 88%);
+}
+.mlviz > * { position: relative; z-index: 1; }
+
+.mlviz-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: var(--mv-c1);
+  margin-bottom: 10px;
+}
+.mlviz-title::before {
+  content: "";
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--mv-c1);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--mv-c1) 20%, transparent);
+  animation: mvBreathe 2.6s ease-in-out infinite;
+}
+@keyframes mvBreathe { 50% { box-shadow: 0 0 0 8px color-mix(in srgb, var(--mv-c1) 6%, transparent); } }
+
+.mlviz svg { display: block; width: 100%; height: auto; overflow: visible; }
+.mlviz-cap {
+  margin: 12px 2px 0;
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: var(--text-secondary);
+  border-top: 1px dashed var(--mv-panel-line);
+  padding-top: 10px;
+}
+.mlviz-cap b, .mlviz-cap strong { color: var(--text); }
+.mlviz-scroll { overflow-x: auto; }
+.mlviz-scroll > svg { min-width: 520px; }
+
+/* legend under a figure */
+.mv-keys { display: flex; flex-wrap: wrap; gap: 6px 14px; margin-top: 10px; font-size: 12px; color: var(--text-secondary); }
+.mv-keys span { display: inline-flex; align-items: center; gap: 6px; }
+.mv-keys i { width: 11px; height: 11px; border-radius: 3px; flex: 0 0 auto; }
+.mv-k1 { background: var(--mv-c1); }
+.mv-k2 { background: var(--mv-c2); }
+.mv-k3 { background: var(--mv-c3); }
+.mv-k4 { background: var(--mv-c4); }
+.mv-k5 { background: var(--mv-c5); }
+.mv-kd { background: repeating-linear-gradient(90deg, var(--mv-ink-soft) 0 3px, transparent 3px 6px); }
+
+/* ---------- SVG element classes ---------- */
+.mv-axis      { stroke: var(--mv-axis); stroke-width: 1.4; fill: none; }
+.mv-gridline  { stroke: var(--mv-grid); stroke-width: 1; fill: none; }
+.mv-lbl       { fill: var(--mv-ink); font-family: var(--font-sans); font-size: 12.5px; font-weight: 650; }
+.mv-lbl-sm    { fill: var(--mv-ink-soft); font-family: var(--font-sans); font-size: 11px; font-weight: 550; }
+.mv-lbl-xs    { fill: var(--mv-ink-faint); font-family: var(--font-sans); font-size: 9.8px; font-weight: 550; }
+.mv-mono      { fill: var(--mv-ink); font-family: var(--font-mono); font-size: 11.5px; }
+.mv-mono-sm   { fill: var(--mv-ink-soft); font-family: var(--font-mono); font-size: 10.2px; }
+.mv-box       { fill: var(--mv-panel); stroke: var(--mv-panel-line); stroke-width: 1.2; }
+.mv-box-1     { fill: color-mix(in srgb, var(--mv-c1) 14%, transparent); stroke: var(--mv-c1); stroke-width: 1.3; }
+.mv-box-2     { fill: color-mix(in srgb, var(--mv-c2) 14%, transparent); stroke: var(--mv-c2); stroke-width: 1.3; }
+.mv-box-3     { fill: color-mix(in srgb, var(--mv-c3) 14%, transparent); stroke: var(--mv-c3); stroke-width: 1.3; }
+.mv-box-5     { fill: color-mix(in srgb, var(--mv-c5) 14%, transparent); stroke: var(--mv-c5); stroke-width: 1.3; }
+.mv-arrow     { stroke: var(--mv-ink-soft); stroke-width: 1.7; fill: none; marker-end: url(#mvArrow); }
+.mv-arrow-1   { stroke: var(--mv-c1); stroke-width: 1.8; fill: none; marker-end: url(#mvArrow1); }
+.mv-arrow-3   { stroke: var(--mv-c3); stroke-width: 1.8; fill: none; marker-end: url(#mvArrow3); }
+.mv-fill-1    { fill: var(--mv-c1); }
+.mv-fill-2    { fill: var(--mv-c2); }
+.mv-fill-3    { fill: var(--mv-c3); }
+.mv-fill-4    { fill: var(--mv-c4); }
+.mv-fill-5    { fill: var(--mv-c5); }
+.mv-str-1     { stroke: var(--mv-c1); fill: none; }
+.mv-str-2     { stroke: var(--mv-c2); fill: none; }
+.mv-str-3     { stroke: var(--mv-c3); fill: none; }
+.mv-str-4     { stroke: var(--mv-c4); fill: none; }
+.mv-str-5     { stroke: var(--mv-c5); fill: none; }
+.mv-dash      { stroke-dasharray: 5 5; }
+.mv-soft      { opacity: .38; }
+
+/* ---------- animations ---------- */
+
+/* marching-ants flow along a path (data moving through a pipeline) */
+.mv-flow { stroke-dasharray: 7 9; animation: mvFlow 1.1s linear infinite; }
+@keyframes mvFlow { to { stroke-dashoffset: -16; } }
+
+/* a line/curve that draws itself once, then holds */
+.mv-draw {
+  stroke-dasharray: var(--len, 1200);
+  stroke-dashoffset: var(--len, 1200);
+  animation: mvDraw 1.8s ease-out forwards;
+  animation-delay: var(--d, 0s);
+}
+@keyframes mvDraw { to { stroke-dashoffset: 0; } }
+
+/* a fitted line that keeps re-drawing (iterative fitting) */
+.mv-draw-loop {
+  stroke-dasharray: var(--len, 1200);
+  animation: mvDrawLoop 3.4s ease-in-out infinite;
+}
+@keyframes mvDrawLoop {
+  0%   { stroke-dashoffset: var(--len, 1200); }
+  45%  { stroke-dashoffset: 0; }
+  85%  { stroke-dashoffset: 0; opacity: 1; }
+  100% { stroke-dashoffset: 0; opacity: 0; }
+}
+
+/* fade+rise in, staggered via --d */
+.mv-in { opacity: 0; animation: mvIn .7s ease-out forwards; animation-delay: var(--d, 0s); }
+@keyframes mvIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+
+/* pop in (points appearing) */
+.mv-pop { opacity: 0; transform-box: fill-box; transform-origin: center; animation: mvPop .5s cubic-bezier(.2,1.4,.4,1) forwards; animation-delay: var(--d, 0s); }
+@keyframes mvPop { from { opacity: 0; transform: scale(.2); } to { opacity: 1; transform: scale(1); } }
+
+/* gentle attention pulse */
+.mv-pulse { transform-box: fill-box; transform-origin: center; animation: mvPulse 2.1s ease-in-out infinite; animation-delay: var(--d, 0s); }
+@keyframes mvPulse { 0%,100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.22); opacity: .78; } }
+
+/* blink between two states (e.g. which node is active) */
+.mv-blink { animation: mvBlink 2.4s steps(1, end) infinite; animation-delay: var(--d, 0s); }
+@keyframes mvBlink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: .18; } }
+
+/* cycle sibling groups so exactly one is visible at a time.
+   Pick the class matching the number of groups and set --i on each. */
+.mv-cyc2, .mv-cyc3, .mv-cyc4, .mv-cyc5 { opacity: 0; }
+.mv-cyc2 { animation: mvCyc2 4s linear infinite; animation-delay: calc(var(--i, 0) * 2s); }
+.mv-cyc3 { animation: mvCyc3 5.4s linear infinite; animation-delay: calc(var(--i, 0) * 1.8s); }
+.mv-cyc4 { animation: mvCyc4 6.8s linear infinite; animation-delay: calc(var(--i, 0) * 1.7s); }
+.mv-cyc5 { animation: mvCyc5 8s linear infinite; animation-delay: calc(var(--i, 0) * 1.6s); }
+@keyframes mvCyc2 { 0% { opacity: 0; } 4% { opacity: 1; } 46% { opacity: 1; } 50%, 100% { opacity: 0; } }
+@keyframes mvCyc3 { 0% { opacity: 0; } 3% { opacity: 1; } 30% { opacity: 1; } 33.3%, 100% { opacity: 0; } }
+@keyframes mvCyc4 { 0% { opacity: 0; } 2% { opacity: 1; } 22% { opacity: 1; } 25%, 100% { opacity: 0; } }
+@keyframes mvCyc5 { 0% { opacity: 0; } 2% { opacity: 1; } 17% { opacity: 1; } 20%, 100% { opacity: 0; } }
+/* the first group stays visible under prefers-reduced-motion */
+@media (prefers-reduced-motion: reduce) {
+  .mv-cyc2, .mv-cyc3, .mv-cyc4, .mv-cyc5 { opacity: 0 !important; }
+  .mv-cyc2[style*="--i:0"], .mv-cyc3[style*="--i:0"],
+  .mv-cyc4[style*="--i:0"], .mv-cyc5[style*="--i:0"] { opacity: 1 !important; }
+}
+
+/* travel along a path: <g class="mv-ride" style="offset-path:path('...')"> */
+.mv-ride { offset-rotate: 0deg; animation: mvRide 3s linear infinite; animation-delay: var(--d, 0s); }
+@keyframes mvRide { from { offset-distance: 0%; } to { offset-distance: 100%; } }
+
+/* descend a bowl / converge (gradient descent ball) */
+.mv-descend { animation: mvDescend 3.6s cubic-bezier(.35,0,.25,1) infinite; }
+@keyframes mvDescend { 0% { offset-distance: 0%; } 78% { offset-distance: 100%; } 100% { offset-distance: 100%; } }
+
+/* grow a bar from its baseline: needs transform-origin set inline or via class */
+.mv-grow { transform-box: fill-box; transform-origin: bottom; animation: mvGrow 1s cubic-bezier(.2,.8,.3,1) forwards; animation-delay: var(--d, 0s); transform: scaleY(0); }
+@keyframes mvGrow { to { transform: scaleY(1); } }
+.mv-grow-x { transform-box: fill-box; transform-origin: left; animation: mvGrowX 1s cubic-bezier(.2,.8,.3,1) forwards; animation-delay: var(--d, 0s); transform: scaleX(0); }
+@keyframes mvGrowX { to { transform: scaleX(1); } }
+
+/* slide a vertical scan line back and forth (threshold sweep) */
+.mv-sweep { animation: mvSweep 4.4s ease-in-out infinite; }
+@keyframes mvSweep { 0%,100% { transform: translateX(0); } 50% { transform: translateX(var(--sx, 120px)); } }
+
+/* rotate (kernel lift, PCA axis search) */
+.mv-spin { transform-box: fill-box; transform-origin: center; animation: mvSpin 9s linear infinite; }
+@keyframes mvSpin { to { transform: rotate(360deg); } }
+.mv-rock { transform-box: fill-box; transform-origin: var(--o, center); animation: mvRock 5s ease-in-out infinite; }
+@keyframes mvRock { 0%,100% { transform: rotate(var(--a1, -14deg)); } 50% { transform: rotate(var(--a2, 16deg)); } }
+
+/* reduced motion: land everything on its finished frame */
+@media (prefers-reduced-motion: reduce) {
+  .mlviz * , .mlviz-title::before {
+    animation-duration: .001s !important;
+    animation-iteration-count: 1 !important;
+    animation-delay: 0s !important;
+    animation-fill-mode: forwards !important;
+  }
+  .mv-draw, .mv-draw-loop { stroke-dashoffset: 0 !important; stroke-dasharray: none !important; }
+  .mv-cyc, .mv-blink, .mv-soft { opacity: 1 !important; }
+  .mv-grow, .mv-grow-x { transform: none !important; }
+}
+
+/* ============================================================
+   "From the ground up" explainer blocks
+   ============================================================ */
+
+/* plain-words callout */
+.callout.plain { border-color: color-mix(in srgb, var(--mv-c2) 42%, var(--border)); background: color-mix(in srgb, var(--mv-c2) 7%, var(--bg-elevated)); }
+
+/* the numbered build-up ladder */
+.gu-ladder { counter-reset: gu; margin: 22px 0; display: grid; gap: 12px; }
+.gu-step {
+  position: relative;
+  counter-increment: gu;
+  padding: 15px 18px 15px 56px;
+  border: 1px solid var(--border);
+  border-left: 3px solid color-mix(in srgb, var(--mv-c1) 62%, var(--border));
+  border-radius: 14px;
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-sm);
+}
+.gu-step::before {
+  content: counter(gu);
+  position: absolute;
+  left: 15px; top: 15px;
+  width: 26px; height: 26px;
+  display: grid; place-items: center;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--mv-c1) 16%, transparent);
+  color: var(--mv-c1);
+  font-size: 12.5px; font-weight: 800;
+  font-family: var(--font-mono);
+}
+.gu-step h4 { margin: 0 0 5px; font-size: 14.5px; font-weight: 720; line-height: 1.35; }
+.gu-step p { margin: 0 0 7px; font-size: 14px; line-height: 1.62; color: var(--text-secondary); }
+.gu-step p:last-child { margin-bottom: 0; }
+.gu-step ul { margin: 6px 0 0; padding-left: 20px; font-size: 13.6px; color: var(--text-secondary); }
+.gu-step ul li { margin: 3px 0; }
+.gu-step code { font-size: .93em; }
+
+/* the one-sentence "so what" tail on a step */
+.gu-so {
+  margin-top: 9px;
+  padding: 8px 12px;
+  border-radius: 9px;
+  background: color-mix(in srgb, var(--mv-c1) 9%, transparent);
+  font-size: 13.2px;
+  line-height: 1.55;
+  color: var(--text);
+}
+.gu-so strong { color: var(--mv-c1); }
+
+/* analogy strip */
+.gu-analogy {
+  margin: 20px 0;
+  padding: 15px 18px;
+  border-radius: 14px;
+  border: 1px dashed color-mix(in srgb, var(--mv-c4) 52%, var(--border));
+  background: color-mix(in srgb, var(--mv-c4) 7%, transparent);
+  font-size: 14px;
+  line-height: 1.62;
+}
+.gu-analogy b:first-child { color: var(--mv-c4); }
+
+/* tiny "jargon → plain English" table */
+.gu-jargon { margin: 20px 0; display: grid; gap: 8px; }
+.gu-jargon > div {
+  display: grid;
+  grid-template-columns: minmax(120px, 190px) 1fr;
+  gap: 4px 16px;
+  padding: 10px 14px;
+  border-radius: 11px;
+  background: var(--bg-subtle);
+  border: 1px solid var(--border);
+  font-size: 13.6px;
+  line-height: 1.55;
+}
+.gu-jargon strong { font-family: var(--font-mono); font-size: 12.6px; color: var(--mv-c2); align-self: start; }
+@media (max-width: 620px) { .gu-jargon > div { grid-template-columns: 1fr; } }
+
+/* 2026 question-bank marker */
+.prep-question.is-2026 > summary .prep-q-no::after {
+  content: "26";
+  margin-left: 3px;
+  font-size: 8.5px;
+  vertical-align: super;
+  font-weight: 800;
+  color: var(--mv-c3);
+}
+.q26-note {
+  margin: 18px 0 14px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid color-mix(in srgb, var(--mv-c3) 38%, var(--border));
+  background: color-mix(in srgb, var(--mv-c3) 8%, transparent);
+  font-size: 13.4px;
+  line-height: 1.6;
+}
+.q26-note strong { color: var(--mv-c3); }
