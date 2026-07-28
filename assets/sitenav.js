@@ -246,6 +246,7 @@
       home: "rag-deep-dive.html",
       pages: [
         { path: "rag-deep-dive.html", title: "RAG, End-to-End", num: "📚", kw: "rag pipeline chunking reranking retrieval evaluation end to end" },
+        { path: "agent-protocols.html", title: "Agent Protocols — MCP · A2A · A2UI", num: "🔗", kw: "agent protocols mcp model context protocol a2a agent2agent agent to agent a2ui agent to ui agent user interface generative ui ag-ui copilotkit interoperability agent card well-known task lifecycle input required auth required artifact message part skill json-rpc grpc rest streaming push notification webhook surface component catalog data model json pointer declarative mcp apps extensions stateless 2026-07-28 tools resources prompts linux foundation ap2 agent payments protocol comparison interview" },
         { path: "llm-evals.html", title: "LLM Evals", num: "✅", kw: "llm evals evaluation vibe testing golden dataset llm as judge faithfulness groundedness rag agent safety operational benchmarks mmlu ragas deepeval interview ai engineer" },
         { path: "llmops.html", title: "LLMOps", num: "⚙️", kw: "llmops mlops lifecycle prompt versioning experiment tracking deployment observability tracing cost token latency optimization guardrails feedback loop tooling langfuse langsmith interview" },
         { path: "langfuse.html", title: "Langfuse — Observability", num: "📡", kw: "langfuse observability trace cost latency quality scores" },

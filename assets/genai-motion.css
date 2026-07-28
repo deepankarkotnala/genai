@@ -1,0 +1,627 @@
+/* =========================================================================
+   genai-motion.css — the motion layer for the GenAI portal
+   =========================================================================
+
+   Ported from the Machine Learning portal's motion system (ml-mobile.css
+   sections 7–9), then widened: the ML file scopes everything to <= 980px
+   because that portal only needed a mobile pass. The GenAI portal is read on
+   the desktop too, so the drawer, the nav, the chrome and the entrances all
+   get the same curves at every width.
+
+   Loaded LAST — after styles.css and office-theme.css — for one reason: the
+   drawer's timing is currently decided by three files at once. styles.css
+   sets `transform .25s ease` at 860px, then again `.32s var(--ease-out)`,
+   then office-theme.css overrides both with `.22s ease` and kills the
+   keyframe entrance with `animation: none !important`. Re-timing that in
+   place means editing three blocks in two 100 KB stylesheets and hoping no
+   fourth override exists. One trailing file that owns motion is reviewable.
+
+   Everything animates transform / opacity / box-shadow / border-color only,
+   so it stays on the compositor. No layout, colour or spacing changes here —
+   this file is timing, nothing else.
+
+   Structure
+     1  Motion tokens
+     2  The navigation drawer (mobile)
+     3  Desktop sidebar collapse
+     4  Sidebar internals — groups, chevrons, rows
+     5  Sticky chrome — topbar, ribbon, jump-to-section
+     6  Interactive feedback — hover, press, focus
+     7  Entrances — scroll-driven, with a one-shot fallback
+     8  Collapsibles
+     9  Reduced motion & print
+   ========================================================================= */
+
+
+/* =========================================================================
+   1 · Motion tokens
+   -------------------------------------------------------------------------
+   Three durations and two curves, matching the ML portal exactly so the two
+   portals feel like one product when you cross between them.
+
+     --gm-ease-out  decelerating, no overshoot. For arrivals: a panel sliding
+                    in, a row appearing. Lands softly.
+     --gm-ease      gentler in and out. For departures and small reversible
+                    moves, where a long tail reads as lag.
+
+   `--ease-out` already exists in styles.css with the same value; these are
+   named separately so this file never depends on a token defined 4000 lines
+   away in a file it may outlive.
+   ========================================================================= */
+:root {
+  --gm-dur-fast: .18s;
+  --gm-dur: .28s;
+  --gm-dur-slow: .42s;
+  --gm-ease: cubic-bezier(.22, .61, .36, 1);
+  --gm-ease-out: cubic-bezier(.16, 1, .3, 1);
+}
+
+
+/* =========================================================================
+   2 · The navigation drawer (mobile)
+   -------------------------------------------------------------------------
+   860px is the breakpoint at which sitenav.js switches the ☰ button from
+   "collapse the desktop sidebar" to "open the drawer", and the breakpoint
+   both stylesheets already use for the drawer. Matching it exactly keeps the
+   JS behaviour and the CSS timing describing the same thing.
+   ========================================================================= */
+@media (max-width: 860px) {
+
+  /* Opening is the slow, decelerating curve: the panel is a large surface
+     travelling a long distance, and arriving softly is what makes it read as
+     a physical object rather than a repaint. Closing (below) is quicker —
+     a dismissal the user asked for should feel immediate, and a leisurely
+     exit on the way out just reads as lag. */
+  .sidebar {
+    transition:
+      transform var(--gm-dur-slow) var(--gm-ease-out),
+      box-shadow var(--gm-dur-slow) ease;
+    will-change: transform;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+  }
+  .app:not(.nav-open) .sidebar {
+    transition:
+      transform var(--gm-dur) var(--gm-ease),
+      box-shadow var(--gm-dur) ease;
+  }
+
+  /* The shadow arrives with the panel, so the drawer lifts off the page as it
+     travels instead of appearing already-lifted. */
+  .app.nav-open .sidebar {
+    box-shadow: 24px 0 60px -30px rgba(15, 23, 42, .45);
+  }
+
+  .backdrop {
+    transition:
+      opacity var(--gm-dur) ease,
+      backdrop-filter var(--gm-dur) ease,
+      -webkit-backdrop-filter var(--gm-dur) ease;
+  }
+
+  /* Drawer contents stagger in *behind* the panel — the groups are already
+     moving by the time the panel edge reaches them, which is what makes the
+     open feel authored rather than mechanical.
+
+     The existing stagger in styles.css runs 0 → .1s in .025s steps, which is
+     inside a single frame budget at 60fps for the first three groups: they
+     effectively land together and the stagger is invisible. Six steps over
+     .07 → .22s is slow enough to read, and short enough that the last group
+     is not noticeably late. */
+  .app.nav-open .nav > .navgroup {
+    animation: gm-drawer-item var(--gm-dur) var(--gm-ease-out) both;
+  }
+  .app.nav-open .nav > .navgroup:nth-child(1) { animation-delay: .07s; }
+  .app.nav-open .nav > .navgroup:nth-child(2) { animation-delay: .10s; }
+  .app.nav-open .nav > .navgroup:nth-child(3) { animation-delay: .13s; }
+  .app.nav-open .nav > .navgroup:nth-child(4) { animation-delay: .16s; }
+  .app.nav-open .nav > .navgroup:nth-child(5) { animation-delay: .19s; }
+  .app.nav-open .nav > .navgroup:nth-child(n+6) { animation-delay: .22s; }
+  @keyframes gm-drawer-item {
+    from { opacity: 0; transform: translateX(-9px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  /* The drawer's own header card leads the groups in. */
+  .app.nav-open .mobile-nav-intro {
+    animation: gm-drawer-intro var(--gm-dur-slow) .04s var(--gm-ease-out) both;
+  }
+  @keyframes gm-drawer-intro {
+    from { opacity: 0; transform: translateY(-7px) scale(.99); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  .app.nav-open .search-wrap {
+    animation: gm-drawer-item var(--gm-dur) .05s var(--gm-ease-out) both;
+  }
+
+  .mobile-nav-close {
+    transition:
+      transform var(--gm-dur-fast) var(--gm-ease),
+      background var(--gm-dur-fast) ease,
+      border-color var(--gm-dur-fast) ease;
+  }
+  .mobile-nav-close:active { transform: scale(.92); }
+}
+
+
+/* =========================================================================
+   3 · Desktop sidebar collapse
+   -------------------------------------------------------------------------
+   The ☰ button on the desktop toggles `.sidebar-collapsed`, which styles.css
+   implements as `display: none` plus a one-column grid. Both are instant and
+   unanimatable, so the widest, most-used state change in the portal is the
+   one place with no motion at all — the page just jumps.
+
+   Replaced with a real transition: the grid column collapses to zero while
+   the panel slides and fades out behind it. `visibility` is delayed by the
+   duration on the way out (so the panel is still painted while it moves) and
+   cleared instantly on the way in.
+
+   Animating `grid-template-columns` needs Chrome 107+ / Safari 16+ / Firefox
+   66+. Everywhere else the properties still apply, just without interpolation
+   — i.e. exactly today's instant collapse. Nothing to fall back to.
+   ========================================================================= */
+@media (min-width: 861px) {
+  .app {
+    transition: grid-template-columns var(--gm-dur-slow) var(--gm-ease-out);
+  }
+  .app > .sidebar {
+    transition:
+      transform var(--gm-dur-slow) var(--gm-ease-out),
+      opacity var(--gm-dur) ease,
+      visibility 0s;
+  }
+
+  .app.sidebar-collapsed { grid-template-columns: 0 minmax(0, 1fr); }
+  .app.sidebar-collapsed > .sidebar {
+    /* Beats `display: none` in styles.css — same specificity, later file.
+       The panel has to stay in the box tree to be animatable at all. */
+    display: block;
+    overflow: hidden;
+    /* At zero width the 1px right border would survive as a hairline. */
+    border-right-width: 0;
+    transform: translateX(-14px);
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    transition:
+      transform var(--gm-dur) var(--gm-ease),
+      opacity var(--gm-dur-fast) ease,
+      visibility 0s linear var(--gm-dur);
+  }
+
+  /* The content pane is laid out by the same grid, so it slides with the
+     column rather than being repositioned in one frame. */
+  .app > .main { min-width: 0; }
+
+  /* Focus mode is not a collapse. office-theme.css takes the sidebar out with
+     `display: none !important`, so the panel is gone in the same frame the
+     class lands. Animating the column underneath it would leave an empty gutter
+     closing up for 420ms after the thing that occupied it had already vanished.
+     Entering and leaving focus mode stays instant, as it is today. */
+  body.focus-mode .app { transition: none; }
+}
+
+
+/* =========================================================================
+   4 · Sidebar internals
+   ========================================================================= */
+
+/* The chevron already rotates in styles.css on a linear-ish `ease`; give it
+   the portal's arrival curve so it settles like everything else. */
+.navgroup-head .ng-chev {
+  transition: transform var(--gm-dur) var(--gm-ease-out);
+}
+
+/* `.navgroup-body` toggles display: none → block, which cannot be
+   transitioned. The display switch still happens instantly, but a keyframe
+   fires on the newly-shown box, so expanding a section reads as the rows
+   arriving rather than the list changing height under the cursor. */
+.navgroup.open > .navgroup-body {
+  animation: gm-group-open var(--gm-dur) var(--gm-ease-out) both;
+}
+@keyframes gm-group-open {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.nav a {
+  transition:
+    background var(--gm-dur-fast) ease,
+    color var(--gm-dur-fast) ease,
+    transform var(--gm-dur-fast) var(--gm-ease);
+}
+.nav a:active { transform: translateX(1px); }
+
+.navgroup-head {
+  transition:
+    background var(--gm-dur-fast) ease,
+    color var(--gm-dur-fast) ease,
+    transform var(--gm-dur-fast) var(--gm-ease);
+}
+.ng-direct-arrow {
+  transition:
+    transform var(--gm-dur) var(--gm-ease-out),
+    color var(--gm-dur-fast) ease;
+}
+
+.sidebar-resizer::after {
+  transition:
+    background var(--gm-dur-fast) ease,
+    transform var(--gm-dur-fast) var(--gm-ease);
+}
+/* While dragging, the panel must track the pointer exactly — a transition
+   here would make the edge lag behind the cursor. */
+body.sidebar-resizing .app,
+body.sidebar-resizing .app > .sidebar { transition: none !important; }
+
+
+/* =========================================================================
+   5 · Sticky chrome
+   ========================================================================= */
+
+/* At rest the topbar is flat and quiet; once the page has moved off the top
+   it separates from the content it is now covering. `body.is-scrolled` is
+   written by genai-motion.js.
+
+   `!important` is required: office-theme.css sets `box-shadow: none
+   !important` on `.topbar`, so specificity alone cannot reach it. */
+.topbar {
+  transition:
+    box-shadow var(--gm-dur) ease,
+    background var(--gm-dur) ease;
+}
+body.is-scrolled .topbar {
+  box-shadow:
+    0 1px 0 var(--border),
+    0 6px 18px -12px rgba(15, 23, 42, .28) !important;
+}
+
+.topbar button,
+.topbar a,
+.menu-btn,
+.home-btn,
+.focus-btn,
+.reader-btn {
+  transition:
+    background var(--gm-dur-fast) ease,
+    border-color var(--gm-dur-fast) ease,
+    color var(--gm-dur-fast) ease,
+    transform var(--gm-dur-fast) var(--gm-ease);
+}
+.topbar button:active,
+.menu-btn:active,
+.home-btn:active,
+.focus-btn:active,
+.reader-btn:active { transform: scale(.94); }
+
+/* The ☰ icon nudges toward the drawer it is about to open. */
+.menu-btn svg { transition: transform var(--gm-dur) var(--gm-ease-out); }
+.app.nav-open .menu-btn svg { transform: rotate(90deg); }
+
+/* Workspace ribbon: the active-tab indicator slides between tabs instead of
+   hard-cutting from one to the next. */
+.office-ribbon a { transition: color var(--gm-dur-fast) ease; }
+.office-ribbon a::after {
+  transition: transform var(--gm-dur) var(--gm-ease-out);
+}
+.office-ribbon a:active { background: var(--accent-soft); }
+
+/* --- Jump-to-section dropdown (mobile) ---------------------------------- */
+@media (max-width: 1100px) {
+  .toc-toggle {
+    transition:
+      background var(--gm-dur-fast) ease,
+      border-color var(--gm-dur-fast) ease,
+      transform var(--gm-dur-fast) var(--gm-ease);
+  }
+  .toc-toggle:active { transform: scale(.99); }
+  .toc-toggle .toc-toggle-caret {
+    transition: transform var(--gm-dur) var(--gm-ease-out);
+  }
+
+  /* office-theme.css reveals the dropdown with display: none → block, so it
+     appeared in one frame with no entrance. Keeping it displayed and gating
+     on visibility / opacity / transform gives it a real animation while
+     leaving it fully inert and unreachable when closed:
+       - visibility: hidden  removes it from the a11y tree and from hit-testing
+       - pointer-events: none guards against any interaction mid-fade
+       - visibility transitions with a delay equal to the duration, so the
+         panel stays painted for the whole of its exit
+     app.js puts `.toc-open` on `.toc` (the <nav>), not on `.toc-rail`, and
+     office-theme.css matches it the same way — follow that convention or the
+     selector silently never matches and the dropdown never opens. */
+  .toc .toc-list {
+    display: block !important;
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(-6px) scale(.99);
+    transform-origin: 50% 0;
+    pointer-events: none;
+    transition:
+      opacity var(--gm-dur) ease,
+      transform var(--gm-dur) var(--gm-ease-out),
+      visibility 0s linear var(--gm-dur);
+  }
+  .toc.toc-open .toc-list,
+  .toc-open .toc-list {
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+    transition:
+      opacity var(--gm-dur) ease,
+      transform var(--gm-dur) var(--gm-ease-out),
+      visibility 0s;
+  }
+}
+
+/* Desktop right rail: the active section marker travels down the list. */
+@media (min-width: 1101px) {
+  .toc-rail .toc-list a {
+    transition:
+      color var(--gm-dur-fast) ease,
+      background var(--gm-dur-fast) ease,
+      border-color var(--gm-dur-fast) ease;
+  }
+}
+.toc-rail .toc-list a:active { background: var(--accent-soft); }
+
+.scroll-top {
+  transition:
+    opacity var(--gm-dur) ease,
+    transform var(--gm-dur) var(--gm-ease-out),
+    box-shadow var(--gm-dur) ease;
+}
+.scroll-top:active { transform: scale(.92); }
+
+
+/* =========================================================================
+   6 · Interactive feedback
+   -------------------------------------------------------------------------
+   office-theme.css deliberately flattens card hover to border + shadow only
+   (`transform: none !important`) — that is the Office-inspired look and this
+   file does not fight it. What it adds is *timing* for those two properties,
+   which office-theme never declared, so the change currently snaps.
+
+   Press feedback is separate and matters most on touch, where there is no
+   hover state at all: without it a tap produces no acknowledgement until the
+   next page paints, and the UI feels dead. It is keyed off `:active`, which
+   office-theme's `:hover` flattening does not touch.
+   ========================================================================= */
+.card,
+.card.hover,
+a.card,
+.module-card,
+.prep-topic-card,
+.page-nav a,
+.rm-link,
+.quiz,
+.demo,
+.diagram,
+.readmap,
+.concept-lab {
+  transition:
+    transform var(--gm-dur-fast) var(--gm-ease),
+    box-shadow var(--gm-dur) ease,
+    border-color var(--gm-dur) ease,
+    background var(--gm-dur) ease;
+}
+
+a.card:active,
+.card.hover:active,
+.module-card:active,
+.prep-topic-card:active,
+.page-nav a:active,
+.rm-link:active {
+  transform: scale(.985);
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+  background: color-mix(in srgb, var(--accent-soft) 30%, var(--surface));
+}
+.prep-topic-card:active > .prep-card-arrow {
+  transform: translateX(3px);
+  opacity: .85;
+}
+
+/* Arrows and chevrons inside cards lead the eye on hover. */
+.prep-card-arrow,
+.card .arrow,
+.rm-link .arrow {
+  transition:
+    transform var(--gm-dur) var(--gm-ease-out),
+    opacity var(--gm-dur-fast) ease;
+}
+
+/* On touch there is no pointer to leave, so a hover style applied by a tap
+   sticks until the next tap elsewhere. Suppress it and let :active speak. */
+@media (hover: none) {
+  a.card:hover,
+  .card.hover:hover,
+  .module-card:hover,
+  .prep-topic-card:hover { transform: none; }
+}
+
+/* Keyboard focus should be instant to appear — a fading focus ring is a
+   worse focus ring — but the colour may still ease. */
+:where(a, button, summary, input, select, textarea):focus-visible {
+  transition: outline-color var(--gm-dur-fast) ease;
+}
+
+button,
+.btn,
+summary {
+  transition:
+    background var(--gm-dur-fast) ease,
+    border-color var(--gm-dur-fast) ease,
+    color var(--gm-dur-fast) ease,
+    transform var(--gm-dur-fast) var(--gm-ease);
+}
+button:active,
+.btn:active { transform: scale(.97); }
+
+
+/* =========================================================================
+   7 · Entrances
+   -------------------------------------------------------------------------
+   Two mutually-exclusive paths, gated on @supports so they can never double
+   up on the same element:
+
+     preferred   `animation-timeline: view()` ties the animation to scroll
+                 position, so every card animates at any scroll depth — no JS,
+                 no observer, and it replays on scroll back.
+     fallback    one staggered entrance for the first screenful. Safari has no
+                 scroll-driven animations, and this is what it gets.
+
+   The existing observer-driven `.soft-reveal` / `[data-reveal]` reveal in
+   app.js and enhance.js keeps working either way; it is only re-curved below
+   so it matches the rest of this file.
+   ========================================================================= */
+@supports (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .content > .grid > .card,
+    .content > .callout,
+    .content > .table-wrap,
+    .content > .code-block,
+    .content > .quiz,
+    .content > .diagram,
+    .content > .readmap,
+    .prep-topic-card,
+    .module-card {
+      animation: gm-rise linear both;
+      animation-timeline: view();
+      /* Complete well before the element reaches the middle of the viewport,
+         so nothing the reader is looking at is still moving. */
+      animation-range: entry 2% cover 20%;
+    }
+    @keyframes gm-rise {
+      from { opacity: 0; transform: translateY(14px) scale(.995); }
+      to   { opacity: 1; transform: none; }
+    }
+  }
+}
+
+@supports not (animation-timeline: view()) {
+  @media (prefers-reduced-motion: no-preference) {
+    .content > .eyebrow,
+    .content > h1,
+    .content > .lead,
+    .hero,
+    .content > .callout:nth-of-type(1),
+    .content > .callout:nth-of-type(2) {
+      animation: gm-rise-once var(--gm-dur-slow) var(--gm-ease-out) both;
+    }
+    .content > .eyebrow { animation-delay: .02s; }
+    .content > h1      { animation-delay: .06s; }
+    .content > .lead   { animation-delay: .11s; }
+    .hero              { animation-delay: .16s; }
+    .content > .callout:nth-of-type(1) { animation-delay: .21s; }
+    .content > .callout:nth-of-type(2) { animation-delay: .26s; }
+    @keyframes gm-rise-once {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: none; }
+    }
+  }
+}
+
+.soft-reveal,
+[data-reveal] {
+  transition:
+    opacity var(--gm-dur-slow) ease,
+    transform var(--gm-dur-slow) var(--gm-ease-out);
+}
+
+
+/* =========================================================================
+   8 · Collapsibles
+   -------------------------------------------------------------------------
+   <details> cannot transition its own open state. As with the nav groups, the
+   body gets a keyframe on reveal so the content arrives rather than appears.
+   ========================================================================= */
+.collapse[open] > .collapse-body,
+details[open] > .collapse-body {
+  animation: gm-collapse-open var(--gm-dur) var(--gm-ease-out) both;
+}
+@keyframes gm-collapse-open {
+  from { opacity: 0; transform: translateY(-5px); }
+  to   { opacity: 1; transform: none; }
+}
+.collapse > summary .chev,
+details > summary .chev {
+  transition: transform var(--gm-dur) var(--gm-ease-out);
+}
+
+
+/* =========================================================================
+   9 · Reduced motion & print
+   -------------------------------------------------------------------------
+   Keep every layout and visibility outcome, drop the movement.
+
+   The `opacity: 1` / `transform: none` overrides are not belt-and-braces: an
+   animation with `both` fill and a near-zero duration freezes its element at
+   the *from* keyframe, i.e. opacity 0. Cancelling the animation without
+   restoring those two properties would leave content invisible.
+
+   Transitions are shortened rather than removed for the drawer and the toc
+   dropdown, because both use `transition: visibility 0s linear <dur>` to stay
+   painted while exiting. `transition: none` drops that delay too, and the
+   panel would vanish rather than close.
+   ========================================================================= */
+@media (prefers-reduced-motion: reduce) {
+  .app.nav-open .nav > .navgroup,
+  .app.nav-open .mobile-nav-intro,
+  .app.nav-open .search-wrap,
+  .navgroup.open > .navgroup-body,
+  .collapse[open] > .collapse-body,
+  details[open] > .collapse-body,
+  .content > .grid > .card,
+  .content > .callout,
+  .content > .table-wrap,
+  .content > .code-block,
+  .content > .quiz,
+  .content > .diagram,
+  .content > .readmap,
+  .content > .eyebrow,
+  .content > h1,
+  .content > .lead,
+  .prep-topic-card,
+  .module-card,
+  .hero {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .app,
+  .app > .sidebar,
+  .sidebar,
+  .backdrop,
+  .toc-rail,
+  .toc .toc-list,
+  .toc-toggle-caret,
+  .navgroup-head .ng-chev,
+  .office-ribbon a::after,
+  .menu-btn svg { transition-duration: .01ms !important; }
+
+  a.card:active,
+  .card.hover:active,
+  .module-card:active,
+  .prep-topic-card:active,
+  .page-nav a:active,
+  .nav a:active,
+  button:active,
+  .btn:active,
+  .topbar button:active,
+  .menu-btn:active,
+  .scroll-top:active { transform: none; }
+}
+
+@media print {
+  * { animation: none !important; transition: none !important; }
+  .content > .grid > .card,
+  .content > .callout,
+  .prep-topic-card,
+  .module-card,
+  .hero,
+  .main { opacity: 1 !important; transform: none !important; }
+}
