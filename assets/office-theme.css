@@ -1942,6 +1942,23 @@ body:not(.focus-mode) .prep-content {
   max-width: var(--content-max) !important;
   margin-inline: auto !important;
 }
+/* --- Horizontal alignment: same column on every page ------------------- */
+/* Width alone was not enough. Sections that hide the right-hand TOC rail
+   (the Interview Hub, the DSA contents page) collapsed the grid to a single
+   column, so their 1040px column centred across the whole canvas and started
+   ~140px further right than a section that keeps the rail. Reserving the rail
+   column even when the rail itself is hidden puts the reading column in the
+   same place on every page, which is what actually reads as "aligned". */
+body:not(.focus-mode) .content-wrap,
 body:not(.focus-mode) .ih-content-wrap {
+  grid-template-columns: minmax(0, 1fr) var(--toc-w) !important;
   max-width: none !important;
+  /* The hub also carried its own padding-inline, which pushed its column a
+     further ~40px right on narrower screens. Zeroing it makes the box
+     structurally identical to every other section rather than only matching
+     by coincidence at one window size. */
+  padding-inline: 0 !important;
 }
+/* The column stays centred inside its grid cell — that is what the Practice
+   and Learn pages already do, and restoring the grid above is enough to put
+   every other section in the same place. */
