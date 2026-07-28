@@ -135,12 +135,30 @@
     });
   }
 
+  function openHashQuestion() {
+    var hash = window.location.hash;
+    if (!hash || hash.length < 2) return;
+    var target;
+    try { target = document.querySelector(hash); } catch (err) { return; }
+    if (!target || !target.classList.contains('prep-question')) return;
+    target.open = true;
+    var icon = target.querySelector('.prep-chevron');
+    if (icon) icon.textContent = '−';
+    target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }
+
+  function setupHashQuestions() {
+    openHashQuestion();
+    window.addEventListener('hashchange', openHashQuestion);
+  }
+
   function init() {
     setupQuestionFilter();
     setupExpandAnswers();
     setupRandomScenario();
     setupTimer();
     setupKeyboardQuestionNav();
+    setupHashQuestions();
   }
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', init);

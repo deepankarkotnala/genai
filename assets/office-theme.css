@@ -1962,3 +1962,37 @@ body:not(.focus-mode) .ih-content-wrap {
 /* The column stays centred inside its grid cell — that is what the Practice
    and Learn pages already do, and restoring the grid above is enough to put
    every other section in the same place. */
+
+/* --- Prose fills the reading column ------------------------------------- */
+/* The column is already capped at --content-max, but several base rules put a
+   SECOND, tighter cap on prose only: --reading-line and --reader-line-length
+   (both 86ch), `.lead` at 86ch, `.content h1` at 900px. Headings, callouts,
+   code blocks and tables ignored those caps and ran to the full column, so a
+   lesson had two different right edges — paragraphs stopped ~400px short of
+   the rule under every h2. Focus mode already clears these caps for exactly
+   this reason; this does the same for the normal layout so every block in a
+   lesson shares one measure. The reader's own width control still works: it
+   sets --reader-line-length, which this defers to whenever the reader has
+   picked a value narrower than the column. */
+body:not(.focus-mode) .content > p,
+body:not(.focus-mode) .content > ul,
+body:not(.focus-mode) .content > ol,
+body:not(.focus-mode) .content > dl,
+body:not(.focus-mode) .content > blockquote,
+body:not(.focus-mode) .content > .lead,
+body:not(.focus-mode) .content > h1,
+body:not(.focus-mode) .content > h2,
+body:not(.focus-mode) .content > h3,
+body:not(.focus-mode) .content > h4 {
+  max-width: 100% !important;
+}
+/* Narrow is the one preset that is meant to be tighter than the column, so it
+   keeps its measure rather than being flattened by the rule above. */
+html[data-reading-width="narrow"] body:not(.focus-mode) .content > p,
+html[data-reading-width="narrow"] body:not(.focus-mode) .content > ul,
+html[data-reading-width="narrow"] body:not(.focus-mode) .content > ol,
+html[data-reading-width="narrow"] body:not(.focus-mode) .content > dl,
+html[data-reading-width="narrow"] body:not(.focus-mode) .content > blockquote,
+html[data-reading-width="narrow"] body:not(.focus-mode) .content > .lead {
+  max-width: min(100%, var(--reader-line-length)) !important;
+}

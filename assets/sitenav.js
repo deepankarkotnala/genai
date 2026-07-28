@@ -210,7 +210,7 @@
         { path: "interview-prep/06-security-responsible-ai.html", title: "Security & responsible AI", num: "06", kw: "prompt injection rbac rag sql injection pii tools secrets responsible ai bias guardrails" },
         { path: "interview-prep/07-python-backend-cloud.html", title: "Python, backend & cloud", num: "07", kw: "python async fastapi pydantic celery temporal idempotency multi tenancy docker kubernetes rate limit testing" },
         { path: "interview-prep/08-project-behavioral.html", title: "Project & behavioural", num: "08", kw: "project architecture stack failure optimization tradeoff stakeholder ownership day to day current 90 days" },
-        { path: "interview-prep/09-sql-for-genai.html", title: "SQL for GenAI roles", num: "09", kw: "sql joins window functions cte indexing explain query plan transactions postgres pgvector vector search text to sql rls multi tenant interview" },
+        { path: "interview-prep/09-sql-for-genai.html", title: "SQL for GenAI roles", num: "09", kw: "sql joins window functions row_number rank lag lead moving average cte recursive cte order of execution having indexing explain query plan transactions upsert merge on conflict materialized view postgres jsonb pgvector vector search text to sql rls multi tenant practice queries topics 2026 interview" },
       ]
     },
     {

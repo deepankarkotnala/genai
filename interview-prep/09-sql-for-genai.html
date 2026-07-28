@@ -36,7 +36,7 @@
 <!-- /Interview Preparation brand metadata -->
 <meta content="SQL, PostgreSQL, pgvector and safe text-to-SQL interview preparation for GenAI engineering roles." name="description"/>
 <link href="../assets/styles.css?v=20260727c" rel="stylesheet"/>
-<link href="../assets/office-theme.css?v=20260727e" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260728b" rel="stylesheet"/>
 </head>
 <body data-page="prep-sql-genai" data-prep-section="interview">
 <div class="app">
@@ -62,7 +62,7 @@
 <div class="eyebrow"><span class="dot"></span> Topic 09 · Interview question bank</div>
 <h1>SQL &amp; Data Systems for GenAI Roles</h1>
 <p class="lead">Prepare for the data work behind production GenAI: reliable joins, analytical SQL, query tuning, transactional workflows, vector search and safely generated queries.</p>
-<div class="meta-row"><span class="pill purple">12 high-signal questions</span><span class="pill">Backend + GenAI relevance</span><span class="pill blue">Write, explain, optimize</span></div>
+<div class="meta-row"><span class="pill purple">16 high-signal questions</span><span class="pill">2026 GenAI/ML hiring signal</span><span class="pill blue">Write, explain, optimize</span></div>
 <div class="diagram prep-diagram" data-reveal=""><svg aria-label="Relational and vector data flow for a GenAI application" role="img" viewbox="0 0 920 285">
 <defs><marker id="sql-arrow" markerheight="10" markerwidth="10" orient="auto" refx="8" refy="3"><path d="M0,0 L8,3 L0,6 Z" fill="var(--accent)"></path></marker></defs>
 <g class="prep-node n1"><rect height="70" rx="18" width="150" x="36" y="105"></rect><text x="111" y="134">Application</text><text class="sub" x="111" y="155">user + tenant context</text></g>
@@ -73,16 +73,30 @@
 <path class="prep-flow" d="M186 126L234 92M186 154L234 199M386 80L460 124M386 220L460 156M628 140H702" marker-end="url(#sql-arrow)"></path>
 </svg><div class="diagram-caption">A strong GenAI data design combines relational correctness, vector similarity, metadata filters and authorization before context reaches the model.</div></div>
 <div class="callout key"><div class="c-ico">⌁</div><div class="c-body"><div class="c-title">What interviewers are checking</div><p>Do not stop at valid syntax. State the table grain, expected cardinality, correctness risks, indexes, authorization boundary and how you would inspect the query plan.</p></div></div>
-<div class="prep-toolbar" data-sticky-prep=""><label class="prep-filter"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><input data-question-filter="" placeholder="Filter these questions…"/></label><button class="btn ghost" data-expand-answers="" type="button">Open all</button><span class="prep-count" data-question-count="">12 questions</span></div>
+
+<h2 id="topics-2026">Topics to prepare · 2026 signal for 9+ years</h2>
+<p>At senior GenAI/AI/ML level SQL is rarely a trivia round. Expect one or two query-writing problems plus a design discussion on how the data layer feeds retrieval, features and evaluation. These six areas cover almost every reported ask.</p>
+<div class="grid grid-3">
+<a class="card" data-reveal="" href="#q02"><span class="ico">1</span><h4>Analytical SQL</h4><p><code>ROW_NUMBER</code>/<code>RANK</code>/<code>DENSE_RANK</code>, dedup, running totals with <code>SUM() OVER</code>, <code>LAG</code>/<code>LEAD</code> growth, explicit frames.</p></a>
+<a class="card" data-reveal="" href="#q04"><span class="ico">2</span><h4>CTEs &amp; recursion</h4><p>Multi-step readable logic, materialization behaviour, recursive traversal of thread and agent-trace hierarchies.</p></a>
+<a class="card" data-reveal="" href="#q06"><span class="ico">3</span><h4>Performance &amp; cost</h4><p>Logical order of execution, index design, <code>EXPLAIN ANALYZE</code>, partitioning, statement timeouts, warehouse spend.</p></a>
+<a class="card" data-reveal="" href="#q16"><span class="ico">4</span><h4>Pipelines &amp; idempotency</h4><p>Upserts (<code>MERGE</code> / <code>ON CONFLICT</code>), incremental embedding refresh, materialized views, late-arriving data, backfills.</p></a>
+<a class="card" data-reveal="" href="#q09"><span class="ico">5</span><h4>Postgres for AI</h4><p>JSONB versus normalization, pgvector, HNSW/IVFFlat trade-offs, hybrid retrieval, tenant isolation and RLS.</p></a>
+<a class="card" data-reveal="" href="#q10"><span class="ico">6</span><h4>Text-to-SQL &amp; evals</h4><p>Semantic schema grounding, AST allowlist validation, read-only least-privilege roles, evaluating generated SQL.</p></a>
+</div>
+<div class="callout note"><div class="c-ico">◔</div><div class="c-body"><div class="c-title">What is <em>not</em> usually asked at this level</div><p>Textbook normal-form definitions, obscure syntax puzzles and hand-drawn ER diagrams. Depth on correctness, plans, authorization and pipeline reliability is what separates a 9-year answer from a 3-year answer.</p></div></div>
+
+<h2 id="question-bank">Interview question bank</h2>
+<div class="prep-toolbar" data-sticky-prep=""><label class="prep-filter"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><input data-question-filter="" placeholder="Filter these questions…"/></label><button class="btn ghost" data-expand-answers="" type="button">Open all</button><span class="prep-count" data-question-count="">16 questions</span></div>
 <section aria-label="Interview questions" class="prep-question-list">
 
-<details class="prep-question" data-question="how do you reason about joins without creating duplicate rows?" data-tags="joins cardinality grain duplicates">
+<details class="prep-question" id="q01" data-question="how do you reason about joins without creating duplicate rows?" data-tags="joins cardinality grain duplicates">
 <summary><span class="prep-q-no">01</span><span class="prep-q-title">How do you reason about joins without accidentally duplicating rows?<span class="prep-tags"><span>joins</span><span>cardinality</span><span>grain</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>I state the grain of every table before writing the join: one row per customer, document, chunk or event. Then I identify whether the relationship is one-to-one, one-to-many or many-to-many and predict the output grain. If I only need existence, I prefer <code>EXISTS</code>; if I need an aggregate from the many side, I aggregate before joining. I validate with row counts and uniqueness checks rather than using <code>DISTINCT</code> to hide a modeling mistake.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Define the input and output grain, know the join cardinality, and aggregate the many side before joining when necessary. <code>DISTINCT</code> is not a repair strategy.</p></div>
 <div class="prep-follow"><strong>Likely follow-up:</strong> When is a many-to-many join intentional?</div></div></details>
 
-<details class="prep-question" data-question="when would you use a window function instead of group by?" data-tags="window functions group by analytics">
+<details class="prep-question" id="q02" data-question="when would you use a window function instead of group by?" data-tags="window functions group by analytics">
 <summary><span class="prep-q-no">02</span><span class="prep-q-title">When would you use a window function instead of <code>GROUP BY</code>?<span class="prep-tags"><span>window</span><span>group-by</span><span>analytics</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p><code>GROUP BY</code> collapses rows to one row per group. A window function preserves each row while calculating a value over related rows, which is useful for ranking, running totals, moving averages, percentiles and comparing an event with a group average. I also explain the partition, ordering and frame because the default frame can change results for cumulative calculations.</p>
 <div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>rank_queries.sql</span><button class="copy-btn">Copy</button></div><pre><code>SELECT tenant_id,
@@ -96,7 +110,7 @@ FROM query_traces;</code></pre></div>
 <div class="prep-say"><strong>30-second version</strong><p>Use <code>GROUP BY</code> to reduce rows and windows to keep row detail while adding group-aware calculations.</p></div>
 <div class="prep-follow"><strong>Likely follow-up:</strong> What is the difference between <code>ROW_NUMBER</code>, <code>RANK</code> and <code>DENSE_RANK</code>?</div></div></details>
 
-<details class="prep-question" data-question="how do you get the latest record per entity?" data-tags="dedup row number latest record">
+<details class="prep-question" id="q03" data-question="how do you get the latest record per entity?" data-tags="dedup row number latest record">
 <summary><span class="prep-q-no">03</span><span class="prep-q-title">How do you return the latest record per document or user?<span class="prep-tags"><span>dedup</span><span>row-number</span><span>latest</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>I use <code>ROW_NUMBER()</code> partitioned by the entity key and ordered by the business timestamp plus a deterministic tie-breaker such as an immutable ID. Then I filter to row number one. PostgreSQL also supports <code>DISTINCT ON</code>, but I use it only when the team is comfortable with PostgreSQL-specific syntax and the ordering rule is explicit.</p>
 <div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>latest_document.sql</span><button class="copy-btn">Copy</button></div><pre><code>WITH ranked AS (
@@ -113,13 +127,13 @@ WHERE rn = 1;</code></pre></div>
 <div class="prep-say"><strong>30-second version</strong><p>Rank rows within each entity by timestamp and a stable tie-breaker, then keep rank one.</p></div>
 <div class="prep-follow"><strong>Likely follow-up:</strong> Why is ordering only by timestamp sometimes nondeterministic?</div></div></details>
 
-<details class="prep-question" data-question="when do you use a cte subquery or temporary table?" data-tags="cte subquery temp table readability performance">
+<details class="prep-question" id="q04" data-question="when do you use a cte subquery or temporary table?" data-tags="cte subquery temp table readability performance">
 <summary><span class="prep-q-no">04</span><span class="prep-q-title">When do you use a CTE, subquery or temporary table?<span class="prep-tags"><span>cte</span><span>subquery</span><span>temp-table</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>I choose based on clarity, reuse and execution behavior. A subquery is fine for a small local transformation. A CTE gives a named reasoning step and supports recursion; in modern PostgreSQL it may be inlined unless materialization is requested. A temporary table is useful when an expensive intermediate result is reused, needs indexes, or must be inspected across several statements. I confirm performance with the actual plan instead of assuming one form is always faster.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Use the simplest form that keeps the query understandable; move to a temporary table when an intermediate result is reused or needs its own indexes.</p></div>
 <div class="prep-follow"><strong>Likely follow-up:</strong> What problem does a recursive CTE solve?</div></div></details>
 
-<details class="prep-question" data-question="how do you find the top n rows per group?" data-tags="top n window function interview query">
+<details class="prep-question" id="q05" data-question="how do you find the top n rows per group?" data-tags="top n window function interview query">
 <summary><span class="prep-q-no">05</span><span class="prep-q-title">How do you find the top N rows per tenant, category or model?<span class="prep-tags"><span>top-n</span><span>window</span><span>ranking</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>I rank rows within each group using a window function and then filter to the required rank. The ordering must match the business rule, and ties need an explicit decision. For large datasets I consider an index starting with the partition key and ordering columns, but I still inspect whether the planner can use it efficiently.</p>
 <div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>top_failures.sql</span><button class="copy-btn">Copy</button></div><pre><code>WITH ranked AS (
@@ -136,25 +150,25 @@ WHERE rnk &lt;= 3;</code></pre></div>
 <div class="prep-say"><strong>30-second version</strong><p>Rank inside each group, decide how ties should behave, and filter to N.</p></div>
 <div class="prep-follow"><strong>Likely follow-up:</strong> How would you return exactly three rows even when values tie?</div></div></details>
 
-<details class="prep-question" data-question="how do indexes work and how do you read explain analyze?" data-tags="index explain analyze performance postgres">
+<details class="prep-question" id="q06" data-question="how do indexes work and how do you read explain analyze?" data-tags="index explain analyze performance postgres">
 <summary><span class="prep-q-no">06</span><span class="prep-q-title">How do indexes help, and how do you use <code>EXPLAIN ANALYZE</code>?<span class="prep-tags"><span>indexes</span><span>explain</span><span>performance</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>An index trades storage and write cost for faster lookup, join or ordering paths. I choose indexes from real predicates and access patterns, considering column order, selectivity, covering columns and partial indexes. With <code>EXPLAIN ANALYZE</code> I compare estimated versus actual rows, identify sequential scans, expensive sorts, nested loops over large inputs, repeated work and buffer usage. I test with production-like data because a small development table can produce a misleading plan.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Index the filters and joins the application actually uses, then verify with actual rows, timing and buffers—not intuition.</p></div>
 <div class="prep-follow"><strong>Likely follow-up:</strong> Why might PostgreSQL correctly choose a sequential scan even when an index exists?</div></div></details>
 
-<details class="prep-question" data-question="what transaction and isolation concepts matter in an ai workflow?" data-tags="transactions isolation idempotency concurrency">
+<details class="prep-question" id="q07" data-question="what transaction and isolation concepts matter in an ai workflow?" data-tags="transactions isolation idempotency concurrency">
 <summary><span class="prep-q-no">07</span><span class="prep-q-title">What transaction and isolation concepts matter in a GenAI workflow?<span class="prep-tags"><span>transactions</span><span>isolation</span><span>idempotency</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>A transaction makes a set of database changes atomic, but I avoid holding it open across a slow model or tool call. I persist an operation or outbox record, commit, call the external service, and then update state idempotently. Isolation level controls which concurrent changes are visible; I use locking or optimistic version checks only around the small critical section that requires consistency. Every retryable workflow needs a stable idempotency key and a uniqueness constraint.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Keep transactions short, never wrap a long LLM call inside one, and make retried state transitions idempotent.</p></div>
 <div class="prep-follow"><strong>Likely follow-up:</strong> What anomaly can occur with read-then-write logic under concurrency?</div></div></details>
 
-<details class="prep-question" data-question="when would you use jsonb versus normalized tables?" data-tags="jsonb normalization schema postgres metadata">
+<details class="prep-question" id="q08" data-question="when would you use jsonb versus normalized tables?" data-tags="jsonb normalization schema postgres metadata">
 <summary><span class="prep-q-no">08</span><span class="prep-q-title">When would you use JSONB versus normalized relational tables?<span class="prep-tags"><span>jsonb</span><span>normalization</span><span>schema</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>I normalize stable entities, relationships and fields that need constraints, joins or frequent filtering. JSONB is useful for sparse provider metadata, evolving tool payloads or trace attributes, but important fields should not disappear into unvalidated blobs. PostgreSQL can index JSONB paths, yet updates may rewrite larger values and application-level schema drift can become difficult to govern. A common design keeps core columns relational and stores optional extension data in JSONB.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Normalize fields with business meaning and constraints; use JSONB for genuinely flexible attributes, not as a substitute for data modeling.</p></div>
 <div class="prep-follow"><strong>Likely follow-up:</strong> How would you validate the shape of JSONB data?</div></div></details>
 
-<details class="prep-question" data-question="how would you combine relational filters and vector search with pgvector?" data-tags="pgvector vector search metadata filters hybrid retrieval">
+<details class="prep-question" id="q09" data-question="how would you combine relational filters and vector search with pgvector?" data-tags="pgvector vector search metadata filters hybrid retrieval">
 <summary><span class="prep-q-no">09</span><span class="prep-q-title">How would you combine relational filters and vector search with pgvector?<span class="prep-tags"><span>pgvector</span><span>filters</span><span>retrieval</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>I store each chunk with its embedding plus relational metadata such as tenant, document, source, access policy and freshness. The query first enforces authorization and selective metadata filters, then orders candidates by the chosen vector distance. For scale I compare exact search with HNSW or IVFFlat, measure recall and latency, and consider hybrid retrieval by combining lexical and vector scores. I never treat vector similarity as an authorization mechanism.</p>
 <div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>authorized_vector_search.sql</span><button class="copy-btn">Copy</button></div><pre><code>SELECT chunk_id, document_id, content,
@@ -168,25 +182,100 @@ LIMIT 20;</code></pre></div>
 <div class="prep-say"><strong>30-second version</strong><p>Keep embeddings beside enforceable metadata, apply tenant and policy filters, then rank authorized candidates by vector distance.</p></div>
 <div class="prep-follow"><strong>Likely follow-up:</strong> What trade-off does an approximate vector index introduce?</div></div></details>
 
-<details class="prep-question" data-question="how do you design safe text to sql?" data-tags="text to sql security validation read only injection">
+<details class="prep-question" id="q10" data-question="how do you design safe text to sql?" data-tags="text to sql security validation read only injection">
 <summary><span class="prep-q-no">10</span><span class="prep-q-title">How do you design a safe text-to-SQL system?<span class="prep-tags"><span>text-to-sql</span><span>security</span><span>validation</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>I give the model a curated semantic schema rather than unrestricted database access. Generated SQL is parsed into an AST and checked against an allowlist of statements, schemas, tables, columns and functions. The database role is read-only and scoped to authorized rows, with statement timeout, row limit and resource controls. I reject multiple statements and writes, log the prompt and approved query, and require confirmation for sensitive reports. Parameterization protects user-supplied values, but generated identifiers still require structural validation.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Constrain the schema, validate the SQL structure, execute with a least-privilege read-only role, cap cost and rows, and preserve an audit trail.</p></div>
 <div class="prep-follow"><strong>Likely follow-up:</strong> Why is a prompt saying “only write SELECT” insufficient?</div></div></details>
 
-<details class="prep-question" data-question="how do you enforce tenant isolation in sql?" data-tags="multi tenancy row level security rls authorization">
+<details class="prep-question" id="q11" data-question="how do you enforce tenant isolation in sql?" data-tags="multi tenancy row level security rls authorization">
 <summary><span class="prep-q-no">11</span><span class="prep-q-title">How do you enforce tenant isolation in the database?<span class="prep-tags"><span>multi-tenant</span><span>rls</span><span>authorization</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>Every tenant-owned row carries a tenant key, and repository methods require tenant context rather than accepting it optionally. Composite unique constraints include the tenant key, and indexes start with it for common access paths. PostgreSQL row-level security can provide defense in depth, but the application must set trusted session context correctly and use a role that cannot bypass policy. I test cross-tenant access explicitly, including generated SQL and vector retrieval paths.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Make tenant context mandatory in schema, queries, constraints and tests; use RLS as an additional database boundary, not the only one.</p></div>
 <div class="prep-follow"><strong>Likely follow-up:</strong> What is dangerous about connection pooling with session-level tenant settings?</div></div></details>
 
-<details class="prep-question" data-question="how do you evaluate llm generated sql?" data-tags="evaluation generated sql correctness performance test cases">
+<details class="prep-question" id="q12" data-question="how do you evaluate llm generated sql?" data-tags="evaluation generated sql correctness performance test cases">
 <summary><span class="prep-q-no">12</span><span class="prep-q-title">How do you evaluate LLM-generated SQL?<span class="prep-tags"><span>evaluation</span><span>correctness</span><span>performance</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>I build a versioned set of natural-language questions with schema context, expected result semantics and edge cases. Exact SQL string match is too strict, so I compare execution results on controlled fixtures, inspect whether required filters and joins are present, and score safety and cost separately. Tests include ambiguity, empty results, duplicate-producing joins, time zones, nulls, authorization boundaries and adversarial requests. Before production execution I run static validation and optionally a cost-limited plan check.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Evaluate result correctness, authorization, safety and query cost on realistic fixtures—not only whether the generated SQL resembles a reference string.</p></div>
 <div class="prep-follow"><strong>Likely follow-up:</strong> How would you handle two different queries that return the same correct result?</div></div></details>
 
+<details class="prep-question" id="q13" data-question="why does the logical order of execution matter?" data-tags="order of execution where having alias debugging">
+<summary><span class="prep-q-no">13</span><span class="prep-q-title">Why does SQL's logical order of execution matter when debugging a query?<span class="prep-tags"><span>execution-order</span><span>where-vs-having</span><span>debugging</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>The clauses run roughly as <code>FROM</code> → <code>JOIN</code> → <code>WHERE</code> → <code>GROUP BY</code> → <code>HAVING</code> → window functions → <code>SELECT</code> → <code>DISTINCT</code> → <code>ORDER BY</code> → <code>LIMIT</code>, not top to bottom. That explains why a <code>SELECT</code> alias is unavailable in <code>WHERE</code>, why aggregates must be filtered in <code>HAVING</code>, why a predicate on the null-able side of a <code>LEFT JOIN</code> silently turns it into an inner join, and why a window function cannot be filtered directly and needs a wrapping CTE.</p>
+<div class="prep-say"><strong>30-second version</strong><p>Row filtering happens before grouping, windows are computed after grouping, and aliases exist only from <code>SELECT</code> onwards—most "wrong result" bugs come from ignoring that order.</p></div>
+<div class="prep-follow"><strong>Likely follow-up:</strong> Where should a <code>LEFT JOIN</code> filter go so the outer rows survive?</div></div></details>
+
+<details class="prep-question" id="q14" data-question="how do you compute month over month or year over year change?" data-tags="lag lead growth time series gaps cost">
+<summary><span class="prep-q-no">14</span><span class="prep-q-title">How do you compute month-over-month change in token spend, including months with no usage?<span class="prep-tags"><span>lag</span><span>growth</span><span>gap-filling</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>I aggregate to the reporting grain first, then use <code>LAG</code> partitioned by the entity and ordered by the period. Missing periods are the trap: a <code>LAG</code> over sparse rows compares against the previous <em>existing</em> row, not the previous month, so I generate a dense calendar with <code>generate_series</code> and left join the aggregate onto it. I also guard division by zero and decide explicitly how a first period or a zero baseline should be reported.</p>
+<div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>spend_mom.sql</span><button class="copy-btn">Copy</button></div><pre><code>WITH months AS (
+  SELECT generate_series(:from_month, :to_month, INTERVAL '1 month') AS month
+), spend AS (
+  SELECT m.month,
+         COALESCE(SUM(u.cost_usd), 0) AS cost_usd
+  FROM months AS m
+  LEFT JOIN llm_usage AS u
+         ON date_trunc('month', u.called_at) = m.month
+        AND u.tenant_id = :tenant_id
+  GROUP BY m.month
+)
+SELECT month,
+       cost_usd,
+       LAG(cost_usd) OVER (ORDER BY month) AS prev_cost,
+       ROUND(
+         100 * (cost_usd - LAG(cost_usd) OVER (ORDER BY month))
+         / NULLIF(LAG(cost_usd) OVER (ORDER BY month), 0), 1
+       ) AS pct_change
+FROM spend
+ORDER BY month;</code></pre></div>
+<div class="prep-say"><strong>30-second version</strong><p>Densify the time axis, aggregate to that grain, then compare with <code>LAG</code> and protect the denominator with <code>NULLIF</code>.</p></div>
+<div class="prep-follow"><strong>Likely follow-up:</strong> How would you add a three-month moving average to the same query?</div></div></details>
+
+<details class="prep-question" id="q15" data-question="when do you need a recursive cte?" data-tags="recursive cte hierarchy agent trace thread">
+<summary><span class="prep-q-no">15</span><span class="prep-q-title">When do you need a recursive CTE in an agent or conversation system?<span class="prep-tags"><span>recursive-cte</span><span>hierarchy</span><span>traces</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>Whenever the depth is unknown at query time: walking an agent trace tree of parent and child spans, replaying a conversation branch, expanding a document-section hierarchy or resolving org structure for authorization. The anchor selects the roots, the recursive member joins children to the accumulated set, and I always carry a depth counter plus a visited path to bound runaway recursion when the data is not guaranteed acyclic. If the depth is fixed and small, explicit joins are clearer and usually faster.</p>
+<div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>trace_tree.sql</span><button class="copy-btn">Copy</button></div><pre><code>WITH RECURSIVE tree AS (
+  SELECT span_id, parent_span_id, name, 1 AS depth
+  FROM agent_spans
+  WHERE trace_id = :trace_id AND parent_span_id IS NULL
+  UNION ALL
+  SELECT s.span_id, s.parent_span_id, s.name, t.depth + 1
+  FROM agent_spans AS s
+  JOIN tree AS t ON s.parent_span_id = t.span_id
+  WHERE t.depth &lt; 20
+)
+SELECT * FROM tree ORDER BY depth, span_id;</code></pre></div>
+<div class="prep-say"><strong>30-second version</strong><p>Use recursion for unknown-depth hierarchies, always bound the depth, and prefer plain joins when the depth is fixed.</p></div>
+<div class="prep-follow"><strong>Likely follow-up:</strong> How would you detect a cycle in the data itself?</div></div></details>
+
+<details class="prep-question" id="q16" data-question="how do you make an incremental embedding refresh idempotent in sql?" data-tags="upsert merge on conflict idempotency materialized view pipeline">
+<summary><span class="prep-q-no">16</span><span class="prep-q-title">How do you make an incremental embedding refresh idempotent and cheap?<span class="prep-tags"><span>upsert</span><span>merge</span><span>materialized-view</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>Each chunk carries a content hash and a model version, with a unique constraint on that pair plus the chunk key. The pipeline selects only rows whose hash or model version changed, embeds them, and writes with <code>INSERT … ON CONFLICT DO UPDATE</code> (or <code>MERGE</code>) so a retried batch is harmless. Deletions are handled by a soft-delete flag rather than a full rebuild. For evaluation and cost dashboards I precompute with a materialized view refreshed concurrently on a schedule, and I keep the refresh window and watermark explicit so late-arriving rows are not skipped.</p>
+<div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>upsert_embeddings.sql</span><button class="copy-btn">Copy</button></div><pre><code>INSERT INTO document_chunks
+       (chunk_id, document_id, content_hash, model_version, embedding, updated_at)
+VALUES (:chunk_id, :document_id, :content_hash, :model_version, :embedding, now())
+ON CONFLICT (chunk_id, model_version) DO UPDATE
+SET embedding  = EXCLUDED.embedding,
+    content_hash = EXCLUDED.content_hash,
+    updated_at = now()
+WHERE document_chunks.content_hash &lt;&gt; EXCLUDED.content_hash;</code></pre></div>
+<div class="prep-say"><strong>30-second version</strong><p>Hash the content, key the upsert on chunk plus model version, skip unchanged rows, and precompute reporting with a concurrently refreshed materialized view.</p></div>
+<div class="prep-follow"><strong>Likely follow-up:</strong> Why does <code>REFRESH MATERIALIZED VIEW CONCURRENTLY</code> require a unique index?</div></div></details>
+
 </section>
+
+<h2 id="practice">Practice queries · 20 minutes each</h2>
+<p>Write these against a schema you invent on the spot, then say the grain, the index you would add and how you would verify the result. That commentary is what is actually being scored.</p>
+<div class="grid grid-2">
+<div class="card" data-reveal=""><span class="ico">1</span><h4>Latest answer per conversation</h4><p>From <code>messages(conversation_id, role, created_at, content)</code> return the most recent assistant message per conversation, with deterministic tie-breaking.</p></div>
+<div class="card" data-reveal=""><span class="ico">2</span><h4>Retrieval hit rate by day</h4><p>From <code>queries</code> and <code>retrieved_chunks</code> report daily share of queries with at least one cited chunk—without duplicating query rows.</p></div>
+<div class="card" data-reveal=""><span class="ico">3</span><h4>P95 latency per model</h4><p>Per model and week, return P95 latency and request count, then flag weeks where P95 grew more than 20% over the previous week.</p></div>
+<div class="card" data-reveal=""><span class="ico">4</span><h4>Top 3 failure reasons per tenant</h4><p>Rank failure reasons within each tenant, return the top three, and state what your query does when counts tie.</p></div>
+<div class="card" data-reveal=""><span class="ico">5</span><h4>Authorized hybrid retrieval</h4><p>Return the 20 nearest chunks for an embedding, restricted to the caller's tenant, active documents and the caller's access level.</p></div>
+<div class="card" data-reveal=""><span class="ico">6</span><h4>Eval regression diff</h4><p>Given <code>eval_runs(run_id, case_id, score, model_version)</code>, list cases whose score dropped between two named runs, worst first.</p></div>
+</div>
+<div class="callout warn"><div class="c-ico">!</div><div class="c-body"><div class="c-title">Say this out loud in the round</div><p>"The grain is one row per X." "This index would serve the filter." "I would confirm with <code>EXPLAIN ANALYZE</code> on production-like volume." Silent correct SQL scores lower than narrated correct SQL at senior level.</p></div></div>
 <div class="page-nav"><a href="08-project-behavioral.html"><div class="dir">← Previous</div><div class="ttl">Project Deep-Dive &amp; Behavioural Questions</div></a><a class="next" href="../scenario-practice/03-secure-text-to-sql.html"><div class="dir">Next →</div><div class="ttl">Secure Text-to-SQL Scenario</div></a></div>
 </main>
 <div class="toc-rail"><nav class="toc"></nav></div>
