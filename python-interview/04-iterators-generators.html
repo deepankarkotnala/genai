@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html data-theme="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="#f4f5f8" name="theme-color"/>
+<title>Iterators, Generators &amp; Comprehensions — Switch job</title>
+<link href="../assets/brand/favicon.svg?v=20260727c" rel="icon" type="image/svg+xml"/>
+<link href="../assets/brand/favicon-32.png?v=20260727c" rel="icon" sizes="32x32" type="image/png"/>
+<link href="../assets/brand/favicon.ico?v=20260727c" rel="shortcut icon"/>
+<link href="../assets/brand/apple-touch-icon.png?v=20260727c" rel="apple-touch-icon" sizes="180x180"/>
+<link href="../assets/brand/site.webmanifest?v=20260727c" rel="manifest"/>
+<link color="#6f47f5" href="../assets/brand/safari-pinned-tab.svg?v=20260727c" rel="mask-icon"/>
+<meta content="Switch job" name="application-name"/>
+<meta content="Switch job" name="apple-mobile-web-app-title"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="#2563eb" name="msapplication-TileColor"/>
+<meta content="website" property="og:type"/>
+<meta content="Switch job Learning Platform" property="og:site_name"/>
+<meta content="Iterators, Generators &amp; Comprehensions — Switch job" property="og:title"/>
+<meta content="The iterator protocol, generators, yield, lazy pipelines and comprehension trade-offs." property="og:description"/>
+<meta content="../assets/brand/social-card.png?v=20260727c" property="og:image"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="Iterators, Generators &amp; Comprehensions — Switch job" name="twitter:title"/>
+<meta content="The iterator protocol, generators, yield, lazy pipelines and comprehension trade-offs." name="twitter:description"/>
+<link href="../assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
+<meta content="The iterator protocol, generators, yield, lazy pipelines and comprehension trade-offs." name="description"/>
+<link href="../assets/styles.css?v=20260727c" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260727e" rel="stylesheet"/>
+</head>
+<body data-page="pyint-iterators-generators" data-prep-section="interview">
+<div class="app">
+<aside class="sidebar">
+<div class="brand">
+<a class="brand-link" href="../index.html" aria-label="Switch job home">
+<span class="brand-mark" aria-hidden="true"><img src="../assets/brand/switch-job-logo.png?v=20260727c" alt=""/></span>
+<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+</a>
+</div>
+<div class="search-wrap"><div class="search-box"><svg fill="none" height="15" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="15"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg><input data-search="" placeholder="Search everything…  ( / )" type="text"/></div><div class="search-results"></div></div>
+<nav class="nav"></nav>
+</aside>
+<div class="backdrop"></div>
+<div class="main">
+<header class="topbar">
+<button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
+<div class="crumbs">Python &amp; AI/ML Interviews / Iterators, Generators &amp; Comprehensions</div>
+<button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
+</header>
+<div class="content-wrap">
+<main class="content prep-content">
+<div class="eyebrow"><span class="dot"></span> Topic 04 · Python fundamentals</div>
+<h1>Iterators, Generators &amp; Comprehensions</h1>
+<p class="lead">&ldquo;What is a generator and where have you used one?&rdquo; is one of the most reliably asked questions in Indian Python interviews, and the second half of it is the part people fail. Have a real memory-pressure story ready.</p>
+<div class="meta-row"><span class="pill purple">21 questions</span><span class="pill">Technical round · all levels</span><span class="pill blue">Checked July 2026</span></div>
+<div class="callout key"><div class="c-ico">⌁</div><div class="c-body"><div class="c-title">What the interviewer is really testing</div><p>They want to know whether you understand lazy evaluation as a memory decision. A list holds everything at once; a generator holds one item at a time. If you can name a file, a database cursor or an API page where that mattered in your own work, you have answered the question better than a definition ever will.</p></div></div>
+<div class="prep-toolbar" data-sticky-prep=""><label class="prep-filter"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><input data-question-filter="" placeholder="Filter these questions…"/></label><button class="btn ghost" data-expand-answers="" type="button">Open all</button><span class="prep-count" data-question-count="">21 questions</span></div>
+<h2 id="the-iterator-protocol">The iterator protocol</h2>
+<section aria-label="Interview questions" class="prep-question-list">
+<details class="prep-question" data-question="what is the difference between an iterable and an iterator?" data-tags="iterator protocol high-frequency">
+<summary><span class="prep-q-no">01</span><span class="prep-q-title">What is the difference between an iterable and an iterator?<span class="prep-tags"><span>iterator</span><span>protocol</span><span>high-frequency</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>An iterable is anything you can loop over — it has <code>__iter__</code>, which hands back a fresh iterator. An iterator is the thing doing the walking — it has <code>__next__</code> and remembers its position. A list is iterable but not an iterator, which is why you can loop over the same list twice; an iterator is consumed once and then empty.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>protocol.py</span><button class="copy-btn">Copy</button></div><pre><code>nums = [1, 2, 3]
+it = iter(nums)      # list -&gt; iterator
+next(it)             # 1
+next(it)             # 2
+list(it)             # [3]  — the rest
+list(it)             # []   — exhausted</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>An iterable can produce an iterator; the iterator holds the position and is consumed once.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Why can you loop over a list twice but not a generator?</div></div></details>
+<details class="prep-question" data-question="how does a for loop work under the hood?" data-tags="iterator loops">
+<summary><span class="prep-q-no">02</span><span class="prep-q-title">How does a <code>for</code> loop work under the hood?<span class="prep-tags"><span>iterator</span><span>loops</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Python calls <code>iter()</code> on the object to get an iterator, then calls <code>next()</code> repeatedly, binding each result to the loop variable. When <code>next()</code> raises <code>StopIteration</code>, the loop ends quietly. That is the whole protocol — which is why anything implementing <code>__iter__</code> and <code>__next__</code> works in a <code>for</code> loop.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>It calls iter to get an iterator, then next until StopIteration is raised, which ends the loop silently.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What happens if <code>__next__</code> never raises StopIteration?</div></div></details>
+<details class="prep-question" data-question="how would you make your own class iterable?" data-tags="iterator oop coding">
+<summary><span class="prep-q-no">03</span><span class="prep-q-title">How would you make your own class iterable?<span class="prep-tags"><span>iterator</span><span>oop</span><span>coding</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Implement <code>__iter__</code>. The simplest way is to make it a generator function using <code>yield</code>, which gives you a fresh iterator per loop for free. Implementing <code>__next__</code> on the class itself also works but makes the object its own iterator, so it can only be looped once.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>iterable.py</span><button class="copy-btn">Copy</button></div><pre><code>class Deck:
+    def __init__(self, cards):
+        self._cards = cards
+
+    # Defining __iter__ is all a class needs to work in a for loop.
+    # Writing it as a generator hands back a FRESH iterator each time,
+    # so the deck can be looped over again and again.
+    def __iter__(self):
+        yield from self._cards</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Implement <code>__iter__</code>, usually as a generator with yield. That gives a fresh iterator each time you loop.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What is the downside of making the object its own iterator?</div></div></details>
+<details class="prep-question" data-question="what is stopiteration and where do you see it?" data-tags="iterator exceptions">
+<summary><span class="prep-q-no">04</span><span class="prep-q-title">What is <code>StopIteration</code> and where do you see it?<span class="prep-tags"><span>iterator</span><span>exceptions</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>It is the exception an iterator raises when it has nothing left. Loops catch it for you, so you only see it when calling <code>next()</code> directly — which is why <code>next(it, default)</code> with a fallback is safer. Inside a generator, returning also raises it, and since Python 3.7 letting it escape a generator turns into a <code>RuntimeError</code> rather than silently ending the loop.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>The signal that an iterator is exhausted. Loops handle it; direct <code>next()</code> calls should pass a default.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Why did Python change how StopIteration behaves inside generators?</div></div></details>
+<details class="prep-question" data-question="what does zip do, and what is the gotcha?" data-tags="iterator builtins">
+<summary><span class="prep-q-no">05</span><span class="prep-q-title">What does <code>zip</code> do, and what is the gotcha?<span class="prep-tags"><span>iterator</span><span>builtins</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p><code>zip</code> pairs items from several iterables and stops at the shortest one — silently, which is the gotcha, because uneven inputs lose data with no warning. Pass <code>strict=True</code> on Python 3.10+ to raise instead, or use <code>itertools.zip_longest</code> to pad. It returns a lazy iterator, so it is consumed once.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>zip.py</span><button class="copy-btn">Copy</button></div><pre><code>list(zip([1, 2, 3], &quot;ab&quot;))                 # [(1,&#x27;a&#x27;), (2,&#x27;b&#x27;)] — 3 is dropped
+list(zip([1, 2, 3], &quot;ab&quot;, strict=True))    # ValueError on 3.10+</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>It pairs iterables and stops at the shortest, silently. Use <code>strict=True</code> or zip_longest when lengths should match.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How would you unzip a list of pairs back into two lists?</div></div></details>
+<details class="prep-question" data-question="what does enumerate give you over range(len(x))?" data-tags="iterator builtins style">
+<summary><span class="prep-q-no">06</span><span class="prep-q-title">What does <code>enumerate</code> give you over <code>range(len(x))</code>?<span class="prep-tags"><span>iterator</span><span>builtins</span><span>style</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>It yields index and item together, so you never index back into the collection, which is both clearer and works on any iterable — including generators, where <code>len</code> does not exist. It also takes a <code>start</code> argument for one-based numbering.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Index and value together, works on any iterable, and avoids indexing back into the collection.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How would you enumerate starting from 1?</div></div></details>
+</section>
+<h2 id="generators-and-lazy-evaluation">Generators and lazy evaluation</h2>
+<section aria-label="Interview questions" class="prep-question-list">
+<details class="prep-question" data-question="what is a generator, and where have you used one?" data-tags="generators high-frequency memory">
+<summary><span class="prep-q-no">07</span><span class="prep-q-title">What is a generator, and where have you used one?<span class="prep-tags"><span>generators</span><span>high-frequency</span><span>memory</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>A generator is a function that uses <code>yield</code> to hand back values one at a time, pausing in place between them instead of building the whole list. The real answer is the second half of the question. Use one wherever the full result would not fit comfortably in memory: reading a multi-gigabyte log file line by line, streaming rows from a database cursor, or walking through paginated API results.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>generator.py</span><button class="copy-btn">Copy</button></div><pre><code>def read_records(path):
+    with open(path) as f:
+        for line in f:               # file objects yield line by line
+            if line.strip():         # skip blank lines
+                yield parse(line)    # hand back ONE record, then pause here
+
+# The loop pulls records one at a time. The whole file is never
+# in memory at once, so a 10 GB log costs the same as a 10 KB one.
+for record in read_records(&quot;huge.log&quot;):
+    handle(record)</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>A function that yields values one at a time and keeps its state between them. I use them for large files and streamed data, where a list would not fit in memory.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What is the memory difference on a one-million-row file, concretely?</div></div></details>
+<details class="prep-question" data-question="what is the difference between return and yield?" data-tags="generators basics">
+<summary><span class="prep-q-no">08</span><span class="prep-q-title">What is the difference between <code>return</code> and <code>yield</code>?<span class="prep-tags"><span>generators</span><span>basics</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p><code>return</code> ends the function and hands back one value. <code>yield</code> produces a value and freezes the function — local variables, position, everything — so the next call resumes exactly where it left off. Any function containing <code>yield</code> becomes a generator function: calling it runs no code and just gives you a generator object.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>return exits with one value; yield produces a value and pauses, resuming from the same spot on the next call.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What does a bare <code>return</code> inside a generator do?</div></div></details>
+<details class="prep-question" data-question="what is the difference between a list comprehension and a generator expression?" data-tags="generators comprehension high-frequency">
+<summary><span class="prep-q-no">09</span><span class="prep-q-title">What is the difference between a list comprehension and a generator expression?<span class="prep-tags"><span>generators</span><span>comprehension</span><span>high-frequency</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Square brackets build the whole list in memory immediately; parentheses create a generator that produces items on demand. If you are going to iterate once — feeding <code>sum</code>, <code>any</code>, a loop — the generator is strictly better. If you need to index it, loop twice, or take its length, you need the list.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>genexp.py</span><button class="copy-btn">Copy</button></div><pre><code>sum(x * x for x in range(10_000_000))    # constant memory
+sum([x * x for x in range(10_000_000)])  # builds a 10M list first</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Brackets build the list now; parentheses produce items lazily. Use the generator when you iterate once.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> When would the list actually be faster?</div></div></details>
+<details class="prep-question" data-question="can you iterate over a generator twice?" data-tags="generators gotcha">
+<summary><span class="prep-q-no">10</span><span class="prep-q-title">Can you iterate over a generator twice?<span class="prep-tags"><span>generators</span><span>gotcha</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>No. A generator is an iterator, so once exhausted it yields nothing and the second loop runs zero times — silently, which makes it a nasty bug. If you need to loop twice, either store the results with <code>list()</code>, or make the source a function you can call again for a fresh generator.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>No — it is consumed once and the second loop silently does nothing. Materialise it or regenerate it.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How would you design an object that can be iterated many times but stays lazy?</div></div></details>
+<details class="prep-question" data-question="what does yield from do?" data-tags="generators delegation">
+<summary><span class="prep-q-no">11</span><span class="prep-q-title">What does <code>yield from</code> do?<span class="prep-tags"><span>generators</span><span>delegation</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>It hands control to another iterable and re-emits every value it produces, so you do not write an inner loop yourself. It also passes <code>send</code> and exceptions through correctly, which a hand-written loop does not. The common use is flattening nested structures or splitting one big generator into smaller ones.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>yield_from.py</span><button class="copy-btn">Copy</button></div><pre><code>def flatten(nested):
+    for item in nested:
+        if isinstance(item, list):
+            # yield from re-emits every value the recursive call produces,
+            # so any depth of nesting flattens without a manual inner loop
+            yield from flatten(item)
+        else:
+            yield item
+
+# flatten([1, [2, [3, 4]], 5]) -&gt; 1, 2, 3, 4, 5</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>It yields everything from another iterable and forwards send and exceptions properly. Good for recursion and composition.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What does it return, and where does that value go?</div></div></details>
+<details class="prep-question" data-question="what does generator.send() do?" data-tags="generators advanced">
+<summary><span class="prep-q-no">12</span><span class="prep-q-title">What does <code>generator.send()</code> do?<span class="prep-tags"><span>generators</span><span>advanced</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>It resumes the generator and passes a value in, which becomes the result of the paused <code>yield</code> expression. That makes the generator two-way — it can receive as well as produce. It is rare in application code; you mostly meet it in coroutine-style pipelines, and asyncio is built on the same mechanism underneath.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>It resumes a generator while passing a value back in, making it two-way. Rare in app code, but it is what async is built on.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Why must you call <code>next()</code> once before the first <code>send()</code>?</div></div></details>
+<details class="prep-question" data-question="how do you build a data pipeline out of generators?" data-tags="generators pipelines design">
+<summary><span class="prep-q-no">13</span><span class="prep-q-title">How do you build a data pipeline out of generators?<span class="prep-tags"><span>generators</span><span>pipelines</span><span>design</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Chain them: each generator takes an iterable and yields a changed version of it, so nothing is actually computed until the final loop pulls a value through. That gives you constant memory over an arbitrarily large source, and each stage stays small and testable on its own. This is the pattern behind most ETL code that has to handle files bigger than RAM.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>pipeline.py</span><button class="copy-btn">Copy</button></div><pre><code># Each stage is lazy: creating it runs no code at all.
+lines = read_lines(&quot;events.log&quot;)            # yields one line at a time
+parsed = (parse(l) for l in lines)          # yields one parsed record
+valid = (p for p in parsed if p.ok)         # yields only the good ones
+
+# Only now does anything execute, one record at a time all the way
+# through the chain — so memory stays flat no matter how big the file is.
+for event in valid:
+    store(event)</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Chain generators so each stage transforms lazily. Nothing runs until the final consumer pulls, so memory stays flat.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How would you add error handling without breaking laziness?</div></div></details>
+<details class="prep-question" data-question="what happens to a generator that is never exhausted?" data-tags="generators cleanup gotcha">
+<summary><span class="prep-q-no">14</span><span class="prep-q-title">What happens to a generator that is never exhausted?<span class="prep-tags"><span>generators</span><span>cleanup</span><span>gotcha</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>It stays paused. If it holds a resource — an open file, a database cursor — that resource stays held until the generator is garbage collected, which triggers <code>GeneratorExit</code> inside it. If your generator has a <code>try/finally</code> or a <code>with</code> block, that cleanup runs then, not when you stopped looping. Use <code>contextlib.closing</code> or close it explicitly when the timing matters.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>It stays suspended holding its resources until garbage collection closes it. Close it explicitly if it owns a file or a connection.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What is GeneratorExit and when is it raised?</div></div></details>
+</section>
+<h2 id="comprehensions-and-itertools">Comprehensions and itertools</h2>
+<section aria-label="Interview questions" class="prep-question-list">
+<details class="prep-question" data-question="what are the four comprehension forms and when is each right?" data-tags="comprehension basics">
+<summary><span class="prep-q-no">15</span><span class="prep-q-title">What are the four comprehension forms and when is each right?<span class="prep-tags"><span>comprehension</span><span>basics</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>List <code>[x for x in y]</code>, set <code>{x for x in y}</code>, dict <code>{k: v for ...}</code>, and generator <code>(x for x in y)</code>. There is no tuple comprehension — parentheses give a generator, so use <code>tuple(...)</code> around one. Pick by the output you need: dedupe with a set, key lookup with a dict, one-pass streaming with a generator.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>List, set, dict and generator. Parentheses give a generator, not a tuple.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Why is there no tuple comprehension?</div></div></details>
+<details class="prep-question" data-question="when does a comprehension become the wrong choice?" data-tags="comprehension style">
+<summary><span class="prep-q-no">16</span><span class="prep-q-title">When does a comprehension become the wrong choice?<span class="prep-tags"><span>comprehension</span><span>style</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>When it has more than about two clauses, when it nests two loops plus a condition, or when it exists only for a side effect. A comprehension is an expression that builds a collection — if you are not keeping the result, use a plain loop. Readability is the deciding factor, and a nested comprehension almost never wins on it.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Once it needs two loops and a condition, or when you only want the side effect. Then a normal loop is clearer.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Show me a nested comprehension and its loop equivalent — which would you ship?</div></div></details>
+<details class="prep-question" data-question="where does the condition go in a comprehension, and what about if/else?" data-tags="comprehension syntax gotcha">
+<summary><span class="prep-q-no">17</span><span class="prep-q-title">Where does the condition go in a comprehension, and what about if/else?<span class="prep-tags"><span>comprehension</span><span>syntax</span><span>gotcha</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>A filtering <code>if</code> goes at the end, after the <code>for</code>. But <code>if/else</code> is a ternary expression, so it goes at the front, before the <code>for</code>. Mixing these up is one of the most common syntax errors people hit under interview pressure.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>comprehension_if.py</span><button class="copy-btn">Copy</button></div><pre><code>[x for x in nums if x &gt; 0]             # filter — if at the end
+[x if x &gt; 0 else 0 for x in nums]      # transform — if/else at the front</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>A filter <code>if</code> goes at the end; an <code>if/else</code> is a ternary and goes at the front.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Can you combine both in one comprehension?</div></div></details>
+<details class="prep-question" data-question="how does a nested comprehension read?" data-tags="comprehension nesting">
+<summary><span class="prep-q-no">18</span><span class="prep-q-title">How does a nested comprehension read?<span class="prep-tags"><span>comprehension</span><span>nesting</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>The <code>for</code> clauses read left to right in the same order you would write nested loops, with the innermost last. Flattening a list of lists is <code>[x for row in matrix for x in row]</code>. Anything deeper than two levels should become a loop or a generator function.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>The for clauses run in the same order as nested loops, outermost first. Two levels is the readable limit.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How would you build a matrix rather than flatten one?</div></div></details>
+<details class="prep-question" data-question="do comprehensions have their own scope?" data-tags="comprehension scope">
+<summary><span class="prep-q-no">19</span><span class="prep-q-title">Do comprehensions have their own scope?<span class="prep-tags"><span>comprehension</span><span>scope</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Yes in Python 3 — the loop variable lives inside the comprehension and does not leak into the surrounding function, unlike Python 2. It can still read outer variables. The walrus operator is the exception: <code>:=</code> inside a comprehension deliberately binds in the enclosing scope.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Yes, the loop variable does not leak in Python 3. The walrus operator is the deliberate exception.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Why would you want the walrus to leak out?</div></div></details>
+<details class="prep-question" data-question="which itertools functions are actually worth knowing?" data-tags="itertools stdlib">
+<summary><span class="prep-q-no">20</span><span class="prep-q-title">Which <code>itertools</code> functions are actually worth knowing?<span class="prep-tags"><span>itertools</span><span>stdlib</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p><code>chain</code> joins iterables end to end. <code>islice</code> takes a slice without building the whole thing. <code>groupby</code> groups neighbouring equal items — it only sees runs, so unsorted input is the usual trap. <code>product</code> and <code>combinations</code> generate pairs, and <code>count</code> and <code>cycle</code> produce endless sequences. They all stay lazy, so they compose with generator pipelines.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>itertools.py</span><button class="copy-btn">Copy</button></div><pre><code>from itertools import chain, islice, groupby
+
+list(islice(infinite_stream, 10))        # first 10, lazily
+list(chain(list_a, list_b))              # joined without copying both</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>chain, islice, groupby, product and combinations. All lazy, so they fit into generator pipelines.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Why does groupby need sorted input?</div></div></details>
+<details class="prep-question" data-question="how do you take the first n items from an infinite generator?" data-tags="itertools coding">
+<summary><span class="prep-q-no">21</span><span class="prep-q-title">How do you take the first N items from an infinite generator?<span class="prep-tags"><span>itertools</span><span>coding</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p><code>itertools.islice(gen, n)</code>. Slicing with <code>gen[:n]</code> does not work because generators do not support indexing, and <code>list(gen)[:n]</code> would try to consume an infinite sequence first. <code>islice</code> pulls exactly n items and stops.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p><code>islice</code>. You cannot slice a generator directly, and converting to a list first would never finish.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How would you take every second item instead?</div></div></details>
+</section>
+<div class="page-nav"><a href="03-functions-scope.html"><div class="dir">← Previous</div><div class="ttl">Functions, Scope &amp; Functional Python</div></a><a class="next" href="05-decorators-context.html"><div class="dir">Next →</div><div class="ttl">Decorators, Context Managers &amp; Descriptors</div></a></div>
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script src="../assets/app.js?v=20260727c"></script>
+<script src="../assets/sitenav.js?v=20260727c"></script>
+<script src="../assets/enhance.js?v=20260727c"></script>
+<script src="../assets/interview-prep.js?v=20260727c"></script>
+</body>
+</html>

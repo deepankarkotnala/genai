@@ -40,6 +40,8 @@
       home: "dsa-prep/index.html",
       pages: [
         { path: "dsa-prep/index.html", title: "Contents", num: "✦", kw: "dsa data structures algorithms interview python leetcode patterns coding round overview contents textbook" },
+        { path: "dsa-prep/top-50.html", title: "Top 50 Questions", num: "★", track: "Priority lists", kw: "top 50 dsa questions interview preparation must do essential shortlist all patterns easy medium blind curated priority high frequency leetcode" },
+        { path: "dsa-prep/top-150.html", title: "Top 150 Questions", num: "★", track: "Priority lists", kw: "top 150 dsa questions high frequency faang maang india product companies full set blind 75 neetcode pattern defining leetcode" },
         { path: "dsa-prep/complexity.html", title: "Time & Space Complexity", num: "0", track: "Foundations", kw: "big o time complexity space complexity auxiliary memory constant linear logarithmic quadratic exponential factorial worst average best amortized in place growth rate operations counting recursion stack two sum trade off" },
         { path: "dsa-prep/00-interview-strategy.html", title: "Interview Strategy", num: "00", track: "Foundations", kw: "interview strategy umpire clarify brute force optimize test complexity study route diagnostic think aloud coding round process" },
         { path: "dsa-prep/01-python-dsa-foundations.html", title: "Python DSA Foundations", num: "01", track: "Foundations", kw: "python objects references mutability aliasing list deque heapq dict set amortized append timsort recursion limit big o auxiliary space copy" },
@@ -169,6 +171,31 @@
       ]
     },
 
+    /* PYTHON_INTERVIEW_START */
+    {
+      id: "pythoninterview", label: "Python & AI/ML Interviews", mark: "Y",
+      blurb: "Validated 2026 question bank", home: "python-interview/index.html",
+      pages: [
+        { path: "python-interview/index.html", title: "Question bank overview", num: "✦", kw: "python ai ml interview questions bank overview 2026 india validated simple answers" },
+        { path: "python-interview/01-python-core.html", title: "Python Core & How It Runs", num: "01", track: "Python fundamentals", kw: "python interpreter compiled bytecode cpython dynamic typing duck typing mutable immutable is vs equals operators truthiness numbers pep8 typecast type casting type conversion implicit explicit int str float shallow deep copy interview" },
+        { path: "python-interview/02-data-structures.html", title: "Strings, Collections & Data Structures", num: "02", track: "Python fundamentals", kw: "string bytes formatting f-string regex list tuple set dictionary collections counter defaultdict deque namedtuple slicing sorting interview" },
+        { path: "python-interview/03-functions-scope.html", title: "Functions, Scope & Functional Python", num: "03", track: "Python fundamentals", kw: "function args kwargs default mutable argument closure lambda scope legb global nonlocal map filter reduce partial recursion interview" },
+        { path: "python-interview/04-iterators-generators.html", title: "Iterators, Generators & Comprehensions", num: "04", track: "Python fundamentals", kw: "iterator iterable generator yield lazy evaluation comprehension itertools generator expression memory streaming interview" },
+        { path: "python-interview/05-decorators-context.html", title: "Decorators, Context Managers & Descriptors", num: "05", track: "Python fundamentals", kw: "decorator functools wraps decorator with arguments context manager with statement contextlib property descriptor caching retry timing interview" },
+        { path: "python-interview/06-oop-data-model.html", title: "OOP & the Python Data Model", num: "06", track: "Advanced Python", kw: "oop class inheritance polymorphism encapsulation abstraction mro super dunder double underscore magic methods special methods operator overloading name mangling private attributes str repr dataclass slots metaclass abc interview" },
+        { path: "python-interview/07-exceptions-packaging.html", title: "Exceptions, Modules & Packaging", num: "07", track: "Advanced Python", kw: "exception try except finally else custom exception raise from import module package virtual environment pip poetry uv requirements packaging interview" },
+        { path: "python-interview/08-memory-performance.html", title: "Memory, Garbage Collection & Performance", num: "08", track: "Advanced Python", kw: "memory management reference counting garbage collector cycles weakref memory leak profiling cprofile optimization slots interning interview" },
+        { path: "python-interview/09-concurrency.html", title: "Threads, Processes & Asyncio", num: "09", track: "Advanced Python", kw: "gil global interpreter lock thread process multiprocessing asyncio event loop coroutine await gather taskgroup cancellation cpu bound io bound interview" },
+        { path: "python-interview/10-typing-stdlib-testing.html", title: "Type Hints, Standard Library & Testing", num: "10", track: "Advanced Python", kw: "type hints typing optional union generic protocol mypy pytest fixture mock patch parametrize coverage logging json datetime pathlib linting ruff interview" },
+        { path: "python-interview/11-backend-apis.html", title: "Backend Python, APIs & Databases", num: "11", track: "Applied & AI/ML", kw: "fastapi django flask rest api pydantic sqlalchemy orm n+1 transaction index caching redis celery queue rate limit scaling wsgi asgi interview" },
+        { path: "python-interview/12-numpy-pandas-data.html", title: "NumPy, Pandas & Data Engineering", num: "12", track: "Applied & AI/ML", kw: "numpy array vectorization broadcasting pandas dataframe groupby merge join missing values apply memory pyspark airflow etl pipeline partitioning interview" },
+        { path: "python-interview/13-ml-ai-llm.html", title: "ML, Deep Learning, LLMs & MLOps", num: "13", track: "Applied & AI/ML", kw: "machine learning scikit-learn overfitting bias variance cross validation precision recall imbalanced pytorch backpropagation transformer llm rag embeddings agents mlops drift deployment interview" },
+        { path: "python-interview/14-coding-behavioural.html", title: "Coding Round & Project Discussion", num: "14", track: "Applied & AI/ML", kw: "python coding round live coding two sum palindrome anagram fibonacci decorator implementation k means from scratch project walkthrough behavioural architecture tradeoff interview" },
+        { path: "python-interview/15-practical-scenarios.html", title: "Practical Questions", num: "15", track: "Applied & AI/ML", kw: "practical scenario questions crore csv 10 million rows large file streaming chunksize polars duckdb pyarrow parquet batching concurrency asyncio semaphore rate limit backoff retry 1000 pdfs folder rag ingestion ocr scanned tables chunking overlap metadata incremental upsert reindex embeddings at scale dedupe vector database pgvector qdrant milvus weaviate pinecone hnsw ef_search hybrid search reranking latency time to first token ttft p95 streaming semantic caching prompt caching model routing cost optimization batch api prompt injection indirect injection sql injection text to sql guardrails owasp least privilege row level security pii redaction dpdp gdpr hipaa agent tools exfiltration hallucination groundedness citations evals llm as judge recall at k monitoring observability tracing long context interview" }
+      ]
+    },
+    /* PYTHON_INTERVIEW_END */
+
     /* INTERVIEW_PREP_START */
     {
       id: "interviewprep", label: "GenAI Interview Prep", mark: "I", blurb: "India-focused question bank", home: "interview-prep/index.html",
@@ -227,6 +254,17 @@
         { path: "langgraph.html", title: "LangGraph & components", num: "🕸️", kw: "langgraph state node edge checkpointer human in the loop asyncio pydantic" },
         { path: "claude-agent.html", title: "How a Claude Agent Works", num: "🤖", kw: "claude agent sdk tool runner loop context safety" },
         { path: "hermes.html", title: "Hermes — open local models", num: "🔱", kw: "hermes nous ollama open function calling local models" }
+      ]
+    },
+    {
+      id: "jobsearch",
+      label: "Job Search & Remote Work",
+      mark: "J",
+      blurb: "Roles abroad, from India",
+      home: "job-search/index.html",
+      direct: true,
+      pages: [
+        { path: "job-search/index.html", title: "Where to Find Remote Roles", num: "🌐", kw: "remote jobs work from home abroad india job portals boards job search weworkremotely remoteok wellfound himalayas remotive workatastartup turing uplers arc dev toptal braintrust deel employer of record eor contractor overseas international hiring worldwide scam check linkedin ai jobs hugging face salary" }
       ]
     }
   ];

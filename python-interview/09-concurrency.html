@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html data-theme="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="#f4f5f8" name="theme-color"/>
+<title>Threads, Processes &amp; Asyncio — Switch job</title>
+<link href="../assets/brand/favicon.svg?v=20260727c" rel="icon" type="image/svg+xml"/>
+<link href="../assets/brand/favicon-32.png?v=20260727c" rel="icon" sizes="32x32" type="image/png"/>
+<link href="../assets/brand/favicon.ico?v=20260727c" rel="shortcut icon"/>
+<link href="../assets/brand/apple-touch-icon.png?v=20260727c" rel="apple-touch-icon" sizes="180x180"/>
+<link href="../assets/brand/site.webmanifest?v=20260727c" rel="manifest"/>
+<link color="#6f47f5" href="../assets/brand/safari-pinned-tab.svg?v=20260727c" rel="mask-icon"/>
+<meta content="Switch job" name="application-name"/>
+<meta content="Switch job" name="apple-mobile-web-app-title"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="#2563eb" name="msapplication-TileColor"/>
+<meta content="website" property="og:type"/>
+<meta content="Switch job Learning Platform" property="og:site_name"/>
+<meta content="Threads, Processes &amp; Asyncio — Switch job" property="og:title"/>
+<meta content="The GIL, threading, multiprocessing, asyncio, cancellation and choosing between them." property="og:description"/>
+<meta content="../assets/brand/social-card.png?v=20260727c" property="og:image"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="Threads, Processes &amp; Asyncio — Switch job" name="twitter:title"/>
+<meta content="The GIL, threading, multiprocessing, asyncio, cancellation and choosing between them." name="twitter:description"/>
+<link href="../assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
+<meta content="The GIL, threading, multiprocessing, asyncio, cancellation and choosing between them." name="description"/>
+<link href="../assets/styles.css?v=20260727c" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260727e" rel="stylesheet"/>
+</head>
+<body data-page="pyint-concurrency" data-prep-section="interview">
+<div class="app">
+<aside class="sidebar">
+<div class="brand">
+<a class="brand-link" href="../index.html" aria-label="Switch job home">
+<span class="brand-mark" aria-hidden="true"><img src="../assets/brand/switch-job-logo.png?v=20260727c" alt=""/></span>
+<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+</a>
+</div>
+<div class="search-wrap"><div class="search-box"><svg fill="none" height="15" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="15"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg><input data-search="" placeholder="Search everything…  ( / )" type="text"/></div><div class="search-results"></div></div>
+<nav class="nav"></nav>
+</aside>
+<div class="backdrop"></div>
+<div class="main">
+<header class="topbar">
+<button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
+<div class="crumbs">Python &amp; AI/ML Interviews / Threads, Processes &amp; Asyncio</div>
+<button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
+</header>
+<div class="content-wrap">
+<main class="content prep-content">
+<div class="eyebrow"><span class="dot"></span> Topic 09 · Advanced Python</div>
+<h1>Threads, Processes &amp; Asyncio</h1>
+<p class="lead">The GIL question is asked in almost every Python interview above fresher level, and it is usually answered badly. The strong answer is not what the GIL is — it is which of the three concurrency tools you would pick, and why.</p>
+<div class="meta-row"><span class="pill purple">18 questions</span><span class="pill">High frequency · backend and AI roles</span><span class="pill blue">Checked July 2026</span></div>
+<div class="callout key"><div class="c-ico">⌁</div><div class="c-body"><div class="c-title">What the interviewer is really testing</div><p>One decision rule: I/O-bound work goes to asyncio, or threads if the library is not async; CPU-bound work goes to multiprocessing. Lead with that rule, then explain the GIL as the reason behind it. Candidates who explain the GIL for two minutes without reaching the decision have missed the question.</p></div></div>
+<div class="prep-toolbar" data-sticky-prep=""><label class="prep-filter"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><input data-question-filter="" placeholder="Filter these questions…"/></label><button class="btn ghost" data-expand-answers="" type="button">Open all</button><span class="prep-count" data-question-count="">18 questions</span></div>
+<h2 id="the-gil-and-choosing-a-model">The GIL and choosing a model</h2>
+<section aria-label="Interview questions" class="prep-question-list">
+<details class="prep-question" data-question="what is the gil, and how does it affect your code?" data-tags="gil concurrency high-frequency">
+<summary><span class="prep-q-no">01</span><span class="prep-q-title">What is the GIL, and how does it affect your code?<span class="prep-tags"><span>gil</span><span>concurrency</span><span>high-frequency</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>The Global Interpreter Lock is a mutex in CPython that lets only one thread execute Python bytecode at a time, because CPython's reference counting is not thread-safe. So threads give you no speedup on CPU-bound work. It does not hurt I/O-bound work, because the GIL is released while a thread waits on the network, disk or a database — and C extensions like NumPy release it during heavy computation too.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>A lock letting only one thread run Python bytecode at a time. It blocks CPU parallelism in threads but not I/O concurrency, because it is released during waits.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> So when would you still use threads?</div></div></details>
+<details class="prep-question" data-question="when do you choose threads, processes or asyncio?" data-tags="concurrency decision high-frequency">
+<summary><span class="prep-q-no">02</span><span class="prep-q-title">When do you choose threads, processes or asyncio?<span class="prep-tags"><span>concurrency</span><span>decision</span><span>high-frequency</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Asyncio for large numbers of concurrent I/O operations — API calls, web serving, database queries — as long as the libraries are async. Threads for I/O when the library is blocking and has no async version, or for a handful of background tasks. Multiprocessing for CPU-bound work, because separate processes have separate GILs. The question to ask is always: is this waiting, or is this computing?</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>choosing.py</span><button class="copy-btn">Copy</button></div><pre><code># I/O-bound, async libraries -&gt; asyncio
+results = await asyncio.gather(*(fetch(u) for u in urls))
+
+# I/O-bound, blocking library -&gt; threads
+with ThreadPoolExecutor(max_workers=8) as pool:
+    results = list(pool.map(blocking_fetch, urls))
+
+# CPU-bound -&gt; processes
+with ProcessPoolExecutor() as pool:
+    results = list(pool.map(heavy_compute, chunks))</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Waiting means asyncio, or threads if the library blocks. Computing means multiprocessing. That one question decides it.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> You have 500 HTTP calls and one blocking client library. What do you do?</div></div></details>
+<details class="prep-question" data-question="what is the difference between concurrency and parallelism?" data-tags="concurrency concepts">
+<summary><span class="prep-q-no">03</span><span class="prep-q-title">What is the difference between concurrency and parallelism?<span class="prep-tags"><span>concurrency</span><span>concepts</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Concurrency is dealing with many things at once by interleaving them — progress is made on several tasks, but not necessarily at the same instant. Parallelism is doing many things at literally the same instant on multiple cores. Asyncio gives concurrency on one thread; multiprocessing gives real parallelism.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Concurrency interleaves tasks, parallelism runs them simultaneously on multiple cores. Asyncio is concurrency; multiprocessing is parallelism.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Can you have parallelism without concurrency?</div></div></details>
+<details class="prep-question" data-question="what is free-threaded python, and does it remove the gil?" data-tags="gil modern python senior">
+<summary><span class="prep-q-no">04</span><span class="prep-q-title">What is free-threaded Python, and does it remove the GIL?<span class="prep-tags"><span>gil</span><span>modern python</span><span>senior</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>PEP 703 added an experimental build of CPython, from 3.13, that runs without the GIL, so threads can execute Python bytecode in parallel. It is being rolled out gradually because removing the GIL costs single-threaded speed and requires C extensions to be made thread-safe. Knowing it exists shows you follow the language; assuming it is the default in production does not.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>An experimental no-GIL build from Python 3.13 under PEP 703. Real, but still opt-in, and extensions must be made thread-safe.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What would you have to change in your code if the GIL disappeared?</div></div></details>
+<details class="prep-question" data-question="why does multiprocessing help where threading does not?" data-tags="multiprocessing gil">
+<summary><span class="prep-q-no">05</span><span class="prep-q-title">Why does multiprocessing help where threading does not?<span class="prep-tags"><span>multiprocessing</span><span>gil</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Each process is a separate Python interpreter with its own GIL and its own memory, so they genuinely run on different cores at the same time. The cost is that starting processes is slow and nothing is shared — every argument and result must be pickled and copied between them. That overhead is why multiprocessing loses on small tasks and wins on big ones.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Each process has its own interpreter and GIL, so they use real cores. The cost is startup time and pickling data between them.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What kinds of objects cannot be sent to a worker process?</div></div></details>
+<details class="prep-question" data-question="what are the risks of using threads with shared state?" data-tags="threading race conditions">
+<summary><span class="prep-q-no">06</span><span class="prep-q-title">What are the risks of using threads with shared state?<span class="prep-tags"><span>threading</span><span>race conditions</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Race conditions, where two threads read-modify-write the same value and one update is lost, and deadlocks, where two threads each hold a lock the other wants. The GIL does not save you — it protects the interpreter's internals, not your logic, so <code>counter += 1</code> is still not atomic. Protect shared mutable state with a lock, or better, avoid sharing it and pass messages through a <code>queue.Queue</code>.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Race conditions and deadlocks. The GIL does not make your code thread-safe — use a lock, or share nothing and pass messages via a queue.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Why is <code>counter += 1</code> not atomic?</div></div></details>
+<details class="prep-question" data-question="what is a thread pool, and how do you size it?" data-tags="threading practical">
+<summary><span class="prep-q-no">07</span><span class="prep-q-title">What is a thread pool, and how do you size it?<span class="prep-tags"><span>threading</span><span>practical</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>A fixed set of reusable worker threads fed from a queue, so you avoid creating a thread per task. For I/O-bound work you can size it well above the core count, since threads spend most of their time waiting — but bound it to what the downstream service can take, or you turn your concurrency into their outage. <code>ThreadPoolExecutor</code> is the standard way.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Reusable workers fed from a queue. For I/O you can go well above core count, but size it to what the downstream service tolerates.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How would you handle one task in the pool raising an exception?</div></div></details>
+<details class="prep-question" data-question="what is concurrent.futures and why is it useful?" data-tags="concurrency stdlib">
+<summary><span class="prep-q-no">08</span><span class="prep-q-title">What is <code>concurrent.futures</code> and why is it useful?<span class="prep-tags"><span>concurrency</span><span>stdlib</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>A single high-level interface over both thread pools and process pools. Because <code>ThreadPoolExecutor</code> and <code>ProcessPoolExecutor</code> share an API, you can switch between them by changing one line — which is exactly what you want when you are unsure whether the workload is I/O- or CPU-bound. <code>submit</code> returns futures; <code>as_completed</code> lets you handle results as they arrive.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>One API over thread and process pools, so you can swap between them by changing one class name.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What is the difference between <code>map</code> and <code>as_completed</code> here?</div></div></details>
+</section>
+<h2 id="asyncio">Asyncio</h2>
+<section aria-label="Interview questions" class="prep-question-list">
+<details class="prep-question" data-question="how does asyncio work, in one explanation?" data-tags="asyncio high-frequency">
+<summary><span class="prep-q-no">09</span><span class="prep-q-title">How does asyncio work, in one explanation?<span class="prep-tags"><span>asyncio</span><span>high-frequency</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>A single thread runs an event loop. When a coroutine hits an <code>await</code> on something that would block, it yields control back to the loop, which runs another ready coroutine and resumes the first when its I/O completes. There is no parallelism and no thread switching — just cooperative hand-offs at <code>await</code> points, which is why it scales to thousands of concurrent connections cheaply.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>One thread, one event loop. Coroutines yield control at <code>await</code>, the loop runs something else, and resumes them when the I/O is ready.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What happens if a coroutine never awaits anything?</div></div></details>
+<details class="prep-question" data-question="what is the difference between a coroutine, a task and a future?" data-tags="asyncio concepts">
+<summary><span class="prep-q-no">10</span><span class="prep-q-title">What is the difference between a coroutine, a task and a future?<span class="prep-tags"><span>asyncio</span><span>concepts</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>A coroutine is what an <code>async def</code> call returns — it does nothing until awaited. A task wraps a coroutine and schedules it on the event loop, so it starts running concurrently right away. A future is the lower-level object representing a result that is not ready yet; a task is a subclass of it. The practical point is that calling a coroutine does not run it — <code>await</code> or <code>create_task</code> does.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>tasks.py</span><button class="copy-btn">Copy</button></div><pre><code>coro = fetch(url)                    # nothing has run yet
+task = asyncio.create_task(coro)     # now it is scheduled
+result = await task                  # wait for it</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>A coroutine is inert until awaited; a task schedules it to run concurrently; a future is the underlying result placeholder.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What warning do you get if you never await a coroutine?</div></div></details>
+<details class="prep-question" data-question="what does blocking the event loop mean, and how do you avoid it?" data-tags="asyncio gotcha production">
+<summary><span class="prep-q-no">11</span><span class="prep-q-title">What does blocking the event loop mean, and how do you avoid it?<span class="prep-tags"><span>asyncio</span><span>gotcha</span><span>production</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Running synchronous work — a CPU-heavy loop, <code>time.sleep</code>, or a blocking database driver — inside a coroutine. Since there is one thread, everything else stops until it finishes, so one slow call stalls every other request. Move blocking calls to a thread with <code>asyncio.to_thread</code>, and CPU-heavy work to a process pool.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>to_thread.py</span><button class="copy-btn">Copy</button></div><pre><code># bad — freezes the whole loop
+rows = legacy_db.query(sql)
+
+# good — runs in a worker thread
+rows = await asyncio.to_thread(legacy_db.query, sql)</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Running sync work inside a coroutine stalls every other task, because there is only one thread. Push it to <code>asyncio.to_thread</code> or a process pool.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How would you detect that this is happening in production?</div></div></details>
+<details class="prep-question" data-question="what is the difference between asyncio.gather and taskgroup?" data-tags="asyncio modern python">
+<summary><span class="prep-q-no">12</span><span class="prep-q-title">What is the difference between <code>asyncio.gather</code> and <code>TaskGroup</code>?<span class="prep-tags"><span>asyncio</span><span>modern python</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p><code>gather</code> runs awaitables concurrently and returns a list of results, but its error handling is awkward — by default one failure leaves the other tasks running. <code>asyncio.TaskGroup</code>, from Python 3.11, cancels the remaining tasks when one fails and raises an <code>ExceptionGroup</code>, which is what you almost always actually want. Use TaskGroup on 3.11+.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>taskgroup.py</span><button class="copy-btn">Copy</button></div><pre><code>async with asyncio.TaskGroup() as tg:
+    a = tg.create_task(fetch(url1))
+    b = tg.create_task(fetch(url2))
+# both done here; if either failed, the other was cancelled</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>gather collects results but leaves siblings running on failure; TaskGroup cancels them and raises an ExceptionGroup. Prefer TaskGroup.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What does <code>return_exceptions=True</code> change about gather?</div></div></details>
+<details class="prep-question" data-question="how do you add a timeout to an async operation?" data-tags="asyncio timeouts production">
+<summary><span class="prep-q-no">13</span><span class="prep-q-title">How do you add a timeout to an async operation?<span class="prep-tags"><span>asyncio</span><span>timeouts</span><span>production</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p><code>async with asyncio.timeout(5):</code> on Python 3.11+, or <code>asyncio.wait_for</code> before that. Both cancel the operation and raise <code>TimeoutError</code>. Every external call in production should have one — without a timeout, a hanging dependency quietly exhausts your connection pool and takes the whole service down.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p><code>asyncio.timeout</code> on 3.11+, or wait_for. Every external call needs one, or a hung dependency takes your service with it.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What is the difference between a connect timeout and a read timeout?</div></div></details>
+<details class="prep-question" data-question="how does cancellation work in asyncio?" data-tags="asyncio cancellation senior">
+<summary><span class="prep-q-no">14</span><span class="prep-q-title">How does cancellation work in asyncio?<span class="prep-tags"><span>asyncio</span><span>cancellation</span><span>senior</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Cancelling a task raises <code>CancelledError</code> inside it at its next <code>await</code>. Your cleanup should live in <code>finally</code> blocks or async context managers so it still runs. Never swallow <code>CancelledError</code> — catch it only to clean up, then re-raise, or timeouts and shutdown stop working.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>It raises CancelledError at the next await. Clean up in finally, and always re-raise rather than swallowing it.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How do you make sure cleanup itself does not get cancelled?</div></div></details>
+<details class="prep-question" data-question="how do you limit how many async operations run at once?" data-tags="asyncio backpressure production">
+<summary><span class="prep-q-no">15</span><span class="prep-q-title">How do you limit how many async operations run at once?<span class="prep-tags"><span>asyncio</span><span>backpressure</span><span>production</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>An <code>asyncio.Semaphore</code> — acquire it inside each task so only N run concurrently. This matters because <code>gather</code> over ten thousand URLs will happily open ten thousand connections and get you rate-limited or blocked. Bound concurrency to what the downstream service can actually take.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>semaphore.py</span><button class="copy-btn">Copy</button></div><pre><code>sem = asyncio.Semaphore(20)
+
+async def fetch_limited(url):
+    async with sem:
+        return await fetch(url)
+
+results = await asyncio.gather(*(fetch_limited(u) for u in urls))</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>A Semaphore around each task. Without it, gather over thousands of items opens thousands of connections at once.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How would you also add a rate limit in requests per second?</div></div></details>
+<details class="prep-question" data-question="can you mix async and sync code in one application?" data-tags="asyncio practical">
+<summary><span class="prep-q-no">16</span><span class="prep-q-title">Can you mix async and sync code in one application?<span class="prep-tags"><span>asyncio</span><span>practical</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Yes, but carefully. Call sync code from async with <code>asyncio.to_thread</code>; call async code from sync with <code>asyncio.run</code> at the top level only. What you must not do is call <code>asyncio.run</code> inside a running loop, or block the loop with a sync call. In FastAPI, defining an endpoint with <code>def</code> instead of <code>async def</code> makes the framework run it in a threadpool for you — which is the right choice when your driver is blocking.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Yes — <code>to_thread</code> to call sync from async, <code>asyncio.run</code> once at the top for the reverse. In FastAPI, a plain <code>def</code> endpoint is run in a threadpool.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> In FastAPI, when should an endpoint be <code>def</code> rather than <code>async def</code>?</div></div></details>
+<details class="prep-question" data-question="what is an async generator and when would you use one?" data-tags="asyncio generators">
+<summary><span class="prep-q-no">17</span><span class="prep-q-title">What is an async generator and when would you use one?<span class="prep-tags"><span>asyncio</span><span>generators</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>An <code>async def</code> function with <code>yield</code>, consumed with <code>async for</code>. It lets you stream results that arrive over I/O — paginated API responses, rows from an async cursor, tokens streaming back from an LLM — without collecting everything first. It is the async equivalent of a generator pipeline.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>async_gen.py</span><button class="copy-btn">Copy</button></div><pre><code>async def stream_pages(client, url):
+    while url:
+        page = await client.get(url)
+        yield page.items
+        url = page.next_url
+
+async for items in stream_pages(client, start):
+    process(items)</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>A generator you await, consumed with <code>async for</code>. Used for paginated APIs, async cursors and streaming LLM tokens.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How do you make sure an async generator is closed properly?</div></div></details>
+<details class="prep-question" data-question="what is a common asyncio mistake you have seen in production?" data-tags="asyncio production senior">
+<summary><span class="prep-q-no">18</span><span class="prep-q-title">What is a common asyncio mistake you have seen in production?<span class="prep-tags"><span>asyncio</span><span>production</span><span>senior</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Fire-and-forget tasks. Calling <code>create_task</code> without keeping a reference means the task can be garbage collected mid-run, and any exception inside it is never seen — the work silently does not happen. Keep a reference, add a done-callback that logs failures, or use a TaskGroup that surfaces the error properly.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Fire-and-forget <code>create_task</code> with no reference kept — the task can be collected and its exceptions vanish silently.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How would you structure background work so failures are always visible?</div></div></details>
+</section>
+<div class="page-nav"><a href="08-memory-performance.html"><div class="dir">← Previous</div><div class="ttl">Memory, Garbage Collection &amp; Performance</div></a><a class="next" href="10-typing-stdlib-testing.html"><div class="dir">Next →</div><div class="ttl">Type Hints, Standard Library &amp; Testing</div></a></div>
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script src="../assets/app.js?v=20260727c"></script>
+<script src="../assets/sitenav.js?v=20260727c"></script>
+<script src="../assets/enhance.js?v=20260727c"></script>
+<script src="../assets/interview-prep.js?v=20260727c"></script>
+</body>
+</html>

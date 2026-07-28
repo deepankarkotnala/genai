@@ -177,6 +177,53 @@
     button.className = "focus-btn";
     button.setAttribute("aria-label", "Toggle distraction-free focus mode");
 
+    /* ---------- Reading-width control ----------
+       Focus mode hides both rails, which on a wide monitor left the text
+       running the full width of the screen — well past a readable line length.
+       The canvas is now capped by --focus-measure in office-theme.css, and
+       this control lets the reader choose that cap. The choice is stored, so
+       it carries across pages and sessions. */
+    var WIDTH_KEY = "genai-focus-width";
+    var WIDTHS = [
+      { id: "narrow", label: "Narrow", hint: "Narrow reading width (~800px)" },
+      { id: "medium", label: "Medium", hint: "Medium reading width (~1000px)" },
+      { id: "wide", label: "Wide", hint: "Wide reading width (~1360px)" },
+      { id: "full", label: "Full", hint: "Use the full screen width" }
+    ];
+
+    function validWidth(value) {
+      for (var i = 0; i < WIDTHS.length; i++) if (WIDTHS[i].id === value) return value;
+      return "medium";
+    }
+
+    var widthWrap = document.createElement("div");
+    widthWrap.className = "focus-width";
+    widthWrap.setAttribute("role", "group");
+    widthWrap.setAttribute("aria-label", "Reading width");
+
+    function applyWidth(value, persist) {
+      value = validWidth(value);
+      document.body.setAttribute("data-focus-width", value);
+      var buttons = widthWrap.children;
+      for (var i = 0; i < buttons.length; i++) {
+        buttons[i].setAttribute("aria-pressed", buttons[i].dataset.width === value ? "true" : "false");
+      }
+      if (persist) setStored(WIDTH_KEY, value);
+    }
+
+    WIDTHS.forEach(function (option) {
+      var choice = document.createElement("button");
+      choice.type = "button";
+      choice.dataset.width = option.id;
+      choice.textContent = option.label;
+      choice.title = option.hint;
+      choice.setAttribute("aria-label", option.hint);
+      choice.addEventListener("click", function () { applyWidth(option.id, true); });
+      widthWrap.appendChild(choice);
+    });
+
+    applyWidth(getStored(WIDTH_KEY, "medium"), false);
+
     // In focus mode a single navigation bar is pinned to the top of the
     // viewport and the exit control plus the theme toggle live inside it, so
     // nothing floats above the lesson. Which element becomes that bar depends
@@ -207,6 +254,10 @@
       } else {
         host.appendChild(button);
       }
+      // The width control only makes sense while the rails are hidden, so it
+      // rides along with the exit button and sits just before it.
+      if (active) host.insertBefore(widthWrap, button);
+      else if (widthWrap.parentNode) widthWrap.parentNode.removeChild(widthWrap);
     }
 
     function apply(active, persist) {

@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html data-theme="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="#f4f5f8" name="theme-color"/>
+<title>Memory, Garbage Collection &amp; Performance — Switch job</title>
+<link href="../assets/brand/favicon.svg?v=20260727c" rel="icon" type="image/svg+xml"/>
+<link href="../assets/brand/favicon-32.png?v=20260727c" rel="icon" sizes="32x32" type="image/png"/>
+<link href="../assets/brand/favicon.ico?v=20260727c" rel="shortcut icon"/>
+<link href="../assets/brand/apple-touch-icon.png?v=20260727c" rel="apple-touch-icon" sizes="180x180"/>
+<link href="../assets/brand/site.webmanifest?v=20260727c" rel="manifest"/>
+<link color="#6f47f5" href="../assets/brand/safari-pinned-tab.svg?v=20260727c" rel="mask-icon"/>
+<meta content="Switch job" name="application-name"/>
+<meta content="Switch job" name="apple-mobile-web-app-title"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="#2563eb" name="msapplication-TileColor"/>
+<meta content="website" property="og:type"/>
+<meta content="Switch job Learning Platform" property="og:site_name"/>
+<meta content="Memory, Garbage Collection &amp; Performance — Switch job" property="og:title"/>
+<meta content="Reference counting, the cycle collector, leaks, profiling and making Python faster." property="og:description"/>
+<meta content="../assets/brand/social-card.png?v=20260727c" property="og:image"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="Memory, Garbage Collection &amp; Performance — Switch job" name="twitter:title"/>
+<meta content="Reference counting, the cycle collector, leaks, profiling and making Python faster." name="twitter:description"/>
+<link href="../assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
+<meta content="Reference counting, the cycle collector, leaks, profiling and making Python faster." name="description"/>
+<link href="../assets/styles.css?v=20260727c" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260727e" rel="stylesheet"/>
+</head>
+<body data-page="pyint-memory-performance" data-prep-section="interview">
+<div class="app">
+<aside class="sidebar">
+<div class="brand">
+<a class="brand-link" href="../index.html" aria-label="Switch job home">
+<span class="brand-mark" aria-hidden="true"><img src="../assets/brand/switch-job-logo.png?v=20260727c" alt=""/></span>
+<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+</a>
+</div>
+<div class="search-wrap"><div class="search-box"><svg fill="none" height="15" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="15"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg><input data-search="" placeholder="Search everything…  ( / )" type="text"/></div><div class="search-results"></div></div>
+<nav class="nav"></nav>
+</aside>
+<div class="backdrop"></div>
+<div class="main">
+<header class="topbar">
+<button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
+<div class="crumbs">Python &amp; AI/ML Interviews / Memory, Garbage Collection &amp; Performance</div>
+<button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
+</header>
+<div class="content-wrap">
+<main class="content prep-content">
+<div class="eyebrow"><span class="dot"></span> Topic 08 · Advanced Python</div>
+<h1>Memory, Garbage Collection &amp; Performance</h1>
+<p class="lead">&ldquo;How does Python memory management work?&rdquo; is a standing question for anyone with two or more years of experience. The answer is two mechanisms, not one, and the second is the part candidates forget.</p>
+<div class="meta-row"><span class="pill purple">15 questions</span><span class="pill">Mid to senior · systems depth</span><span class="pill blue">Checked July 2026</span></div>
+<div class="callout key"><div class="c-ico">⌁</div><div class="c-body"><div class="c-title">What the interviewer is really testing</div><p>Reference counting frees most objects instantly; a separate cycle collector cleans up the objects that reference each other. Say both. Then be ready to explain how you would actually find a memory leak or a slow function in a running service, because that follow-up is where the real signal is.</p></div></div>
+<div class="prep-toolbar" data-sticky-prep=""><label class="prep-filter"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><input data-question-filter="" placeholder="Filter these questions…"/></label><button class="btn ghost" data-expand-answers="" type="button">Open all</button><span class="prep-count" data-question-count="">15 questions</span></div>
+<h2 id="how-python-manages-memory">How Python manages memory</h2>
+<section aria-label="Interview questions" class="prep-question-list">
+<details class="prep-question" data-question="how does python memory management work?" data-tags="memory gc high-frequency">
+<summary><span class="prep-q-no">01</span><span class="prep-q-title">How does Python memory management work?<span class="prep-tags"><span>memory</span><span>gc</span><span>high-frequency</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Two mechanisms. Every object carries a reference count, and when it drops to zero the object is freed immediately — that handles the vast majority of memory. A separate generational garbage collector periodically finds groups of objects that reference each other but are unreachable from your code, since their counts never reach zero. On top of that, CPython pools small allocations so it does not ask the OS for memory on every object.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Reference counting frees objects the moment nothing points at them, and a generational cycle collector cleans up reference cycles that counting cannot.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Give me an example of a cycle that reference counting cannot free.</div></div></details>
+<details class="prep-question" data-question="what is a reference cycle, and how does python handle it?" data-tags="gc memory">
+<summary><span class="prep-q-no">02</span><span class="prep-q-title">What is a reference cycle, and how does Python handle it?<span class="prep-tags"><span>gc</span><span>memory</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Two or more objects pointing at each other — a parent holding children that hold the parent, or a list containing itself. Their counts never reach zero even after your last reference is gone, so reference counting alone would leak them. The cycle collector walks tracked objects, finds groups unreachable from the outside, and frees them.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>cycle.py</span><button class="copy-btn">Copy</button></div><pre><code>a, b = Node(), Node()
+a.peer = b
+b.peer = a          # each keeps the other alive
+del a, b            # counts stay at 1 — the cycle collector handles it</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Objects referencing each other, so their counts never hit zero. The generational garbage collector detects and frees them.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How would you avoid creating the cycle in the first place?</div></div></details>
+<details class="prep-question" data-question="what does &#x27;generational&#x27; mean in python&#x27;s garbage collector?" data-tags="gc memory">
+<summary><span class="prep-q-no">03</span><span class="prep-q-title">What does 'generational' mean in Python's garbage collector?<span class="prep-tags"><span>gc</span><span>memory</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>New objects start in generation 0 and are scanned often; those that survive move to generation 1, then 2, which are scanned progressively less. The assumption is that most objects die young, so scanning the young ones frequently catches most garbage for very little work. You can inspect and tune this with the <code>gc</code> module, though tuning is rarely the right fix.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Objects are grouped by age; young ones are checked often, old ones rarely, because most objects die young.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> When would disabling the GC actually help performance?</div></div></details>
+<details class="prep-question" data-question="what is a weak reference and when would you use one?" data-tags="memory weakref">
+<summary><span class="prep-q-no">04</span><span class="prep-q-title">What is a weak reference and when would you use one?<span class="prep-tags"><span>memory</span><span>weakref</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>A reference that does not increase the reference count, so it never keeps the object alive. Use it for caches and observer registries where you want the entry to disappear when the real owner drops the object — <code>weakref.WeakValueDictionary</code> is the usual tool. It also breaks parent-child cycles: keep the child's link back to the parent weak.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>A reference that does not keep the object alive. Used for caches and to break parent-child cycles.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What happens when you access a weak reference after the object is gone?</div></div></details>
+<details class="prep-question" data-question="how would you find a memory leak in a python service?" data-tags="memory debugging production">
+<summary><span class="prep-q-no">05</span><span class="prep-q-title">How would you find a memory leak in a Python service?<span class="prep-tags"><span>memory</span><span>debugging</span><span>production</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Confirm it first — plot resident memory over time; steady growth under steady load is a leak, a sawtooth is normal. Then use <code>tracemalloc</code> to snapshot allocations at two points and diff them, which shows the lines allocating what is not being freed. <code>objgraph</code> or <code>gc.get_objects()</code> helps find what is holding the references. In practice the cause is usually an unbounded cache, a growing module-level list, or a closure holding a large object.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>tracemalloc.py</span><button class="copy-btn">Copy</button></div><pre><code>import tracemalloc
+
+tracemalloc.start()
+snap1 = tracemalloc.take_snapshot()
+... run the workload ...
+snap2 = tracemalloc.take_snapshot()
+for stat in snap2.compare_to(snap1, &quot;lineno&quot;)[:10]:
+    print(stat)</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Confirm growth under steady load, diff two tracemalloc snapshots to find the allocating lines, then look for an unbounded cache or a growing global.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What is the most common cause you have personally seen?</div></div></details>
+<details class="prep-question" data-question="does python return freed memory to the operating system?" data-tags="memory cpython">
+<summary><span class="prep-q-no">06</span><span class="prep-q-title">Does Python return freed memory to the operating system?<span class="prep-tags"><span>memory</span><span>cpython</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Not always. Small objects come from CPython's internal pools, and those pools are only released when an entire arena is empty, which fragmentation often prevents. So a process that briefly loaded a huge list can keep a high resident size afterwards. If memory must come back, do the heavy work in a separate process and let it exit.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Often not — small-object pools are only returned when fully empty, so peak usage tends to stick. Isolate heavy work in a subprocess.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How does that change how you size a container's memory limit?</div></div></details>
+<details class="prep-question" data-question="what is interning, and where does python do it?" data-tags="memory interning cpython">
+<summary><span class="prep-q-no">07</span><span class="prep-q-title">What is interning, and where does Python do it?<span class="prep-tags"><span>memory</span><span>interning</span><span>cpython</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Reusing one object for a value instead of creating duplicates. CPython interns small integers from -5 to 256 and short identifier-like strings, so those comparisons with <code>is</code> can appear to work. It saves memory and speeds up dict lookups, but it is an implementation detail you must never depend on.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Reusing one object for common values — small ints and identifier-like strings. It is a CPython optimisation, not a guarantee.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How would you deliberately intern a string, and why might you?</div></div></details>
+</section>
+<h2 id="making-python-faster">Making Python faster</h2>
+<section aria-label="Interview questions" class="prep-question-list">
+<details class="prep-question" data-question="how do you find out why python code is slow?" data-tags="profiling performance high-frequency">
+<summary><span class="prep-q-no">08</span><span class="prep-q-title">How do you find out why Python code is slow?<span class="prep-tags"><span>profiling</span><span>performance</span><span>high-frequency</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Measure before changing anything. <code>cProfile</code> gives per-function call counts and cumulative time, which finds the hot function. <code>line_profiler</code> narrows it to the line. For a live service, a sampling profiler like <code>py-spy</code> attaches to a running process with almost no overhead. Guessing at the bottleneck is how people optimise the wrong 5% of the code.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>profile.sh</span><button class="copy-btn">Copy</button></div><pre><code>python -m cProfile -s cumtime app.py | head -20
+py-spy top --pid 4242          # live process, no restart</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>cProfile for per-function cost, line_profiler to narrow it down, py-spy to profile a running process. Always measure first.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What is the difference between total and cumulative time in cProfile output?</div></div></details>
+<details class="prep-question" data-question="what are the biggest wins when optimising python?" data-tags="performance practical">
+<summary><span class="prep-q-no">09</span><span class="prep-q-title">What are the biggest wins when optimising Python?<span class="prep-tags"><span>performance</span><span>practical</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Fix the algorithm first — an O(n²) loop replaced by a dict lookup beats any micro-optimisation. Then move work out of loops, use built-ins and comprehensions which run in C, and batch I/O and database calls instead of calling per item. Only after that consider NumPy vectorisation, caching, or pushing hot code into C or Rust.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Algorithm first, then batching I/O, then built-ins and comprehensions, then vectorisation. Micro-optimisation is last.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> You have a loop doing one database query per item — what do you do?</div></div></details>
+<details class="prep-question" data-question="why is a list membership test slow and a set test fast?" data-tags="performance complexity high-frequency">
+<summary><span class="prep-q-no">10</span><span class="prep-q-title">Why is a list membership test slow and a set test fast?<span class="prep-tags"><span>performance</span><span>complexity</span><span>high-frequency</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p><code>x in list</code> scans item by item, so it is O(n). <code>x in set</code> hashes <code>x</code> and jumps to a slot, so it is O(1). Inside a loop that difference turns a linear job into a quadratic one — converting the lookup collection to a set is the single most common real speedup in ordinary Python code.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>membership.py</span><button class="copy-btn">Copy</button></div><pre><code># O(n * m)
+[x for x in items if x in blocklist]          # blocklist is a list
+
+# O(n)
+blocked = set(blocklist)
+[x for x in items if x in blocked]</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Lists scan linearly, sets hash directly. Converting a lookup list to a set is the most common real-world speedup.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> When would building the set cost more than it saves?</div></div></details>
+<details class="prep-question" data-question="why is string concatenation in a loop slow?" data-tags="performance strings">
+<summary><span class="prep-q-no">11</span><span class="prep-q-title">Why is string concatenation in a loop slow?<span class="prep-tags"><span>performance</span><span>strings</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Strings are immutable, so every <code>+=</code> allocates a new string and copies everything so far — n concatenations copy roughly n²/2 characters. Collect the pieces in a list and <code>"".join()</code> once, which allocates a single result. CPython sometimes optimises the simple case in place, but that is fragile and disappears the moment another name references the string.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Each += copies the whole string because strings are immutable, making it quadratic. Collect in a list and join once.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What about building large strings with io.StringIO?</div></div></details>
+<details class="prep-question" data-question="when does __slots__ actually help?" data-tags="performance memory slots">
+<summary><span class="prep-q-no">12</span><span class="prep-q-title">When does <code>__slots__</code> actually help?<span class="prep-tags"><span>performance</span><span>memory</span><span>slots</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>When you create very many small instances. Removing the per-instance <code>__dict__</code> can cut memory substantially and speed up attribute access. At a few thousand objects it is noise; at a few million it is the difference between fitting in memory and not. Measure with <code>sys.getsizeof</code> or <code>tracemalloc</code> rather than assuming.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Only at large object counts — it drops the per-instance dict, saving real memory across millions of instances.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What do you lose by adding <code>__slots__</code>?</div></div></details>
+<details class="prep-question" data-question="how do you speed up code that is genuinely cpu-bound?" data-tags="performance cpu-bound">
+<summary><span class="prep-q-no">13</span><span class="prep-q-title">How do you speed up code that is genuinely CPU-bound?<span class="prep-tags"><span>performance</span><span>cpu-bound</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>First check whether the work can be vectorised with NumPy or expressed in Pandas, which pushes the loop into C. If not, use <code>multiprocessing</code> to use more cores, since threads will not help while the GIL exists. Beyond that, compile the hot path with Numba or Cython, or call a library written in C or Rust. Rewriting everything is almost never the answer — one function usually dominates.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Vectorise with NumPy, then multiprocessing for more cores, then Numba, Cython or a native library for the one hot function.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Why will threads not help a CPU-bound Python loop?</div></div></details>
+<details class="prep-question" data-question="what is caching, and where does it go wrong?" data-tags="performance caching">
+<summary><span class="prep-q-no">14</span><span class="prep-q-title">What is caching, and where does it go wrong?<span class="prep-tags"><span>performance</span><span>caching</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Storing an expensive result so later calls are cheap — <code>lru_cache</code> in-process, Redis across processes. It goes wrong through staleness when the source changes and nothing invalidates, through unbounded growth when there is no <code>maxsize</code> or TTL, and through caching per-user data under a shared key, which is a data-leak bug rather than a performance one. Always define what invalidates an entry before you add the cache.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Store expensive results, but always define the invalidation rule, a size limit, and make sure the key includes everything the result depends on.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How would you cache per-tenant data safely?</div></div></details>
+<details class="prep-question" data-question="how would you process a file that is larger than available memory?" data-tags="memory generators practical">
+<summary><span class="prep-q-no">15</span><span class="prep-q-title">How would you process a file that is larger than available memory?<span class="prep-tags"><span>memory</span><span>generators</span><span>practical</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Stream it. Iterating a file object yields one line at a time, so memory stays flat regardless of file size. For structured data, read in chunks — <code>pandas.read_csv(chunksize=...)</code> or a columnar format like Parquet that lets you read only the columns you need. Never call <code>.read()</code> or <code>readlines()</code> on a file you did not size first.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Stream it line by line or in chunks, and use a columnar format to read only the columns you need. Never read the whole file at once.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How would you do a group-by aggregation over a file that does not fit in memory?</div></div></details>
+</section>
+<div class="page-nav"><a href="07-exceptions-packaging.html"><div class="dir">← Previous</div><div class="ttl">Exceptions, Modules &amp; Packaging</div></a><a class="next" href="09-concurrency.html"><div class="dir">Next →</div><div class="ttl">Threads, Processes &amp; Asyncio</div></a></div>
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script src="../assets/app.js?v=20260727c"></script>
+<script src="../assets/sitenav.js?v=20260727c"></script>
+<script src="../assets/enhance.js?v=20260727c"></script>
+<script src="../assets/interview-prep.js?v=20260727c"></script>
+</body>
+</html>

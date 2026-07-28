@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html data-theme="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="#f4f5f8" name="theme-color"/>
+<title>Decorators, Context Managers &amp; Descriptors — Switch job</title>
+<link href="../assets/brand/favicon.svg?v=20260727c" rel="icon" type="image/svg+xml"/>
+<link href="../assets/brand/favicon-32.png?v=20260727c" rel="icon" sizes="32x32" type="image/png"/>
+<link href="../assets/brand/favicon.ico?v=20260727c" rel="shortcut icon"/>
+<link href="../assets/brand/apple-touch-icon.png?v=20260727c" rel="apple-touch-icon" sizes="180x180"/>
+<link href="../assets/brand/site.webmanifest?v=20260727c" rel="manifest"/>
+<link color="#6f47f5" href="../assets/brand/safari-pinned-tab.svg?v=20260727c" rel="mask-icon"/>
+<meta content="Switch job" name="application-name"/>
+<meta content="Switch job" name="apple-mobile-web-app-title"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="#2563eb" name="msapplication-TileColor"/>
+<meta content="website" property="og:type"/>
+<meta content="Switch job Learning Platform" property="og:site_name"/>
+<meta content="Decorators, Context Managers &amp; Descriptors — Switch job" property="og:title"/>
+<meta content="Decorators with and without arguments, with-statements, properties and descriptors." property="og:description"/>
+<meta content="../assets/brand/social-card.png?v=20260727c" property="og:image"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="Decorators, Context Managers &amp; Descriptors — Switch job" name="twitter:title"/>
+<meta content="Decorators with and without arguments, with-statements, properties and descriptors." name="twitter:description"/>
+<link href="../assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
+<meta content="Decorators with and without arguments, with-statements, properties and descriptors." name="description"/>
+<link href="../assets/styles.css?v=20260727c" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260727e" rel="stylesheet"/>
+</head>
+<body data-page="pyint-decorators-context" data-prep-section="interview">
+<div class="app">
+<aside class="sidebar">
+<div class="brand">
+<a class="brand-link" href="../index.html" aria-label="Switch job home">
+<span class="brand-mark" aria-hidden="true"><img src="../assets/brand/switch-job-logo.png?v=20260727c" alt=""/></span>
+<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+</a>
+</div>
+<div class="search-wrap"><div class="search-box"><svg fill="none" height="15" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="15"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg><input data-search="" placeholder="Search everything…  ( / )" type="text"/></div><div class="search-results"></div></div>
+<nav class="nav"></nav>
+</aside>
+<div class="backdrop"></div>
+<div class="main">
+<header class="topbar">
+<button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
+<div class="crumbs">Python &amp; AI/ML Interviews / Decorators, Context Managers &amp; Descriptors</div>
+<button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
+</header>
+<div class="content-wrap">
+<main class="content prep-content">
+<div class="eyebrow"><span class="dot"></span> Topic 05 · Python fundamentals</div>
+<h1>Decorators, Context Managers &amp; Descriptors</h1>
+<p class="lead">Expect to be asked to write a decorator on the spot — usually a timer, a retry, or one that takes arguments. Practise typing the three-level version from memory until it is automatic.</p>
+<div class="meta-row"><span class="pill purple">18 questions</span><span class="pill">Live-coding favourite</span><span class="pill blue">Checked July 2026</span></div>
+<div class="callout key"><div class="c-ico">⌁</div><div class="c-body"><div class="c-title">What the interviewer is really testing</div><p>A decorator is just a function that takes a function and returns a replacement. If you can say that sentence and then write the <code>*args, **kwargs</code> wrapper without hesitating, you have passed. The follow-up is almost always &ldquo;now make it take an argument&rdquo;, which needs one more layer of nesting.</p></div></div>
+<div class="prep-toolbar" data-sticky-prep=""><label class="prep-filter"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><input data-question-filter="" placeholder="Filter these questions…"/></label><button class="btn ghost" data-expand-answers="" type="button">Open all</button><span class="prep-count" data-question-count="">18 questions</span></div>
+<h2 id="decorators">Decorators</h2>
+<section aria-label="Interview questions" class="prep-question-list">
+<details class="prep-question" data-question="what is a decorator?" data-tags="decorators high-frequency">
+<summary><span class="prep-q-no">01</span><span class="prep-q-title">What is a decorator?<span class="prep-tags"><span>decorators</span><span>high-frequency</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>A function that takes another function, wraps it with extra behaviour, and returns the replacement. <code>@my_decorator</code> above a <code>def</code> is shorthand for <code>func = my_decorator(func)</code>. It lets you add logging, timing, caching, retries or permission checks without touching the function's own code.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>decorator.py</span><button class="copy-btn">Copy</button></div><pre><code>import functools, time
+
+def timed(func):                          # 1. takes the original function
+    @functools.wraps(func)                # keeps func&#x27;s name and docstring
+    def wrapper(*args, **kwargs):         # 2. stands in for the original
+        start = time.perf_counter()
+        result = func(*args, **kwargs)    # 3. call what we wrapped
+        print(f&quot;{func.__name__} took {time.perf_counter() - start:.3f}s&quot;)
+        return result                     # 4. hand the real result back
+    return wrapper                        # 5. this replaces the original
+
+@timed                                    # same as: train_model = timed(train_model)
+def train_model(data): ...</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>A function that wraps another function and returns the replacement. <code>@d</code> is just <code>func = d(func)</code>.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Now write one that takes an argument, like a retry count.</div></div></details>
+<details class="prep-question" data-question="how do you write a decorator that takes arguments?" data-tags="decorators coding high-frequency">
+<summary><span class="prep-q-no">02</span><span class="prep-q-title">How do you write a decorator that takes arguments?<span class="prep-tags"><span>decorators</span><span>coding</span><span>high-frequency</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>You need three levels: an outer function that takes the arguments, a middle one that takes the function, and an inner wrapper that takes the call's arguments. The outer function is really a decorator <em>factory</em> — it returns a decorator. That extra layer is the whole trick.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>retry.py</span><button class="copy-btn">Copy</button></div><pre><code>import functools, time
+
+def retry(times=3, delay=1.0):                 # LEVEL 1: takes the settings
+    def decorator(func):                       # LEVEL 2: takes the function
+        @functools.wraps(func)
+        def wrapper(*args, **kwargs):          # LEVEL 3: takes the call args
+            for attempt in range(times):
+                try:
+                    return func(*args, **kwargs)   # success -&gt; done
+                except Exception:
+                    if attempt == times - 1:
+                        raise                      # last try -&gt; give up loudly
+                    # wait 1s, then 2s, then 4s... so retries do not pile up
+                    time.sleep(delay * (2 ** attempt))
+        return wrapper
+    return decorator
+
+# The extra level exists purely so the decorator can take arguments:
+# retry(times=5) RUNS first and returns the real decorator.
+@retry(times=5, delay=0.5)
+def call_api(): ...</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Three nested functions: the outer takes the arguments and returns the real decorator, which returns the wrapper.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How would you make it work both with and without parentheses?</div></div></details>
+<details class="prep-question" data-question="why do you need functools.wraps?" data-tags="decorators functools">
+<summary><span class="prep-q-no">03</span><span class="prep-q-title">Why do you need <code>functools.wraps</code>?<span class="prep-tags"><span>decorators</span><span>functools</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Without it, the thing callers now hold is the wrapper, not your function. So its <code>__name__</code> is <code>"wrapper"</code>, its docstring is gone, and anything inspecting it sees the wrapper's arguments instead of the real ones. That breaks tracebacks, help text, documentation tools, and frameworks that read signatures — FastAPI, for example, builds routes from them. One line prevents all of it.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>It copies the original name, docstring and metadata to the wrapper so debugging, docs and signature-reading frameworks still work.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Does <code>wraps</code> fix the signature for <code>inspect.signature</code> too?</div></div></details>
+<details class="prep-question" data-question="how do you apply more than one decorator, and in what order do they run?" data-tags="decorators order trick question">
+<summary><span class="prep-q-no">04</span><span class="prep-q-title">How do you apply more than one decorator, and in what order do they run?<span class="prep-tags"><span>decorators</span><span>order</span><span>trick question</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Stacked decorators apply bottom-up: the one nearest the <code>def</code> wraps first, and the top one wraps last. At call time that means the top decorator's code runs first, since it is the outermost layer. This matters when order changes behaviour — authentication should sit outside caching, not inside it.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>stacking.py</span><button class="copy-btn">Copy</button></div><pre><code>@log        # runs first at call time (outermost)
+@cache      # applied first (innermost)
+def fetch(): ...
+
+# equivalent to: fetch = log(cache(fetch))</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Applied bottom-up, executed top-down. The bottom one wraps first; the top one runs first.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Where would putting the cache above the auth check cause a security bug?</div></div></details>
+<details class="prep-question" data-question="how would you decorate a class method?" data-tags="decorators oop">
+<summary><span class="prep-q-no">05</span><span class="prep-q-title">How would you decorate a class method?<span class="prep-tags"><span>decorators</span><span>oop</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>The same way — the wrapper just has to pass <code>self</code> through, which <code>*args</code> does automatically since <code>self</code> is the first positional argument. Order matters with <code>@staticmethod</code>, <code>@classmethod</code> and <code>@property</code>: they must be the outermost decorator, because they change what kind of object the attribute is.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Identically — <code>*args</code> carries <code>self</code> through. But <code>@staticmethod</code>, <code>@classmethod</code> and <code>@property</code> must go on top.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What actually breaks if you put <code>@property</code> underneath your decorator?</div></div></details>
+<details class="prep-question" data-question="what are decorators used for in real production code?" data-tags="decorators practical">
+<summary><span class="prep-q-no">06</span><span class="prep-q-title">What are decorators used for in real production code?<span class="prep-tags"><span>decorators</span><span>practical</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Routing in Flask and FastAPI, caching with <code>lru_cache</code>, retries around flaky network calls, timing and metrics, authentication and permission checks, input validation, and registering plugins into a registry. The common thread is cross-cutting concerns — behaviour that many functions need but that is not their real job.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Cross-cutting concerns: routing, caching, retries, auth, metrics and validation. Behaviour many functions need but none of them own.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Give me one you actually wrote yourself and why.</div></div></details>
+<details class="prep-question" data-question="what is a class-based decorator, and when is it better?" data-tags="decorators oop">
+<summary><span class="prep-q-no">07</span><span class="prep-q-title">What is a class-based decorator, and when is it better?<span class="prep-tags"><span>decorators</span><span>oop</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>A class that stores the function in <code>__init__</code> and implements <code>__call__</code> so instances behave like functions. It is better when the decorator needs real state you want to inspect afterwards — a call counter, collected metrics, a cache you want to expose and clear. For simple wrapping, a function is less machinery.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>class_decorator.py</span><button class="copy-btn">Copy</button></div><pre><code>class CountCalls:
+    def __init__(self, func):
+        functools.update_wrapper(self, func)   # copy name/docstring across
+        self.func, self.count = func, 0        # state lives on the instance
+
+    # __call__ makes the instance usable like a function,
+    # so @CountCalls behaves the same as a function decorator.
+    def __call__(self, *args, **kwargs):
+        self.count += 1                        # inspect later: fn.count
+        return self.func(*args, **kwargs)</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>A class implementing <code>__call__</code>. Worth it when the decorator holds state you want to read or reset later.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What goes wrong when you use a class decorator on a method?</div></div></details>
+</section>
+<h2 id="context-managers">Context managers</h2>
+<section aria-label="Interview questions" class="prep-question-list">
+<details class="prep-question" data-question="what does the with statement do?" data-tags="context manager high-frequency">
+<summary><span class="prep-q-no">08</span><span class="prep-q-title">What does the <code>with</code> statement do?<span class="prep-tags"><span>context manager</span><span>high-frequency</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>It guarantees setup and teardown around a block. On entry it calls <code>__enter__</code>, and on exit — normally, by <code>return</code>, or because of an exception — it calls <code>__exit__</code>. That is why <code>with open(...)</code> closes the file even if the body raises, which a plain <code>close()</code> at the end would not.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>It runs setup and guaranteed cleanup around a block, even if the block raises. That is why files always close.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What are the two methods a context manager must implement?</div></div></details>
+<details class="prep-question" data-question="how do you write a context manager as a class?" data-tags="context manager coding">
+<summary><span class="prep-q-no">09</span><span class="prep-q-title">How do you write a context manager as a class?<span class="prep-tags"><span>context manager</span><span>coding</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Implement <code>__enter__</code>, returning whatever the <code>as</code> clause should bind, and <code>__exit__(exc_type, exc_value, traceback)</code> for cleanup. If <code>__exit__</code> returns a truthy value it swallows the exception — almost always a mistake, so return <code>None</code> unless you mean it.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>cm_class.py</span><button class="copy-btn">Copy</button></div><pre><code>class Timer:
+    def __enter__(self):
+        self.start = time.perf_counter()
+        return self          # whatever you return is bound by &quot;as&quot;
+
+    # Called on the way out — normally, on return, or on an exception.
+    # The three arguments describe the exception, or are None if there was none.
+    def __exit__(self, exc_type, exc, tb):
+        self.elapsed = time.perf_counter() - self.start
+        return None          # falsy -&gt; let any exception carry on rising
+
+# with Timer() as t:
+#     slow_thing()
+# print(t.elapsed)</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p><code>__enter__</code> for setup and the bound value, <code>__exit__</code> for cleanup. Return None from exit so exceptions propagate.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> When would you deliberately return True from <code>__exit__</code>?</div></div></details>
+<details class="prep-question" data-question="how do you write one with contextlib.contextmanager?" data-tags="context manager contextlib">
+<summary><span class="prep-q-no">10</span><span class="prep-q-title">How do you write one with <code>contextlib.contextmanager</code>?<span class="prep-tags"><span>context manager</span><span>contextlib</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Write a generator that yields exactly once: everything before the <code>yield</code> is setup, the yielded value is what <code>as</code> binds, and everything after is cleanup. Wrap the yield in <code>try/finally</code> so cleanup still runs when the block raises. It is far less code than the class version for simple cases.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>cm_gen.py</span><button class="copy-btn">Copy</button></div><pre><code>from contextlib import contextmanager
+
+@contextmanager
+def transaction(conn):
+    tx = conn.begin()        # setup: everything before the yield
+    try:
+        yield tx             # the body of the &quot;with&quot; block runs here
+        tx.commit()          # reached only if the block finished cleanly
+    except Exception:
+        tx.rollback()        # the block raised -&gt; undo everything
+        raise                # re-raise so the caller still sees the error
+
+# with transaction(conn) as tx:
+#     tx.execute(...)        # commits on success, rolls back on failure</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>A generator that yields once — setup before, cleanup after, wrapped in try/finally so it runs on failure too.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What happens if your generator yields twice?</div></div></details>
+<details class="prep-question" data-question="what real problems do context managers solve beyond files?" data-tags="context manager practical">
+<summary><span class="prep-q-no">11</span><span class="prep-q-title">What real problems do context managers solve beyond files?<span class="prep-tags"><span>context manager</span><span>practical</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Database transactions that must commit or roll back, acquiring and releasing locks, opening and closing network connections, temporarily changing state such as a working directory or a log level, and timing a block. Anything with a paired &ldquo;must undo this&rdquo; step belongs in a context manager rather than in a <code>finally</code> you might forget.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Transactions, locks, connections, temporary state changes, and timing. Anything with a mandatory undo step.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How would you manage two resources that must be released in order?</div></div></details>
+<details class="prep-question" data-question="what is contextlib.suppress and how is it different from a bare except?" data-tags="context manager exceptions">
+<summary><span class="prep-q-no">12</span><span class="prep-q-title">What is <code>contextlib.suppress</code> and how is it different from a bare <code>except</code>?<span class="prep-tags"><span>context manager</span><span>exceptions</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p><code>with suppress(FileNotFoundError):</code> ignores exactly the exceptions you name and nothing else. It is a targeted, readable alternative to <code>try/except/pass</code>. A bare <code>except:</code> swallows everything including <code>KeyboardInterrupt</code>, which is why it is almost always wrong.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>It ignores only the exceptions you name, unlike a bare except which hides everything including interrupts.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> When is ignoring an exception genuinely the right call?</div></div></details>
+<details class="prep-question" data-question="what does async with do differently?" data-tags="context manager asyncio">
+<summary><span class="prep-q-no">13</span><span class="prep-q-title">What does <code>async with</code> do differently?<span class="prep-tags"><span>context manager</span><span>asyncio</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>It uses <code>__aenter__</code> and <code>__aexit__</code>, which are coroutines, so setup and teardown can await. You need it whenever acquiring or releasing the resource is itself I/O — an async database session, an HTTP client pool, an async lock. Using a plain <code>with</code> on such an object raises a <code>TypeError</code>.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>It awaits the setup and teardown, using <code>__aenter__</code> and <code>__aexit__</code>. Needed when acquiring the resource is itself I/O.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How would you write an async context manager with contextlib?</div></div></details>
+</section>
+<h2 id="properties-and-descriptors">Properties and descriptors</h2>
+<section aria-label="Interview questions" class="prep-question-list">
+<details class="prep-question" data-question="what does @property do, and why not just use a public attribute?" data-tags="property oop high-frequency">
+<summary><span class="prep-q-no">14</span><span class="prep-q-title">What does <code>@property</code> do, and why not just use a public attribute?<span class="prep-tags"><span>property</span><span>oop</span><span>high-frequency</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p><code>@property</code> makes a method callable like an attribute, so you can add validation, computation or logging later without changing any calling code. That is the point: start with a plain attribute, and convert it to a property when you need behaviour — the public interface never changes. Getters and setters everywhere upfront is a Java habit, not a Python one.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>property.py</span><button class="copy-btn">Copy</button></div><pre><code>class Account:
+    def __init__(self, balance):
+        self._balance = balance      # underscore = internal, use the property
+
+    @property
+    def balance(self):               # called on: account.balance
+        return self._balance
+
+    @balance.setter
+    def balance(self, value):        # called on: account.balance = 50
+        if value &lt; 0:
+            raise ValueError(&quot;balance cannot be negative&quot;)
+        self._balance = value
+
+# Callers still write account.balance — they never learn it became a method.</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>It lets a method be accessed like an attribute, so you can add validation later without breaking callers. Start plain, upgrade when needed.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What happens if a property getter is expensive and called in a loop?</div></div></details>
+<details class="prep-question" data-question="what is a descriptor?" data-tags="descriptor advanced">
+<summary><span class="prep-q-no">15</span><span class="prep-q-title">What is a descriptor?<span class="prep-tags"><span>descriptor</span><span>advanced</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>An object that defines <code>__get__</code>, <code>__set__</code> or <code>__delete__</code> and is used as a class attribute, so it controls what happens when that attribute is read or written. It is the mechanism behind <code>property</code>, <code>classmethod</code>, <code>staticmethod</code> and ORM model fields. You rarely write one, but knowing it explains how those work.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>A class attribute that intercepts get, set or delete. It is what property, classmethod and ORM fields are built on.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What is the difference between a data and a non-data descriptor?</div></div></details>
+<details class="prep-question" data-question="what is the difference between a data and a non-data descriptor?" data-tags="descriptor advanced">
+<summary><span class="prep-q-no">16</span><span class="prep-q-title">What is the difference between a data and a non-data descriptor?<span class="prep-tags"><span>descriptor</span><span>advanced</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>A data descriptor defines <code>__set__</code> or <code>__delete__</code>; a non-data one only defines <code>__get__</code>. It matters for lookup order: data descriptors win over the instance dictionary, non-data descriptors lose to it. That is why a <code>property</code> cannot be shadowed by an instance attribute but a cached method can.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Data descriptors define <code>__set__</code> and take priority over the instance dict; non-data ones only define <code>__get__</code> and lose to it.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How does <code>functools.cached_property</code> use that difference?</div></div></details>
+<details class="prep-question" data-question="what is functools.cached_property?" data-tags="property caching performance">
+<summary><span class="prep-q-no">17</span><span class="prep-q-title">What is <code>functools.cached_property</code>?<span class="prep-tags"><span>property</span><span>caching</span><span>performance</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>A property that runs once and then stores the answer directly on the object, so every later read skips the method and picks up the stored value. Use it for expensive derived values on an object that does not change; do not use it if the underlying data can change, because nothing invalidates the cache.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>A property that computes once and caches on the instance. Only safe when the underlying data will not change.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How would you invalidate it if the data did change?</div></div></details>
+<details class="prep-question" data-question="what are __slots__ and what do they cost?" data-tags="slots memory oop">
+<summary><span class="prep-q-no">18</span><span class="prep-q-title">What are <code>__slots__</code> and what do they cost?<span class="prep-tags"><span>slots</span><span>memory</span><span>oop</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Declaring <code>__slots__</code> replaces the per-instance dictionary with a fixed set of attribute slots, cutting memory noticeably and speeding up access. The cost is that you cannot add attributes not in the list, and it complicates multiple inheritance and weak references. It is worth it when you have hundreds of thousands of small objects, and pointless otherwise.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>slots.py</span><button class="copy-btn">Copy</button></div><pre><code>class Point:
+    # Fixes the allowed attributes, which removes the per-instance __dict__.
+    # Saves real memory once you have millions of these objects.
+    __slots__ = (&quot;x&quot;, &quot;y&quot;)
+
+    def __init__(self, x, y):
+        self.x, self.y = x, y
+
+# p.z = 3  -&gt;  AttributeError: Point has no attribute &#x27;z&#x27;
+</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>They remove the per-instance dict to save memory, at the cost of not being able to add new attributes. Only worth it at large object counts.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Can you use <code>__slots__</code> with a dataclass?</div></div></details>
+</section>
+<div class="page-nav"><a href="04-iterators-generators.html"><div class="dir">← Previous</div><div class="ttl">Iterators, Generators &amp; Comprehensions</div></a><a class="next" href="06-oop-data-model.html"><div class="dir">Next →</div><div class="ttl">OOP &amp; the Python Data Model</div></a></div>
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script src="../assets/app.js?v=20260727c"></script>
+<script src="../assets/sitenav.js?v=20260727c"></script>
+<script src="../assets/enhance.js?v=20260727c"></script>
+<script src="../assets/interview-prep.js?v=20260727c"></script>
+</body>
+</html>

@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html data-theme="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="#f4f5f8" name="theme-color"/>
+<title>Exceptions, Modules &amp; Packaging — Switch job</title>
+<link href="../assets/brand/favicon.svg?v=20260727c" rel="icon" type="image/svg+xml"/>
+<link href="../assets/brand/favicon-32.png?v=20260727c" rel="icon" sizes="32x32" type="image/png"/>
+<link href="../assets/brand/favicon.ico?v=20260727c" rel="shortcut icon"/>
+<link href="../assets/brand/apple-touch-icon.png?v=20260727c" rel="apple-touch-icon" sizes="180x180"/>
+<link href="../assets/brand/site.webmanifest?v=20260727c" rel="manifest"/>
+<link color="#6f47f5" href="../assets/brand/safari-pinned-tab.svg?v=20260727c" rel="mask-icon"/>
+<meta content="Switch job" name="application-name"/>
+<meta content="Switch job" name="apple-mobile-web-app-title"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="#2563eb" name="msapplication-TileColor"/>
+<meta content="website" property="og:type"/>
+<meta content="Switch job Learning Platform" property="og:site_name"/>
+<meta content="Exceptions, Modules &amp; Packaging — Switch job" property="og:title"/>
+<meta content="Exception design, imports, virtual environments, dependency and packaging questions." property="og:description"/>
+<meta content="../assets/brand/social-card.png?v=20260727c" property="og:image"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="Exceptions, Modules &amp; Packaging — Switch job" name="twitter:title"/>
+<meta content="Exception design, imports, virtual environments, dependency and packaging questions." name="twitter:description"/>
+<link href="../assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
+<meta content="Exception design, imports, virtual environments, dependency and packaging questions." name="description"/>
+<link href="../assets/styles.css?v=20260727c" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260727e" rel="stylesheet"/>
+</head>
+<body data-page="pyint-exceptions-packaging" data-prep-section="interview">
+<div class="app">
+<aside class="sidebar">
+<div class="brand">
+<a class="brand-link" href="../index.html" aria-label="Switch job home">
+<span class="brand-mark" aria-hidden="true"><img src="../assets/brand/switch-job-logo.png?v=20260727c" alt=""/></span>
+<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+</a>
+</div>
+<div class="search-wrap"><div class="search-box"><svg fill="none" height="15" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="15"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg><input data-search="" placeholder="Search everything…  ( / )" type="text"/></div><div class="search-results"></div></div>
+<nav class="nav"></nav>
+</aside>
+<div class="backdrop"></div>
+<div class="main">
+<header class="topbar">
+<button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
+<div class="crumbs">Python &amp; AI/ML Interviews / Exceptions, Modules &amp; Packaging</div>
+<button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
+</header>
+<div class="content-wrap">
+<main class="content prep-content">
+<div class="eyebrow"><span class="dot"></span> Topic 07 · Advanced Python</div>
+<h1>Exceptions, Modules &amp; Packaging</h1>
+<p class="lead">Exception handling questions look easy and are not. The interviewer is checking whether you catch specific errors or blanket everything, and whether you have ever debugged an import problem in a real project.</p>
+<div class="meta-row"><span class="pill purple">18 questions</span><span class="pill">Technical + code review round</span><span class="pill blue">Checked July 2026</span></div>
+<div class="callout key"><div class="c-ico">⌁</div><div class="c-body"><div class="c-title">What the interviewer is really testing</div><p>Two things. First, that you catch the narrowest exception you can actually handle and let the rest crash loudly — silent failures are worse than crashes. Second, that you have shipped a Python project and know what a virtual environment, a lock file and an editable install are for.</p></div></div>
+<div class="prep-toolbar" data-sticky-prep=""><label class="prep-filter"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><input data-question-filter="" placeholder="Filter these questions…"/></label><button class="btn ghost" data-expand-answers="" type="button">Open all</button><span class="prep-count" data-question-count="">18 questions</span></div>
+<h2 id="exceptions-and-error-handling">Exceptions and error handling</h2>
+<section aria-label="Interview questions" class="prep-question-list">
+<details class="prep-question" data-question="what is the full try statement, including else and finally?" data-tags="exceptions basics high-frequency">
+<summary><span class="prep-q-no">01</span><span class="prep-q-title">What is the full <code>try</code> statement, including <code>else</code> and <code>finally</code>?<span class="prep-tags"><span>exceptions</span><span>basics</span><span>high-frequency</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p><code>try</code> holds the risky code, <code>except</code> handles specific failures, <code>else</code> runs only if nothing raised, and <code>finally</code> always runs — even on <code>return</code> or an unhandled exception. The <code>else</code> block is underused: it keeps the success path out of the <code>try</code>, so you do not accidentally catch an exception from code that was never meant to be guarded.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>try.py</span><button class="copy-btn">Copy</button></div><pre><code>try:
+    conn = connect()
+except ConnectionError as exc:
+    log.warning(&quot;connect failed: %s&quot;, exc)
+    raise
+else:
+    use(conn)          # only runs if connect() succeeded
+finally:
+    cleanup()          # always runs</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>try guards, except handles, else runs on success only, finally always runs. else keeps unrelated code out of the try block.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What happens if <code>finally</code> contains a <code>return</code>?</div></div></details>
+<details class="prep-question" data-question="why is a bare except: a problem?" data-tags="exceptions anti-pattern high-frequency">
+<summary><span class="prep-q-no">02</span><span class="prep-q-title">Why is a bare <code>except:</code> a problem?<span class="prep-tags"><span>exceptions</span><span>anti-pattern</span><span>high-frequency</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>It catches everything, including <code>KeyboardInterrupt</code> and <code>SystemExit</code>, so you cannot stop the program with Ctrl-C and shutdown handlers break. It also hides bugs — a typo raising <code>NameError</code> looks identical to the network error you meant to handle. Catch the specific exception, or <code>except Exception</code> at a top-level boundary where you log and re-raise.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>It swallows KeyboardInterrupt and SystemExit and hides real bugs. Catch specific exceptions, or <code>except Exception</code> only at a boundary.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Where in an application is a broad catch actually correct?</div></div></details>
+<details class="prep-question" data-question="how do you define and use a custom exception?" data-tags="exceptions design">
+<summary><span class="prep-q-no">03</span><span class="prep-q-title">How do you define and use a custom exception?<span class="prep-tags"><span>exceptions</span><span>design</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Subclass <code>Exception</code>, give it a clear name ending in <code>Error</code>, and attach the context a caller would need to act on. Define one base exception per package so callers can catch everything from your library with a single class. Do not subclass <code>BaseException</code> — that is reserved for things that should not be caught.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>custom_exc.py</span><button class="copy-btn">Copy</button></div><pre><code>class RetrievalError(Exception):
+    &quot;&quot;&quot;Base for everything this package raises.&quot;&quot;&quot;
+
+class IndexUnavailable(RetrievalError):
+    def __init__(self, index: str):
+        self.index = index
+        super().__init__(f&quot;index {index!r} is unavailable&quot;)</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Subclass Exception, name it clearly, attach useful context, and give the package one base exception callers can catch.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How should a library decide what to raise versus what to return?</div></div></details>
+<details class="prep-question" data-question="what is the difference between raise, raise x and raise x from y?" data-tags="exceptions chaining">
+<summary><span class="prep-q-no">04</span><span class="prep-q-title">What is the difference between <code>raise</code>, <code>raise X</code> and <code>raise X from Y</code>?<span class="prep-tags"><span>exceptions</span><span>chaining</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Bare <code>raise</code> inside an <code>except</code> re-raises the current exception with its original traceback intact. <code>raise X</code> starts a new exception, and Python still shows the original as context. <code>raise X from Y</code> makes the causal link explicit, which is what you want when translating a low-level error into your own domain error.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>chaining.py</span><button class="copy-btn">Copy</button></div><pre><code>try:
+    row = db.fetch(id)
+except psycopg.Error as exc:
+    raise RecordUnavailable(id) from exc   # keeps the real cause</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Bare raise re-raises with the original traceback; <code>from</code> records the cause explicitly when wrapping a low-level error.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What does <code>raise X from None</code> do, and when is it right?</div></div></details>
+<details class="prep-question" data-question="what is the difference between an error and an exception in python?" data-tags="exceptions basics">
+<summary><span class="prep-q-no">05</span><span class="prep-q-title">What is the difference between an error and an exception in Python?<span class="prep-tags"><span>exceptions</span><span>basics</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>In Python they are the same mechanism — <code>ValueError</code>, <code>TypeError</code> and the rest are all exception classes. The useful distinction is syntax errors, which are raised while parsing before anything runs, versus runtime exceptions, which happen during execution and can be caught. You cannot catch a <code>SyntaxError</code> in the file that contains it.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>They are the same thing in Python. The real split is syntax errors, caught at parse time, versus runtime exceptions you can handle.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Can you ever catch a SyntaxError?</div></div></details>
+<details class="prep-question" data-question="what is an exception group, and why was it added?" data-tags="exceptions modern python asyncio">
+<summary><span class="prep-q-no">06</span><span class="prep-q-title">What is an exception group, and why was it added?<span class="prep-tags"><span>exceptions</span><span>modern python</span><span>asyncio</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Added in Python 3.11, an <code>ExceptionGroup</code> carries several exceptions at once, and <code>except*</code> handles them by type. It exists because concurrent code can fail in more than one way simultaneously — an <code>asyncio.TaskGroup</code> where three tasks fail differently used to lose all but one. It is mostly something you consume rather than raise.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>A 3.11 feature that carries several exceptions at once, handled with <code>except*</code>. It exists because concurrent tasks can fail in parallel.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How does TaskGroup use exception groups?</div></div></details>
+<details class="prep-question" data-question="how should exceptions be handled in a production api?" data-tags="exceptions production design">
+<summary><span class="prep-q-no">07</span><span class="prep-q-title">How should exceptions be handled in a production API?<span class="prep-tags"><span>exceptions</span><span>production</span><span>design</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Let errors propagate up to one boundary — a middleware or exception handler — that maps them to a status code, logs with a request ID and stack trace, and returns a safe message. Never leak internal details or stack traces to the client. Catching and swallowing errors deep inside a service is how bugs reach production invisible.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Handle at one boundary that maps to status codes, logs with a correlation ID, and returns a safe message. Do not swallow errors deep in the stack.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How do you distinguish an expected 4xx from an unexpected 5xx in that handler?</div></div></details>
+<details class="prep-question" data-question="what are the most common built-in exceptions and when do they appear?" data-tags="exceptions basics">
+<summary><span class="prep-q-no">08</span><span class="prep-q-title">What are the most common built-in exceptions and when do they appear?<span class="prep-tags"><span>exceptions</span><span>basics</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p><code>ValueError</code> for a right-typed but wrong-valued input, <code>TypeError</code> for a wrong type, <code>KeyError</code> and <code>IndexError</code> for missing lookups, <code>AttributeError</code> for a missing attribute — often on <code>None</code>, <code>FileNotFoundError</code> for missing paths, and <code>ZeroDivisionError</code>. Knowing which one to raise matters as much as knowing how to catch them.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>ValueError for bad values, TypeError for wrong types, KeyError and IndexError for lookups, AttributeError usually from None.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Should a function raise ValueError or return None for bad input?</div></div></details>
+<details class="prep-question" data-question="how do you retry an operation that may fail transiently?" data-tags="exceptions retry production">
+<summary><span class="prep-q-no">09</span><span class="prep-q-title">How do you retry an operation that may fail transiently?<span class="prep-tags"><span>exceptions</span><span>retry</span><span>production</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Retry only the exceptions you know are transient — timeouts, 5xx, connection resets — never a validation error. Use exponential backoff with jitter so retries do not stampede, cap the attempts, and make sure the operation is idempotent before you retry it at all. Libraries like <code>tenacity</code> do this properly; hand-rolled loops usually forget the jitter and the cap.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Retry only transient errors, with capped exponential backoff and jitter, and only when the operation is idempotent.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How would you make a payment call safe to retry?</div></div></details>
+</section>
+<h2 id="modules-imports-and-environments">Modules, imports and environments</h2>
+<section aria-label="Interview questions" class="prep-question-list">
+<details class="prep-question" data-question="what is the difference between a module and a package?" data-tags="modules basics">
+<summary><span class="prep-q-no">10</span><span class="prep-q-title">What is the difference between a module and a package?<span class="prep-tags"><span>modules</span><span>basics</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>A module is one <code>.py</code> file. A package is a directory of modules, usually with an <code>__init__.py</code> that marks it and can expose a curated public API. Since Python 3.3 namespace packages can skip <code>__init__.py</code>, but including it is still the clearer default for application code.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>A module is a file, a package is a directory of modules with an <code>__init__.py</code> defining its public surface.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What should and should not go inside <code>__init__.py</code>?</div></div></details>
+<details class="prep-question" data-question="what is the difference between an absolute and a relative import?" data-tags="imports basics">
+<summary><span class="prep-q-no">11</span><span class="prep-q-title">What is the difference between an absolute and a relative import?<span class="prep-tags"><span>imports</span><span>basics</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>An absolute import names the full path from the project root, like <code>from myapp.services import auth</code>. A relative import uses dots — <code>from .services import auth</code> — and resolves against the current package. Absolute imports are recommended because they are unambiguous and survive files being moved; relative ones break when a module is run directly as a script.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Absolute names the full path and is preferred; relative uses dots and breaks when the module is run as a script.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Why exactly does a relative import fail when you run the file directly?</div></div></details>
+<details class="prep-question" data-question="what causes a circular import, and how do you fix it?" data-tags="imports gotcha design">
+<summary><span class="prep-q-no">12</span><span class="prep-q-title">What causes a circular import, and how do you fix it?<span class="prep-tags"><span>imports</span><span>gotcha</span><span>design</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Two modules importing each other, so one is still half-initialised when the other reads from it — you get <code>ImportError</code> or a mysterious <code>AttributeError</code>. Quick fixes are moving the import inside the function or using <code>TYPE_CHECKING</code> for type-only imports. The real fix is usually that the shared piece belongs in a third module both can depend on.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>circular.py</span><button class="copy-btn">Copy</button></div><pre><code>from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:          # not imported at runtime
+    from .orders import Order
+
+def total(order: &quot;Order&quot;) -&gt; float: ...</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Two modules importing each other, so one is half-built. Move the import into the function, use TYPE_CHECKING, or extract the shared part.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Why does the function-level import work when the top-level one does not?</div></div></details>
+<details class="prep-question" data-question="what happens the first time a module is imported, and the second time?" data-tags="imports runtime">
+<summary><span class="prep-q-no">13</span><span class="prep-q-title">What happens the first time a module is imported, and the second time?<span class="prep-tags"><span>imports</span><span>runtime</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>The first import finds the file, compiles it, executes the whole module top to bottom, and caches the resulting module object in <code>sys.modules</code>. Every later import of the same name just returns the cached object without re-running anything. That is why module-level code runs exactly once, and why it is a reasonable place for one-time setup — and a terrible place for slow work.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>It executes the file once and caches the module in sys.modules; later imports return the cache. Module-level code runs exactly once.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How would you force a module to actually reload?</div></div></details>
+<details class="prep-question" data-question="what is a virtual environment and why does every project need one?" data-tags="environments tooling high-frequency">
+<summary><span class="prep-q-no">14</span><span class="prep-q-title">What is a virtual environment and why does every project need one?<span class="prep-tags"><span>environments</span><span>tooling</span><span>high-frequency</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>An isolated directory with its own Python and its own installed packages, so two projects can need different versions of the same library without conflict. Without it you install into the system Python, versions collide, and &ldquo;works on my machine&rdquo; becomes unavoidable. Create one with <code>python -m venv .venv</code>, or let <code>uv</code> or Poetry manage it.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>An isolated per-project package directory, so projects with conflicting dependency versions can coexist.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How does a virtual environment relate to a Docker image — do you need both?</div></div></details>
+<details class="prep-question" data-question="what is the difference between requirements.txt and a lock file?" data-tags="packaging dependencies">
+<summary><span class="prep-q-no">15</span><span class="prep-q-title">What is the difference between <code>requirements.txt</code> and a lock file?<span class="prep-tags"><span>packaging</span><span>dependencies</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p><code>requirements.txt</code> usually lists direct dependencies with loose version ranges. A lock file — <code>poetry.lock</code>, <code>uv.lock</code>, or a pinned <code>requirements.txt</code> from <code>pip-compile</code> — records the exact resolved version of every package including transitive ones, with hashes. You need the lock file for reproducible builds; without it, a deploy six months later installs different code.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>requirements.txt lists what you want; a lock file pins every resolved version including transitive ones, which is what makes builds reproducible.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How do you keep a lock file up to date without breaking production?</div></div></details>
+<details class="prep-question" data-question="what does an editable install (pip install -e .) do?" data-tags="packaging tooling">
+<summary><span class="prep-q-no">16</span><span class="prep-q-title">What does an editable install (<code>pip install -e .</code>) do?<span class="prep-tags"><span>packaging</span><span>tooling</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>It installs your project by linking to the source directory instead of copying it, so code changes take effect immediately without reinstalling. It is the normal way to work on a library or a multi-package repo locally. In production you install the built package, not an editable one.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>It links the package to your source tree so edits apply immediately. For local development only.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Why is an editable install a bad idea inside a production container?</div></div></details>
+<details class="prep-question" data-question="what is pyproject.toml, and what replaced setup.py?" data-tags="packaging modern python">
+<summary><span class="prep-q-no">17</span><span class="prep-q-title">What is <code>pyproject.toml</code>, and what replaced <code>setup.py</code>?<span class="prep-tags"><span>packaging</span><span>modern python</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p><code>pyproject.toml</code> is the standard project file: build system, metadata, dependencies, and tool configuration for ruff, mypy and pytest all in one place. It replaced the scattered <code>setup.py</code>, <code>setup.cfg</code> and per-tool config files. <code>setup.py</code> still works but a new project in 2026 has no reason to use it.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>The single standard file for build config, metadata, dependencies and tool settings. It replaced setup.py and setup.cfg.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What goes in the <code>[build-system]</code> table and why does it matter?</div></div></details>
+<details class="prep-question" data-question="how does python find a module when you import it?" data-tags="imports runtime">
+<summary><span class="prep-q-no">18</span><span class="prep-q-title">How does Python find a module when you import it?<span class="prep-tags"><span>imports</span><span>runtime</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>It checks <code>sys.modules</code> for a cached copy first, then searches the paths in <code>sys.path</code> in order — the script's directory, then <code>PYTHONPATH</code>, then the installed site-packages. The first match wins, which is why naming a local file <code>random.py</code> or <code>email.py</code> shadows the standard library and produces baffling errors.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>sys.modules cache first, then sys.path in order — script directory, PYTHONPATH, site-packages. First match wins, so local files can shadow stdlib.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How would you debug an import that is picking up the wrong file?</div></div></details>
+</section>
+<div class="page-nav"><a href="06-oop-data-model.html"><div class="dir">← Previous</div><div class="ttl">OOP &amp; the Python Data Model</div></a><a class="next" href="08-memory-performance.html"><div class="dir">Next →</div><div class="ttl">Memory, Garbage Collection &amp; Performance</div></a></div>
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script src="../assets/app.js?v=20260727c"></script>
+<script src="../assets/sitenav.js?v=20260727c"></script>
+<script src="../assets/enhance.js?v=20260727c"></script>
+<script src="../assets/interview-prep.js?v=20260727c"></script>
+</body>
+</html>
