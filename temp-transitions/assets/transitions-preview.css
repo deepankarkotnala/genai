@@ -1,0 +1,190 @@
+/* =========================================================================
+   transitions-preview.css — SANDBOX ONLY
+   =========================================================================
+
+   A trial of the transition options discussed, kept entirely in
+   /temp-transitions. Nothing in this file exists in the live portal, and no
+   live file was modified to support it. Loaded LAST, after genai-motion.css,
+   so it can layer on top of the existing motion system without editing it.
+
+   Everything here is progressive: where the browser lacks the feature, the
+   page behaves exactly as it does today. Everything is also inside a
+   `prefers-reduced-motion: no-preference` guard, so a reduced-motion visitor
+   gets none of it.
+
+   Contents
+     1  Cross-document view transitions (page → page navigation)
+     2  The sidebar's active-row indicator, morphing across pages
+     3  Theme switch — full-page crossfade
+     4  <details> collapsibles that actually open
+     5  Anchor jumps — land under the sticky header, then acknowledge
+     6  Search results — fade and stagger in
+   ========================================================================= */
+
+
+/* =========================================================================
+   1 · Cross-document view transitions
+   -------------------------------------------------------------------------
+   `navigation: auto` opts both documents into a shared transition, so a click
+   from the hub to a module no longer tears the page down and rebuilds it. The
+   chrome (sidebar, topbar, ribbon) is left unnamed on purpose: it falls into
+   the root snapshot, and because it is identical on both pages, crossfading it
+   reads as the chrome *holding still* while only the article moves.
+
+   Only `.content-wrap` gets its own name, so the article can carry a small
+   directional slide that the chrome does not.
+
+   Requires: a same-origin HTTP origin (this does NOT work over file://) and a
+   Chromium or Safari build. Firefox ignores the whole at-rule and navigates
+   normally.
+   ========================================================================= */
+@view-transition { navigation: auto; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .content-wrap { view-transition-name: page-canvas; }
+
+  /* The old page leaves faster than the new one arrives — an even crossfade
+     reads as a dissolve, whereas a short out and a longer, decelerating in
+     reads as one page replacing another. */
+  html:not(.vt-theme)::view-transition-old(page-canvas) {
+    animation: tp-page-out 150ms cubic-bezier(.22, .61, .36, 1) both;
+  }
+  html:not(.vt-theme)::view-transition-new(page-canvas) {
+    animation: tp-page-in 320ms cubic-bezier(.16, 1, .3, 1) both;
+  }
+  /* The chrome's own crossfade. Short, because identical pixels crossfading
+     for too long picks up a visible haze. */
+  html:not(.vt-theme)::view-transition-old(root),
+  html:not(.vt-theme)::view-transition-new(root) {
+    animation-duration: 180ms;
+  }
+
+  @keyframes tp-page-out {
+    to { opacity: 0; transform: translateY(-6px); }
+  }
+  @keyframes tp-page-in {
+    from { opacity: 0; transform: translateY(10px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}
+
+
+/* =========================================================================
+   2 · The active-row indicator, morphing across pages
+   -------------------------------------------------------------------------
+   Giving the active sidebar row a view-transition-name makes the browser treat
+   the row on the old page and the row on the new page as the same object, so
+   the green marker *slides* from the page you left to the page you arrived at
+   instead of blinking to a new position.
+
+   This is the experimental one. `.app > .sidebar` carries `zoom: 0.9` on
+   desktop (styles.css) and zoom interacts poorly with snapshot geometry, so
+   check it at desktop width specifically — if the marker lands offset, that is
+   the zoom rule, and the fix is to drop `zoom` in favour of font-size scaling.
+   ========================================================================= */
+@media (prefers-reduced-motion: no-preference) {
+  .nav a.active { view-transition-name: nav-active-row; }
+  html:not(.vt-theme)::view-transition-group(nav-active-row) {
+    animation-duration: 320ms;
+    animation-timing-function: cubic-bezier(.16, 1, .3, 1);
+  }
+}
+
+
+/* =========================================================================
+   3 · Theme switch — full-page crossfade
+   -------------------------------------------------------------------------
+   The reason the earlier CSS-transition attempt staggered is that gradients,
+   `backdrop-filter` glass and shadows cannot interpolate between themes: they
+   snapped while everything else drifted. A view transition crossfades a
+   *snapshot* of the rendered page, so those surfaces are included by
+   definition and there is nothing left that can arrive late.
+
+   `.vt-theme` (set by transitions-preview.js for the duration) suppresses the
+   directional slides above — a theme change should fade in place, not move.
+   ========================================================================= */
+@media (prefers-reduced-motion: no-preference) {
+  html.vt-theme::view-transition-old(root),
+  html.vt-theme::view-transition-new(root),
+  html.vt-theme::view-transition-old(page-canvas),
+  html.vt-theme::view-transition-new(page-canvas) {
+    animation-duration: 260ms;
+    animation-timing-function: ease;
+  }
+  /* Both snapshots share the frame and crossfade, rather than the new one
+     wiping over the old. */
+  html.vt-theme::view-transition-old(root) { mix-blend-mode: normal; }
+  html.vt-theme::view-transition-group(nav-active-row) { animation-duration: 0s; }
+}
+
+
+/* =========================================================================
+   4 · <details> collapsibles that actually open
+   -------------------------------------------------------------------------
+   The interview Q&A blocks are native <details>, which snap. `::details-content`
+   plus `interpolate-size: allow-keywords` lets height animate to `auto` — no
+   JS, no measured pixel heights. `content-visibility` needs
+   `transition-behavior: allow-discrete` to stay visible for the duration.
+
+   Chromium-only today (Chrome/Edge 131+). Elsewhere the @supports block is
+   skipped and they snap as they do now.
+   ========================================================================= */
+@supports (interpolate-size: allow-keywords) and selector(::details-content) {
+  @media (prefers-reduced-motion: no-preference) {
+    :root { interpolate-size: allow-keywords; }
+
+    .collapse::details-content {
+      height: 0;
+      overflow: hidden;
+      content-visibility: hidden;
+      transition:
+        height .34s cubic-bezier(.16, 1, .3, 1),
+        content-visibility .34s allow-discrete;
+    }
+    .collapse[open]::details-content { height: auto; }
+  }
+}
+
+
+/* =========================================================================
+   5 · Anchor jumps — land clear of the sticky header, then acknowledge
+   -------------------------------------------------------------------------
+   `scroll-behavior: smooth` is already set on <html>, but a heading jumped to
+   lands *underneath* the sticky topbar, so the smooth scroll ends on the wrong
+   thing. `scroll-margin-top` reserves the chrome's height. The brief tint then
+   answers "which one did I land on?" without the reader hunting.
+   ========================================================================= */
+.content :is(h2, h3, h4)[id] { scroll-margin-top: calc(var(--header-h, 56px) + 28px); }
+
+@media (prefers-reduced-motion: no-preference) {
+  .content :is(h2, h3, h4)[id]:target {
+    animation: tp-target-ack 1100ms ease-out;
+  }
+  @keyframes tp-target-ack {
+    0%   { background: var(--accent-soft); box-shadow: -10px 0 0 var(--accent-soft); }
+    100% { background: transparent; box-shadow: -10px 0 0 transparent; }
+  }
+}
+
+
+/* =========================================================================
+   6 · Search results — fade and stagger in
+   -------------------------------------------------------------------------
+   The results list is re-rendered on every keystroke, so the stagger is kept
+   very short and the delays cap out after a few rows: long enough to read as
+   the list assembling, short enough not to feel like lag while typing.
+   ========================================================================= */
+@media (prefers-reduced-motion: no-preference) {
+  .search-result {
+    animation: tp-result-in 160ms cubic-bezier(.16, 1, .3, 1) both;
+  }
+  .search-result:nth-child(2) { animation-delay: 20ms; }
+  .search-result:nth-child(3) { animation-delay: 40ms; }
+  .search-result:nth-child(4) { animation-delay: 60ms; }
+  .search-result:nth-child(n+5) { animation-delay: 75ms; }
+
+  @keyframes tp-result-in {
+    from { opacity: 0; transform: translateY(4px); }
+    to   { opacity: 1; transform: translateY(0); }
+  }
+}
