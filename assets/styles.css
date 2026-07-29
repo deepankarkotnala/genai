@@ -250,7 +250,11 @@ img, svg { max-width: 100%; }
   backdrop-filter: saturate(180%) blur(12px);
   border-bottom: 1px solid var(--border);
 }
-.topbar .crumbs { font-size: 14px; color: var(--text-muted); flex: 1; min-width: 0; }
+/* `margin-right: auto` (not just `flex: 1`) is what keeps the trailing
+   controls pinned to the right edge: narrow breakpoints cap the crumbs with
+   `max-width`, so flex-grow alone stops filling the row and the focus/theme
+   buttons drift toward the middle. */
+.topbar .crumbs { font-size: 14px; color: var(--text-muted); flex: 1; min-width: 0; margin-right: auto; }
 .topbar .crumbs b { color: var(--text-secondary); font-weight: 600; }
 /* ☰ toggles the sidebar: collapse on desktop, slide-in drawer on mobile. */
 .menu-btn { display: grid; }
@@ -522,6 +526,21 @@ tbody tr:hover { background: var(--bg-subtle); }
 /* utility */
 .muted { color: var(--text-muted); }
 
+/* ---------- Companion video-playlist button ----------
+   Used at the top of a topic page to point at the course playlist that
+   pairs with it (see llm-evals.html, modules/08, modules/12, langgraph.html). */
+.yt-btn {
+  display: inline-flex; align-items: center; gap: 9px;
+  margin: 4px 0 8px; padding: 10px 16px;
+  border: 1px solid var(--border); border-radius: 10px;
+  background: var(--bg-elevated); color: var(--text);
+  font-weight: 650; font-size: 13.5px; text-decoration: none;
+  transition: border-color .15s, transform .1s, box-shadow .15s;
+}
+.yt-btn:hover { border-color: #ff0000; transform: translateY(-1px); box-shadow: var(--shadow-sm); text-decoration: none; }
+.yt-btn svg { flex: none; }
+.yt-btn .yt-sub { font-weight: 500; color: var(--text-muted); font-size: 12px; }
+
 /* ---------- Site footer (injected by sitenav.js on every page) ---------- */
 .site-footer {
   margin-top: clamp(40px, 6vw, 72px);
@@ -555,7 +574,15 @@ tbody tr:hover { background: var(--bg-subtle); }
       whole page, handled natively by `@view-transition`. We explicitly turn OFF
       the JS-era .main entry animation there so nothing competes with it.
    2. Browsers WITHOUT it → the JS fallback (sitenav.js) fades the content out on
-      leave, and the `page-enter` keyframe fades the next page in. */
+      leave, and the `page-enter` keyframe fades the next page in.
+
+   The light/dark toggle rides on path 1 as well: enhance.js runs it inside
+   `document.startViewTransition`, which produces the same root snapshot and so
+   picks up the same crossfade timing below. That is deliberate — it is why a
+   theme change and a page change feel like one gesture, and why the theme fade
+   cannot stagger (a snapshot carries the gradients, glass and shadows that
+   cannot interpolate between themes). Browsers on path 2 get the atomic flip
+   instead; see the `.theme-switching` block at the end of this file. */
 
 /* --- Fallback path (no View Transitions support) --- */
 @supports not (view-transition-name: none) {
@@ -4018,4 +4045,31 @@ html[data-theme="dark"] .toc-textbook a.active {
   html .app { grid-template-columns: calc(var(--sidebar-w) * 0.9) minmax(0, 1fr); }
   .app > .sidebar { zoom: 0.9; height: calc(100vh / 0.9); }
   .content-wrap > .content { zoom: 0.9; }
+}
+
+/* =========================================================================
+   Light ↔ dark switch — every element flips in the same frame
+   `enhance.js` puts `.theme-switching` on <html> across a theme change.
+
+   The jitter this kills is a *staggered* flip. Components here carry their own
+   transitions (`all .15s`, `.2s`, `border-color .3s`…), so on a theme change
+   each one starts re-colouring on its own clock and finishes at its own time,
+   while the things that physically cannot interpolate between themes —
+   gradients, `backdrop-filter` glass, shadows — snap immediately. The page
+   arrives in dark mode in pieces.
+
+   Giving everything one shared duration does not fix that: the
+   non-interpolating surfaces still snap while the rest drifts, which is the
+   same stagger, just tidier. The only version with nothing to stagger is no
+   animation at all — suppress every transition for the length of the change
+   and the whole page repaints once, in one frame.
+
+   The class is removed a moment later, so ordinary hover/focus transitions are
+   untouched outside the switch itself.
+   ========================================================================= */
+html.theme-switching,
+html.theme-switching *,
+html.theme-switching *::before,
+html.theme-switching *::after {
+  transition: none !important;
 }

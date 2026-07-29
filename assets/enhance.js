@@ -923,6 +923,96 @@
     new MutationObserver(update).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
   }
 
+  /* ---------- Light↔dark switching, without the stagger ----------
+     Every surface, border and text colour is a `var(--…)` that changes the
+     instant `data-theme` changes on <html>. Left alone the flip arrives in
+     pieces: each component carries its own transition (`all .15s`, `.2s`,
+     `border-color .3s`…) so each starts and finishes re-colouring on its own
+     clock, while gradients, glass and shadows — which cannot interpolate
+     between themes — snap over immediately.
+
+     So the switch is made atomic instead: `.theme-switching` suppresses every
+     transition on the page (see styles.css), the new colours paint in a single
+     frame, and the class comes straight back off. Nothing animates, so there is
+     nothing left to fall out of step.
+
+     Driven by a MutationObserver rather than by the toggle handlers: the theme
+     is set from several entry points (app.js, portal-page.js, the ribbon
+     toggle), and observer callbacks run before the browser paints, so the class
+     is in place for the same frame that applies the new colours. */
+  function setupThemeTransition() {
+    var root = document.documentElement;
+    var release = null;
+
+    new MutationObserver(function () {
+      root.classList.add("theme-switching");
+      // Two frames: the first paints the new theme with transitions off, the
+      // second is when it is safe to hand hover/focus transitions back. A
+      // timeout backs this up in case the tab is hidden and rAF never fires.
+      if (release) window.clearTimeout(release);
+      release = window.setTimeout(drop, 300);
+      window.requestAnimationFrame(function () {
+        window.requestAnimationFrame(drop);
+      });
+    }).observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+
+    function drop() {
+      if (release) { window.clearTimeout(release); release = null; }
+      root.classList.remove("theme-switching");
+    }
+  }
+
+  /* ---------- Light↔dark as a crossfade ----------
+     The atomic flip above is correct but abrupt. A view transition is the one
+     way to fade it without the stagger: it crossfades a *snapshot* of the
+     rendered page, so the gradients, `backdrop-filter` glass and shadows that
+     cannot interpolate between themes are carried along with everything else.
+     There is no per-element colour animation involved, so nothing can arrive
+     late. Where the API is missing (Firefox today) this does nothing and the
+     atomic flip above remains the behaviour.
+
+     The listener is on `document` in the capture phase deliberately. Listeners
+     added to the button itself run in registration order regardless of the
+     capture flag, and app.js registers its handler first — so a listener on the
+     button could never run before the theme had already flipped. Document
+     capture runs ahead of any listener on the target.
+
+     Rather than reimplementing the toggle (it also swaps the button's icon and
+     writes localStorage), the same click is re-dispatched inside the update
+     callback, with a flag so the interceptor lets that one through. app.js
+     stays the only copy of the logic. */
+  function setupThemeCrossfade() {
+    if (REDUCED || !document.startViewTransition) return;
+    var passthrough = false;
+    var busy = false;
+
+    document.addEventListener("click", function (event) {
+      if (passthrough) return;                     // our own re-dispatch — let it through
+      var button = event.target.closest && event.target.closest("[data-theme-toggle]");
+      if (!button) return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();            // app.js must not flip it yet
+
+      // Rapid double-clicks would otherwise queue transitions and skip frames;
+      // flipping straight through keeps the toggle honest under a fast tap.
+      if (busy) { flip(); return; }
+      busy = true;
+
+      document.startViewTransition(flip).finished.then(done, done);
+
+      function done() { busy = false; }
+    }, true);
+
+    function flip() {
+      var button = document.querySelector("[data-theme-toggle]");
+      if (!button) return;
+      passthrough = true;
+      button.click();                              // app.js flips the theme + icon here
+      passthrough = false;
+    }
+  }
+
   function clearLegacyReadingClasses() {
     var body = document.body;
     var root = document.documentElement;
@@ -984,6 +1074,8 @@
     setupSoftReveal();
     addScrollTop();
     setupThemeColor();
+    setupThemeTransition();
+    setupThemeCrossfade();
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
