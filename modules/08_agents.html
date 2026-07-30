@@ -42,9 +42,9 @@
      exactly — same key, same "light" default — so the pre-paint value can never
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size, width and text edges, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","align"}, anything unknown -> "default" ("left" for align). */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["small","default","large","xl"].indexOf(r.size)>=0?r.size:"default";var wd=["cozy","default","wide","full"].indexOf(r.width)>=0?r.width:"default";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20260730h" rel="stylesheet"/>
-<link href="../assets/office-theme.css?v=20260730h" rel="stylesheet"/>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "m", unknown width -> "wide". Text is always justified. */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:"m";var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260731b" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260731b" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260728a" rel="stylesheet"/>
 </head>
 <body data-page="08">
@@ -82,7 +82,7 @@
 <div class="meta-row">
 <span class="pill blue">⏱ Study + practice · 12–18 h</span>
 <span class="pill">Difficulty · Intermediate→Advanced</span>
-<span class="pill purple">Prereq · Modules 01, 06–07</span>
+<span class="pill purple">Prereq · Modules 01, 06</span>
 </div>
 <a class="yt-btn" href="https://www.youtube.com/watch?v=yC36gN-rqjo&amp;list=PLKnIA16_RmvYsvB8qkUQuJmJNuiCUJFPL" target="_blank" rel="noopener noreferrer">
 <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="#ff0000" d="M23.5 6.2a3.02 3.02 0 0 0-2.12-2.14C19.5 3.55 12 3.55 12 3.55s-7.5 0-9.38.51A3.02 3.02 0 0 0 .5 6.2 31.6 31.6 0 0 0 0 12a31.6 31.6 0 0 0 .5 5.8 3.02 3.02 0 0 0 2.12 2.14c1.88.51 9.38.51 9.38.51s7.5 0 9.38-.51a3.02 3.02 0 0 0 2.12-2.14A31.6 31.6 0 0 0 24 12a31.6 31.6 0 0 0-.5-5.8z"></path><path fill="#fff" d="M9.6 15.6V8.4l6.2 3.6-6.2 3.6z"></path></svg>
@@ -90,7 +90,8 @@
 </a>
 <!-- ============ 1. EXECUTIVE SUMMARY ============ -->
 <h2 id="summary">1 · Executive summary</h2>
-<p>An <strong>agent</strong> is an LLM placed in a control loop where it can call <strong>tools</strong> and act on their results. Instead of producing a final answer in one pass, the model reasons about what to do, takes an action (calls a tool), observes the outcome, and repeats. Give it a goal and a toolbox, and it figures out the steps. The dominant pattern, <strong>ReAct</strong> (Reason + Act), interleaves thinking and acting; <strong>planning</strong>, <strong>reflection</strong>, and <strong>memory</strong> make it more capable and reliable.</p>
+<p><strong>In plain words first:</strong> everything up to now called the model once and used whatever came back. An agent calls it in a loop instead, and between calls your code does whatever the model asked for &mdash; run a search, query a database, execute some code &mdash; and hands the result back. The model itself is doing nothing new here; the loop around it is. If this is your first encounter with agents, <a href="../teach-agents/lessons/0001-what-is-an-agent.html">What is an agent, really?</a> is a gentler, code-free introduction to the same idea.</p>
+<p>An <strong>agent</strong> is an LLM placed in a control loop where it can call <strong><button class="term-link" type="button" data-term-dialog="term-tool-calling">tools</button></strong> and act on their results. Instead of producing a final answer in one pass, the model reasons about what to do, takes an action (calls a tool), observes the outcome, and repeats. Give it a goal and a toolbox, and it figures out the steps. The dominant pattern, <strong><button class="term-link" type="button" data-term-dialog="term-react">ReAct</button></strong> (Reason + Act), interleaves thinking and acting; <strong>planning</strong>, <strong>reflection</strong>, and <strong>memory</strong> make it more capable and reliable.</p>
 <div class="grid grid-3">
 <div class="card" data-reveal=""><span class="ico">❓</span><h4>Why it exists</h4><p>Many tasks need <em>actions</em> and <em>fresh data</em>, not just text — query a DB, run code, call an API, retrieve docs, then synthesize. A single forward pass can't do that.</p></div>
 <div class="card" data-reveal=""><span class="ico">🔧</span><h4>Problem it solves</h4><p>Multi-step, tool-using, dynamic tasks where the right next step depends on what previous steps returned.</p></div>
@@ -172,11 +173,11 @@
 <h3>Planning &amp; decomposition</h3>
 <p>For complex goals, the agent first <strong>decomposes</strong> the task into sub-goals (a plan), then executes them — sometimes spawning sub-agents (Module 13). Planning reduces flailing: an explicit plan keeps the agent on track instead of greedily reacting step by step and losing the thread.</p>
 <h3>Reflection — the self-correction loop</h3>
-<p><strong>Reflection</strong> adds a critique step: after producing an action or answer, the agent (or a separate critic) evaluates it — "did this actually work? is the code correct? did I answer the question?" — and revises if not. This is the agentic analogue of the faithfulness check in Module 07 and dramatically improves reliability on hard tasks.</p>
+<p><strong>Reflection</strong> adds a critique step: after producing an action or answer, the agent (or a separate critic) evaluates it — "did this actually work? is the code correct? did I answer the question?" — and revises if not. This is the agentic analogue of the faithfulness check in Module 06 and dramatically improves reliability on hard tasks.</p>
 <h3>Memory in depth</h3>
 <ul>
 <li><strong>Working memory</strong> — the current context window; the live scratchpad of thoughts/observations for this task.</li>
-<li><strong>Short-term memory</strong> — the conversation/episode history. As it overflows the window, summarize older turns (compression, Module 07) to preserve gist.</li>
+<li><strong>Short-term memory</strong> — the conversation/episode history. As it overflows the window, summarize older turns (compression, Module 06) to preserve gist.</li>
 <li><strong>Long-term memory</strong> — persistent facts/preferences stored in a vector DB and <em>retrieved</em> when relevant. This is literally RAG over the agent's own past. It's how an assistant "remembers you" across sessions.</li>
 </ul>
 <h3>Agent failure modes (know these cold)</h3>
@@ -470,14 +471,40 @@ final = ollama.<span class="tok-fn">chat</span>(model=<span class="tok-str">"qwe
 <tbody>
 <tr><td><strong>SQL Analysis Agent</strong></td><td>This module <em>is</em> the core: ReAct loop over schema + query tools, with read-only guards.</td></tr>
 <tr><td><strong>EDA Agent</strong></td><td>Tools for loading data, computing stats, plotting; reflection to refine the analysis plan.</td></tr>
-<tr><td><strong>ElasticSearch Investigation Agent</strong></td><td>Iterative, multi-step querying of ES (Agentic RAG, Module 07) with the loop + memory here.</td></tr>
+<tr><td><strong>ElasticSearch Investigation Agent</strong></td><td>Iterative, multi-step querying of ES (Agentic RAG, Module 06) with the loop + memory here.</td></tr>
 <tr><td><strong>Multi-Agent Plant Assistant</strong></td><td>Each specialist is an agent like this; coordination comes in Module 13.</td></tr>
 <tr><td><strong>MCP Server</strong></td><td>MCP (Module 09) is how these tools get standardized and exposed to any agent.</td></tr>
 </tbody>
 </table></div>
 
+<!-- ============ TERM DEFINITIONS ============ -->
+<dialog class="term-dialog" id="term-tool-calling" aria-labelledby="term-tool-calling-title">
+<div class="term-dialog-head">
+<div>
+<span class="term-dialog-eyebrow">In one breath</span>
+<h2 id="term-tool-calling-title">Tools and tool calling</h2>
+</div>
+<button class="term-dialog-close" type="button" data-term-close="" aria-label="Close">✕</button>
+</div>
+<div class="term-dialog-body">
+<p>A tool is just a function in your code &mdash; search the web, run some SQL, send an email. "Tool calling" is how the model gets one of them to run.</p><p>The part that surprises everyone: <strong>the model never runs anything.</strong> It cannot. You describe the available functions to it, and instead of prose it replies with a structured request &mdash; "call <code>search_orders</code> with customer_id 42". Your code reads that, runs the real function, and puts the result back into the conversation. Then the model carries on with an answer it could not have produced on its own.</p><p class="term-dialog-note">So an "agent that can do things" is really a model that can <em>ask</em> for things, wrapped in code that is willing to do them. Every safety question in this module follows from that one fact.</p>
+</div>
+</dialog>
+<dialog class="term-dialog" id="term-react" aria-labelledby="term-react-title">
+<div class="term-dialog-head">
+<div>
+<span class="term-dialog-eyebrow">In one breath</span>
+<h2 id="term-react-title">ReAct (Reason + Act)</h2>
+</div>
+<button class="term-dialog-close" type="button" data-term-close="" aria-label="Close">✕</button>
+</div>
+<div class="term-dialog-body">
+<p>The most common shape for the agent loop: <strong>think, act, observe &mdash; repeat.</strong></p><p>The model writes a short thought about what to do next, asks for one tool call, sees the result, and thinks again with that result in hand. It stops when it has enough to answer.</p><p>Why interleave rather than plan it all up front? Because the right second step usually depends on what the first one returned. A search that comes back empty ought to change the plan, and a plan written before any evidence arrived cannot react to that.</p>
+</div>
+</dialog>
+
 <div class="page-nav">
-<a href="07_advanced_rag.html"><div class="dir">← Previous</div><div class="ttl">07 · Advanced RAG</div></a>
+<a href="../rag-deep-dive.html"><div class="dir">← Previous</div><div class="ttl">06 · RAG, End-to-End</div></a>
 <a class="next" href="09_mcp.html"><div class="dir">Next →</div><div class="ttl">09 · Model Context Protocol</div></a>
 </div>
 </main>
@@ -485,9 +512,9 @@ final = ollama.<span class="tok-fn">chat</span>(model=<span class="tok-str">"qwe
 </div>
 </div>
 </div>
-<script src="../assets/app.js?v=20260727c"></script>
-<script src="../assets/sitenav.js?v=20260727c"></script>
-<script src="../assets/enhance.js?v=20260730h"></script>
+<script src="../assets/app.js?v=20260731b"></script>
+<script src="../assets/sitenav.js?v=20260731b"></script>
+<script src="../assets/enhance.js?v=20260731b"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
 </body>
 </html>

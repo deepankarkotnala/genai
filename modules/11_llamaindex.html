@@ -42,9 +42,9 @@
      exactly — same key, same "light" default — so the pre-paint value can never
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size, width and text edges, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","align"}, anything unknown -> "default" ("left" for align). */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["small","default","large","xl"].indexOf(r.size)>=0?r.size:"default";var wd=["cozy","default","wide","full"].indexOf(r.width)>=0?r.width:"default";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20260730h" rel="stylesheet"/>
-<link href="../assets/office-theme.css?v=20260730h" rel="stylesheet"/>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "m", unknown width -> "wide". Text is always justified. */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:"m";var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260731b" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260731b" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260728a" rel="stylesheet"/>
 </head>
 <body data-page="11">
@@ -82,11 +82,12 @@
 <div class="meta-row">
 <span class="pill blue">⏱ Study + practice · 8–12 h</span>
 <span class="pill">Difficulty · Intermediate</span>
-<span class="pill purple">Prereq · Modules 04–07, 10</span>
+<span class="pill purple">Prereq · Modules 04–06, 10</span>
 </div>
 <!-- ============ 1. EXECUTIVE SUMMARY ============ -->
 <h2 id="summary">1 · Executive summary</h2>
-<p><strong>LlamaIndex</strong> is the "data framework for LLM applications." It models your knowledge as <strong>Documents</strong> → split into <strong>Nodes</strong> (chunks with metadata + relationships) → organized by an <strong>Index</strong> → served through a <strong>Retriever</strong> and a <strong>Query Engine</strong> that retrieves, then synthesizes an answer. It encodes the RAG pipeline you built by hand in Modules 04–07 as first-class, swappable components — with strong abstractions for ingestion, advanced retrieval, and response synthesis.</p>
+<p><strong>In plain words first:</strong> this is the RAG pipeline from Modules 04&ndash;06 with names bolted onto each stage. Your files become Documents, the chunks become Nodes, the store becomes an Index, and the search-and-answer step becomes a Query Engine. Learning LlamaIndex is mostly learning which of its four nouns corresponds to which step you already understand.</p>
+<p><strong>LlamaIndex</strong> is the "data framework for LLM applications." It models your knowledge as <strong>Documents</strong> → split into <strong><button class="term-link" type="button" data-term-dialog="term-li-nouns">Nodes</button></strong> (chunks with metadata + relationships) → organized by an <strong>Index</strong> → served through a <strong>Retriever</strong> and a <strong>Query Engine</strong> that retrieves, then synthesizes an answer. It encodes the RAG pipeline you built by hand in Modules 04–06 as first-class, swappable components — with strong abstractions for ingestion, advanced retrieval, and response synthesis.</p>
 <div class="grid grid-3">
 <div class="card" data-reveal=""><span class="ico">❓</span><h4>Why it exists</h4><p>RAG has a lot of moving data-plumbing — loading, chunking, indexing, retrieving, synthesizing. LlamaIndex makes each a clean, reusable abstraction.</p></div>
 <div class="card" data-reveal=""><span class="ico">🔧</span><h4>Problem it solves</h4><p>"Connect my documents/database to an LLM, retrieve well, and synthesize a grounded answer" — with sensible defaults and deep customization.</p></div>
@@ -163,7 +164,7 @@
 <tr><td><strong>VectorStoreIndex</strong></td><td>Embedding similarity (Modules 04–05)</td><td>The default — semantic Q&amp;A</td></tr>
 <tr><td><strong>SummaryIndex</strong></td><td>Iterates all nodes (no embedding)</td><td>Summarize a whole small document</td></tr>
 <tr><td><strong>DocumentSummaryIndex</strong></td><td>Retrieve by per-doc summaries, then drill in</td><td>Routing across many documents</td></tr>
-<tr><td><strong>PropertyGraphIndex</strong></td><td>Knowledge-graph over entities/relations</td><td>Graph RAG (Module 07) — multi-hop</td></tr>
+<tr><td><strong>PropertyGraphIndex</strong></td><td>Knowledge-graph over entities/relations</td><td>Graph RAG (Module 06) — multi-hop</td></tr>
 </tbody>
 </table></div>
 <h3>Response synthesis modes</h3>
@@ -174,11 +175,11 @@
 <li><strong>tree_summarize</strong> — recursively summarize node groups bottom-up; good for "summarize everything" queries.</li>
 </ul>
 <h3>Advanced retrieval as node strategies</h3>
-<p>The advanced techniques from Module 07 appear here as node parsers/postprocessors:</p>
+<p>The advanced techniques from Module 06 appear here as node parsers/postprocessors:</p>
 <ul>
 <li><strong>SentenceWindowNodeParser</strong> — embed single sentences, return them <em>with surrounding sentences</em> (parent-document idea).</li>
 <li><strong>HierarchicalNodeParser + AutoMergingRetriever</strong> — small chunks that auto-merge into their parent when enough siblings match.</li>
-<li><strong>SentenceTransformerRerank</strong> postprocessor — cross-encoder reranking (Module 07) in one line.</li>
+<li><strong>SentenceTransformerRerank</strong> postprocessor — cross-encoder reranking (Module 06) in one line.</li>
 <li><strong>MetadataFilters</strong> — pre-filter retrieval by node metadata (Module 05).</li>
 </ul>
 <h3>Storage &amp; persistence</h3>
@@ -241,7 +242,7 @@ Settings.node_parser = <span class="tok-fn">SentenceSplitter</span>(chunk_size=<
 docs = <span class="tok-fn">SimpleDirectoryReader</span>(<span class="tok-str">"./data"</span>).<span class="tok-fn">load_data</span>()
 index = VectorStoreIndex.<span class="tok-fn">from_documents</span>(docs)
 
-<span class="tok-com"># Two-stage retrieval: fetch 20, rerank to 4 (Module 07)</span>
+<span class="tok-com"># Two-stage retrieval: fetch 20, rerank to 4 (Module 06)</span>
 reranker = <span class="tok-fn">SentenceTransformerRerank</span>(
     model=<span class="tok-str">"cross-encoder/ms-marco-MiniLM-L-6-v2"</span>, top_n=<span class="tok-num">4</span>)
 engine = index.<span class="tok-fn">as_query_engine</span>(
@@ -258,7 +259,7 @@ engine = index.<span class="tok-fn">as_query_engine</span>(
 <span class="tok-kw">from</span> llama_index.core.postprocessor <span class="tok-kw">import</span> MetadataReplacementPostProcessor
 
 <span class="tok-com"># Embed single sentences (precise match) but answer with a window</span>
-<span class="tok-com"># of surrounding sentences (full context) — parent-document, Module 07.</span>
+<span class="tok-com"># of surrounding sentences (full context) — parent-document, Module 06.</span>
 parser = SentenceWindowNodeParser.<span class="tok-fn">from_defaults</span>(
     window_size=<span class="tok-num">3</span>, window_metadata_key=<span class="tok-str">"window"</span>,
     original_text_metadata_key=<span class="tok-str">"original"</span>)
@@ -340,7 +341,7 @@ engine = index.<span class="tok-fn">as_query_engine</span>()                    
 <h2 id="mistakes">9 · Top mistakes engineers make</h2>
 <div class="grid grid-2">
 <div class="card"><h4>❌ Using the in-memory store in prod</h4><p>It re-embeds on every restart and doesn't scale. Plug in Qdrant/pgvector and persist.</p></div>
-<div class="card"><h4>❌ Ignoring chunking settings</h4><p>The default chunk size may not fit your data. Tune <code>SentenceSplitter</code> against an eval set (Module 07).</p></div>
+<div class="card"><h4>❌ Ignoring chunking settings</h4><p>The default chunk size may not fit your data. Tune <code>SentenceSplitter</code> against an eval set (Module 06).</p></div>
 <div class="card"><h4>❌ Skipping reranking</h4><p>A one-line <code>SentenceTransformerRerank</code> postprocessor is often the biggest quality win.</p></div>
 <div class="card"><h4>❌ Not reading source_nodes</h4><p>Citations are free in the response object — use them for trust and evaluation.</p></div>
 <div class="card"><h4>❌ Wrong response mode for the task</h4><p>Use <code>tree_summarize</code> for "summarize everything", <code>compact</code>/<code>refine</code> for Q&amp;A. Defaults aren't always right.</p></div>
@@ -355,13 +356,13 @@ engine = index.<span class="tok-fn">as_query_engine</span>()                    
 <details class="collapse"><summary><span class="pill blue">Intermediate</span>  What exactly is a Query Engine made of? <span class="chev">›</span></summary>
 <div class="collapse-body"><p>A retriever (fetches relevant Nodes from an index), optional node postprocessors (rerank, filter, window-replace), and a response synthesizer (composes Nodes + query into a grounded answer, with a synthesis mode like compact/refine/tree_summarize). It's the end-to-end "ask → answer with sources" object.</p></div></details>
 <details class="collapse"><summary><span class="pill blue">Intermediate</span>  Explain sentence-window / auto-merging retrieval. <span class="chev">›</span></summary>
-<div class="collapse-body"><p>Both solve the small-vs-large chunk dilemma (Module 07's parent-document). Sentence-window embeds single sentences for precise matching but returns each matched sentence with a window of surrounding sentences for context (via a metadata-replacement postprocessor). Auto-merging uses a hierarchy of chunk sizes and merges small matched chunks into their parent when enough siblings hit — giving precision plus coherent context.</p></div></details>
+<div class="collapse-body"><p>Both solve the small-vs-large chunk dilemma (Module 06's parent-document). Sentence-window embeds single sentences for precise matching but returns each matched sentence with a window of surrounding sentences for context (via a metadata-replacement postprocessor). Auto-merging uses a hierarchy of chunk sizes and merges small matched chunks into their parent when enough siblings hit — giving precision plus coherent context.</p></div></details>
 <details class="collapse"><summary><span class="pill amber">Senior</span>  How do you take a LlamaIndex prototype to production? <span class="chev">›</span></summary>
-<div class="collapse-body"><p>Swap the in-memory store for a real vector DB (Qdrant/pgvector) and persist the index so you don't re-embed on boot. Move ingestion into a scheduled, idempotent IngestionPipeline that handles updates/deletes and tags <code>model_version</code> (Module 04). Tune chunking and add reranking, validated by an eval set (Module 07). Set local/hosted models and temperature via <code>Settings</code>; add metadata-based access control; expose the query engine behind a service boundary (FastAPI). Add tracing/observability and cost controls (Module 14). Treat it as the data layer, with orchestration/agents handled by LangGraph if needed.</p></div></details>
+<div class="collapse-body"><p>Swap the in-memory store for a real vector DB (Qdrant/pgvector) and persist the index so you don't re-embed on boot. Move ingestion into a scheduled, idempotent IngestionPipeline that handles updates/deletes and tags <code>model_version</code> (Module 04). Tune chunking and add reranking, validated by an eval set (Module 06). Set local/hosted models and temperature via <code>Settings</code>; add metadata-based access control; expose the query engine behind a service boundary (FastAPI). Add tracing/observability and cost controls (Module 14). Treat it as the data layer, with orchestration/agents handled by LangGraph if needed.</p></div></details>
 <details class="collapse"><summary><span class="pill amber">Senior</span>  When would you combine LlamaIndex and LangGraph? <span class="chev">›</span></summary>
-<div class="collapse-body"><p>When the app needs both strong retrieval <em>and</em> multi-step/agentic control. Use LlamaIndex to build a high-quality query engine (advanced retrieval, synthesis), then expose it as a <em>tool</em> to a LangGraph agent that decides when to retrieve, can retrieve iteratively (Agentic RAG, Module 07), branch, and keep state. LlamaIndex handles "how to retrieve well"; LangGraph handles "how to orchestrate the reasoning loop."</p></div></details>
+<div class="collapse-body"><p>When the app needs both strong retrieval <em>and</em> multi-step/agentic control. Use LlamaIndex to build a high-quality query engine (advanced retrieval, synthesis), then expose it as a <em>tool</em> to a LangGraph agent that decides when to retrieve, can retrieve iteratively (Agentic RAG, Module 06), branch, and keep state. LlamaIndex handles "how to retrieve well"; LangGraph handles "how to orchestrate the reasoning loop."</p></div></details>
 <details class="collapse"><summary><span class="pill purple">Staff · design</span>  Design a multi-source enterprise knowledge engine with LlamaIndex. <span class="chev">›</span></summary>
-<div class="collapse-body"><p>Ingestion: LlamaHub readers per source (wiki, tickets, docs, DB) → IngestionPipeline (parse to Nodes with rich metadata: source, ACL, freshness, <code>model_version</code>) → embed → persist to a sharded vector store (Module 05). Retrieval: per-source indexes with a <strong>router query engine</strong> (DocumentSummaryIndex) to pick relevant sources, sentence-window/auto-merging for context, reranking for precision, and metadata pre-filtering for access control (never post-filter security). Synthesis: compact for Q&amp;A, tree_summarize for overviews, always returning source_nodes for citations. Operations: scheduled re-ingestion to meet freshness SLAs, eval gates (recall/faithfulness, Module 07) in CI, observability + cost tracking (Module 14). Expose the engine as a tool to a LangGraph agent for multi-step questions. The deliverable is a governed, fresh, citable retrieval layer reusable across the org.</p></div></details>
+<div class="collapse-body"><p>Ingestion: LlamaHub readers per source (wiki, tickets, docs, DB) → IngestionPipeline (parse to Nodes with rich metadata: source, ACL, freshness, <code>model_version</code>) → embed → persist to a sharded vector store (Module 05). Retrieval: per-source indexes with a <strong>router query engine</strong> (DocumentSummaryIndex) to pick relevant sources, sentence-window/auto-merging for context, reranking for precision, and metadata pre-filtering for access control (never post-filter security). Synthesis: compact for Q&amp;A, tree_summarize for overviews, always returning source_nodes for citations. Operations: scheduled re-ingestion to meet freshness SLAs, eval gates (recall/faithfulness, Module 06) in CI, observability + cost tracking (Module 14). Expose the engine as a tool to a LangGraph agent for multi-step questions. The deliverable is a governed, fresh, citable retrieval layer reusable across the org.</p></div></details>
 <!-- ============ 11. QUIZ ============ -->
 <h2 id="quiz">11 · Knowledge check</h2>
 <div class="quiz">
@@ -430,11 +431,25 @@ engine = index.<span class="tok-fn">as_query_engine</span>()                    
 <tbody>
 <tr><td><strong>PDF Q&amp;A</strong></td><td>The fastest path: SimpleDirectoryReader → VectorStoreIndex → query engine with citations.</td></tr>
 <tr><td><strong>Multi-PDF RAG</strong></td><td>Per-doc metadata + a DocumentSummaryIndex router to scope queries to the right files.</td></tr>
-<tr><td><strong>Hybrid Search RAG</strong></td><td>Combine a vector retriever with a BM25 retriever + rerank postprocessor (Module 07).</td></tr>
+<tr><td><strong>Hybrid Search RAG</strong></td><td>Combine a vector retriever with a BM25 retriever + rerank postprocessor (Module 06).</td></tr>
 <tr><td><strong>Multi-Agent Plant Assistant</strong></td><td>A tuned query engine over manuals exposed as a retrieval tool to the agents (Module 13).</td></tr>
 <tr><td><strong>Enterprise Platform</strong></td><td>The governed, multi-source knowledge engine from §10's staff design.</td></tr>
 </tbody>
 </table></div>
+
+<!-- ============ TERM DEFINITIONS ============ -->
+<dialog class="term-dialog" id="term-li-nouns" aria-labelledby="term-li-nouns-title">
+<div class="term-dialog-head">
+<div>
+<span class="term-dialog-eyebrow">In one breath</span>
+<h2 id="term-li-nouns-title">Document, Node, Index, Query Engine</h2>
+</div>
+<button class="term-dialog-close" type="button" data-term-close="" aria-label="Close">✕</button>
+</div>
+<div class="term-dialog-body">
+<p>Four words for four things you have already built by hand.</p><ul><li><strong>Document</strong> &mdash; one source file, loaded. Your PDF, web page or database row.</li><li><strong>Node</strong> &mdash; one chunk of a document, plus metadata and links to its neighbours. This is the <em>chunk</em> from Module 06, with a memory of where it came from.</li><li><strong>Index</strong> &mdash; the organised collection of nodes you search against. Usually embeddings in a vector store, exactly as in Module 05.</li><li><strong>Query Engine</strong> &mdash; the thing you actually ask a question. It retrieves the relevant nodes, then has the model write an answer from them: retrieval plus synthesis in one object.</li></ul><p class="term-dialog-note">Nothing here is new machinery. If a name confuses you, ask which stage of your hand-built pipeline it replaces.</p>
+</div>
+</dialog>
 
 <div class="page-nav">
 <a href="10_langchain.html"><div class="dir">← Previous</div><div class="ttl">10 · LangChain</div></a>
@@ -445,9 +460,9 @@ engine = index.<span class="tok-fn">as_query_engine</span>()                    
 </div>
 </div>
 </div>
-<script src="../assets/app.js?v=20260727c"></script>
-<script src="../assets/sitenav.js?v=20260727c"></script>
-<script src="../assets/enhance.js?v=20260730h"></script>
+<script src="../assets/app.js?v=20260731b"></script>
+<script src="../assets/sitenav.js?v=20260731b"></script>
+<script src="../assets/enhance.js?v=20260731b"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
 </body>
 </html>

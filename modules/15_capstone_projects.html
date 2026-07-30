@@ -42,9 +42,9 @@
      exactly — same key, same "light" default — so the pre-paint value can never
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size, width and text edges, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","align"}, anything unknown -> "default" ("left" for align). */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["small","default","large","xl"].indexOf(r.size)>=0?r.size:"default";var wd=["cozy","default","wide","full"].indexOf(r.width)>=0?r.width:"default";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20260730h" rel="stylesheet"/>
-<link href="../assets/office-theme.css?v=20260730h" rel="stylesheet"/>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "m", unknown width -> "wide". Text is always justified. */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:"m";var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260731b" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260731b" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260728a" rel="stylesheet"/>
 </head>
 <body data-page="15">
@@ -86,6 +86,7 @@
 </div>
 <!-- ============ OVERVIEW ============ -->
 <h2 id="overview">Project roadmap</h2>
+<p><strong>How to use this page:</strong> you are not meant to build all ten. Projects 1&ndash;4 exercise Modules 01&ndash;06 and can each be finished in a weekend; 5&ndash;9 add the agents, tools and orchestration from Modules 08&ndash;13 and run to a week or two; project 10 is the one you put on a CV. Pick the earliest project you could <em>not</em> already build, and take that one all the way to finished &mdash; one completed small project teaches more than three abandoned large ones.</p>
 <p>Build in order — each reuses components from the last. Difficulty and production-realism rise as you go.</p>
 <div class="diagram">
 <svg aria-label="Capstone progression" role="img" viewbox="0 0 740 200" width="740">
@@ -166,7 +167,7 @@
              PROJECT 3 — MULTI-PDF RAG
         ================================================================== -->
 <h2 id="p3">3 · Multi-PDF RAG</h2>
-<p><span class="pill blue">Intermediate</span>  Q&amp;A across a corpus of PDFs with per-document scoping and citations. <span class="pill blue">Modules 05, 06, 07, 11</span></p>
+<p><span class="pill blue">Intermediate</span>  Q&amp;A across a corpus of PDFs with per-document scoping and citations. <span class="pill blue">Modules 05, 06, 11</span></p>
 <p><strong>Architecture:</strong> same as PDF QA but every chunk carries <code>doc_id</code> + <code>title</code> metadata, enabling <strong>metadata pre-filtering</strong> (Module 05) so users can ask "across all docs" or "only in the 2024 handbook."</p>
 <div class="code-block"><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> structure (delta vs #2)</span><button class="copy-btn">Copy</button></div>
 <pre><code>multi-pdf-rag/
@@ -177,7 +178,7 @@
 │   └── rag.py               <span class="tok-com"># scoped retrieval + multi-doc citations</span>
 └── ui/                      <span class="tok-com"># doc picker + scope toggle</span></code></pre></div>
 <p><strong>Data flow:</strong> batch ingest tags each chunk → user picks scope (all / specific docs) → pre-filtered retrieval → answer cites <em>which</em> document + page.</p>
-<p><strong>Component design:</strong> a <strong>router</strong> (DocumentSummaryIndex, Module 11) picks relevant documents first for large corpora; parent-document retrieval (Module 07) preserves context.</p>
+<p><strong>Component design:</strong> a <strong>router</strong> (DocumentSummaryIndex, Module 11) picks relevant documents first for large corpora; parent-document retrieval (Module 06) preserves context.</p>
 <p><strong>Implementation plan:</strong> ① batch ingest w/ metadata → ② scoped retrieval (pre-filter) → ③ doc router for scale → ④ multi-doc citation formatting → ⑤ eval across documents.</p>
 <p><strong>Deployment:</strong> as #2 + a scheduled ingestion job for new/updated PDFs.</p>
 <div class="callout warn"><div class="c-ico">🏭</div><div class="c-body"><div class="c-title">Production considerations</div><p>Pre-filter (never post-filter) for scoping; handle doc deletes/updates idempotently; <code>model_version</code> on vectors for re-embedding; router to avoid scanning thousands of docs per query.</p></div></div>
@@ -185,7 +186,7 @@
              PROJECT 4 — HYBRID SEARCH RAG
         ================================================================== -->
 <h2 id="p4">4 · Hybrid Search RAG</h2>
-<p><span class="pill blue">Intermediate</span>  Production-grade retrieval: dense + sparse + reranking + evaluation. <span class="pill blue">Modules 04, 05, 07, 14</span></p>
+<p><span class="pill blue">Intermediate</span>  Production-grade retrieval: dense + sparse + reranking + evaluation. <span class="pill blue">Modules 04, 05, 06, 14</span></p>
 <div class="cssflow">
 <div class="fnode">Query</div><div class="farrow"></div>
 <div class="fnode">Dense + BM25 (parallel)<small>top-50 each</small></div><div class="farrow"></div>
@@ -198,7 +199,7 @@
 ├── retrieval/
 │   ├── dense.py            <span class="tok-com"># vector search (Module 05)</span>
 │   ├── sparse.py           <span class="tok-com"># BM25 / ES lexical</span>
-│   ├── fuse.py             <span class="tok-com"># reciprocal rank fusion (Module 07)</span>
+│   ├── fuse.py             <span class="tok-com"># reciprocal rank fusion (Module 06)</span>
 │   └── rerank.py           <span class="tok-com"># cross-encoder</span>
 ├── core/rag.py
 ├── eval/
@@ -206,10 +207,10 @@
 │   └── ablation.py         <span class="tok-com"># baseline → +hybrid → +rerank table</span>
 └── api/main.py</code></pre></div>
 <p><strong>Data flow:</strong> query → dense &amp; sparse retrieval in parallel → RRF fuse → cross-encoder rerank → grounded generation.</p>
-<p><strong>Component design:</strong> the <code>AdvancedRetriever</code> (Module 07) as a clean two-stage retrieve→rerank pipeline; ES can supply both lexical and dense in one engine.</p>
+<p><strong>Component design:</strong> the <code>AdvancedRetriever</code> (Module 06) as a clean two-stage retrieve→rerank pipeline; ES can supply both lexical and dense in one engine.</p>
 <p><strong>Implementation plan:</strong> ① dense baseline + eval → ② add BM25 + RRF → ③ add reranker → ④ run the ablation to prove each lift → ⑤ keep what the metrics reward.</p>
 <p><strong>Deployment:</strong> vector store + (optional) ES; reranker model served alongside; eval gate in CI.</p>
-<div class="callout warn"><div class="c-ico">🏭</div><div class="c-body"><div class="c-title">Production considerations</div><p>Reranker latency budget; RRF over raw-score fusion; measure recall@k and faithfulness; cache query vectors; never add a technique the eval doesn't reward (Module 07).</p></div></div>
+<div class="callout warn"><div class="c-ico">🏭</div><div class="c-body"><div class="c-title">Production considerations</div><p>Reranker latency budget; RRF over raw-score fusion; measure recall@k and faithfulness; cache query vectors; never add a technique the eval doesn't reward (Module 06).</p></div></div>
 <!-- =================================================================
              PROJECT 5 — AGENT-BASED EDA SYSTEM
         ================================================================== -->
@@ -272,8 +273,8 @@
              PROJECT 7 — ELASTICSEARCH INVESTIGATION AGENT
         ================================================================== -->
 <h2 id="p7">7 · ElasticSearch Investigation Agent</h2>
-<p><span class="pill amber">Advanced</span>  An agent that investigates logs/metrics in ES through iterative, multi-step queries (Agentic RAG). <span class="pill blue">Modules 05, 07, 08, 12</span></p>
-<p><strong>Architecture:</strong> a LangGraph agent loops — list indices → inspect mappings → search → "do I have enough?" conditional → search again / summarize. This is <strong>Agentic RAG</strong> (Module 07) over ES's hybrid (BM25 + dense_vector) search.</p>
+<p><span class="pill amber">Advanced</span>  An agent that investigates logs/metrics in ES through iterative, multi-step queries (Agentic RAG). <span class="pill blue">Modules 05, 06, 08, 12</span></p>
+<p><strong>Architecture:</strong> a LangGraph agent loops — list indices → inspect mappings → search → "do I have enough?" conditional → search again / summarize. This is <strong>Agentic RAG</strong> (Module 06) over ES's hybrid (BM25 + dense_vector) search.</p>
 <div class="code-block"><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> structure</span><button class="copy-btn">Copy</button></div>
 <pre><code>es-investigate/
 ├── tools/es.py            <span class="tok-com"># list_indices, get_mapping, search (allow-list)</span>
@@ -314,7 +315,7 @@
              PROJECT 9 — MULTI-AGENT PLANT ASSISTANT
         ================================================================== -->
 <h2 id="p9">9 · Multi-Agent Plant Assistant</h2>
-<p><span class="pill red">Advanced</span>  A supervisor coordinating specialist agents over manuals, telemetry, and maintenance for an industrial plant. <span class="pill blue">Modules 07, 09, 12, 13, 14</span></p>
+<p><span class="pill red">Advanced</span>  A supervisor coordinating specialist agents over manuals, telemetry, and maintenance for an industrial plant. <span class="pill blue">Modules 06, 09, 12, 13, 14</span></p>
 <div class="diagram">
 <svg aria-label="Plant assistant multi-agent" role="img" viewbox="0 0 620 210" width="620">
 <defs><marker id="ar9" markerheight="9" markerwidth="9" orient="auto" refx="7" refy="3"><path d="M0,0 L7,3 L0,6 Z" fill="var(--text-muted)"></path></marker></defs>
@@ -386,7 +387,7 @@
 <div class="grid grid-2">
 <div class="card"><h4>🪜 Build in order</h4><p>1→4 cement RAG; 5→7 cement agents; 8 adds MCP; 9 adds multi-agent; 10 synthesizes everything. Each reuses the last's components.</p></div>
 <div class="card"><h4>📏 Wrap every project in Module 14</h4><p>Tracing, guardrails, cost accounting, and an eval gate are non-negotiable — add them from the start, not after.</p></div>
-<div class="card"><h4>🔒 Default to local first</h4><p>Build with Ollama (Modules 03–07) to iterate free and offline; swap to hosted by config when needed.</p></div>
+<div class="card"><h4>🔒 Default to local first</h4><p>Build with Ollama (Modules 03–06) to iterate free and offline; swap to hosted by config when needed.</p></div>
 <div class="card"><h4>🎯 Prove every choice</h4><p>Eval-driven: don't add hybrid/rerank/multi-agent unless the metrics reward it. Ship the simplest thing that works.</p></div>
 </div>
 <!-- ============ INTERVIEW ============ -->
@@ -407,9 +408,9 @@
 </div>
 </div>
 </div>
-<script src="../assets/app.js?v=20260727c"></script>
-<script src="../assets/sitenav.js?v=20260727c"></script>
-<script src="../assets/enhance.js?v=20260730h"></script>
+<script src="../assets/app.js?v=20260731b"></script>
+<script src="../assets/sitenav.js?v=20260731b"></script>
+<script src="../assets/enhance.js?v=20260731b"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
 </body>
 </html>

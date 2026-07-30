@@ -42,9 +42,9 @@
      exactly — same key, same "light" default — so the pre-paint value can never
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size, width and text edges, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","align"}, anything unknown -> "default" ("left" for align). */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["small","default","large","xl"].indexOf(r.size)>=0?r.size:"default";var wd=["cozy","default","wide","full"].indexOf(r.width)>=0?r.width:"default";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20260730h" rel="stylesheet"/>
-<link href="../assets/office-theme.css?v=20260730h" rel="stylesheet"/>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "m", unknown width -> "wide". Text is always justified. */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:"m";var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260731b" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260731b" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260728a" rel="stylesheet"/>
 </head>
 <body data-page="06">
@@ -78,6 +78,12 @@
 <main class="content">
 <div class="eyebrow"><span class="dot"></span> Module 06 · Retrieval track</div>
 <h1>Retrieval-Augmented Generation (RAG)</h1>
+<div class="callout warn" id="moved-notice">
+<div class="c-ico">↪</div>
+<div class="c-body"><div class="c-title">This page has been retired</div>
+<p>RAG is now taught in one place, start to finish, on <a href="../rag-deep-dive.html"><strong>RAG, End-to-End (Module 06) →</strong></a>. This page is kept only so old links still resolve; it is no longer in the sidebar or the reading order, and it is not maintained. Read the single RAG page instead.</p></div>
+</div>
+
 <p class="lead">Module 01 left us with a hard limit: an LLM only knows its training data and hallucinates about anything else — your PDFs, your database, last week's events. RAG is the fix that powers most production GenAI today. The idea is almost embarrassingly simple: <strong>before the model answers, retrieve the relevant facts and paste them into the prompt</strong>. Everything you learned about embeddings (04) and vector DBs (05) now snaps together into one pipeline.</p>
 <div class="meta-row">
 <span class="pill blue">⏱ Study + practice · 12–18 h</span>
@@ -86,9 +92,10 @@
 </div>
 <!-- ============ 1. EXECUTIVE SUMMARY ============ -->
 <h2 id="summary">1 · Executive summary</h2>
-<p><strong>RAG</strong> grounds an LLM in external knowledge at query time. You split your documents into <strong>chunks</strong>, embed them into a <strong>vector store</strong>, and for each user question you <strong>retrieve</strong> the most relevant chunks, <strong>augment</strong> the prompt with them, and let the model <strong>generate</strong> an answer based on that supplied context. No retraining, knowledge stays current, and answers can cite their sources.</p>
+<p><strong>In plain words first:</strong> the model has never seen your documents, and it will cheerfully invent an answer about them anyway (Module 01). So do not ask it cold. Search your own documents first, take the two or three passages that look relevant, paste them into the prompt above your question, and ask it to answer from those. That is the entire idea &mdash; everything below is how to do each of those steps well.</p>
+<p><strong>RAG</strong> grounds an LLM in external knowledge at query time. You split your documents into <strong><button class="term-link" type="button" data-term-dialog="term-chunking">chunks</button></strong>, embed them into a <strong>vector store</strong>, and for each user question you <strong>retrieve</strong> the most relevant chunks, <strong>augment</strong> the prompt with them, and let the model <strong>generate</strong> an answer based on that supplied context. No retraining, knowledge stays current, and answers can cite their sources.</p>
 <div class="grid grid-3">
-<div class="card" data-reveal=""><span class="ico">❓</span><h4>Why it exists</h4><p>Fine-tuning to teach facts is slow, costly, and goes stale. RAG injects fresh, private knowledge at inference with zero retraining.</p></div>
+<div class="card" data-reveal=""><span class="ico">❓</span><h4>Why it exists</h4><p><button class="term-link" type="button" data-term-dialog="term-finetuning">Fine-tuning</button> to teach facts is slow, costly, and goes stale. RAG injects fresh, private knowledge at inference with zero retraining.</p></div>
 <div class="card" data-reveal=""><span class="ico">🔧</span><h4>Problem it solves</h4><p>Hallucination and stale/missing knowledge. Ground the model in retrieved evidence and it answers from <em>your</em> data, with citations.</p></div>
 <div class="card" data-reveal=""><span class="ico">🌐</span><h4>Where it fits</h4><p>The dominant pattern for Q&amp;A over documents, support, search, and enterprise knowledge. Advanced techniques layer on in <a href="07_advanced_rag.html">Module 07</a>.</p></div>
 </div>
@@ -432,6 +439,32 @@ emb = <span class="tok-kw">lambda</span> t: np.<span class="tok-fn">array</span>
 </tbody>
 </table></div>
 
+<!-- ============ TERM DEFINITIONS ============ -->
+<dialog class="term-dialog" id="term-chunking" aria-labelledby="term-chunking-title">
+<div class="term-dialog-head">
+<div>
+<span class="term-dialog-eyebrow">In one breath</span>
+<h2 id="term-chunking-title">Chunking</h2>
+</div>
+<button class="term-dialog-close" type="button" data-term-close="" aria-label="Close">✕</button>
+</div>
+<div class="term-dialog-body">
+<p>Cutting a document into pieces of a few hundred words before you store it.</p><p>Two reasons. A whole 40-page PDF will not fit in the prompt; and even if it did, burying one relevant paragraph in forty pages of noise makes the answer worse, not better. So you store pieces, retrieve the few that match, and send only those.</p><p class="term-dialog-note">Where you cut matters more than beginners expect. Slice mid-sentence or through a table and the piece stops making sense on its own — which is why chunking strategy gets a section of its own later in this module.</p>
+</div>
+</dialog>
+<dialog class="term-dialog" id="term-finetuning" aria-labelledby="term-finetuning-title">
+<div class="term-dialog-head">
+<div>
+<span class="term-dialog-eyebrow">In one breath</span>
+<h2 id="term-finetuning-title">Fine-tuning</h2>
+</div>
+<button class="term-dialog-close" type="button" data-term-close="" aria-label="Close">✕</button>
+</div>
+<div class="term-dialog-body">
+<p>Continuing to train an existing model on your own examples, so that its <strong>parameters</strong> change. It is the other way people try to give a model new knowledge — and usually the wrong one.</p><p>The comparison in one line: <strong>fine-tuning changes the model, RAG changes the prompt.</strong> Fine-tuning is good for teaching a <em>style</em>, a format or a narrow skill. It is poor for facts, because every update means training all over again, and the model still cannot tell you where an answer came from.</p><p class="term-dialog-note">Nothing in this course asks you to fine-tune anything. It appears here only as the alternative that RAG is being compared against.</p>
+</div>
+</dialog>
+
 <div class="page-nav">
 <a href="05_vector_databases.html"><div class="dir">← Previous</div><div class="ttl">05 · Vector Databases</div></a>
 <a class="next" href="07_advanced_rag.html"><div class="dir">Next →</div><div class="ttl">07 · Advanced RAG</div></a>
@@ -441,9 +474,9 @@ emb = <span class="tok-kw">lambda</span> t: np.<span class="tok-fn">array</span>
 </div>
 </div>
 </div>
-<script src="../assets/app.js?v=20260727c"></script>
-<script src="../assets/sitenav.js?v=20260727c"></script>
-<script src="../assets/enhance.js?v=20260730h"></script>
+<script src="../assets/app.js?v=20260731b"></script>
+<script src="../assets/sitenav.js?v=20260731b"></script>
+<script src="../assets/enhance.js?v=20260731b"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
 </body>
 </html>

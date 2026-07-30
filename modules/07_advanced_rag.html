@@ -42,9 +42,9 @@
      exactly — same key, same "light" default — so the pre-paint value can never
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size, width and text edges, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","align"}, anything unknown -> "default" ("left" for align). */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["small","default","large","xl"].indexOf(r.size)>=0?r.size:"default";var wd=["cozy","default","wide","full"].indexOf(r.width)>=0?r.width:"default";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20260730h" rel="stylesheet"/>
-<link href="../assets/office-theme.css?v=20260730h" rel="stylesheet"/>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "m", unknown width -> "wide". Text is always justified. */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:"m";var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260731b" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260731b" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260728a" rel="stylesheet"/>
 </head>
 <body data-page="07">
@@ -78,6 +78,12 @@
 <main class="content">
 <div class="eyebrow"><span class="dot"></span> Module 07 · Retrieval track</div>
 <h1>Advanced RAG</h1>
+<div class="callout warn" id="moved-notice">
+<div class="c-ico">↪</div>
+<div class="c-body"><div class="c-title">This page has been retired</div>
+<p>RAG is now taught in one place, start to finish, on <a href="../rag-deep-dive.html"><strong>RAG, End-to-End (Module 06) →</strong></a>. This page is kept only so old links still resolve; it is no longer in the sidebar or the reading order, and it is not maintained. Read the single RAG page instead.</p></div>
+</div>
+
 <p class="lead">Naive RAG (Module 06) demos beautifully and then disappoints in production: it misses exact terms, retrieves near-misses, fumbles vague or multi-part questions, and you have no number telling you how good it is. This module is the toolbox that turns a demo into a system — <strong>hybrid search, reranking, query transformation, smarter chunk retrieval, Graph &amp; Agentic RAG, and the evaluation discipline that lets you prove any of it helped.</strong></p>
 <div class="meta-row">
 <span class="pill blue">⏱ Study + practice · 16–24 h</span>
@@ -86,10 +92,11 @@
 </div>
 <!-- ============ 1. EXECUTIVE SUMMARY ============ -->
 <h2 id="summary">1 · Executive summary</h2>
-<p>Advanced RAG is a set of upgrades to each stage of the pipeline, plus the measurement loop that justifies them. You improve <strong>recall</strong> (find more of the right chunks) with hybrid search and query expansion; you improve <strong>precision</strong> (rank the right chunks first) with reranking and compression; you improve <strong>context quality</strong> with parent-document and Graph RAG; and you handle hard questions with <strong>Agentic RAG</strong>. Crucially, you measure every change with a <strong>RAG evaluation</strong> harness so improvements are real, not vibes.</p>
+<p><strong>In plain words first:</strong> Module 06 built a pipeline that finds passages by meaning and pastes them into the prompt. It fails in four ordinary ways &mdash; it misses exact terms like product codes, it returns passages that are merely nearby rather than relevant, it cannot handle a question with two parts, and you have no number telling you whether a change you made is an improvement. Each section below fixes one of those, in that order.</p>
+<p>Advanced RAG is a set of upgrades to each stage of the pipeline, plus the measurement loop that justifies them. You improve <strong><button class="term-link" type="button" data-term-dialog="term-precision-recall">recall</button></strong> (find more of the right chunks) with hybrid search and query expansion; you improve <strong>precision</strong> (rank the right chunks first) with reranking and compression; you improve <strong>context quality</strong> with parent-document and Graph RAG; and you handle hard questions with <strong>Agentic RAG</strong>. Crucially, you measure every change with a <strong>RAG evaluation</strong> harness so improvements are real, not vibes.</p>
 <div class="grid grid-3">
 <div class="card" data-reveal=""><span class="ico">🎯</span><h4>Better recall</h4><p>Hybrid (dense+sparse) search, query expansion/rewriting, multi-query — find chunks naive vector search misses.</p></div>
-<div class="card" data-reveal=""><span class="ico">🔬</span><h4>Better precision</h4><p>Cross-encoder reranking and context compression put the <em>right</em> evidence first and strip the noise.</p></div>
+<div class="card" data-reveal=""><span class="ico">🔬</span><h4>Better precision</h4><p><button class="term-link" type="button" data-term-dialog="term-cross-encoder">Cross-encoder</button> reranking and context compression put the <em>right</em> evidence first and strip the noise.</p></div>
 <div class="card" data-reveal=""><span class="ico">🧠</span><h4>Better reasoning</h4><p>Parent-document, Graph RAG, and Agentic RAG handle context, relationships, and multi-hop questions.</p></div>
 </div>
 <div class="callout key">
@@ -458,6 +465,32 @@ bm25 = <span class="tok-fn">BM25Okapi</span>([d.<span class="tok-fn">split</span
 </tbody>
 </table></div>
 
+<!-- ============ TERM DEFINITIONS ============ -->
+<dialog class="term-dialog" id="term-precision-recall" aria-labelledby="term-precision-recall-title">
+<div class="term-dialog-head">
+<div>
+<span class="term-dialog-eyebrow">In one breath</span>
+<h2 id="term-precision-recall-title">Precision and recall</h2>
+</div>
+<button class="term-dialog-close" type="button" data-term-close="" aria-label="Close">✕</button>
+</div>
+<div class="term-dialog-body">
+<p>The two ways a search can be wrong, and they pull against each other.</p><p><strong>Recall</strong> &mdash; of all the passages that <em>should</em> have been found, what fraction did you actually find? Low recall means the answer was never in the prompt at all, so the model could not possibly get it right.</p><p><strong>Precision</strong> &mdash; of the passages you did return, what fraction are genuinely relevant? Low precision means the right passage is in there somewhere, buried in noise that pushes the model off course.</p><p class="term-dialog-note">Return more passages and recall rises while precision falls. That is why the pipeline has two distinct stages: retrieve widely for recall, then rerank ruthlessly for precision.</p>
+</div>
+</dialog>
+<dialog class="term-dialog" id="term-cross-encoder" aria-labelledby="term-cross-encoder-title">
+<div class="term-dialog-head">
+<div>
+<span class="term-dialog-eyebrow">In one breath</span>
+<h2 id="term-cross-encoder-title">Cross-encoder (and why reranking works)</h2>
+</div>
+<button class="term-dialog-close" type="button" data-term-close="" aria-label="Close">✕</button>
+</div>
+<div class="term-dialog-body">
+<p>There are two ways to judge whether a passage answers a question.</p><p>The <strong>embedding</strong> approach from Module 04 turns the question into numbers and each passage into numbers <em>separately</em>, then compares the two lists. Fast, because every passage can be converted once in advance &mdash; but no passage was ever read with your particular question in mind.</p><p>A <strong>cross-encoder</strong> reads the question and one passage <em>together</em> and scores that pair directly. Far more accurate, and far too slow to run against a million passages.</p><p class="term-dialog-note">Hence the standard shape: cheap search fetches perhaps 50 candidates, the cross-encoder carefully reorders those 50, and the best few go into the prompt. That reordering step is what "reranking" means.</p>
+</div>
+</dialog>
+
 <div class="page-nav">
 <a href="06_rag_basics.html"><div class="dir">← Previous</div><div class="ttl">06 · RAG Basics</div></a>
 <a class="next" href="08_agents.html"><div class="dir">Next →</div><div class="ttl">08 · Agentic AI</div></a>
@@ -467,9 +500,9 @@ bm25 = <span class="tok-fn">BM25Okapi</span>([d.<span class="tok-fn">split</span
 </div>
 </div>
 </div>
-<script src="../assets/app.js?v=20260727c"></script>
-<script src="../assets/sitenav.js?v=20260727c"></script>
-<script src="../assets/enhance.js?v=20260730h"></script>
+<script src="../assets/app.js?v=20260731b"></script>
+<script src="../assets/sitenav.js?v=20260731b"></script>
+<script src="../assets/enhance.js?v=20260731b"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
 </body>
 </html>

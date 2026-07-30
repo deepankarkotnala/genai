@@ -42,9 +42,9 @@
      exactly — same key, same "light" default — so the pre-paint value can never
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size, width and text edges, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","align"}, anything unknown -> "default" ("left" for align). */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["small","default","large","xl"].indexOf(r.size)>=0?r.size:"default";var wd=["cozy","default","wide","full"].indexOf(r.width)>=0?r.width:"default";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20260730h" rel="stylesheet"/>
-<link href="../assets/office-theme.css?v=20260730h" rel="stylesheet"/>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "m", unknown width -> "wide". Text is always justified. */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:"m";var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260731b" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260731b" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260728a" rel="stylesheet"/>
 </head>
 <body data-page="09">
@@ -91,7 +91,8 @@
 </div>
 <!-- ============ 1. EXECUTIVE SUMMARY ============ -->
 <h2 id="summary">1 · Executive summary</h2>
-<p>The <strong>Model Context Protocol (MCP)</strong> is an open standard (introduced by Anthropic, now broadly adopted) that defines how applications expose <strong>context and capabilities</strong> to LLMs. An <strong>MCP server</strong> publishes three things — <strong>tools</strong> (actions the model can invoke), <strong>resources</strong> (data the model can read), and <strong>prompts</strong> (reusable templates) — over a standard JSON-RPC protocol. An <strong>MCP client</strong> (inside the host app) discovers and calls them. Build the server once; reuse it everywhere.</p>
+<p><strong>In plain words first:</strong> in Module 08 you wrote the tools <em>and</em> the agent, so they only ever worked with each other. MCP is an agreement about how a tool describes itself and how it is called, so a tool you write can be used by an agent you did not write, and the other way round. Same tools as last module; a standard plug instead of soldered wires.</p>
+<p>The <strong>Model Context Protocol (MCP)</strong> is an open standard (introduced by Anthropic, now broadly adopted) that defines how applications expose <strong>context and capabilities</strong> to LLMs. An <strong><button class="term-link" type="button" data-term-dialog="term-mcp-client-server">MCP server</button></strong> publishes three things — <strong>tools</strong> (actions the model can invoke), <strong>resources</strong> (data the model can read), and <strong>prompts</strong> (reusable templates) — over a standard JSON-RPC protocol. An <strong>MCP client</strong> (inside the host app) discovers and calls them. Build the server once; reuse it everywhere.</p>
 <div class="grid grid-3">
 <div class="card" data-reveal=""><span class="ico">❓</span><h4>Why it exists</h4><p>Every tool integration was custom per app × per framework — an M×N explosion. MCP collapses it to M+N: tools and clients share one protocol.</p></div>
 <div class="card" data-reveal=""><span class="ico">🔧</span><h4>Problem it solves</h4><p>Standardized, discoverable, reusable tool/data access for LLMs — with a clean security boundary between the model and your systems.</p></div>
@@ -509,6 +510,20 @@ ALLOWED = {<span class="tok-str">"app-logs"</span>, <span class="tok-str">"audit
 </tbody>
 </table></div>
 
+<!-- ============ TERM DEFINITIONS ============ -->
+<dialog class="term-dialog" id="term-mcp-client-server" aria-labelledby="term-mcp-client-server-title">
+<div class="term-dialog-head">
+<div>
+<span class="term-dialog-eyebrow">In one breath</span>
+<h2 id="term-mcp-client-server-title">Client and server, in MCP terms</h2>
+</div>
+<button class="term-dialog-close" type="button" data-term-close="" aria-label="Close">✕</button>
+</div>
+<div class="term-dialog-body">
+<p>Deliberately borrowed words, worth pinning down because the roles feel backwards at first.</p><p>The <strong>server</strong> is the small program <em>you</em> write that owns some capability &mdash; your database, your files, your internal API &mdash; and offers it in a standard shape. It contains no model.</p><p>The <strong>client</strong> is the application that has the model in it: a desktop assistant, an IDE, or your own agent. It connects to servers, discovers what they offer, and calls them on the model behalf.</p><p class="term-dialog-note">"Server" here does not imply a machine in a data centre. Most MCP servers are a script running on your own laptop, talking over its input and output streams.</p>
+</div>
+</dialog>
+
 <div class="page-nav">
 <a href="08_agents.html"><div class="dir">← Previous</div><div class="ttl">08 · Agentic AI</div></a>
 <a class="next" href="10_langchain.html"><div class="dir">Next →</div><div class="ttl">10 · LangChain</div></a>
@@ -518,9 +533,9 @@ ALLOWED = {<span class="tok-str">"app-logs"</span>, <span class="tok-str">"audit
 </div>
 </div>
 </div>
-<script src="../assets/app.js?v=20260727c"></script>
-<script src="../assets/sitenav.js?v=20260727c"></script>
-<script src="../assets/enhance.js?v=20260730h"></script>
+<script src="../assets/app.js?v=20260731b"></script>
+<script src="../assets/sitenav.js?v=20260731b"></script>
+<script src="../assets/enhance.js?v=20260731b"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
 </body>
 </html>

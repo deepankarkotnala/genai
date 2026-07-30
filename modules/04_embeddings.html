@@ -42,9 +42,9 @@
      exactly — same key, same "light" default — so the pre-paint value can never
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size, width and text edges, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","align"}, anything unknown -> "default" ("left" for align). */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["small","default","large","xl"].indexOf(r.size)>=0?r.size:"default";var wd=["cozy","default","wide","full"].indexOf(r.width)>=0?r.width:"default";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20260730h" rel="stylesheet"/>
-<link href="../assets/office-theme.css?v=20260730h" rel="stylesheet"/>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "m", unknown width -> "wide". Text is always justified. */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:"m";var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260731b" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260731b" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260728a" rel="stylesheet"/>
 </head>
 <body data-page="04">
@@ -86,11 +86,12 @@
 </div>
 <!-- ============ 1. EXECUTIVE SUMMARY ============ -->
 <h2 id="summary">1 · Executive summary</h2>
-<p>An <strong>embedding</strong> is a fixed-length vector (e.g. 384, 768, or 1536 numbers) produced by a model that has learned to map text into a space where <strong>semantic similarity equals geometric closeness</strong>. "How do I reset my password?" and "I forgot my login credentials" produce nearby vectors even though they share almost no words. That property is the foundation of every retrieval system in this course.</p>
+<p><strong>In plain words first:</strong> a model can read what you hand it, but it cannot search through ten thousand documents to decide what to hand itself &mdash; and pasting all of them into the prompt is impossible. The trick in this module is to turn every piece of text into a list of numbers, chosen so that texts meaning similar things get similar lists. Then &ldquo;find text that means roughly this&rdquo; becomes &ldquo;find the nearest list of numbers&rdquo;, which a computer can do millions of times a second.</p>
+<p>An <strong>embedding</strong> is a fixed-length <button class="term-link" type="button" data-term-dialog="term-vector">vector</button> (e.g. 384, 768, or 1536 numbers) produced by a model that has learned to map text into a space where <strong>semantic similarity equals geometric closeness</strong>. "How do I reset my password?" and "I forgot my login credentials" produce nearby vectors even though they share almost no words. That property is the foundation of every retrieval system in this course.</p>
 <div class="grid grid-3">
 <div class="card" data-reveal=""><span class="ico">❓</span><h4>Why it exists</h4><p>Keyword search misses meaning ("car" ≠ "automobile"). Embeddings capture semantics so search works on intent, not exact strings.</p></div>
 <div class="card" data-reveal=""><span class="ico">🔧</span><h4>Problem it solves</h4><p>"Find the few relevant passages out of millions, fast." Convert everything to vectors once, then compare by distance.</p></div>
-<div class="card" data-reveal=""><span class="ico">🌐</span><h4>Where it fits</h4><p>The first half of RAG. Embeddings feed the <a href="05_vector_databases.html">vector DB</a> (Module 05) and power <a href="06_rag_basics.html">retrieval</a> (Module 06).</p></div>
+<div class="card" data-reveal=""><span class="ico">🌐</span><h4>Where it fits</h4><p>The first half of RAG. Embeddings feed the <a href="05_vector_databases.html">vector DB</a> (Module 05) and power <a href="../rag-deep-dive.html">retrieval</a> (Module 06).</p></div>
 </div>
 <div class="callout key">
 <div class="c-ico">🔑</div>
@@ -104,7 +105,7 @@
 <div class="callout note"><div class="c-ico">🧭</div><div class="c-body"><div class="c-title">The classic analogy</div>
 <p>The famous result <code>king − man + woman ≈ queen</code> shows directions in the space carry meaning. Modern sentence embeddings extend this from single words to whole passages — the <em>geometry encodes semantics</em>.</p></div></div>
 <h3>Why — distance is cheap, understanding is expensive</h3>
-<p>Comparing two vectors with cosine similarity is a single dot product — microseconds. Asking an LLM "are these two paragraphs about the same thing?" costs a full forward pass and dollars. Embeddings move the expensive "understanding" step to a one-time encode, then let cheap geometry do the matching at query time across millions of items.</p>
+<p>Comparing two vectors with <button class="term-link" type="button" data-term-dialog="term-cosine">cosine similarity</button> is a single dot product — microseconds. Asking an LLM "are these two paragraphs about the same thing?" costs a full forward pass and dollars. Embeddings move the expensive "understanding" step to a one-time encode, then let cheap geometry do the matching at query time across millions of items.</p>
 <h3>How — from transformer to a single vector</h3>
 <p>An embedding model is usually a transformer <em>encoder</em> (Module 02, bidirectional). It reads the text, produces a contextual vector per token, then <strong>pools</strong> them into one vector (mean-pooling or a special <code>[CLS]</code> token). The model is trained with <em>contrastive learning</em>: pull similar pairs together, push dissimilar pairs apart.</p>
 <div class="cssflow">
@@ -161,7 +162,7 @@
 <h3>Dense vs. sparse embeddings</h3>
 <div class="grid grid-2">
 <div class="card"><h4>Dense (semantic)</h4><p>Few hundred–few thousand floats, every dim is "active." Captures meaning/synonyms. Misses exact keywords, codes, and rare proper nouns. This module's focus.</p></div>
-<div class="card"><h4>Sparse (lexical)</h4><p>Vocabulary-sized, mostly zeros (BM25, SPLADE). Captures exact terms, IDs, jargon. Misses paraphrase. We combine both in <strong>hybrid search</strong> (<a href="07_advanced_rag.html">Module 07</a>).</p></div>
+<div class="card"><h4>Sparse (lexical)</h4><p>Vocabulary-sized, mostly zeros (BM25, SPLADE). Captures exact terms, IDs, jargon. Misses paraphrase. We combine both in <strong>hybrid search</strong> (<a href="../rag-deep-dive.html#hybrid">Module 06</a>).</p></div>
 </div>
 <h3>Choosing an embedding model</h3>
 <div class="table-wrap"><table>
@@ -175,7 +176,7 @@
 </tbody>
 </table></div>
 <h3>Why chunk granularity is an embedding decision</h3>
-<p>A single vector must summarize an <em>entire</em> input. Embed a whole 20-page PDF into one vector and it becomes a mushy average — useless for retrieval. Embed each sentence and you lose surrounding context. The sweet spot (typically a few hundred tokens per chunk, with overlap) is a tradeoff you tune in <a href="06_rag_basics.html">Module 06</a>; the constraint originates here, in how embeddings compress.</p>
+<p>A single vector must summarize an <em>entire</em> input. Embed a whole 20-page PDF into one vector and it becomes a mushy average — useless for retrieval. Embed each sentence and you lose surrounding context. The sweet spot (typically a few hundred tokens per chunk, with overlap) is a tradeoff you tune in <a href="../rag-deep-dive.html">Module 06</a>; the constraint originates here, in how embeddings compress.</p>
 <h3>Tradeoffs &amp; limitations</h3>
 <div class="grid grid-2">
 <div class="card"><h4>Strengths</h4><ul style="margin-bottom:0"><li>Meaning-based matching</li><li>One-time encode, cheap query-time search</li><li>Language- and format-agnostic</li></ul></div>
@@ -315,7 +316,7 @@ doc = <span class="tok-fn">embed</span>(<span class="tok-str">"running sentence 
 <div class="card"><h4>❌ Skipping normalization (then using dot product)</h4><p>Unnormalized dot products rank by magnitude, not meaning. Normalize, or use cosine explicitly.</p></div>
 <div class="card"><h4>❌ Ignoring query/passage prefixes</h4><p>Asymmetric models (e5, bge) need <code>"query:"</code>/<code>"passage:"</code> prefixes. Omit them and recall craters.</p></div>
 <div class="card"><h4>❌ Embedding huge chunks</h4><p>One vector can't represent 20 pages. Oversized chunks average out the signal. Chunk thoughtfully (Module 06).</p></div>
-<div class="card"><h4>❌ Relying on dense alone for IDs/codes</h4><p>Exact tokens (SKUs, error codes, names) need lexical/sparse search. Use hybrid (Module 07).</p></div>
+<div class="card"><h4>❌ Relying on dense alone for IDs/codes</h4><p>Exact tokens (SKUs, error codes, names) need lexical/sparse search. Use hybrid (Module 06).</p></div>
 <div class="card"><h4>❌ Re-embedding the query every request</h4><p>For repeated/popular queries, cache the query vector — it's pure compute you can avoid.</p></div>
 </div>
 <!-- ============ 10. INTERVIEW ============ -->
@@ -325,7 +326,7 @@ doc = <span class="tok-fn">embed</span>(<span class="tok-str">"running sentence 
 <details class="collapse"><summary><span class="pill green">Beginner</span>  Why cosine similarity instead of Euclidean distance for text? <span class="chev">›</span></summary>
 <div class="collapse-body"><p>Cosine measures the angle between vectors, ignoring magnitude — and for text, direction (which concepts are present) matters more than length. With normalized vectors, cosine, dot product, and Euclidean give the same ranking, so people normalize and use the fast dot product.</p></div></details>
 <details class="collapse"><summary><span class="pill blue">Intermediate</span>  Dense vs sparse embeddings — when do you need each? <span class="chev">›</span></summary>
-<div class="collapse-body"><p>Dense (semantic) embeddings match meaning and paraphrase but miss exact terms. Sparse/lexical (BM25, SPLADE) match exact keywords, codes, and rare proper nouns but miss synonyms. Use dense for conceptual queries, sparse for precise terms, and <strong>hybrid</strong> (combine both, then rerank) when you need both — covered in Module 07.</p></div></details>
+<div class="collapse-body"><p>Dense (semantic) embeddings match meaning and paraphrase but miss exact terms. Sparse/lexical (BM25, SPLADE) match exact keywords, codes, and rare proper nouns but miss synonyms. Use dense for conceptual queries, sparse for precise terms, and <strong>hybrid</strong> (combine both, then rerank) when you need both — covered in Module 06.</p></div></details>
 <details class="collapse"><summary><span class="pill blue">Intermediate</span>  How does embedding dimensionality affect a system? <span class="chev">›</span></summary>
 <div class="collapse-body"><p>Higher dimensions can capture more nuance but cost more storage (linear in dims × number of vectors) and slightly slower similarity computation and index build. 384-d is fast/light; 768–1024 is a common quality balance; 1536+ for top quality. Choose based on recall needs vs. storage/latency budget; some models (Matryoshka) let you truncate dims gracefully.</p></div></details>
 <details class="collapse"><summary><span class="pill amber">Senior</span>  Your retrieval quality dropped overnight. Embeddings are a suspect — how do you investigate? <span class="chev">›</span></summary>
@@ -407,6 +408,32 @@ doc = <span class="tok-fn">embed</span>(<span class="tok-str">"running sentence 
 </tbody>
 </table></div>
 
+<!-- ============ TERM DEFINITIONS ============ -->
+<dialog class="term-dialog" id="term-vector" aria-labelledby="term-vector-title">
+<div class="term-dialog-head">
+<div>
+<span class="term-dialog-eyebrow">In one breath</span>
+<h2 id="term-vector-title">Vector</h2>
+</div>
+<button class="term-dialog-close" type="button" data-term-close="" aria-label="Close">✕</button>
+</div>
+<div class="term-dialog-body">
+<p>A list of numbers, in a fixed order. That is the whole definition — "vector" is just the mathematical word for it.</p><p>Two things make it useful here. First, a list of numbers can be <em>compared</em> to another list: numbers that rise and fall together describe similar things. Second, a list of 768 numbers can be pictured as one point in a space with 768 directions, so "similar meaning" becomes "nearby point" — which is why this module is called turning meaning into math.</p><p class="term-dialog-note">You cannot visualise 768 directions, and you never need to. Every operation in this module works the same way in 768 as it does in 2.</p>
+</div>
+</dialog>
+<dialog class="term-dialog" id="term-cosine" aria-labelledby="term-cosine-title">
+<div class="term-dialog-head">
+<div>
+<span class="term-dialog-eyebrow">In one breath</span>
+<h2 id="term-cosine-title">Cosine similarity</h2>
+</div>
+<button class="term-dialog-close" type="button" data-term-close="" aria-label="Close">✕</button>
+</div>
+<div class="term-dialog-body">
+<p>A number between −1 and 1 saying how closely two vectors point in the same <em>direction</em>, ignoring how long they are.</p><p>1 means the same direction (as similar as it gets), 0 means unrelated, −1 means opposite. Direction rather than length is the right question for text: a long document and a one-line question can mean the same thing, and we do not want length to drown that out.</p>
+</div>
+</dialog>
+
 <div class="page-nav">
 <a href="03_local_llms.html"><div class="dir">← Previous</div><div class="ttl">03 · Local LLMs &amp; Ollama</div></a>
 <a class="next" href="05_vector_databases.html"><div class="dir">Next →</div><div class="ttl">05 · Vector Databases</div></a>
@@ -416,9 +443,9 @@ doc = <span class="tok-fn">embed</span>(<span class="tok-str">"running sentence 
 </div>
 </div>
 </div>
-<script src="../assets/app.js?v=20260727c"></script>
-<script src="../assets/sitenav.js?v=20260727c"></script>
-<script src="../assets/enhance.js?v=20260730h"></script>
+<script src="../assets/app.js?v=20260731b"></script>
+<script src="../assets/sitenav.js?v=20260731b"></script>
+<script src="../assets/enhance.js?v=20260731b"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
 </body>
 </html>

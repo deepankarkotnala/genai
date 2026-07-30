@@ -42,9 +42,9 @@
      exactly — same key, same "light" default — so the pre-paint value can never
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size, width and text edges, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","align"}, anything unknown -> "default" ("left" for align). */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["small","default","large","xl"].indexOf(r.size)>=0?r.size:"default";var wd=["cozy","default","wide","full"].indexOf(r.width)>=0?r.width:"default";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20260730h" rel="stylesheet"/>
-<link href="../assets/office-theme.css?v=20260730h" rel="stylesheet"/>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "m", unknown width -> "wide". Text is always justified. */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:"m";var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260731b" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260731b" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260728a" rel="stylesheet"/>
 </head>
 <body data-page="01">
@@ -78,15 +78,30 @@
 <main class="content">
 <div class="eyebrow"><span class="dot"></span> Module 01 · Foundations track</div>
 <h1>Foundations of Large Language Models</h1>
-<p class="lead">Before you build RAG pipelines or multi-agent systems, you need an unshakable mental model of what an LLM actually <em>is</em>: a probabilistic next-token predictor wrapped around a transformer. Everything else in this course is a technique for steering, grounding, or orchestrating this one primitive.</p>
+<p class="lead">Before you build RAG pipelines or multi-agent systems, you need an unshakable mental model of what an LLM actually <em>is</em>: a machine that, given some text, scores which chunk of text plausibly comes next — and nothing more. The network design it uses to do that is called a <button class="term-link" type="button" data-term-dialog="term-transformer">transformer</button>. Everything else in this course is a technique for steering, grounding, or orchestrating this one primitive.</p>
 <div class="meta-row">
 <span class="pill blue">⏱ Study + practice · 8–12 h</span>
 <span class="pill">Difficulty · Beginner→Intermediate</span>
-<span class="pill purple">Prereq · Python, basic ML</span>
+<span class="pill purple">Prereq · <a href="00_basics.html">Module 00</a> · Python</span>
 </div>
+<div class="callout tip"><div class="c-ico">🧭</div><div class="c-body"><div class="c-title">Before you start — the six words this page leans on</div>
+<p>If any of these are new, read <a href="00_basics.html">Module 00 · The Basics</a> first (25 minutes, no mathematics). It exists precisely so this page reads as a summary rather than a wall. Every underlined term below can also be clicked for a two-line definition, right where it appears.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Word</th><th>Enough to get through this page</th></tr></thead>
+<tbody>
+<tr><td><strong>Token</strong></td><td>A chunk of text, roughly four characters, that the model treats as one unit.</td></tr>
+<tr><td><strong>Vocabulary</strong></td><td>The fixed list of every token a model knows — usually around 100,000.</td></tr>
+<tr><td><strong>Transformer</strong></td><td>The network design inside the model. Treat it as a black box until <a href="02_transformers.html">Module 02</a>.</td></tr>
+<tr><td><strong>Logits</strong></td><td>The raw score the model gives every possible next token.</td></tr>
+<tr><td><strong>Sampling</strong></td><td>Picking which of those tokens to actually use.</td></tr>
+<tr><td><strong>Autoregressive</strong></td><td>The loop: pick a token, append it, ask again.</td></tr>
+</tbody>
+</table></div>
+</div></div>
+
 <!-- ============ 1. EXECUTIVE SUMMARY ============ -->
 <h2 id="summary">1 · Executive summary</h2>
-<p>A <strong>Large Language Model (LLM)</strong> is a neural network trained on a vast corpus of text to do one deceptively simple thing: <strong>given a sequence of tokens, predict the probability distribution of the next token</strong>. That's it. Chat, summarization, code generation, reasoning, tool-calling — all of it emerges from repeatedly sampling the next token.</p>
+<p>A <strong>Large Language Model (LLM)</strong> is a <button class="term-link" type="button" data-term-dialog="term-neural-network">neural network</button> trained on a vast corpus of text to do one deceptively simple thing: <strong>given a sequence of tokens, predict the probability distribution of the next token</strong>. That's it. Chat, summarization, code generation, reasoning, tool-calling — all of it emerges from repeatedly sampling the next token.</p>
 <div class="grid grid-3">
 <div class="card" data-reveal=""><span class="ico">❓</span><h4>Why it exists</h4><p>To capture the statistical structure of human language and knowledge in a single differentiable function you can query in natural language.</p></div>
 <div class="card" data-reveal=""><span class="ico">🔧</span><h4>Problem it solves</h4><p>One model replaces thousands of bespoke NLP pipelines (classification, extraction, generation) with a single promptable interface.</p></div>
@@ -105,7 +120,7 @@
 <h3>Why — emergence from scale</h3>
 <p>Why does "predict the next word" produce something that can write code or pass exams? Because to predict the next token <em>well</em> across billions of diverse examples, the network is forced to learn the underlying structure: syntax, semantics, world facts, and reasoning shortcuts. Capabilities like in-context learning and chain-of-thought <strong>emerge</strong> once the model and data are large enough — they were never explicitly programmed.</p>
 <h3>How — the generation loop</h3>
-<p>Text generation is autoregressive: the model predicts one token ID, appends it to the sequence, and repeats. After the initial full-prompt <strong>prefill</strong>, production inference normally performs one cached decode step per generated token rather than re-tokenizing the growing text or recomputing the entire sequence.</p>
+<p>Text generation is <button class="term-link" type="button" data-term-dialog="term-autoregressive">autoregressive</button>: the model predicts one token ID, appends it to the sequence, and repeats. After the initial full-prompt <button class="term-link" type="button" data-term-dialog="term-prefill">prefill</button>, production inference normally performs one cached decode step per generated token rather than re-tokenizing the growing text or recomputing the entire sequence.</p>
 <div class="cssflow">
 <div class="fnode accent">Your prompt (text)<small>"Explain RAG in one line"</small></div>
 <div class="farrow"></div>
@@ -197,7 +212,7 @@
 <p>Pricing, latency, and context limits are all measured in tokens — not words. Non-English text and code often tokenize less efficiently (more tokens per character), inflating cost. Always estimate with a real tokenizer, never by counting words.</p></div>
 </div>
 <h3>Logits, softmax, and the probability distribution</h3>
-<p>The final transformer layer outputs a <strong>logit</strong> (raw score) for every token in the vocabulary (often 100k+ tokens). A <code>softmax</code> turns these into a probability distribution that sums to 1. Decoding is how we pick from that distribution.</p>
+<p>The final transformer layer outputs a <button class="term-link" type="button" data-term-dialog="term-logits">logit</button> (raw score) for every token in the vocabulary (often 100k+ tokens). A <code>softmax</code> turns these into a probability distribution that sums to 1. Decoding is how we pick from that distribution.</p>
 <div class="diagram" data-reveal="">
 <svg aria-label="Animated next-token probability distribution and token selection" role="img" viewbox="0 0 760 330" width="760">
 <defs><marker id="found-arrow-prob" markerheight="10" markerwidth="10" orient="auto" refx="8" refy="3"><path d="M0,0 L8,3 L0,6 Z" fill="var(--text-muted)"></path></marker></defs>
@@ -534,8 +549,70 @@ resp = local.chat.completions.<span class="tok-fn">create</span>(
 </table>
 </div>
 
+<!-- ============ TERM DEFINITIONS (click-to-open, see enhance.js) ============ -->
+<dialog class="term-dialog" id="term-transformer" aria-labelledby="term-transformer-title">
+<div class="term-dialog-head">
+<div>
+<span class="term-dialog-eyebrow">In one breath</span>
+<h2 id="term-transformer-title">Transformer</h2>
+</div>
+<button class="term-dialog-close" type="button" data-term-close="" aria-label="Close">✕</button>
+</div>
+<div class="term-dialog-body">
+<p>A particular way of arranging a neural network, published in 2017, and the design behind every language model you have heard of.</p><p>Its one central trick is <strong>attention</strong>: every token is allowed to look at every other token in the text and decide which ones matter for understanding it. Stack a few dozen of those stages and you have a transformer.</p><p>Why it mattered: earlier designs read text one word at a time, which was slow to train and forgetful over long passages. A transformer takes the whole passage at once, which is what made internet-scale training practical.</p><p class="term-dialog-note">For this page you can treat it as <em>the box that takes tokens and returns a score for every possible next token</em>. <a href="02_transformers.html">Module 02</a> opens the box; <a href="00_basics.html">Module 00</a> has the plain-language version.</p>
+</div>
+</dialog>
+<dialog class="term-dialog" id="term-neural-network" aria-labelledby="term-neural-network-title">
+<div class="term-dialog-head">
+<div>
+<span class="term-dialog-eyebrow">In one breath</span>
+<h2 id="term-neural-network-title">Neural network</h2>
+</div>
+<button class="term-dialog-close" type="button" data-term-close="" aria-label="Close">✕</button>
+</div>
+<div class="term-dialog-body">
+<p>A long series of stages. Numbers go into the first one; at each stage every number is multiplied by stored settings, the results are added up, and small results get flattened out so the stage responds to some patterns and ignores others. The output feeds the next stage.</p><p>Those stored settings — billions of them — are the <strong>parameters</strong> or <strong>weights</strong>. They <em>are</em> the model. Training found them by guessing, measuring the error, and nudging every setting slightly, trillions of times. Using the model never changes them.</p><p class="term-dialog-note">Plain-English version in <a href="00_basics.html">Module 00</a>; a deeper optional walkthrough in <a href="../interview-prep/00-neural-networks.html">Neural Networks</a>.</p>
+</div>
+</dialog>
+<dialog class="term-dialog" id="term-autoregressive" aria-labelledby="term-autoregressive-title">
+<div class="term-dialog-head">
+<div>
+<span class="term-dialog-eyebrow">In one breath</span>
+<h2 id="term-autoregressive-title">Autoregressive</h2>
+</div>
+<button class="term-dialog-close" type="button" data-term-close="" aria-label="Close">✕</button>
+</div>
+<div class="term-dialog-body">
+<p>A long word for a small loop: <strong>predict one token, stick it on the end of the text, then predict again from the longer text.</strong> Repeat until a stop token or a length limit.</p><p>"Auto" as in self, "regressive" as in feeding its own output back in. It is the reason answers stream onto your screen a word at a time, and the reason a 500-token answer costs roughly 500 passes through the model.</p>
+</div>
+</dialog>
+<dialog class="term-dialog" id="term-prefill" aria-labelledby="term-prefill-title">
+<div class="term-dialog-head">
+<div>
+<span class="term-dialog-eyebrow">In one breath</span>
+<h2 id="term-prefill-title">Prefill and decode</h2>
+</div>
+<button class="term-dialog-close" type="button" data-term-close="" aria-label="Close">✕</button>
+</div>
+<div class="term-dialog-body">
+<p><strong>Prefill</strong> is the first pass, which processes your entire prompt in one go. <strong>Decode</strong> is each pass after it, producing one token at a time.</p><p>Decode passes are cheap because the model keeps the intermediate work it already did for earlier tokens — the <strong>KV cache</strong> — instead of recomputing the whole sequence every time.</p><p class="term-dialog-note">This split is why the first token of an answer takes longer to appear than the rest, and why a long prompt costs differently from a long answer.</p>
+</div>
+</dialog>
+<dialog class="term-dialog" id="term-logits" aria-labelledby="term-logits-title">
+<div class="term-dialog-head">
+<div>
+<span class="term-dialog-eyebrow">In one breath</span>
+<h2 id="term-logits-title">Logits</h2>
+</div>
+<button class="term-dialog-close" type="button" data-term-close="" aria-label="Close">✕</button>
+</div>
+<div class="term-dialog-body">
+<p>The model's raw scores. For every single token in its vocabulary — often 100,000 of them — it outputs one number saying how well that token would continue the text.</p><p>Raw scores are not probabilities: they can be negative and they do not add up to anything in particular. <code>softmax</code> squashes them into percentages that sum to 1, and <strong>sampling</strong> then picks one.</p><p class="term-dialog-note">If you ever see "the model outputs text", this is what it actually outputs. The text is what happens after picking.</p>
+</div>
+</dialog>
+
 <div class="page-nav">
-<a href="../index.html"><div class="dir">← Back</div><div class="ttl">Overview</div></a>
+<a href="00_basics.html"><div class="dir">← Back</div><div class="ttl">00 · The Basics</div></a>
 <a class="next" href="02_transformers.html"><div class="dir">Next →</div><div class="ttl">02 · Transformers Deep Dive</div></a>
 </div>
 </main>
@@ -543,9 +620,9 @@ resp = local.chat.completions.<span class="tok-fn">create</span>(
 </div>
 </div>
 </div>
-<script src="../assets/app.js?v=20260727c"></script>
-<script src="../assets/sitenav.js?v=20260727c"></script>
-<script src="../assets/enhance.js?v=20260730h"></script>
+<script src="../assets/app.js?v=20260731b"></script>
+<script src="../assets/sitenav.js?v=20260731b"></script>
+<script src="../assets/enhance.js?v=20260731b"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
 </body>
 </html>

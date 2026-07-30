@@ -42,9 +42,9 @@
      exactly — same key, same "light" default — so the pre-paint value can never
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size, width and text edges, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","align"}, anything unknown -> "default" ("left" for align). */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["small","default","large","xl"].indexOf(r.size)>=0?r.size:"default";var wd=["cozy","default","wide","full"].indexOf(r.width)>=0?r.width:"default";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20260730h" rel="stylesheet"/>
-<link href="../assets/office-theme.css?v=20260730h" rel="stylesheet"/>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "m", unknown width -> "wide". Text is always justified. */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:"m";var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260731b" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260731b" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260728a" rel="stylesheet"/>
 </head>
 <body data-page="03">
@@ -86,7 +86,8 @@
 </div>
 <!-- ============ 1. EXECUTIVE SUMMARY ============ -->
 <h2 id="summary">1 · Executive summary</h2>
-<p>A <strong>local LLM</strong> is an open-weights model (Llama, Qwen, Gemma, Mistral, Phi…) that you download and run on your own compute, with no API call leaving your machine. The enabling trick is <strong>quantization</strong>: storing weights in 4–8 bits instead of 16/32, which shrinks a model 3–4× so it fits in consumer VRAM. <strong>Ollama</strong> is the runtime that packages model + weights + config into one pullable artifact and serves an OpenAI-compatible API on <code>localhost:11434</code>.</p>
+<p><strong>In plain words first:</strong> so far you have been renting someone else&rsquo;s model over the internet. This module is about downloading a model onto your own machine and running it there. What you gain: privacy, no per-token bill, and it works with the wifi off. What you pay: you now own the hardware question, and a model small enough for your machine is not as clever as the largest hosted ones.</p>
+<p>A <strong>local LLM</strong> is an <button class="term-link" type="button" data-term-dialog="term-open-weights">open-weights</button> model (Llama, Qwen, Gemma, Mistral, Phi…) that you download and run on your own compute, with no API call leaving your machine. The enabling trick is <strong>quantization</strong>: storing weights in 4–8 bits instead of 16/32, which shrinks a model 3–4× so it fits in consumer <button class="term-link" type="button" data-term-dialog="term-vram">VRAM</button>. <strong>Ollama</strong> is the runtime that packages model + weights + config into one pullable artifact and serves an OpenAI-compatible API on <code>localhost:11434</code>.</p>
 <div class="grid grid-3">
 <div class="card" data-reveal=""><span class="ico">❓</span><h4>Why it exists</h4><p>Privacy, cost control, offline capability, low latency, and zero per-token billing — at the price of owning the hardware and ops.</p></div>
 <div class="card" data-reveal=""><span class="ico">🔧</span><h4>Problem it solves</h4><p>"My data can't go to a third party" and "my inference bill is unsustainable." Local inference removes both constraints.</p></div>
@@ -448,6 +449,32 @@ ollama run de-assistant <span class="tok-str">"What is GGUF?"</span>   <span cla
 </tbody>
 </table></div>
 
+<!-- ============ TERM DEFINITIONS ============ -->
+<dialog class="term-dialog" id="term-open-weights" aria-labelledby="term-open-weights-title">
+<div class="term-dialog-head">
+<div>
+<span class="term-dialog-eyebrow">In one breath</span>
+<h2 id="term-open-weights-title">Open-weights model</h2>
+</div>
+<button class="term-dialog-close" type="button" data-term-close="" aria-label="Close">✕</button>
+</div>
+<div class="term-dialog-body">
+<p>A model whose <strong>parameters</strong> — the billions of numbers that <em>are</em> the model — have been published for download, so you can run it on your own machine with nothing leaving it.</p><p>It is not the same thing as open source. Downloadable weights say nothing about the training data or the training code being public, and licences differ in what commercial use they allow.</p><p class="term-dialog-note">The opposite is an API-only model: the weights stay on the provider's servers and your text travels to them.</p>
+</div>
+</dialog>
+<dialog class="term-dialog" id="term-vram" aria-labelledby="term-vram-title">
+<div class="term-dialog-head">
+<div>
+<span class="term-dialog-eyebrow">In one breath</span>
+<h2 id="term-vram-title">VRAM</h2>
+</div>
+<button class="term-dialog-close" type="button" data-term-close="" aria-label="Close">✕</button>
+</div>
+<div class="term-dialog-body">
+<p>The memory on a graphics card, as distinct from your computer's ordinary RAM. A model has to fit inside it to run at full speed.</p><p>This is the one number that decides what you can run locally. Rough rule at 4-bit <strong>quantization</strong>: a little over half a gigabyte per billion parameters, so an 8-billion-parameter model wants roughly 5–6 GB — plus headroom for the <strong>KV cache</strong>, which grows as the conversation gets longer.</p><p class="term-dialog-note">No GPU? The model still runs on the CPU out of system RAM. Correctly, just far more slowly.</p>
+</div>
+</dialog>
+
 <div class="page-nav">
 <a href="02_transformers.html"><div class="dir">← Previous</div><div class="ttl">02 · Transformers Deep Dive</div></a>
 <a class="next" href="04_embeddings.html"><div class="dir">Next →</div><div class="ttl">04 · Embeddings</div></a>
@@ -457,9 +484,9 @@ ollama run de-assistant <span class="tok-str">"What is GGUF?"</span>   <span cla
 </div>
 </div>
 </div>
-<script src="../assets/app.js?v=20260727c"></script>
-<script src="../assets/sitenav.js?v=20260727c"></script>
-<script src="../assets/enhance.js?v=20260730h"></script>
+<script src="../assets/app.js?v=20260731b"></script>
+<script src="../assets/sitenav.js?v=20260731b"></script>
+<script src="../assets/enhance.js?v=20260731b"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
 </body>
 </html>

@@ -42,9 +42,9 @@
      exactly — same key, same "light" default — so the pre-paint value can never
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size, width and text edges, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","align"}, anything unknown -> "default" ("left" for align). */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["small","default","large","xl"].indexOf(r.size)>=0?r.size:"default";var wd=["cozy","default","wide","full"].indexOf(r.width)>=0?r.width:"default";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20260730h" rel="stylesheet"/>
-<link href="../assets/office-theme.css?v=20260730h" rel="stylesheet"/>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "m", unknown width -> "wide". Text is always justified. */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:"m";var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260731b" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260731b" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260728a" rel="stylesheet"/>
 </head>
 <body data-page="13">
@@ -91,7 +91,8 @@
 </div>
 <!-- ============ 1. EXECUTIVE SUMMARY ============ -->
 <h2 id="summary">1 · Executive summary</h2>
-<p>A <strong>multi-agent system</strong> decomposes a task across several specialized agents, each with its own role, prompt, and tools, coordinated through a <strong>topology</strong> — most often a <strong>supervisor</strong> (a router/manager agent delegates to workers) or a <strong>network</strong> (agents hand off to each other directly). The wins are <strong>specialization</strong> (focused prompts/tools beat one bloated agent), <strong>modularity</strong> (test/iterate one agent at a time), and <strong>parallelism</strong>. The costs are coordination overhead, latency, and new failure modes.</p>
+<p><strong>In plain words first:</strong> one agent handed thirty tools and five jobs gets confused, exactly as a person would. So you split the work: several agents, each with a narrow job, a short prompt and only the tools it needs. The new problem &mdash; and the whole subject of this module &mdash; is who decides what happens next, and how work passes between them.</p>
+<p>A <strong>multi-agent system</strong> decomposes a task across several specialized agents, each with its own role, prompt, and tools, coordinated through a <strong><button class="term-link" type="button" data-term-dialog="term-topology">topology</button></strong> — most often a <strong>supervisor</strong> (a router/manager agent delegates to workers) or a <strong>network</strong> (agents hand off to each other directly). The wins are <strong>specialization</strong> (focused prompts/tools beat one bloated agent), <strong>modularity</strong> (test/iterate one agent at a time), and <strong>parallelism</strong>. The costs are coordination overhead, latency, and new failure modes.</p>
 <div class="grid grid-3">
 <div class="card" data-reveal=""><span class="ico">❓</span><h4>Why it exists</h4><p>One agent with 30 tools and 5 jobs is unreliable. Splitting into focused specialists keeps each prompt/context small and each role testable.</p></div>
 <div class="card" data-reveal=""><span class="ico">🔧</span><h4>Problem it solves</h4><p>Complex, multi-domain tasks: research + write + review, or triage → specialist → QA. Divide and conquer with coordination.</p></div>
@@ -451,6 +452,20 @@ crew = <span class="tok-fn">Crew</span>(agents=[analyst, writer],
 </tbody>
 </table></div>
 
+<!-- ============ TERM DEFINITIONS ============ -->
+<dialog class="term-dialog" id="term-topology" aria-labelledby="term-topology-title">
+<div class="term-dialog-head">
+<div>
+<span class="term-dialog-eyebrow">In one breath</span>
+<h2 id="term-topology-title">Topology: supervisor vs network</h2>
+</div>
+<button class="term-dialog-close" type="button" data-term-close="" aria-label="Close">✕</button>
+</div>
+<div class="term-dialog-body">
+<p>"Topology" just means the shape of the team &mdash; who talks to whom.</p><p><strong>Supervisor.</strong> One manager agent receives the task, decides which specialist should act, and collects the result. The workers never talk to each other. Easy to reason about and to debug, and the manager can become a bottleneck.</p><p><strong>Network.</strong> Agents hand off directly to whichever peer is relevant. More flexible, and much harder to predict &mdash; two agents can bounce a task back and forth until you stop them.</p><p class="term-dialog-note">Start with a supervisor. Reach for a network only when you can name the handoff that a supervisor makes awkward.</p>
+</div>
+</dialog>
+
 <div class="page-nav">
 <a href="12_langgraph.html"><div class="dir">← Previous</div><div class="ttl">12 · LangGraph</div></a>
 <a class="next" href="14_production_genai.html"><div class="dir">Next →</div><div class="ttl">14 · Production GenAI</div></a>
@@ -460,9 +475,9 @@ crew = <span class="tok-fn">Crew</span>(agents=[analyst, writer],
 </div>
 </div>
 </div>
-<script src="../assets/app.js?v=20260727c"></script>
-<script src="../assets/sitenav.js?v=20260727c"></script>
-<script src="../assets/enhance.js?v=20260730h"></script>
+<script src="../assets/app.js?v=20260731b"></script>
+<script src="../assets/sitenav.js?v=20260731b"></script>
+<script src="../assets/enhance.js?v=20260731b"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
 </body>
 </html>

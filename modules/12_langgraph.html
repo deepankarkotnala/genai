@@ -42,9 +42,9 @@
      exactly — same key, same "light" default — so the pre-paint value can never
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size, width and text edges, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","align"}, anything unknown -> "default" ("left" for align). */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["small","default","large","xl"].indexOf(r.size)>=0?r.size:"default";var wd=["cozy","default","wide","full"].indexOf(r.width)>=0?r.width:"default";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20260730h" rel="stylesheet"/>
-<link href="../assets/office-theme.css?v=20260730h" rel="stylesheet"/>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "m", unknown width -> "wide". Text is always justified. */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:"m";var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260731b" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260731b" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260728a" rel="stylesheet"/>
 </head>
 <body data-page="12">
@@ -90,7 +90,8 @@
 </a>
 <!-- ============ 1. EXECUTIVE SUMMARY ============ -->
 <h2 id="summary">1 · Executive summary</h2>
-<p><strong>LangGraph</strong> is a library for building stateful, cyclic LLM applications as <strong>graphs</strong>. You define a shared <strong>State</strong> (a typed object), <strong>Nodes</strong> (functions that read state and return updates), and <strong>Edges</strong> (which node runs next — fixed or <strong>conditional</strong>). The graph can contain <strong>cycles</strong> (the agent loop), run nodes in <strong>parallel</strong>, persist progress via <strong>checkpointing</strong>, and <strong>pause for human input</strong>. It's the production-grade orchestration layer for everything in Module 08.</p>
+<p><strong>In plain words first:</strong> Module 08's agent was a <code>while</code> loop with the model inside it. That works until you need it to branch, run two things at once, wait for a human, or survive a crash halfway through. LangGraph asks you to write the same agent as a set of named steps plus rules about which step runs next &mdash; and once it is written that way, the library can pause it, resume it, replay it and inspect it. The cost is more ceremony up front; the payoff is an agent you can operate.</p>
+<p><strong>LangGraph</strong> is a library for building stateful, cyclic LLM applications as <strong>graphs</strong>. You define a shared <strong><button class="term-link" type="button" data-term-dialog="term-graph-state">State</button></strong> (a typed object), <strong>Nodes</strong> (functions that read state and return updates), and <strong>Edges</strong> (which node runs next — fixed or <strong>conditional</strong>). The graph can contain <strong>cycles</strong> (the agent loop), run nodes in <strong>parallel</strong>, persist progress via <strong><button class="term-link" type="button" data-term-dialog="term-checkpointing">checkpointing</button></strong>, and <strong>pause for human input</strong>. It's the production-grade orchestration layer for everything in Module 08.</p>
 <div class="grid grid-3">
 <div class="card" data-reveal=""><span class="ico">❓</span><h4>Why it exists</h4><p>Agent loops, branching, retries, parallelism, and human approval can't be expressed as a DAG. LangGraph adds cycles, state, and durability.</p></div>
 <div class="card" data-reveal=""><span class="ico">🔧</span><h4>Problem it solves</h4><p>Reliable control flow for agents: explicit state, conditional routing, checkpoint/resume, and human-in-the-loop — instead of an opaque while-loop.</p></div>
@@ -478,11 +479,37 @@ agent = <span class="tok-fn">create_react_agent</span>(model, tools=[inventory])
 <tbody>
 <tr><td><strong>SQL Analysis Agent</strong></td><td>Explicit graph: agent ↔ tools cycle, approval interrupt before queries, durable state.</td></tr>
 <tr><td><strong>EDA Agent</strong></td><td>Plan → parallel analysis nodes → synthesize → reflect loop; checkpointed long-running runs.</td></tr>
-<tr><td><strong>ElasticSearch Investigation Agent</strong></td><td>Iterative Agentic-RAG cycle (Module 07) with conditional "need more evidence?" routing.</td></tr>
+<tr><td><strong>ElasticSearch Investigation Agent</strong></td><td>Iterative Agentic-RAG cycle (Module 06) with conditional "need more evidence?" routing.</td></tr>
 <tr><td><strong>Multi-Agent Plant Assistant</strong></td><td>Supervisor graph routing to specialist agents (Module 13) — multi-agent as nodes.</td></tr>
 <tr><td><strong>Enterprise Platform</strong></td><td>Durable, auditable, HITL-gated workflows with Postgres checkpointing and tracing.</td></tr>
 </tbody>
 </table></div>
+
+<!-- ============ TERM DEFINITIONS ============ -->
+<dialog class="term-dialog" id="term-graph-state" aria-labelledby="term-graph-state-title">
+<div class="term-dialog-head">
+<div>
+<span class="term-dialog-eyebrow">In one breath</span>
+<h2 id="term-graph-state-title">State, nodes and edges</h2>
+</div>
+<button class="term-dialog-close" type="button" data-term-close="" aria-label="Close">✕</button>
+</div>
+<div class="term-dialog-body">
+<p>Three words that describe an agent as a diagram rather than a loop.</p><ul><li><strong>State</strong> &mdash; one shared bag of data for the whole run: the conversation so far, what has been retrieved, any flags. Every step reads it and returns changes to it.</li><li><strong>Node</strong> &mdash; one named step. Usually a plain function: call the model, call a tool, validate something.</li><li><strong>Edge</strong> &mdash; which node runs next. Fixed ("after retrieve, always answer") or <em>conditional</em>, where a function looks at the state and decides &mdash; which is how a loop and a branch are expressed.</li></ul><p class="term-dialog-note">A graph that can return to an earlier node is <em>cyclic</em>. That is the agent loop, and it is precisely what the pipe chains of Module 10 could not express.</p>
+</div>
+</dialog>
+<dialog class="term-dialog" id="term-checkpointing" aria-labelledby="term-checkpointing-title">
+<div class="term-dialog-head">
+<div>
+<span class="term-dialog-eyebrow">In one breath</span>
+<h2 id="term-checkpointing-title">Checkpointing</h2>
+</div>
+<button class="term-dialog-close" type="button" data-term-close="" aria-label="Close">✕</button>
+</div>
+<div class="term-dialog-body">
+<p>Saving the whole state after every step, so a run can be stopped and picked up again.</p><p>This is what makes three otherwise awkward things easy: an agent that waits for human approval without holding a process open, a run that survives a crash or a deploy mid-task, and a bug you can debug by replaying the exact state a failing step received.</p><p class="term-dialog-note">In development the checkpoint lives in memory; in production it is a database row keyed by conversation, which is also how "resume this chat tomorrow" works.</p>
+</div>
+</dialog>
 
 <div class="page-nav">
 <a href="11_llamaindex.html"><div class="dir">← Previous</div><div class="ttl">11 · LlamaIndex</div></a>
@@ -493,9 +520,9 @@ agent = <span class="tok-fn">create_react_agent</span>(model, tools=[inventory])
 </div>
 </div>
 </div>
-<script src="../assets/app.js?v=20260727c"></script>
-<script src="../assets/sitenav.js?v=20260727c"></script>
-<script src="../assets/enhance.js?v=20260730h"></script>
+<script src="../assets/app.js?v=20260731b"></script>
+<script src="../assets/sitenav.js?v=20260731b"></script>
+<script src="../assets/enhance.js?v=20260731b"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
 </body>
 </html>

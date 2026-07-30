@@ -42,9 +42,9 @@
      exactly — same key, same "light" default — so the pre-paint value can never
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size, width and text edges, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","align"}, anything unknown -> "default" ("left" for align). */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["small","default","large","xl"].indexOf(r.size)>=0?r.size:"default";var wd=["cozy","default","wide","full"].indexOf(r.width)>=0?r.width:"default";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20260730h" rel="stylesheet"/>
-<link href="../assets/office-theme.css?v=20260730h" rel="stylesheet"/>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "m", unknown width -> "wide". Text is always justified. */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:"m";var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260731b" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260731b" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260728a" rel="stylesheet"/>
 </head>
 <body data-page="05">
@@ -86,11 +86,12 @@
 </div>
 <!-- ============ 1. EXECUTIVE SUMMARY ============ -->
 <h2 id="summary">1 · Executive summary</h2>
-<p>A <strong>vector database</strong> stores embeddings plus metadata and serves <strong>k-nearest-neighbor (kNN)</strong> queries at scale. Its core trick is the <strong>Approximate Nearest Neighbor (ANN) index</strong> — most commonly <strong>HNSW</strong> — which finds <em>almost</em> the true nearest neighbors in logarithmic-ish time instead of scanning everything. You give up a small, tunable amount of recall to gain orders-of-magnitude lower latency.</p>
+<p><strong>In plain words first:</strong> a vector database is a search engine for the lists of numbers you made in <a href="04_embeddings.html">Module 04</a>. You hand it one list and ask "which of my stored lists are nearest to this?", and it answers in a few milliseconds even with ten million of them stored. It manages that by <em>not</em> checking them all — it takes a shortcut and accepts being almost always right instead of always right. Everything below is that one idea in detail.</p>
+<p>A <strong>vector database</strong> stores embeddings plus metadata and serves <strong><button class="term-link" type="button" data-term-dialog="term-knn">k-nearest-neighbor (kNN)</button></strong> queries at scale. Its core trick is the <strong><button class="term-link" type="button" data-term-dialog="term-ann">Approximate Nearest Neighbor (ANN) index</button></strong> — most commonly <strong><button class="term-link" type="button" data-term-dialog="term-hnsw">HNSW</button></strong> — which finds <em>almost</em> the true nearest neighbors in logarithmic-ish time instead of scanning everything. You give up a small, tunable amount of recall to gain orders-of-magnitude lower latency.</p>
 <div class="grid grid-3">
 <div class="card" data-reveal=""><span class="ico">❓</span><h4>Why it exists</h4><p>Brute-force similarity over millions of high-dim vectors is O(N·d) per query — too slow. ANN indexes make it fast enough for production.</p></div>
 <div class="card" data-reveal=""><span class="ico">🔧</span><h4>Problem it solves</h4><p>"Find the top-k closest vectors out of millions, with metadata filters, in single-digit milliseconds, while accepting live updates."</p></div>
-<div class="card" data-reveal=""><span class="ico">🌐</span><h4>Where it fits</h4><p>The storage + retrieval engine of RAG. It sits between <a href="04_embeddings.html">embeddings</a> (04) and <a href="06_rag_basics.html">RAG</a> (06).</p></div>
+<div class="card" data-reveal=""><span class="ico">🌐</span><h4>Where it fits</h4><p>The storage + retrieval engine of RAG. It sits between <a href="04_embeddings.html">embeddings</a> (04) and <a href="../rag-deep-dive.html">RAG</a> (06).</p></div>
 </div>
 <div class="callout key">
 <div class="c-ico">🔑</div>
@@ -384,7 +385,7 @@ hits = qc.<span class="tok-fn">search</span>(<span class="tok-str">"local"</span
 <details class="collapse"><summary><span class="pill amber">Senior</span>  Recall is fine in tests but bad in prod. Diagnose. <span class="chev">›</span></summary>
 <div class="collapse-body"><p>Suspects: (1) production data distribution differs from test; (2) <code>ef_search</code> lowered for latency; (3) selective metadata filters + post-filtering starving results; (4) index not rebuilt after a bulk load, or stale after deletes; (5) embedding model/version drift between index and query (Module 04). Reproduce with a flat-index ground truth on prod queries, compare recall@k, and isolate the variable. Fix the specific cause — often raise ef_search or switch to pre-filtering.</p></div></details>
 <details class="collapse"><summary><span class="pill purple">Staff · design</span>  Design vector search for 1B vectors, multi-tenant, &lt;50ms p99. <span class="chev">›</span></summary>
-<div class="collapse-body"><p>1B × 768 floats won't fit one node in RAM as raw HNSW — use <strong>IVF+PQ</strong> or quantized HNSW to compress, and <strong>shard</strong> by tenant or hash with replicas for HA. Pre-filter by tenant (route to the tenant's shard for isolation + smaller search space). Tune <code>ef_search</code> per route to hit p99 under the recall SLO; add a small re-rank stage (Module 07) on the top candidates to recover precision lost to quantization. Operate: background re-index jobs for model upgrades (versioned vectors), warm caches, monitor recall@k continuously with a sampled ground-truth job, and capacity-plan RAM. Consider a tiered design: quantized index for breadth, exact rescoring on finalists.</p></div></details>
+<div class="collapse-body"><p>1B × 768 floats won't fit one node in RAM as raw HNSW — use <strong>IVF+PQ</strong> or quantized HNSW to compress, and <strong>shard</strong> by tenant or hash with replicas for HA. Pre-filter by tenant (route to the tenant's shard for isolation + smaller search space). Tune <code>ef_search</code> per route to hit p99 under the recall SLO; add a small re-rank stage (Module 06) on the top candidates to recover precision lost to quantization. Operate: background re-index jobs for model upgrades (versioned vectors), warm caches, monitor recall@k continuously with a sampled ground-truth job, and capacity-plan RAM. Consider a tiered design: quantized index for breadth, exact rescoring on finalists.</p></div></details>
 <!-- ============ 11. QUIZ ============ -->
 <h2 id="quiz">11 · Knowledge check</h2>
 <div class="quiz">
@@ -454,24 +455,62 @@ hits = qc.<span class="tok-fn">search</span>(<span class="tok-str">"local"</span
 <tbody>
 <tr><td><strong>PDF RAG</strong></td><td>Store chunk vectors + page/source metadata; kNN retrieves the passages to ground the answer.</td></tr>
 <tr><td><strong>Multi-PDF RAG</strong></td><td>Metadata pre-filtering by <code>doc_id</code> lets users scope queries to specific documents.</td></tr>
-<tr><td><strong>Hybrid Search RAG</strong></td><td>The dense half of hybrid search lives here; combined with lexical scores in Module 07.</td></tr>
+<tr><td><strong>Hybrid Search RAG</strong></td><td>The dense half of hybrid search lives here; combined with lexical scores in Module 06.</td></tr>
 <tr><td><strong>ElasticSearch Agent / MCP</strong></td><td>ES <code>dense_vector</code> + HNSW gives you lexical and vector search in one engine you already operate.</td></tr>
 <tr><td><strong>Enterprise Platform</strong></td><td>Multi-tenant, sharded, quantized vector store with continuous recall monitoring (the §10 staff design).</td></tr>
 </tbody>
 </table></div>
 
+<!-- ============ TERM DEFINITIONS ============ -->
+<dialog class="term-dialog" id="term-knn" aria-labelledby="term-knn-title">
+<div class="term-dialog-head">
+<div>
+<span class="term-dialog-eyebrow">In one breath</span>
+<h2 id="term-knn-title">k-nearest neighbours (kNN)</h2>
+</div>
+<button class="term-dialog-close" type="button" data-term-close="" aria-label="Close">✕</button>
+</div>
+<div class="term-dialog-body">
+<p>"Give me the <em>k</em> stored items closest to this one." If k is 5, you get the five nearest.</p><p>Closest by <strong>distance between vectors</strong>, which — after Module 04 — means closest in meaning. The honest way to answer it is to measure your query against every stored vector and keep the best five. Perfectly correct, and hopelessly slow once there are millions of them.</p>
+</div>
+</dialog>
+<dialog class="term-dialog" id="term-ann" aria-labelledby="term-ann-title">
+<div class="term-dialog-head">
+<div>
+<span class="term-dialog-eyebrow">In one breath</span>
+<h2 id="term-ann-title">Approximate nearest neighbours (ANN)</h2>
+</div>
+<button class="term-dialog-close" type="button" data-term-close="" aria-label="Close">✕</button>
+</div>
+<div class="term-dialog-body">
+<p>The same question as kNN, answered by a shortcut that is <em>nearly</em> always right.</p><p>Instead of comparing against everything, an ANN index organises the vectors in advance so a search can jump to a promising neighbourhood and look only there. You might occasionally miss the true fifth-best match and get the sixth instead. In exchange the answer arrives in milliseconds rather than seconds.</p><p class="term-dialog-note">The share of true nearest neighbours you actually get back is called <strong>recall</strong>, and it is a dial rather than a fact: more accuracy costs more time, and you choose where to sit on it. That trade-off is the subject of this whole module.</p>
+</div>
+</dialog>
+<dialog class="term-dialog" id="term-hnsw" aria-labelledby="term-hnsw-title">
+<div class="term-dialog-head">
+<div>
+<span class="term-dialog-eyebrow">In one breath</span>
+<h2 id="term-hnsw-title">HNSW</h2>
+</div>
+<button class="term-dialog-close" type="button" data-term-close="" aria-label="Close">✕</button>
+</div>
+<div class="term-dialog-body">
+<p>The most widely used ANN index. The initials stand for Hierarchical Navigable Small World, which is considerably more intimidating than the idea.</p><p>Picture a road map in layers. The top layer has only motorways between distant cities; the bottom has every side street. A search starts on the motorways to get roughly to the right region in a few hops, then drops down a layer at a time to refine. That is how it finds the right neighbourhood without visiting every address.</p>
+</div>
+</dialog>
+
 <div class="page-nav">
 <a href="04_embeddings.html"><div class="dir">← Previous</div><div class="ttl">04 · Embeddings</div></a>
-<a class="next" href="06_rag_basics.html"><div class="dir">Next →</div><div class="ttl">06 · RAG Basics</div></a>
+<a class="next" href="../rag-deep-dive.html"><div class="dir">Next →</div><div class="ttl">06 · RAG, End-to-End</div></a>
 </div>
 </main>
 <div class="toc-rail"><nav class="toc"></nav></div>
 </div>
 </div>
 </div>
-<script src="../assets/app.js?v=20260727c"></script>
-<script src="../assets/sitenav.js?v=20260727c"></script>
-<script src="../assets/enhance.js?v=20260730h"></script>
+<script src="../assets/app.js?v=20260731b"></script>
+<script src="../assets/sitenav.js?v=20260731b"></script>
+<script src="../assets/enhance.js?v=20260731b"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
 </body>
 </html>

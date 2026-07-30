@@ -42,9 +42,9 @@
      exactly — same key, same "light" default — so the pre-paint value can never
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size, width and text edges, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","align"}, anything unknown -> "default" ("left" for align). */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["small","default","large","xl"].indexOf(r.size)>=0?r.size:"default";var wd=["cozy","default","wide","full"].indexOf(r.width)>=0?r.width:"default";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20260730h" rel="stylesheet"/>
-<link href="../assets/office-theme.css?v=20260730h" rel="stylesheet"/>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "m", unknown width -> "wide". Text is always justified. */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:"m";var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260731b" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260731b" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260728a" rel="stylesheet"/>
 </head>
 <body data-page="10">
@@ -82,11 +82,12 @@
 <div class="meta-row">
 <span class="pill blue">⏱ Study + practice · 10–16 h</span>
 <span class="pill">Difficulty · Intermediate</span>
-<span class="pill purple">Prereq · Modules 01, 04–07</span>
+<span class="pill purple">Prereq · Modules 01, 04–06</span>
 </div>
 <!-- ============ 1. EXECUTIVE SUMMARY ============ -->
 <h2 id="summary">1 · Executive summary</h2>
-<p><strong>LangChain</strong> is an orchestration framework for LLM applications. Its modern foundation is the <strong>Runnable</strong> — a standard interface (<code>invoke</code>, <code>batch</code>, <code>stream</code>, async variants) implemented by every component (prompts, models, parsers, retrievers). Because they share that interface, you compose them with the <strong>pipe operator</strong> (<code>|</code>) into a <strong>chain</strong>: <code>prompt | model | parser</code>. This is <strong>LCEL</strong> (LangChain Expression Language), and it gives you streaming, batching, async, and retries for free.</p>
+<p><strong>In plain words first:</strong> you have already written all of this by hand &mdash; a prompt, a model call, some parsing of the reply, a retrieval step. LangChain is a box of those same parts, built so they all snap together the same way. Nothing below is a new idea about LLMs; it is a naming convention that lets you swap one part for another without rewriting the rest.</p>
+<p><strong>LangChain</strong> is an orchestration framework for LLM applications. Its modern foundation is the <strong><button class="term-link" type="button" data-term-dialog="term-runnable">Runnable</button></strong> — a standard interface (<code>invoke</code>, <code>batch</code>, <code>stream</code>, async variants) implemented by every component (prompts, models, parsers, retrievers). Because they share that interface, you compose them with the <strong>pipe operator</strong> (<code>|</code>) into a <strong>chain</strong>: <code>prompt | model | parser</code>. This is <strong>LCEL</strong> (LangChain Expression Language), and it gives you streaming, batching, async, and retries for free.</p>
 <div class="grid grid-3">
 <div class="card" data-reveal=""><span class="ico">❓</span><h4>Why it exists</h4><p>Every LLM app re-implements prompting, retries, RAG wiring, memory, streaming. LangChain standardizes these as interchangeable parts.</p></div>
 <div class="card" data-reveal=""><span class="ico">🔧</span><h4>Problem it solves</h4><p>Composition. Swap a model, add a retriever, change a parser — without rewriting the pipeline. Provider-agnostic by design.</p></div>
@@ -165,7 +166,7 @@
 <h3>Why LCEL gives you streaming &amp; batching "for free"</h3>
 <p>Because the composition graph is declarative, LangChain knows the structure of your pipeline. So when you call <code>.stream()</code> on a chain, it streams from the model node and pipes tokens through downstream parsers; <code>.batch()</code> fans inputs out in parallel; async works end-to-end. You didn't write any of that concurrency — the framework derives it from the Runnable graph.</p>
 <h3>Retrievers — RAG as a Runnable</h3>
-<p>A <strong>retriever</strong> is a Runnable that takes a query string and returns documents. Any vector store (Module 05) exposes one via <code>.as_retriever()</code>. Because it's a Runnable, it drops straight into a chain — and you can wrap it with reranking, multi-query, or compression (Module 07) and it's still just a Runnable.</p>
+<p>A <strong>retriever</strong> is a Runnable that takes a query string and returns documents. Any vector store (Module 05) exposes one via <code>.as_retriever()</code>. Because it's a Runnable, it drops straight into a chain — and you can wrap it with reranking, multi-query, or compression (Module 06) and it's still just a Runnable.</p>
 <h3>Memory — the modern way</h3>
 <p>Older LangChain had bespoke "Memory" classes; the modern approach is <strong>message history</strong> wrapped around a chain with <code>RunnableWithMessageHistory</code> (and for anything stateful/branching, you graduate to LangGraph's checkpointed state, Module 12). The principle is unchanged from Module 08: working/short-term history in context, long-term in a store.</p>
 <h3>Output parsing &amp; structured output</h3>
@@ -356,7 +357,7 @@ chain = (store.<span class="tok-fn">as_retriever</span>() | (<span class="tok-kw
 <details class="collapse"><summary><span class="pill amber">Senior</span>  When would you NOT use LangChain, or drop to raw SDK? <span class="chev">›</span></summary>
 <div class="collapse-body"><p>For a single, simple completion the abstraction adds dependency weight and indirection with no benefit — call the provider SDK. Drop to raw calls in hot paths where you need precise control over requests/streaming, or when debugging an issue the abstraction obscures. Use LangChain where composition, swappability, integrations, or tracing genuinely pay off; for cyclic/stateful agent flows, use LangGraph instead of bending LCEL. Match the tool to the complexity.</p></div></details>
 <details class="collapse"><summary><span class="pill amber">Senior</span>  How do you make a LangChain app production-ready? <span class="chev">›</span></summary>
-<div class="collapse-body"><p>Pin exact package versions; enable LangSmith tracing for observability and prompt/version management; add <code>.with_retry()</code>/<code>.with_fallbacks()</code> for resilience and a fallback model; use structured output for machine-consumable results; keep prompts in a versioned registry; build an eval set (Module 07/14) gating prompt/chain changes; wrap chains behind your own service boundary (FastAPI/LangServe) so you can swap the framework if needed; and set temperature/timeouts/token budgets explicitly. Treat the chain as one component in your system, not the whole architecture.</p></div></details>
+<div class="collapse-body"><p>Pin exact package versions; enable LangSmith tracing for observability and prompt/version management; add <code>.with_retry()</code>/<code>.with_fallbacks()</code> for resilience and a fallback model; use structured output for machine-consumable results; keep prompts in a versioned registry; build an eval set (Module 06/14) gating prompt/chain changes; wrap chains behind your own service boundary (FastAPI/LangServe) so you can swap the framework if needed; and set temperature/timeouts/token budgets explicitly. Treat the chain as one component in your system, not the whole architecture.</p></div></details>
 <details class="collapse"><summary><span class="pill purple">Staff · design</span>  Design a provider-agnostic LLM layer for an org using LangChain. <span class="chev">›</span></summary>
 <div class="collapse-body"><p>A thin internal library exposing chains built from <code>langchain-core</code> Runnables, with the model created by a factory driven by config (so local Ollama, OpenAI, or a gateway are interchangeable). Centralize: a versioned <strong>prompt registry</strong>; <strong>retry/fallback</strong> policies (primary → cheaper/local fallback); <strong>structured-output</strong> schemas; <strong>LangSmith tracing</strong> for per-team cost/latency and eval; and <strong>guardrails</strong> wrapping inputs/outputs (Module 14). Expose chains via a service boundary (LangServe/FastAPI) so consumers don't import LangChain directly — that keeps you free to swap or drop the framework. Gate every prompt/chain change on an eval set in CI. The goal: teams get composable, observable, swappable LLM components without lock-in to any single provider or even to LangChain itself.</p></div></details>
 <!-- ============ 11. QUIZ ============ -->
@@ -418,7 +419,7 @@ chain = (store.<span class="tok-fn">as_retriever</span>() | (<span class="tok-kw
 <li><code>.with_retry()</code> + a fallback model; LangSmith tracing toggle</li>
 </ul>
 <h4>Stretch</h4>
-<ul style="margin-bottom:0"><li>Wrap a reranker (Module 07) as a Runnable in the retrieval step.</li><li>Serve the chain with LangServe and call it over HTTP.</li></ul>
+<ul style="margin-bottom:0"><li>Wrap a reranker (Module 06) as a Runnable in the retrieval step.</li><li>Serve the chain with LangServe and call it over HTTP.</li></ul>
 </div>
 <!-- ============ 15. REAL PROJECT CONNECTION ============ -->
 <h2 id="real-project">15 · Real project connection</h2>
@@ -433,6 +434,20 @@ chain = (store.<span class="tok-fn">as_retriever</span>() | (<span class="tok-kw
 </tbody>
 </table></div>
 
+<!-- ============ TERM DEFINITIONS ============ -->
+<dialog class="term-dialog" id="term-runnable" aria-labelledby="term-runnable-title">
+<div class="term-dialog-head">
+<div>
+<span class="term-dialog-eyebrow">In one breath</span>
+<h2 id="term-runnable-title">Runnable and LCEL</h2>
+</div>
+<button class="term-dialog-close" type="button" data-term-close="" aria-label="Close">✕</button>
+</div>
+<div class="term-dialog-body">
+<p>One agreement, applied to every part.</p><p>A <strong>Runnable</strong> is anything that follows the same tiny contract: it can be invoked with an input and return an output, invoked with a list of inputs, or streamed piece by piece. Prompts, models, parsers and retrievers are all Runnables, which is the entire trick &mdash; because they all behave alike, they can be chained in any order.</p><p><strong>LCEL</strong> is the notation for that chaining: <code>prompt | model | parser</code>. The <code>|</code> means "feed the output of the left into the right", the same way a shell pipe does. Because the framework knows the shape of the chain, streaming, batching and retries come for free.</p><p class="term-dialog-note">If you can read that one line of pipes, you can read most modern LangChain code.</p>
+</div>
+</dialog>
+
 <div class="page-nav">
 <a href="09_mcp.html"><div class="dir">← Previous</div><div class="ttl">09 · Model Context Protocol</div></a>
 <a class="next" href="11_llamaindex.html"><div class="dir">Next →</div><div class="ttl">11 · LlamaIndex</div></a>
@@ -442,9 +457,9 @@ chain = (store.<span class="tok-fn">as_retriever</span>() | (<span class="tok-kw
 </div>
 </div>
 </div>
-<script src="../assets/app.js?v=20260727c"></script>
-<script src="../assets/sitenav.js?v=20260727c"></script>
-<script src="../assets/enhance.js?v=20260730h"></script>
+<script src="../assets/app.js?v=20260731b"></script>
+<script src="../assets/sitenav.js?v=20260731b"></script>
+<script src="../assets/enhance.js?v=20260731b"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
 </body>
 </html>
