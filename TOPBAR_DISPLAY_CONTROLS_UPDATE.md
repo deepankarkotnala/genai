@@ -52,11 +52,15 @@ measure genuinely varies:
 
 - **Alignment (Left / Justified)** is new and available everywhere. Justification
   covers running prose only — headings, code, tables and chips keep their own
-  alignment, and justifying a two-word table cell just opens gaps. `hyphens: auto`
-  rides along with it, because a column this narrow justified without hyphens
-  pulls visible rivers of white space through the paragraph; inline code and links
-  stay unhyphenated and get `overflow-wrap: anywhere` so a long token cannot
-  overflow a justified line.
+  alignment, and justifying a two-word table cell just opens gaps.
+- **Words are never split.** `hyphens: auto` shipped with the first version of
+  this and was wrong: it produced breaks like "nor- / mally" mid-paragraph, and
+  a hyphen the reader has to reassemble costs more than the tighter spacing buys.
+  Justified prose is now `hyphens: manual`, so the browser distributes the slack
+  between words with `text-justify: inter-word`. The single exception is a token
+  longer than the column, which has to break or overflow: inline code and links
+  get `overflow-wrap: break-word`, which only engages when the token cannot fit
+  on a line of its own.
 - **Text width** is hidden below 861px in both modes: the column is the viewport
   there, so no step can change anything. A control that cannot do anything is
   hidden rather than shown disabled.
