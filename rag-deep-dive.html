@@ -41,9 +41,9 @@
      exactly — same key, same "light" default — so the pre-paint value can never
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size, width and text edges, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","align"}, anything unknown -> "default" ("left" for align). */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["small","default","large","xl"].indexOf(r.size)>=0?r.size:"default";var wd=["cozy","default","wide","full"].indexOf(r.width)>=0?r.width:"default";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);}catch(e){}})();</script>
-<link rel="stylesheet" href="assets/styles.css?v=20260730h">
-<link href="assets/office-theme.css?v=20260730h" rel="stylesheet"/>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "m", unknown width -> "wide". Text is always justified. */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:"m";var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);}catch(e){}})();</script>
+<link rel="stylesheet" href="assets/styles.css?v=20260731b">
+<link href="assets/office-theme.css?v=20260731b" rel="stylesheet"/>
 <link href="assets/genai-motion.css?v=20260728a" rel="stylesheet"/>
 <style>
   /* This standalone page builds its own section sidebar; keep the same look. */
@@ -98,7 +98,7 @@
       <button class="icon-btn menu-btn" aria-label="Menu">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
       </button>
-      <div class="crumbs">Retrieval / <b>RAG, end-to-end</b></div>
+      <div class="crumbs">Retrieval / <b>06 · RAG, End-to-End</b></div>
       <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
     </header>
 
@@ -108,20 +108,20 @@
         <h1>RAG, End-to-End</h1>
         <p class="lead"><strong>RAG (Retrieval-Augmented Generation)</strong> means: instead of asking an LLM to answer purely from its internal memory, we first <em>retrieve</em> relevant knowledge from external sources, then hand that context to the LLM so it can generate a <em>grounded</em>, accurate answer. This page walks every stage of a real production pipeline — from raw files to a cited final response.</p>
         <div class="meta-row">
-          <span class="pill blue">⏱ Deep study + implementation · 12–18 h</span>
-          <span class="pill">Reference · breadth-first</span>
+          <span class="pill blue">⏱ Deep study + implementation · 24–36 h</span>
+          <span class="pill">Module 06 · the only RAG page</span>
           <span class="pill purple">Enterprise / plant &amp; process examples</span>
         </div>
 
         <div class="callout note">
           <div class="c-ico">🔗</div>
           <div class="c-body">
-            <div class="c-title">How this page relates to the rest of the course</div>
-            <p>This is the <em>panoramic</em> view of RAG. Several stages have their own dedicated, deeper module — wherever that's the case you'll see a <strong>“Goes deeper →”</strong> link rather than repeated material. The core conceptual modules are
-            <a href="modules/04_embeddings.html">04 · Embeddings</a>,
-            <a href="modules/05_vector_databases.html">05 · Vector Databases</a>,
-            <a href="modules/06_rag_basics.html">06 · RAG Basics</a> and
-            <a href="modules/07_advanced_rag.html">07 · Advanced RAG</a>.</p>
+            <div class="c-title">This is the only RAG page — read it top to bottom</div>
+            <p>Everything about RAG lives here, in order: what the pipeline is, then each stage in turn, then evaluation and production. Nothing here is repeated elsewhere in the portal, so you don't need to hunt for a second RAG page.</p>
+            <p>Two things come first, and they are separate topics rather than parts of RAG:
+            <a href="modules/04_embeddings.html">04 · Embeddings</a> (how text becomes vectors) and
+            <a href="modules/05_vector_databases.html">05 · Vector Databases</a> (how those vectors are searched). Read those, then start at section 1 below.
+            After this page, the next step in the sequence is <a href="modules/08_agents.html">08 · Agentic AI</a>.</p>
           </div>
         </div>
 
@@ -364,8 +364,8 @@ forecasting model inputs.</code></pre>
         <h2 id="retrieval">9 · Retrieval methodologies</h2>
         <div class="callout note">
           <div class="c-ico">📎</div>
-          <div class="c-body"><div class="c-title">Builds on Module 06 &amp; 07</div>
-          <p>The retrieve-then-generate loop is introduced in <a href="modules/06_rag_basics.html#deep-dive">06 · RAG Basics →</a>; hybrid search, reranking and Graph/Agentic RAG are expanded in <a href="modules/07_advanced_rag.html"><strong>07 · Advanced RAG →</strong></a>. This section is the compact field guide.</p></div>
+          <div class="c-body"><div class="c-title">Builds on the stages above</div>
+          <p>Sections 1–8 covered how documents get in: ingestion, chunking, embedding and indexing. This is the other half — how the right chunks come back out. Read it after those, not before: retrieval choices only make sense once you know what was stored.</p></div>
         </div>
 
         <h3 id="dense">9.1 Dense (vector) retrieval</h3>
@@ -652,8 +652,8 @@ Instructions:
         </div>
 
         <div class="page-nav">
-          <a href="modules/06_rag_basics.html"><div class="dir">← Foundations</div><div class="ttl">06 · RAG Basics</div></a>
-          <a class="next" href="modules/07_advanced_rag.html"><div class="dir">Go deeper →</div><div class="ttl">07 · Advanced RAG</div></a>
+          <a href="modules/05_vector_databases.html"><div class="dir">← Previous</div><div class="ttl">05 · Vector Databases</div></a>
+          <a class="next" href="modules/08_agents.html"><div class="dir">Next →</div><div class="ttl">08 · Agentic AI</div></a>
         </div>
       </main>
       <div class="toc-rail"><nav class="toc"></nav></div>
@@ -661,10 +661,10 @@ Instructions:
   </div>
 </div>
 
-<script src="assets/app.js?v=20260727c"></script>
-<script src="assets/sitenav.js?v=20260727c"></script>
-<script src="assets/enhance.js?v=20260730h"></script>
+<script src="assets/app.js?v=20260731b"></script>
+<script src="assets/sitenav.js?v=20260731b"></script>
+<script src="assets/enhance.js?v=20260731b"></script>
 <script src="assets/genai-motion.js?v=20260728a"></script>
-<script src="assets/section-nav.js?v=20260727c"></script>
+<script src="assets/section-nav.js?v=20260731b"></script>
 </body>
 </html>

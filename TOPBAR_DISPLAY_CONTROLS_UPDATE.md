@@ -47,8 +47,9 @@ measure genuinely varies:
 | Setting | Regular mode | Focus mode | Below 861px |
 | --- | --- | --- | --- |
 | Text size | yes | yes | yes |
-| Alignment | yes | yes | yes |
-| Text width | — | yes | — |
+| Text width | — | yes (Standard / **Wide** / Full) | — |
+
+*(An Alignment control shipped briefly and has been removed — see Revision 2.)*
 
 - **Alignment (Left / Justified)** is new and available everywhere. Justification
   covers running prose only — headings, code, tables and chips keep their own
@@ -93,3 +94,33 @@ DSA chapter page families.
 
 Not touched: `machine-learning/assets/` and `temp-transitions/assets/` keep their
 own forked copies of these files.
+
+## Revision 2: justification is the house style, and Cozy is gone
+
+- **Text is always justified.** The Left/Justified control was removed rather
+  than kept at a default: one way for the portal to read, nothing to choose. The
+  rules now apply unconditionally, and `data-reading-align` is gone from both the
+  stylesheet and the pre-paint script in all 132 pages.
+- Justification reaches **all** prose, not just direct children of `.content` —
+  the home page hero lead was the one that gave the earlier version away. Opted
+  back out: table cells, code, chips, captions, quiz options and the meta rows,
+  where justifying two words opens comedy-sized gaps.
+- **Focus mode: Cozy removed, Wide is the default.** Three steps remain
+  (Standard 1000px / Wide 1360px / Full uncapped). On the wide screens where
+  focus mode actually gets used, the old default left two thirds of the canvas
+  empty. Stored `cozy` values fall back to `wide`.
+- **Workspace tabs are larger in focus mode** — 13.5px against the breadcrumb
+  row's 12.5px, since they are the only navigation left on screen. Unchanged
+  outside focus mode.
+- **Page titles are smaller:** `--fs-h1` went from `clamp(31px, 3vw, 44px)` to
+  `clamp(26px, 2.05vw, 33px)` (mobile `clamp(29px, 8vw, 38.5px)` →
+  `clamp(24px, 6.1vw, 30px)`). At 44px the title dwarfed the lead beneath it.
+- **Prose has its own font token, `--font-read`,** set to `system-ui` — so body
+  copy renders in whatever the reader's own OS uses for interface text (Segoe UI
+  Variable Text on Windows 11, SF on macOS, Roboto on Android). No download,
+  which the offline requirement demands. Headings keep `--font-sans`. A serif
+  (Charter/Georgia) was tried first and rejected: wrong register for a portal
+  that sits next to code.
+- **Fixed on the way:** that experiment had briefly routed `code` and `pre`
+  through `--font-sans`, which silently de-monospaced every inline snippet. Code
+  is explicitly `--font-mono` again.
