@@ -2266,9 +2266,13 @@ html[data-reading-size="xl"] { --reading-scale: 1.28; }
 /* ---- ALIGNMENT (left / justified) ----
    Applies everywhere: phone, tablet, desktop, focus mode. Justification is
    limited to running prose — headings, code, tables and chips keep their own
-   alignment, and justifying a two-word table cell only opens gaps. Hyphenation
-   rides along with it: a justified column this narrow without hyphens pulls
-   visible rivers of white space through the paragraph. */
+   alignment, and justifying a two-word table cell only opens gaps.
+
+   Words are never split. Automatic hyphenation was tried first and rejected:
+   it produced breaks like "nor- / mally" mid-paragraph, which costs more in
+   reading effort than the tighter spacing buys back. `hyphens: manual` leaves
+   the browser to distribute the slack between words instead, and honours an
+   explicit &shy; if any content ever wants one. */
 html[data-reading-align="justify"] .content > p,
 html[data-reading-align="justify"] .content > .lead,
 html[data-reading-align="justify"] .content > ul > li,
@@ -2288,18 +2292,19 @@ html[data-reading-align="justify"] .prep-content > .lead,
 html[data-reading-align="justify"] .prep-content > ul > li,
 html[data-reading-align="justify"] .prep-content > ol > li {
   text-align: justify;
+  /* Spacing between words absorbs the slack — the alternative, inter-character,
+     stretches inside words and reads as broken tracking. */
   text-justify: inter-word;
-  hyphens: auto;
-  -webkit-hyphens: auto;
-}
-/* A justified line cannot break a long token, so an inline code span or URL
-   would either overflow or leave a huge gap. These stay unhyphenated and are
-   allowed to break anywhere as a last resort. */
-html[data-reading-align="justify"] .content code,
-html[data-reading-align="justify"] .content a {
   hyphens: manual;
   -webkit-hyphens: manual;
-  overflow-wrap: anywhere;
+}
+/* One exception to "never break a word": a token longer than the column has to
+   break somewhere or it overflows. `break-word` only engages when the token
+   cannot fit on a line of its own, so ordinary words are untouched — long URLs
+   and code identifiers are the whole target. */
+html[data-reading-align="justify"] .content code,
+html[data-reading-align="justify"] .content a {
+  overflow-wrap: break-word;
 }
 
 /* ---- TEXT WIDTH ----
@@ -2506,6 +2511,84 @@ body.focus-mode .focus-nav > .reader-wrap .reader-btn:hover {
 
 @media (prefers-reduced-motion: reduce) {
   .reader-popover, .reader-scrim { transition: none; }
+}
+
+/* =========================================================================
+   TYPE COLOUR — headings and bold step down from black
+   =========================================================================
+   Light mode ran headings at #20232b, near enough to black that a lesson read
+   as a stack of hard black slabs over mid-grey body copy. Everything below
+   softens that into one hierarchy, each step a token mix so the two themes
+   work from their own pair rather than from hard-coded hex:
+
+     heading   mix(--text 72%)   #2D313B light   (headings, h1-h4, card and
+                                                  callout titles)
+     bold      mix(--text 55%)   #363A45 light   (--prose-strong, below)
+     body      --text-secondary  #505665 light
+
+   Only light mode is restated. Dark already dials headings back a step from
+   --text on purpose — large, heavy type reads brighter than its hex value —
+   and dimming them further would cost legibility rather than buy calm.
+
+   `--heading` is the single token every heading in the portal already reads,
+   so softening it there covers h1-h4, hero titles, card titles and the section
+   headings on every page family at once. The component titles listed after it
+   are the ones that were wired to `--text` instead and so had been left out.
+   ========================================================================= */
+html[data-theme="light"],
+html:not([data-theme]) {
+  --heading: color-mix(in srgb, var(--text) 72%, var(--text-secondary));
+}
+
+/* Titles that read as headings but were coloured from --text directly. */
+.content .callout .c-title,
+.content .quiz .q,
+.content .recall > summary,
+.content .collapse > summary,
+.content .demo-title,
+.content .rm-head { color: var(--heading); }
+
+/* =========================================================================
+   PROSE EMPHASIS — bold inside a lesson
+   =========================================================================
+   Body copy is `--text-secondary` and bold was `--heading` at weight 650, so
+   every emphasised phrase jumped from mid-grey to near-black. In a paragraph
+   with three or four bold terms that reads as a page of headlines: the eye is
+   pulled to the bold and the sentence around it goes quiet.
+
+   Bold now sits one clear step above body copy instead of at the far end of
+   the scale — a grey bold, at 600 rather than 650. The mix is expressed in
+   tokens, so light and dark both work from their own pair: in light it lands
+   near #353945 against #505665 body, in dark near #cfd3da against #b6bbc5.
+
+   Every prose column in the portal carries `.content` (the hub, prep, ATS and
+   Google sections add a second class to the same element), so this one scope
+   covers all of them — while leaving `.brand-text strong`, `.crumbs b` and the
+   accent-coloured `.prep-*`/`.ats-*` figures alone. Those either sit outside
+   `.content` or win on specificity.
+   ========================================================================= */
+:root { --prose-strong: color-mix(in srgb, var(--text) 55%, var(--text-secondary)); }
+
+.content strong,
+.content b,
+.content dt {
+  color: var(--prose-strong);
+  font-weight: 600;
+}
+/* styles.css lightens every `strong` to #dde2e9 in dark mode, which is close
+   to pure white against mid-grey body copy — the same over-emphasis the rule
+   above is undoing, so it has to be answered explicitly. */
+html[data-theme="dark"] .content strong,
+html[data-theme="dark"] .content b,
+html[data-theme="dark"] .content dt { color: var(--prose-strong); }
+
+/* Bold inside a heading, a chip or a button is structural, not emphasis: those
+   already carry their own colour and weight, and greying them would fight it. */
+.content h1 strong, .content h2 strong, .content h3 strong, .content h4 strong,
+.content .pill strong, .content .eyebrow strong, .content button strong,
+.content a strong, .content .card > h3 b {
+  color: inherit;
+  font-weight: inherit;
 }
 
 /* =========================================================================
