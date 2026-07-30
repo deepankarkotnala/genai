@@ -13,7 +13,6 @@
   var motionQuery = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)");
   var REDUCED = !!(motionQuery && motionQuery.matches);
   var FOCUS_KEY = "genai-focus-mode";
-  var READER_KEY = "genai-reader-settings-v2";
 
   function getStored(key, fallback) {
     try {
@@ -52,8 +51,11 @@
     return '<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M3 12h3M18 12h3M12 3v3M12 18v3"/></svg>';
   }
 
-  function iconReader() {
-    return '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 19V5h10"/><path d="M4 12h8"/><path d="M16 8l4 11M14.7 15h6.6"/></svg>';
+  /* Two letters at two sizes is the universal mark for type size, and it reads
+     at 15px where a line-art glyph turns to mush. Text rather than an SVG so
+     it inherits the button's colour and the theme's font. */
+  function glyphType() {
+    return '<span class="reader-glyph" aria-hidden="true">A<i>a</i></span>';
   }
 
   function isDsaPage() {
@@ -130,16 +132,64 @@
     var ribbon = document.createElement("nav");
     ribbon.className = "office-ribbon";
     ribbon.setAttribute("aria-label", "Workspace sections");
+    /* "Overview" rather than "Home": the top bar now carries a Home button of
+       its own, and two controls with the same label pointing at the same page
+       read as a bug. The status chip moved to the top bar as well, so the
+       ribbon is nothing but tabs — which is what lets it scroll cleanly on a
+       phone. The spacer stays: focus mode reuses it to push the exit control
+       to the far end of the bar. */
     ribbon.innerHTML =
-      item("Home", "index.html", isHome) +
+      item("Overview", "index.html", isHome) +
       item("Learn", "modules/01_foundations.html", isLearn) +
       item("Practice", "scenario-practice/index.html", isPractice) +
       item("Interview", "interview-hub/index.html", isInterview) +
-      '<span class="ribbon-spacer"></span>' +
-      '<span class="ribbon-status"><i aria-hidden="true"></i>Offline-ready workspace</span>';
+      '<span class="ribbon-spacer"></span>';
 
     bar.insertAdjacentElement("afterend", ribbon);
     document.body.classList.add("has-ribbon");
+  }
+
+  /* ---------- Breadcrumb structure ----------
+     The bar ships its trail as one text node ("Foundations / <b>01 · …</b>"),
+     which leaves the stylesheet nothing to target when the row has to shed
+     weight on a phone — the whole string can only be truncated mid-word.
+     Splitting it into trail / separator / current parts lets the narrow
+     breakpoints drop the ancestor and keep the chapter title (the part the
+     reader actually needs), and gives the slash its own colour instead of
+     inheriting the muted trail. Runs on every page family: some crumbs carry
+     a <b> for the current page, DSA chapters are plain text, and hub pages
+     are a <b> with no trail at all. */
+  function structureCrumbs() {
+    var crumbs = document.querySelector(".topbar .crumbs");
+    if (!crumbs || crumbs.querySelector(".crumb-current")) return;
+
+    var bold = crumbs.querySelector("b");
+    var full = crumbs.textContent.replace(/\s+/g, " ").trim();
+    var current = bold ? bold.textContent.replace(/\s+/g, " ").trim() : "";
+    var trail;
+
+    if (current) {
+      trail = full.slice(0, full.lastIndexOf(current));
+    } else {
+      var segments = full.split("/");
+      current = segments.pop().trim();
+      trail = segments.join("/");
+    }
+
+    var ancestors = trail.split("/").map(function (part) { return part.trim(); })
+      .filter(function (part) { return part.length > 0; });
+
+    var html = "";
+    for (var i = 0; i < ancestors.length; i++) {
+      html += '<span class="crumb-trail">' + esc(ancestors[i]) + "</span>" +
+        '<span class="crumb-sep" aria-hidden="true">/</span>';
+    }
+    html += '<b class="crumb-current">' + esc(current) + "</b>";
+
+    crumbs.innerHTML = html;
+    // The current page can still be clipped on a very narrow phone, so the
+    // untruncated trail stays reachable as a tooltip.
+    crumbs.title = ancestors.concat([current]).join(" / ");
   }
 
   function addHomeButton() {
@@ -177,52 +227,11 @@
     button.className = "focus-btn";
     button.setAttribute("aria-label", "Toggle distraction-free focus mode");
 
-    /* ---------- Reading-width control ----------
-       Focus mode hides both rails, which on a wide monitor left the text
-       running the full width of the screen — well past a readable line length.
-       The canvas is now capped by --focus-measure in office-theme.css, and
-       this control lets the reader choose that cap. The choice is stored, so
-       it carries across pages and sessions. */
-    var WIDTH_KEY = "genai-focus-width";
-    var WIDTHS = [
-      { id: "narrow", label: "Narrow", hint: "Narrow reading width (~800px)" },
-      { id: "medium", label: "Medium", hint: "Medium reading width (~1000px)" },
-      { id: "wide", label: "Wide", hint: "Wide reading width (~1360px)" },
-      { id: "full", label: "Full", hint: "Use the full screen width" }
-    ];
-
-    function validWidth(value) {
-      for (var i = 0; i < WIDTHS.length; i++) if (WIDTHS[i].id === value) return value;
-      return "medium";
-    }
-
-    var widthWrap = document.createElement("div");
-    widthWrap.className = "focus-width";
-    widthWrap.setAttribute("role", "group");
-    widthWrap.setAttribute("aria-label", "Reading width");
-
-    function applyWidth(value, persist) {
-      value = validWidth(value);
-      document.body.setAttribute("data-focus-width", value);
-      var buttons = widthWrap.children;
-      for (var i = 0; i < buttons.length; i++) {
-        buttons[i].setAttribute("aria-pressed", buttons[i].dataset.width === value ? "true" : "false");
-      }
-      if (persist) setStored(WIDTH_KEY, value);
-    }
-
-    WIDTHS.forEach(function (option) {
-      var choice = document.createElement("button");
-      choice.type = "button";
-      choice.dataset.width = option.id;
-      choice.textContent = option.label;
-      choice.title = option.hint;
-      choice.setAttribute("aria-label", option.hint);
-      choice.addEventListener("click", function () { applyWidth(option.id, true); });
-      widthWrap.appendChild(choice);
-    });
-
-    applyWidth(getStored(WIDTH_KEY, "medium"), false);
+    /* Focus mode used to carry its own Narrow/Medium/Wide/Full strip for the
+       reading measure, stored separately under "genai-focus-width". The
+       Display panel now owns that choice for the whole site and maps it onto
+       --focus-measure (see applyReadingSettings), so the strip is gone and
+       there is one setting instead of two that could disagree. */
 
     // In focus mode a single navigation bar is pinned to the top of the
     // viewport and the exit control plus the theme toggle live inside it, so
@@ -254,10 +263,13 @@
       } else {
         host.appendChild(button);
       }
-      // The width control only makes sense while the rails are hidden, so it
-      // rides along with the exit button and sits just before it.
-      if (active) host.insertBefore(widthWrap, button);
-      else if (widthWrap.parentNode) widthWrap.parentNode.removeChild(widthWrap);
+      /* Reading settings matter most while the lesson is the only thing on
+         screen, so the Display control follows the exit button into the focus
+         bar and comes back to the top bar on exit. It is created after this
+         function is first called, hence the lookup rather than a closure over
+         the element. */
+      var reader = document.querySelector(".reader-wrap");
+      if (reader) host.insertBefore(reader, button);
     }
 
     function apply(active, persist) {
@@ -273,6 +285,9 @@
         if (app) app.classList.remove("nav-open");
       }
       if (persist) setStored(FOCUS_KEY, active ? "1" : "0");
+      // The Display panel anchors itself to this button, which has just moved
+      // into (or out of) a bar of a different height.
+      document.dispatchEvent(new CustomEvent("genai-focus-change", { detail: { active: active } }));
     }
 
     apply(getStored(FOCUS_KEY, "0") === "1", false);
@@ -300,159 +315,265 @@
     });
   }
 
-  function readReaderSettings() {
-    try {
-      var settings = JSON.parse(getStored(READER_KEY, "{}"));
-      return {
-        size: ["small", "default", "large", "xl"].indexOf(settings.size) >= 0 ? settings.size : "default",
-        width: ["narrow", "default", "wide"].indexOf(settings.width) >= 0 ? settings.width : "default",
-        contrast: settings.contrast === true
-      };
-    } catch (error) {
-      return { size: "default", width: "default", contrast: false };
-    }
+  /* =======================================================================
+     Display settings — text size and reading width
+     =======================================================================
+     One control, two settings, stored under one key. The size and width
+     values are also read by the inline pre-paint script in every page's
+     <head> (the same one that applies the theme), so a reader who has chosen
+     large text gets large text in the first paint instead of watching the
+     lesson reflow a moment after load. That means three things must agree on
+     the storage contract, and the head script is the one that cannot be
+     changed from here:
+
+       key    "gp.reading"
+       value  {"size":"small|default|large|xl",
+               "width":"cozy|default|wide|full",
+               "align":"left|justify"}
+
+     Anything unrecognised falls back to "default" on both sides ("left" for
+     align).
+
+     Scope of each setting:
+       size   everywhere
+       align  everywhere
+       width  focus mode only, and only above 860px. Outside focus mode the
+              reading column is pinned by the "ONE TYPE SCALE" layer
+              (`max-width: var(--content-max) !important`), so Cozy and
+              Standard rendered identically and Wide and Full only hid the
+              contents rail — the measure never actually changed. Focus mode
+              is excluded from that layer and owns --focus-measure, which is
+              where the four steps do real work. Below 861px there is no
+              spare canvas either way: the column is the viewport.
+
+     The previous generation of this control also offered a contrast toggle
+     and wrote a set of `reader-*` state classes. Those classes were retired
+     (see DRAWER_READING_GUARDRAILS_UPDATE.md) and the old rules are keyed to
+     the pre-Office palette, so nothing here writes them; clearLegacyReading-
+     Classes() still strips any left over from an old session. */
+  var READING_KEY = "gp.reading";
+  var SIZES = ["small", "default", "large", "xl"];
+  var WIDTHS = ["cozy", "default", "wide", "full"];
+  var ALIGNS = ["left", "justify"];
+
+  function readReadingSettings() {
+    var stored = {};
+    try { stored = JSON.parse(getStored(READING_KEY, "{}")) || {}; } catch (error) { stored = {}; }
+    return {
+      size: SIZES.indexOf(stored.size) >= 0 ? stored.size : "default",
+      width: WIDTHS.indexOf(stored.width) >= 0 ? stored.width : "default",
+      align: ALIGNS.indexOf(stored.align) >= 0 ? stored.align : "left"
+    };
   }
 
-  function applyReaderSettings(settings) {
-    var body = document.body;
+  function applyReadingSettings(settings) {
     var root = document.documentElement;
-    var stateClasses = ["reader-text-small", "reader-text-large", "reader-text-xl", "reader-narrow", "reader-wide", "reader-high-contrast"];
-
-    stateClasses.forEach(function (name) {
-      body.classList.remove(name);
-      root.classList.remove(name);
-    });
-
-    root.dataset.readingSize = settings.size;
-    root.dataset.readingWidth = settings.width;
-    root.dataset.readingContrast = settings.contrast ? "high" : "soft";
-
-    if (settings.size !== "default") {
-      body.classList.add("reader-text-" + settings.size);
-      root.classList.add("reader-text-" + settings.size);
-    }
-    if (settings.width !== "default") {
-      body.classList.add("reader-" + settings.width);
-      root.classList.add("reader-" + settings.width);
-    }
-    if (settings.contrast) {
-      body.classList.add("reader-high-contrast");
-      root.classList.add("reader-high-contrast");
-    }
+    root.setAttribute("data-reading-size", settings.size);
+    root.setAttribute("data-reading-width", settings.width);
+    root.setAttribute("data-reading-align", settings.align);
+    /* Focus mode caps its canvas with --focus-measure, selected by
+       data-focus-width. It used to carry its own Narrow/Medium/Wide/Full
+       control, which meant two widgets writing two stored values for one
+       idea. Mapping the width here retires that control and keeps the choice
+       consistent whether the lesson is in focus mode or not. */
+    document.body.setAttribute("data-focus-width", {
+      cozy: "narrow", default: "medium", wide: "wide", full: "full"
+    }[settings.width]);
   }
 
   function addReaderControls() {
     var bar = document.querySelector(".topbar");
-    if (!bar || bar.querySelector(".reader-wrap")) return;
+    var studyContent = document.querySelector(".content-wrap > .content");
+    if (!bar || !studyContent || bar.querySelector(".reader-wrap")) return;
 
-    var settings = readReaderSettings();
-    applyReaderSettings(settings);
+    var settings = readReadingSettings();
+    applyReadingSettings(settings);
+
+    var SIZE_CHOICES = [
+      { value: "small", label: "A", cls: "sz-s", name: "Small text" },
+      { value: "default", label: "A", cls: "sz-m", name: "Standard text" },
+      { value: "large", label: "A", cls: "sz-l", name: "Large text" },
+      { value: "xl", label: "A", cls: "sz-xl", name: "Extra large text" }
+    ];
+    var ALIGN_CHOICES = [
+      { value: "left", label: "Left", name: "Left aligned — even word spacing, ragged right edge" },
+      { value: "justify", label: "Justified", name: "Justified — text fills the full column width on both edges" }
+    ];
+    // Focus mode only; see the scope note above applyReadingSettings.
+    var WIDTH_CHOICES = [
+      { value: "cozy", label: "Cozy", name: "Cozy reading measure (~800px)" },
+      { value: "default", label: "Standard", name: "Standard reading measure (~1000px)" },
+      { value: "wide", label: "Wide", name: "Wide reading measure (~1360px)" },
+      { value: "full", label: "Full", name: "Full width — text spans the whole screen" }
+    ];
+
+    function segment(group, choices) {
+      var html = '<div class="reader-segment" data-reader-' + group + ' role="group">';
+      choices.forEach(function (choice) {
+        html += '<button type="button" data-value="' + choice.value + '"' +
+          (choice.cls ? ' class="' + choice.cls + '"' : "") +
+          ' title="' + esc(choice.name) + '" aria-label="' + esc(choice.name) + '">' +
+          esc(choice.label) + "</button>";
+      });
+      return html + "</div>";
+    }
 
     var wrap = document.createElement("div");
     wrap.className = "reader-wrap";
     wrap.innerHTML =
-      '<button class="reader-btn" type="button" aria-expanded="false" aria-label="Open reading comfort settings">' +
-        iconReader() + '<span class="reader-lbl">Reader</span>' +
-      "</button>" +
-      '<div class="reader-popover" role="dialog" aria-label="Reading comfort settings">' +
-        "<h3>Reading comfort</h3>" +
-        "<p>Adjust the lesson without changing its content.</p>" +
-        '<div class="reader-row"><span>Text size</span><div class="reader-segment" data-reader-size>' +
-          '<button type="button" data-value="small" aria-label="Small text">A−</button>' +
-          '<button type="button" data-value="default" aria-label="Default text">A</button>' +
-          '<button type="button" data-value="large" aria-label="Large text">A+</button>' +
-          '<button type="button" data-value="xl" aria-label="Extra large text">A++</button>' +
-        "</div></div>" +
-        '<div class="reader-row"><span>Line width</span><div class="reader-segment" data-reader-width>' +
-          '<button type="button" data-value="narrow">Narrow</button>' +
-          '<button type="button" data-value="default">Auto</button>' +
-          '<button type="button" data-value="wide">Wide</button>' +
-        "</div></div>" +
-        '<div class="reader-row"><span>Contrast</span><div class="reader-segment" data-reader-contrast>' +
-          '<button type="button" data-value="false">Soft</button>' +
-          '<button type="button" data-value="true">High</button>' +
-        "</div></div>" +
-      "</div>";
+      '<button class="reader-btn" type="button" aria-expanded="false" aria-haspopup="dialog" ' +
+        'title="Text size and reading width" aria-label="Display settings: text size and reading width">' +
+        glyphType() + '<span class="reader-lbl">Display</span>' +
+      "</button>";
 
-    var theme = bar.querySelector("[data-theme-toggle]");
-    if (theme) bar.insertBefore(wrap, theme);
-    else bar.appendChild(wrap);
+    /* The panel is a child of <body>, not of the button. The top bar sets
+       `backdrop-filter`, which makes it the containing block for fixed
+       positioning, and some breakpoints also give it `overflow: hidden` — a
+       panel nested inside it would be positioned against the bar and then
+       clipped by it. Portalling to <body> sidesteps both, and means the panel
+       does not have to be moved when focus mode re-docks the button. */
+    var panel = document.createElement("div");
+    panel.className = "reader-popover";
+    panel.setAttribute("role", "dialog");
+    panel.setAttribute("aria-label", "Display settings");
+    panel.innerHTML =
+      '<div class="reader-head"><h3>Display</h3>' +
+      '<button type="button" class="reader-close" aria-label="Close display settings">' +
+        '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>' +
+      "</button></div>" +
+      "<p>Changes the lesson only, and follows you across pages.</p>" +
+      '<div class="reader-row"><span>Text size</span>' + segment("size", SIZE_CHOICES) + "</div>" +
+      '<div class="reader-row"><span>Alignment</span>' + segment("align", ALIGN_CHOICES) + "</div>" +
+      /* Hidden by CSS outside focus mode and below 861px, where the measure
+         cannot change. The row is always built so entering focus mode does not
+         have to rebuild the panel. */
+      '<div class="reader-row reader-row-width"><span>Text width</span>' + segment("width", WIDTH_CHOICES) + "</div>" +
+      '<button type="button" class="reader-reset">Reset to default</button>';
 
-    var trigger = wrap.querySelector(".reader-btn");
-    var panel = wrap.querySelector(".reader-popover");
+    // The sheet form of the panel (phones) needs something behind it, both to
+    // dim the lesson and to give a tap target that closes it.
+    var scrim = document.createElement("div");
+    scrim.className = "reader-scrim";
 
     var live = document.createElement("span");
     live.className = "sr-only reader-live";
     live.setAttribute("aria-live", "polite");
-    wrap.appendChild(live);
+
+    /* Normal layout: the button sits with the other view controls, just before
+       the theme toggle. If focus mode was restored from storage before this
+       ran, the exit button is already docked in the focus bar and the top bar
+       is hidden, so the control joins it there instead. */
+    var theme = document.querySelector(".topbar [data-theme-toggle], .office-ribbon [data-theme-toggle]");
+    var focusBtn = document.querySelector(".focus-btn");
+    if (document.body.classList.contains("focus-mode") && focusBtn && focusBtn.parentNode) {
+      focusBtn.parentNode.insertBefore(wrap, focusBtn);
+    } else if (theme && theme.parentNode) {
+      theme.parentNode.insertBefore(wrap, theme);
+    } else {
+      bar.appendChild(wrap);
+    }
+    document.body.appendChild(scrim);
+    document.body.appendChild(panel);
+    document.body.appendChild(live);
+
+    var trigger = wrap.querySelector(".reader-btn");
 
     function refreshButtons() {
-      wrap.querySelectorAll("[data-reader-size] button").forEach(function (button) {
-        var active = button.dataset.value === settings.size;
-        button.classList.toggle("active", active);
-        button.setAttribute("aria-pressed", active ? "true" : "false");
+      var groups = { size: settings.size, align: settings.align, width: settings.width };
+      Object.keys(groups).forEach(function (group) {
+        var buttons = panel.querySelectorAll("[data-reader-" + group + "] button");
+        for (var i = 0; i < buttons.length; i++) {
+          var active = buttons[i].dataset.value === groups[group];
+          buttons[i].classList.toggle("active", active);
+          buttons[i].setAttribute("aria-pressed", active ? "true" : "false");
+        }
       });
-      wrap.querySelectorAll("[data-reader-width] button").forEach(function (button) {
-        var active = button.dataset.value === settings.width;
-        button.classList.toggle("active", active);
-        button.setAttribute("aria-pressed", active ? "true" : "false");
-      });
-      wrap.querySelectorAll("[data-reader-contrast] button").forEach(function (button) {
-        var active = button.dataset.value === String(settings.contrast);
-        button.classList.toggle("active", active);
-        button.setAttribute("aria-pressed", active ? "true" : "false");
-      });
+      var custom = settings.size !== "default" || settings.width !== "default" || settings.align !== "left";
+      trigger.classList.toggle("is-custom", custom);
+      panel.querySelector(".reader-reset").disabled = !custom;
     }
 
     function announce() {
-      var sizeNames = { small: "small", default: "standard", large: "large", xl: "extra large" };
-      var widthNames = { narrow: "narrow", default: "automatic", wide: "wide" };
-      live.textContent = "Reading settings applied: " + sizeNames[settings.size] + " text, " + widthNames[settings.width] + " line width, " + (settings.contrast ? "high" : "soft") + " contrast.";
+      var sizes = { small: "small", default: "standard", large: "large", xl: "extra large" };
+      var widths = { cozy: "cozy", default: "standard", wide: "wide", full: "full" };
+      var text = "Display: " + sizes[settings.size] + " text, " +
+        (settings.align === "justify" ? "justified" : "left aligned");
+      // The width only means something where the control is offered.
+      if (document.body.classList.contains("focus-mode")) text += ", " + widths[settings.width] + " width";
+      live.textContent = text + ".";
     }
 
     function save() {
-      applyReaderSettings(settings);
+      applyReadingSettings(settings);
       refreshButtons();
-      setStored(READER_KEY, JSON.stringify(settings));
+      setStored(READING_KEY, JSON.stringify(settings));
       announce();
     }
 
-    function close() {
-      panel.classList.remove("open");
-      trigger.setAttribute("aria-expanded", "false");
+    // Below this width the panel is a bottom sheet pinned by the stylesheet,
+    // so it must not carry the inline coordinates the anchored form needs.
+    var sheetQuery = window.matchMedia("(max-width: 620px)");
+
+    function place() {
+      if (sheetQuery.matches) {
+        panel.style.top = "";
+        panel.style.right = "";
+        return;
+      }
+      var rect = trigger.getBoundingClientRect();
+      panel.style.top = Math.round(rect.bottom + 8) + "px";
+      panel.style.right = Math.max(8, Math.round(window.innerWidth - rect.right)) + "px";
     }
 
-    trigger.addEventListener("click", function () {
-      var open = !panel.classList.contains("open");
-      panel.classList.toggle("open", open);
-      trigger.setAttribute("aria-expanded", open ? "true" : "false");
+    function open(value) {
+      if (value) place();
+      panel.classList.toggle("open", value);
+      scrim.classList.toggle("open", value);
+      // Locks the page behind the sheet; harmless for the anchored form.
+      document.body.classList.toggle("reader-open", value);
+      trigger.setAttribute("aria-expanded", value ? "true" : "false");
+    }
+
+    function isOpen() { return panel.classList.contains("open"); }
+
+    trigger.addEventListener("click", function () { open(!isOpen()); });
+    panel.querySelector(".reader-close").addEventListener("click", function () {
+      open(false);
+      trigger.focus();
+    });
+    scrim.addEventListener("click", function () { open(false); });
+
+    ["size", "align", "width"].forEach(function (group) {
+      panel.querySelector("[data-reader-" + group + "]").addEventListener("click", function (event) {
+        var button = event.target.closest("button[data-value]");
+        if (!button) return;
+        settings[group] = button.dataset.value;
+        save();
+      });
     });
 
-    wrap.querySelector("[data-reader-size]").addEventListener("click", function (event) {
-      var button = event.target.closest("button[data-value]");
-      if (!button) return;
-      settings.size = button.dataset.value;
-      save();
-    });
-    wrap.querySelector("[data-reader-width]").addEventListener("click", function (event) {
-      var button = event.target.closest("button[data-value]");
-      if (!button) return;
-      settings.width = button.dataset.value;
-      save();
-    });
-    wrap.querySelector("[data-reader-contrast]").addEventListener("click", function (event) {
-      var button = event.target.closest("button[data-value]");
-      if (!button) return;
-      settings.contrast = button.dataset.value === "true";
+    panel.querySelector(".reader-reset").addEventListener("click", function () {
+      settings.size = "default";
+      settings.width = "default";
+      settings.align = "left";
       save();
     });
 
     document.addEventListener("click", function (event) {
-      if (!wrap.contains(event.target)) close();
+      if (!isOpen() || wrap.contains(event.target) || panel.contains(event.target)) return;
+      open(false);
     });
     document.addEventListener("keydown", function (event) {
-      if (event.key === "Escape") close();
+      if (event.key !== "Escape" || !isOpen()) return;
+      open(false);
+      trigger.focus();
     });
+    // The anchor moves with the bar, so an open panel has to follow it. Focus
+    // mode re-docks the button into a bar of a different height, which is why
+    // this listens for its own toggle as well as the viewport changing.
+    window.addEventListener("resize", function () { if (isOpen()) place(); });
+    window.addEventListener("scroll", function () { if (isOpen()) place(); }, { passive: true });
+    document.addEventListener("genai-focus-change", function () { if (isOpen()) place(); });
 
     refreshButtons();
   }
@@ -1064,8 +1185,12 @@
     clearLegacyReadingClasses();
     addDsaWorkspaceNav();
     addOfficeRibbon();
+    structureCrumbs();
+    // Order matters: each of these inserts itself before the theme toggle, so
+    // calling them in reading order lays the bar out Home → Focus → Aa → ☾.
     addHomeButton();
     addFocusButton();
+    addReaderControls();
     setupTermDialogs();
     // injectTopicDiagram();  // Learning-loop concept diagram removed site-wide (felt unnecessary).
     setupReadingProgress();

@@ -590,7 +590,6 @@ body.sidebar-resizing .sidebar-resizer::after {
   box-shadow: none !important;
   animation: none !important;
 }
-.meta-row { gap: 0; margin: 0 0 24px; }
 .pill,
 .chip,
 .tag {
@@ -606,9 +605,12 @@ body.sidebar-resizing .sidebar-resizer::after {
   font-size: 11.5px;
   font-weight: 550;
 }
-.meta-row .pill { margin: 0 -1px -1px 0; border-radius: 0; }
-.meta-row .pill:first-child { border-radius: 6px 0 0 6px; }
-.meta-row .pill:last-child { border-radius: 0 6px 6px 0; }
+/* The meta row under a lesson title used to be a joined segmented strip: gap 0,
+   a -1px margin per chip to collapse the shared borders, and squared inner
+   corners. At three chips of unequal length that read as one crowded block with
+   seams rather than three separate facts, so each chip now stands on its own.
+   The full treatment is in the LESSON META CHIPS section at the end of this
+   file, next to the responsive rules it depends on. */
 .pill.blue,.pill.green,.pill.purple,.pill.amber,.pill.red { color: var(--text-secondary); }
 
 .toc-rail {
@@ -1219,7 +1221,7 @@ body.focus-mode .content-wrap {
 /* Focus mode used to run edge to edge. On a wide monitor that produced lines
    of 200+ characters, which is unreadable — so the canvas is now capped at a
    comfortable measure and centred, with generous gutters either side. The cap
-   is a variable the reader controls from the focus bar (see .focus-width). */
+   is a variable the reader controls from the Display panel (Text width). */
 /* Measures are the outer box; the gutter is inside it (border-box), so the
    text column is roughly measure minus 2x gutter. On a 2560px screen that
    gives about 68 / 93 / 137 characters per line for narrow / medium / wide,
@@ -1260,50 +1262,15 @@ body.focus-mode .content > h2,
 body.focus-mode .content > h3,
 body.focus-mode .content > h4 { max-width: none; }
 
-/* --- Reading-width control (focus bar) ---------------------------------- */
-/* A small segmented control so the reader picks their own measure. Hidden
-   outside focus mode, because the normal layout already has a fixed column. */
-.focus-width { display: none; }
-body.focus-mode .focus-nav > .focus-width {
-  display: inline-flex;
-  align-items: center;
-  gap: 1px;
-  height: 26px;
-  margin: auto 6px;
-  padding: 2px;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
-}
-body.focus-mode .focus-nav > .focus-width > button {
-  display: inline-grid;
-  place-items: center;
-  height: 20px;
-  padding: 0 8px;
-  border: 0;
-  border-radius: 4px;
-  color: var(--text-secondary);
-  background: transparent;
-  font: 560 10.5px/1 var(--font-sans, inherit);
-  letter-spacing: .02em;
-  cursor: pointer;
-  transition: color .18s ease, background .18s ease;
-}
-body.focus-mode .focus-nav > .focus-width > button:hover { color: var(--text); background: var(--bg-elevated); }
-body.focus-mode .focus-nav > .focus-width > button[aria-pressed="true"] {
-  color: #fff;
-  background: var(--excel, var(--accent));
-}
-body.focus-mode .focus-nav > .focus-width > button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* The focus bar's own Narrow/Medium/Wide/Full strip has been retired: the
+   Display panel in the top bar owns text width everywhere and maps its choice
+   onto data-focus-width, so one setting drives both layouts. */
 
 @media (max-width: 760px) {
   body.focus-mode { --nav-bar-h: 42px; }
   body.focus-mode .focus-nav { padding-inline: 8px; }
   body.focus-mode .focus-nav > .focus-btn { width: 30px; padding: 0; }
   body.focus-mode .focus-nav > .focus-btn .focus-lbl { display: none !important; }
-  /* On a phone the screen is narrower than every preset, so the control has
-     nothing to do — the measure is the viewport either way. */
-  body.focus-mode .focus-nav > .focus-width { display: none; }
   body.focus-mode .content { max-width: none; padding: 24px clamp(16px, 5vw, 24px) 72px; }
 }
 
@@ -1531,9 +1498,9 @@ body.focus-mode .focus-nav > .focus-width > button:focus-visible { outline: 2px 
   .content { padding-left: 14px; padding-right: 14px; }
   .hero { padding: 18px 15px; }
   .content h2 { margin-top: 27px; }
-  .meta-row { display: flex; overflow-x: auto; flex-wrap: nowrap; padding-bottom: 2px; scrollbar-width: none; }
-  .meta-row::-webkit-scrollbar { display: none; }
-  .meta-row .pill { flex: none; border-radius: 5px !important; margin-right: 5px; }
+  /* The chips used to scroll sideways here, which hid the difficulty and the
+     prerequisites off the right edge of a phone with nothing to say so. Three
+     short facts wrap into two lines instead — see LESSON META CHIPS. */
   .card { padding: 14px; }
   .readmap { padding: 14px; }
   .rm-link { grid-template-columns: 1fr; gap: 3px; }
@@ -1904,6 +1871,11 @@ html[data-theme="dark"] .brand-mark {
    ========================================================================= */
 
 /* --- Page title: one size on every page, hero or not ------------------- */
+/* The `* var(--reading-scale)` factor on every size below is what lets the
+   Display panel's text-size setting through this layer. Without it the layer
+   would pin headings at the theme size and only body copy would respond, so
+   "larger text" would change the paragraphs and leave the titles behind. The
+   factor is 1 unless the reader has chosen otherwise. */
 .hero h1,
 .ih-hero h1,
 .gp-hero h1,
@@ -1911,7 +1883,7 @@ html[data-theme="dark"] .brand-mark {
 .dsa-hero h2,
 .content > h1,
 .prep-content > h1 {
-  font-size: var(--fs-h1) !important;
+  font-size: calc(var(--fs-h1) * var(--reading-scale)) !important;
   max-width: none !important;
   line-height: 1.16 !important;
   letter-spacing: -.022em !important;
@@ -1924,17 +1896,17 @@ html[data-theme="dark"] .brand-mark {
 .content > .lead,
 .prep-content > .lead,
 .dsa-chead .dsa-outcome {
-  font-size: var(--fs-lead) !important;
+  font-size: calc(var(--fs-lead) * var(--reading-scale)) !important;
   line-height: 1.62;
 }
 
 /* --- Section headings -------------------------------------------------- */
 .content > h2,
 .prep-content > h2,
-.ih-content > h2 { font-size: var(--fs-h2) !important; }
+.ih-content > h2 { font-size: calc(var(--fs-h2) * var(--reading-scale)) !important; }
 .content > h3,
 .prep-content > h3,
-.ih-content > h3 { font-size: var(--fs-h3) !important; }
+.ih-content > h3 { font-size: calc(var(--fs-h3) * var(--reading-scale)) !important; }
 
 /* --- Reading width: one token everywhere ------------------------------- */
 /* Focus mode owns its own measure (the reader picks it), so it is excluded
@@ -2006,4 +1978,611 @@ html[data-reading-width="narrow"] body:not(.focus-mode) .content > dl,
 html[data-reading-width="narrow"] body:not(.focus-mode) .content > blockquote,
 html[data-reading-width="narrow"] body:not(.focus-mode) .content > .lead {
   max-width: min(100%, var(--reader-line-length)) !important;
+}
+
+/* =========================================================================
+   CHAPTER TOP BAR — responsive redesign
+   =========================================================================
+   The bar is two stacked rows that together form one piece of chrome:
+
+     row 1 (.topbar)         menu   Foundations / 01 · Foundations of LLMs   [ Offline-ready ]  Home  Focus  theme
+     row 2 (.office-ribbon)  Overview   Learn   Practice   Interview
+                             ^^^^^^^^ active marker
+
+   What changed and why:
+   - The two rows now read as one unit. Each used to draw its own 1px bottom
+     rule over a different background, so the header looked like two unrelated
+     strips; the ribbon now shares the bar's surface and only the lower edge
+     carries a rule.
+   - The breadcrumb is structured markup (structureCrumbs in enhance.js), so a
+     phone can drop the ancestor instead of truncating the whole trail
+     mid-word — the chapter title is the part the reader actually needs.
+   - The offline chip moved up from the ribbon, leaving the ribbon as tabs
+     only, which is what lets it scroll cleanly in a 360px viewport.
+   - Every control keeps a >= 36px touch target on small screens, where the
+     28px desktop density sits below the practical minimum.
+
+   Scoping note: focus mode restyles whichever row survives as `.focus-nav`,
+   and those rules live further up this file, so everything structural here is
+   scoped to `body:not(.focus-mode)` and cannot leak into that state.
+   ========================================================================= */
+:root {
+  /* A little taller than the old 42/38 — the chip and the active marker both
+     need vertical room. Every sticky offset in this file derives from these
+     two vars, so the rest of the layout follows automatically. */
+  --header-h: 46px;
+  --ribbon-h: 40px;
+  --topbar-pad: clamp(10px, 1.6vw, 22px);
+}
+
+body:not(.focus-mode) .topbar {
+  /* styles.css still describes the older floating "glass" bar (inset by 12px,
+     18px corners). Only its `top` was ever reset, so the inset and the corners
+     survived above a full-bleed ribbon — the visible seam between the rows.
+     Pinning the geometry here makes the header one flush block regardless of
+     which stylesheet wins. */
+  top: 0;
+  width: 100%;
+  margin: 0;
+  border-radius: 0;
+  gap: 6px;
+  padding: 0 var(--topbar-pad);
+  /* No rule between the rows: the ribbon closes the block. */
+  border-bottom: 0;
+  background: color-mix(in srgb, var(--bg-elevated) 88%, transparent) !important;
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+}
+/* Pages without a ribbon (hubs, labs) still need the bar to close itself. */
+body:not(.focus-mode):not(.has-ribbon) .topbar { border-bottom: 1px solid var(--border); }
+
+/* ---- Breadcrumb ---- */
+body:not(.focus-mode) .topbar .crumbs {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  margin-left: 2px;
+  font-size: 13px;
+}
+.topbar .crumbs .crumb-trail {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-muted);
+}
+.topbar .crumbs .crumb-sep {
+  flex: none;
+  color: var(--border-strong);
+  font-weight: 400;
+}
+/* The chapter title is the part worth protecting, so it shrinks last: the
+   ancestor gives up its space first because both are `flex: 0 1 auto` and the
+   ancestor is the shorter, lower-value string. */
+.topbar .crumbs .crumb-current {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text) !important;
+  font-weight: 620;
+}
+
+/* ---- Controls ---- */
+body:not(.focus-mode) .topbar .icon-btn,
+body:not(.focus-mode) .topbar .home-btn,
+body:not(.focus-mode) .topbar .focus-btn,
+body:not(.focus-mode) .topbar .reader-btn {
+  flex: none;
+  height: 30px;
+  min-height: 30px;
+  border-radius: 7px;
+  transition: color .16s ease, background .16s ease, border-color .16s ease;
+}
+body:not(.focus-mode) .topbar .icon-btn { width: 30px; }
+body:not(.focus-mode) .topbar .focus-btn[aria-pressed="true"] {
+  border-color: var(--accent-ring);
+  color: var(--accent-strong);
+  background: var(--accent-soft) !important;
+}
+/* Keyboard users get the same ring the rest of the portal uses. */
+body:not(.focus-mode) .topbar .icon-btn:focus-visible,
+body:not(.focus-mode) .topbar .home-btn:focus-visible,
+body:not(.focus-mode) .topbar .focus-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+/* ---- Workspace tabs ---- */
+body:not(.focus-mode) .office-ribbon {
+  gap: 1px;
+  padding: 0 calc(var(--topbar-pad) - 2px);
+  background: color-mix(in srgb, var(--bg-elevated) 88%, transparent);
+  backdrop-filter: blur(14px) saturate(150%);
+  -webkit-backdrop-filter: blur(14px) saturate(150%);
+}
+body:not(.focus-mode) .office-ribbon a {
+  align-items: center;
+  padding: 0 12px;
+  border-radius: 7px 7px 0 0;
+  font-size: 12.5px;
+  font-weight: 550;
+  transition: color .16s ease, background .16s ease;
+}
+body:not(.focus-mode) .office-ribbon a:hover { background: var(--surface); }
+body:not(.focus-mode) .office-ribbon a.active { color: var(--text); font-weight: 640; }
+/* A rounded 2.5px marker inset from the label, rather than the old edge-to-
+   edge hairline — it reads as an indicator instead of a border fragment. */
+body:not(.focus-mode) .office-ribbon a.active::after {
+  left: 11px;
+  right: 11px;
+  height: 2.5px;
+  border-radius: 3px 3px 0 0;
+  background: var(--excel);
+}
+body:not(.focus-mode) .office-ribbon a:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: -3px;
+  border-radius: 7px;
+}
+
+/* =========================================================================
+   Tablet and phone
+   ========================================================================= */
+@media (max-width: 860px) {
+  :root {
+    /* Touch targets drive the height here, not density. */
+    --header-h: 50px;
+    --ribbon-h: 42px;
+  }
+
+  body:not(.focus-mode) .topbar {
+    gap: 4px;
+    padding-left: max(8px, env(safe-area-inset-left));
+    padding-right: max(8px, env(safe-area-inset-right));
+  }
+  body:not(.focus-mode) .topbar .crumbs { gap: 5px; font-size: 12.5px; }
+  body:not(.focus-mode) .topbar .icon-btn,
+  body:not(.focus-mode) .topbar .home-btn,
+  body:not(.focus-mode) .topbar .focus-btn,
+  body:not(.focus-mode) .topbar .reader-btn {
+    width: 36px;
+    height: 36px;
+    min-height: 36px;
+    padding: 0;
+    border-radius: 9px;
+  }
+  /* Tabs scroll horizontally. `proximity` snapping keeps a tab from parking
+     half off-screen without fighting a deliberate flick, and the mask fades
+     the cut edges so a clipped tab reads as "more this way". */
+  body:not(.focus-mode) .office-ribbon {
+    gap: 0;
+    padding: 0 6px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    overscroll-behavior-x: contain;
+    -webkit-mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+    mask-image: linear-gradient(90deg, transparent 0, #000 14px, #000 calc(100% - 14px), transparent 100%);
+  }
+  body:not(.focus-mode) .office-ribbon::-webkit-scrollbar { display: none; }
+  body:not(.focus-mode) .office-ribbon a {
+    flex: none;
+    padding: 0 14px;
+    font-size: 12.5px;
+    scroll-snap-align: center;
+  }
+  /* Inside a scroll container the spacer would claim flex space and push the
+     tabs into unreachable overflow. */
+  body:not(.focus-mode) .office-ribbon .ribbon-spacer { display: none; }
+}
+
+@media (max-width: 620px) {
+  /* Only the chapter title survives; the full trail stays available as the
+     breadcrumb's tooltip. */
+  .topbar .crumbs .crumb-trail,
+  .topbar .crumbs .crumb-sep { display: none; }
+  body:not(.focus-mode) .topbar .crumbs { margin-left: 0; font-size: 13px; }
+  .topbar .crumbs .crumb-current { font-weight: 640; }
+}
+
+@media (max-width: 430px) {
+  :root { --header-h: 48px; --ribbon-h: 40px; }
+  body:not(.focus-mode) .topbar { gap: 2px; }
+  /* styles.css caps the crumbs at 31vw here and drops the Home button — both
+     were sized for the old bar, which carried labelled buttons at this width.
+     With icon-only controls the row is four 34px targets, so the title can
+     have the rest of the line and Home stays: it is the only one-tap way out
+     of a chapter once the drawer is closed. */
+  body:not(.focus-mode) .topbar .crumbs { max-width: none; font-size: 12.5px; }
+  body:not(.focus-mode) .topbar .home-btn { display: inline-flex; }
+  body:not(.focus-mode) .topbar .icon-btn,
+  body:not(.focus-mode) .topbar .home-btn,
+  body:not(.focus-mode) .topbar .focus-btn,
+  body:not(.focus-mode) .topbar .reader-btn { width: 34px; height: 34px; min-height: 34px; }
+  body:not(.focus-mode) .office-ribbon a { padding: 0 12px; }
+}
+
+/* Landscape phones have the width for tabs but almost no height to spare. */
+@media (max-width: 900px) and (max-height: 460px) {
+  :root { --header-h: 42px; --ribbon-h: 34px; }
+  body:not(.focus-mode) .topbar .icon-btn,
+  body:not(.focus-mode) .topbar .home-btn,
+  body:not(.focus-mode) .topbar .focus-btn,
+  body:not(.focus-mode) .topbar .reader-btn { width: 30px; height: 30px; min-height: 30px; }
+}
+
+/* Blur is the one expensive property in the bar; a device that cannot back it
+   gets the flat surface rather than a semi-transparent smear. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  body:not(.focus-mode) .topbar { background: var(--bg-elevated) !important; }
+  body:not(.focus-mode) .office-ribbon { background: var(--bg-elevated); }
+}
+
+/* =========================================================================
+   DISPLAY SETTINGS — text size and text width
+   =========================================================================
+   Two settings behind one button in the top bar: a dropdown anchored under
+   the trigger on desktop and tablet, a bottom sheet on phones. enhance.js
+   writes html[data-reading-size] and html[data-reading-width]; everything
+   below is driven by those two attributes, and the inline pre-paint script in
+   each page's <head> sets them before first paint so a lesson never reflows
+   from default to the reader's choice after load.
+
+   TEXT SIZE works by scaling the theme's own type tokens rather than by
+   re-stating every font-size. `--reading-scale` is declared on `.content`, so
+   it inherits to every descendant, and each rule that reads `var(--fs-h2)` &c
+   inside the reading column lands on a scaled value while the sidebar, top bar
+   and ribbon keep the root values. Only the handful of components that hard-
+   code a px size (tables, code, cards, callouts, quizzes) need restating.
+   ========================================================================= */
+:root { --reading-scale: 1; }
+html[data-reading-size="small"] { --reading-scale: .92; }
+html[data-reading-size="large"] { --reading-scale: 1.14; }
+html[data-reading-size="xl"] { --reading-scale: 1.28; }
+
+.content { font-size: calc(var(--fs-base) * var(--reading-scale)); }
+/* Headings and the lead are scaled by the ONE TYPE SCALE layer above, which
+   states them with !important as the single source of truth; h4 is not part of
+   that layer, so it is scaled here. */
+.content h4 { font-size: calc(14px * var(--reading-scale)); }
+/* Components inside the reading column with their own px sizes. Anything not
+   listed here (p, li, td, dd, blockquote) inherits from `.content`. */
+.content table { font-size: calc(12.5px * var(--reading-scale)); }
+.content pre { font-size: calc(12.5px * var(--reading-scale)); }
+.content .card p { font-size: calc(13px * var(--reading-scale)); }
+.content .callout .c-title { font-size: calc(13.5px * var(--reading-scale)); }
+.content .callout p { font-size: calc(13px * var(--reading-scale)); }
+.content .quiz .q { font-size: calc(13.5px * var(--reading-scale)); }
+.content .quiz .explain { font-size: calc(12.5px * var(--reading-scale)); }
+.content .recall > summary,
+.content .recall .a { font-size: calc(13px * var(--reading-scale)); }
+.content .demo-title { font-size: calc(13px * var(--reading-scale)); }
+
+/* ---- ALIGNMENT (left / justified) ----
+   Applies everywhere: phone, tablet, desktop, focus mode. Justification is
+   limited to running prose — headings, code, tables and chips keep their own
+   alignment, and justifying a two-word table cell only opens gaps. Hyphenation
+   rides along with it: a justified column this narrow without hyphens pulls
+   visible rivers of white space through the paragraph. */
+html[data-reading-align="justify"] .content > p,
+html[data-reading-align="justify"] .content > .lead,
+html[data-reading-align="justify"] .content > ul > li,
+html[data-reading-align="justify"] .content > ol > li,
+html[data-reading-align="justify"] .content > blockquote,
+html[data-reading-align="justify"] .content > blockquote > p,
+html[data-reading-align="justify"] .content > dl > dd,
+html[data-reading-align="justify"] .content > .callout p,
+html[data-reading-align="justify"] .content > .card p,
+/* The hub and the question bank name their reading column differently; the
+   setting is about text on the page, not about one page family. */
+html[data-reading-align="justify"] .ih-content > p,
+html[data-reading-align="justify"] .ih-content > ul > li,
+html[data-reading-align="justify"] .ih-content > ol > li,
+html[data-reading-align="justify"] .prep-content > p,
+html[data-reading-align="justify"] .prep-content > .lead,
+html[data-reading-align="justify"] .prep-content > ul > li,
+html[data-reading-align="justify"] .prep-content > ol > li {
+  text-align: justify;
+  text-justify: inter-word;
+  hyphens: auto;
+  -webkit-hyphens: auto;
+}
+/* A justified line cannot break a long token, so an inline code span or URL
+   would either overflow or leave a huge gap. These stay unhyphenated and are
+   allowed to break anywhere as a last resort. */
+html[data-reading-align="justify"] .content code,
+html[data-reading-align="justify"] .content a {
+  hyphens: manual;
+  -webkit-hyphens: manual;
+  overflow-wrap: anywhere;
+}
+
+/* ---- TEXT WIDTH ----
+   Focus mode only. Outside it, `body:not(.focus-mode) .content` is pinned to
+   --content-max with !important by the ONE TYPE SCALE layer above, which is
+   the single source of truth for reading width across five stylesheets. The
+   four steps therefore had nothing to change in the normal layout: Cozy and
+   Standard rendered identically, and Wide and Full only removed the contents
+   rail while the column stayed at 1040px. Rather than punch a hole in that
+   layer, the control is offered where the measure genuinely varies — focus
+   mode, which the layer excludes and which owns --focus-measure (see the
+   data-focus-width map in applyReadingSettings). */
+
+/* ---- Trigger ---- */
+.reader-wrap { position: relative; display: inline-flex; flex: none; }
+/* Matches the Home and Focus labels. styles.css already hides it below 861px,
+   which is where the bar switches to icon-only controls. */
+.topbar .reader-lbl { font-size: 11.5px; }
+/* The "Aa" mark. Baseline-aligned rather than centred, so the pair reads as
+   one glyph the way it would in running text. */
+.reader-glyph {
+  display: inline-flex;
+  align-items: baseline;
+  gap: .5px;
+  font-weight: 680;
+  font-size: 14px;
+  line-height: 1;
+  letter-spacing: -.01em;
+}
+.reader-glyph i { font-size: 10.5px; font-style: normal; font-weight: 640; }
+/* A dot instead of a filled button: it says "you have changed something here"
+   without turning a settings control into a permanent accent in the bar. */
+.reader-btn.is-custom::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--excel);
+}
+
+/* ---- Panel: dropdown form ---- */
+.reader-popover {
+  position: fixed;
+  /* top/right are set by enhance.js from the trigger's box, because the bar
+     that holds the trigger changes height between layouts and focus mode. */
+  top: 60px;
+  right: 16px;
+  z-index: 120;
+  width: min(320px, calc(100vw - 20px));
+  padding: 14px 15px 15px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-lg);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-6px) scale(.985);
+  transform-origin: top right;
+  transition: opacity .16s ease, transform .2s var(--ease-out, ease), visibility .16s;
+}
+.reader-popover.open { opacity: 1; visibility: visible; transform: none; }
+.reader-head { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.reader-popover h3 { margin: 0; color: var(--heading); font-size: 14.5px; font-weight: 650; }
+.reader-popover > p { margin: 3px 0 13px; color: var(--text-muted); font-size: 12px; line-height: 1.5; }
+.reader-close {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text-muted);
+  background: transparent;
+  cursor: pointer;
+}
+.reader-close:hover { border-color: var(--border); color: var(--text); background: var(--surface); }
+.reader-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 9px 0;
+  border-top: 1px solid var(--border);
+}
+.reader-row:first-of-type { border-top: 0; padding-top: 0; }
+/* Text width is a focus-mode setting (see TEXT WIDTH above), and even there it
+   needs a canvas wider than the text — below 861px the column is the viewport.
+   Hiding the row rather than disabling it keeps the panel honest: a control
+   that cannot do anything is not shown. */
+.reader-row-width { display: none; }
+@media (min-width: 861px) {
+  body.focus-mode .reader-row-width { display: flex; }
+}
+.reader-row > span { flex: none; color: var(--text-secondary); font-size: 12.5px; font-weight: 600; }
+.reader-segment {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+}
+.reader-segment button {
+  min-width: 30px;
+  height: 26px;
+  padding: 0 8px;
+  border: 0;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  background: transparent;
+  font: 600 11.5px/1 var(--font-sans, inherit);
+  cursor: pointer;
+  transition: color .14s ease, background .14s ease;
+}
+.reader-segment button:hover { color: var(--text); background: var(--bg-elevated); }
+.reader-segment button.active { color: #fff; background: var(--excel); }
+.reader-segment button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* The text-size choices are the same letter at four sizes — the control shows
+   what it does rather than naming it. */
+.reader-segment .sz-s { font-size: 10.5px; }
+.reader-segment .sz-m { font-size: 12.5px; }
+.reader-segment .sz-l { font-size: 14.5px; }
+.reader-segment .sz-xl { font-size: 16.5px; }
+.reader-reset {
+  width: 100%;
+  height: 30px;
+  margin-top: 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-secondary);
+  background: var(--surface);
+  font: 600 12px/1 var(--font-sans, inherit);
+  cursor: pointer;
+  transition: color .14s ease, border-color .14s ease, background .14s ease;
+}
+.reader-reset:hover:not(:disabled) { border-color: var(--border-strong); color: var(--text); background: var(--bg-elevated); }
+.reader-reset:disabled { opacity: .45; cursor: default; }
+
+.reader-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: rgba(17, 20, 26, .34);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .18s ease, visibility .18s;
+}
+/* The scrim is for the sheet form only. On a pointer device the dropdown
+   closes on outside-click without dimming the lesson behind it. */
+.reader-scrim.open { opacity: 0; visibility: hidden; }
+
+/* ---- Panel: bottom-sheet form ---- */
+@media (max-width: 620px) {
+  .reader-popover {
+    top: auto !important;
+    right: 0 !important;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 16px 16px calc(18px + env(safe-area-inset-bottom));
+    border-width: 1px 0 0;
+    border-radius: 16px 16px 0 0;
+    transform: translateY(14px);
+    transform-origin: bottom center;
+  }
+  .reader-popover h3 { font-size: 15.5px; }
+  .reader-popover > p { font-size: 12.5px; }
+  /* Stacked, so each control gets the full row and a comfortable target. */
+  .reader-row { flex-direction: column; align-items: stretch; gap: 8px; padding: 12px 0; }
+  .reader-row > span { font-size: 12px; }
+  .reader-segment { width: 100%; }
+  .reader-segment button { flex: 1; min-width: 0; height: 38px; }
+  .reader-close { width: 32px; height: 32px; }
+  .reader-reset { height: 38px; margin-top: 14px; }
+  .reader-scrim.open { opacity: 1; visibility: visible; }
+  body.reader-open { overflow: hidden; }
+}
+
+/* ---- Focus mode ---- */
+/* The control docks into the focus bar next to the exit button, in the same
+   quiet idiom as the workspace links. */
+body.focus-mode .focus-nav > .reader-wrap { align-self: center; flex: 0 0 auto; }
+body.focus-mode .focus-nav > .reader-wrap .reader-btn {
+  height: 28px;
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  background: transparent;
+}
+body.focus-mode .focus-nav > .reader-wrap .reader-btn:hover {
+  border-color: var(--border);
+  color: var(--text);
+  background: var(--bg-elevated);
+}
+@media (max-width: 760px) {
+  body.focus-mode .focus-nav > .reader-wrap .reader-btn { width: 30px; padding: 0; }
+  body.focus-mode .focus-nav > .reader-wrap .reader-lbl { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reader-popover, .reader-scrim { transition: none; }
+}
+
+/* =========================================================================
+   LESSON META CHIPS — the row under a lesson title
+   =========================================================================
+       [ ⏱ Study + practice · 8–12 h ]  [ Difficulty · Beginner→Intermediate ]
+       [ Prereq · Python, basic ML ]
+
+   Three separate facts, so three separate chips. They were previously joined
+   into one segmented strip (gap 0, -1px margins, squared inner corners), which
+   at three unequal lengths read as a single crowded block with seams down it.
+
+   Each chip now has its own border, its own radius and real space around it.
+   The effort chip carries a quiet accent tint because it is the fact a reader
+   scans for first; the rest stay neutral, which keeps one accent on screen
+   rather than a row of competing colours. `.pill` is used in cards and other
+   components too, so every rule here is scoped to `.meta-row`.
+   ========================================================================= */
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  /* Row gap slightly under the column gap: wrapped lines then read as one
+     group instead of drifting apart. */
+  gap: 7px 8px;
+  margin: 15px 0 26px;
+  padding: 0;
+  overflow: visible;
+}
+.meta-row .pill {
+  margin: 0;
+  min-height: 30px;
+  padding: 0 12px;
+  gap: 7px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  color: var(--text-secondary);
+  background: var(--surface) !important;
+  /* Scales with the Display panel's text-size setting, like the prose it
+     annotates; `--reader-meta-size` is the legacy token this replaces. */
+  font-size: calc(12px * var(--reading-scale));
+  font-weight: 550;
+  line-height: 1.25;
+  letter-spacing: .002em;
+  white-space: nowrap;
+}
+/* The effort/time chip (always the first `.pill.blue` in the markup — every
+   page family uses that class for the "⏱ … h" fact). */
+.meta-row .pill.blue {
+  border-color: color-mix(in srgb, var(--excel) 26%, var(--border));
+  color: var(--accent-strong) !important;
+  background: var(--excel-soft) !important;
+  font-weight: 600;
+}
+/* claude-agent.html styles its first chip as white text on a purple gradient,
+   from before purple was retired. The base `.pill` rule in this file forces
+   `background: var(--bg-elevated) !important`, so the gradient was already
+   gone and only the white text survived — the chip read as blank space. It
+   joins the neutral set, leaving one accent chip per row. */
+.meta-row .pill.anthropic {
+  border-color: var(--border) !important;
+  color: var(--text-secondary) !important;
+}
+
+/* Long values ("Prereq · Python, basic ML") must be allowed to wrap rather
+   than push the row into a horizontal scroll on a narrow screen. */
+@media (max-width: 860px) {
+  .meta-row { gap: 6px 7px; margin: 13px 0 22px; }
+  .meta-row .pill {
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: 8px;
+    font-size: calc(11.5px * var(--reading-scale));
+    white-space: normal;
+  }
+}
+
+@media (max-width: 430px) {
+  .meta-row { gap: 6px; }
+  .meta-row .pill { min-height: 26px; padding: 3px 9px; }
 }
