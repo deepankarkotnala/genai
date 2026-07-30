@@ -14,7 +14,10 @@
     var content = document.querySelector(".content");
     var nav = document.querySelector(".nav");
     if (!content || !nav) return;
-    var heads = [].slice.call(content.querySelectorAll("h2[id]"));
+    /* A term dialog carries an <h2> for its accessible name, and those dialogs
+       live inside .content — so an unfiltered query lists every definition as a
+       chapter section. Section headings are the ones in the document flow. */
+    var heads = [].slice.call(content.querySelectorAll("h2[id]")).filter(function (h) { return !h.closest("dialog"); });
 
     var html = '<a href="index.html"><span class="num">＊</span> Hub home</a>' +
                '<div class="nav-group-label">On this page</div>';

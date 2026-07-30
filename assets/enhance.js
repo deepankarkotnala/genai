@@ -85,9 +85,9 @@
     }
 
     var isHome = path.replace(/\/$/, "/index.html") === home.pathname.toLowerCase().replace(/\/$/, "/index.html");
-    var isLearn = /\/(?:modules|learn-rag-mcp|teach-agents)\//.test(path) || /\/(?:memory|rag-deep-dive|langgraph|langfuse|guardrails|hermes|claude-agent)\.html$/.test(path);
-    var isPractice = /\/(?:scenario-practice|interview-labs|ats-agent-lab)\//.test(path);
-    var isInterview = /\/(?:dsa-prep|interview-prep|interview-hub|google-prep)\//.test(path);
+    var isLearn = /\/(?:modules|teach-agents)\//.test(path) || /\/(?:memory|rag-deep-dive|agent-protocols|llm-evals|llmops|langgraph|langgraph-asyncio|langgraph-pydantic|langfuse|guardrails|hermes|claude-agent)\.html$/.test(path);
+    var isPractice = /\/scenario-practice\//.test(path);
+    var isInterview = /\/(?:dsa-prep|interview-prep|python-interview|interview-labs|google-prep)\//.test(path);
     var isProgress = /\/(?:progress|study-plan)\.html$/.test(path);
 
     var nav = document.createElement("nav");
@@ -97,7 +97,7 @@
       item("Home", "index.html", isHome) +
       item("Learn", "modules/01_foundations.html", isLearn) +
       item("Practice", "scenario-practice/index.html", isPractice) +
-      item("Interview", "interview-hub/index.html", isInterview);
+      item("Interview", "interview-prep/index.html", isInterview);
 
     var crumbs = bar.querySelector(".crumbs");
     if (crumbs) crumbs.insertAdjacentElement("beforebegin", nav);
@@ -124,9 +124,9 @@
     }
 
     var isHome = path.replace(/\/$/, "/index.html") === home.pathname.toLowerCase().replace(/\/$/, "/index.html");
-    var isLearn = /\/(?:modules|learn-rag-mcp|teach-agents)\//.test(path) || /\/(?:memory|rag-deep-dive|langgraph|langfuse|guardrails|hermes|claude-agent)\.html$/.test(path);
-    var isPractice = /\/(?:scenario-practice|interview-labs|ats-agent-lab)\//.test(path);
-    var isInterview = /\/(?:interview-prep|interview-hub|google-prep)\//.test(path);
+    var isLearn = /\/(?:modules|teach-agents)\//.test(path) || /\/(?:memory|rag-deep-dive|agent-protocols|llm-evals|llmops|langgraph|langgraph-asyncio|langgraph-pydantic|langfuse|guardrails|hermes|claude-agent)\.html$/.test(path);
+    var isPractice = /\/scenario-practice\//.test(path);
+    var isInterview = /\/(?:interview-prep|python-interview|interview-labs|google-prep)\//.test(path);
     var isProgress = /\/(?:progress|study-plan)\.html$/.test(path);
 
     var ribbon = document.createElement("nav");
@@ -142,7 +142,7 @@
       item("Overview", "index.html", isHome) +
       item("Learn", "modules/01_foundations.html", isLearn) +
       item("Practice", "scenario-practice/index.html", isPractice) +
-      item("Interview", "interview-hub/index.html", isInterview) +
+      item("Interview", "interview-prep/index.html", isInterview) +
       '<span class="ribbon-spacer"></span>';
 
     bar.insertAdjacentElement("afterend", ribbon);
@@ -327,12 +327,11 @@
      changed from here:
 
        key    "gp.reading"
-       value  {"size":"small|default|large|xl",
-               "width":"cozy|default|wide|full",
-               "align":"left|justify"}
+       value  {"size":"xs|s|m|l|xl","width":"default|wide|full"}
 
-     Anything unrecognised falls back to "default" on both sides ("left" for
-     align).
+     Anything unrecognised falls back to "m" for size and "wide" for width, so
+     values stored under the previous four-step scale land on the new default.
+     Text is justified everywhere and is no longer a setting.
 
      Scope of each setting:
        size   everywhere
@@ -352,17 +351,20 @@
      the pre-Office palette, so nothing here writes them; clearLegacyReading-
      Classes() still strips any left over from an old session. */
   var READING_KEY = "gp.reading";
-  var SIZES = ["small", "default", "large", "xl"];
-  var WIDTHS = ["cozy", "default", "wide", "full"];
-  var ALIGNS = ["left", "justify"];
+  // Five steps; "m" is the default. Ids are deliberately not "default"/"large"
+  // any more — the old ids implied a default that is no longer the default,
+  // and a stored value from the previous scale simply falls back to "m".
+  var SIZES = ["xs", "s", "m", "l", "xl"];
+  var WIDTHS = ["default", "wide", "full"];
 
   function readReadingSettings() {
     var stored = {};
     try { stored = JSON.parse(getStored(READING_KEY, "{}")) || {}; } catch (error) { stored = {}; }
     return {
-      size: SIZES.indexOf(stored.size) >= 0 ? stored.size : "default",
-      width: WIDTHS.indexOf(stored.width) >= 0 ? stored.width : "default",
-      align: ALIGNS.indexOf(stored.align) >= 0 ? stored.align : "left"
+      size: SIZES.indexOf(stored.size) >= 0 ? stored.size : "m",
+      // Wide is the default measure: on the wide screens where focus mode is
+      // actually used, the old default left two thirds of the canvas empty.
+      width: WIDTHS.indexOf(stored.width) >= 0 ? stored.width : "wide"
     };
   }
 
@@ -370,14 +372,13 @@
     var root = document.documentElement;
     root.setAttribute("data-reading-size", settings.size);
     root.setAttribute("data-reading-width", settings.width);
-    root.setAttribute("data-reading-align", settings.align);
     /* Focus mode caps its canvas with --focus-measure, selected by
        data-focus-width. It used to carry its own Narrow/Medium/Wide/Full
        control, which meant two widgets writing two stored values for one
        idea. Mapping the width here retires that control and keeps the choice
        consistent whether the lesson is in focus mode or not. */
     document.body.setAttribute("data-focus-width", {
-      cozy: "narrow", default: "medium", wide: "wide", full: "full"
+      default: "medium", wide: "wide", full: "full"
     }[settings.width]);
   }
 
@@ -390,18 +391,14 @@
     applyReadingSettings(settings);
 
     var SIZE_CHOICES = [
-      { value: "small", label: "A", cls: "sz-s", name: "Small text" },
-      { value: "default", label: "A", cls: "sz-m", name: "Standard text" },
-      { value: "large", label: "A", cls: "sz-l", name: "Large text" },
-      { value: "xl", label: "A", cls: "sz-xl", name: "Extra large text" }
-    ];
-    var ALIGN_CHOICES = [
-      { value: "left", label: "Left", name: "Left aligned — even word spacing, ragged right edge" },
-      { value: "justify", label: "Justified", name: "Justified — text fills the full column width on both edges" }
+      { value: "xs", label: "A", cls: "sz-1", name: "Smallest text" },
+      { value: "s", label: "A", cls: "sz-2", name: "Compact text" },
+      { value: "m", label: "A", cls: "sz-3", name: "Standard text" },
+      { value: "l", label: "A", cls: "sz-4", name: "Large text" },
+      { value: "xl", label: "A", cls: "sz-5", name: "Extra large text" }
     ];
     // Focus mode only; see the scope note above applyReadingSettings.
     var WIDTH_CHOICES = [
-      { value: "cozy", label: "Cozy", name: "Cozy reading measure (~800px)" },
       { value: "default", label: "Standard", name: "Standard reading measure (~1000px)" },
       { value: "wide", label: "Wide", name: "Wide reading measure (~1360px)" },
       { value: "full", label: "Full", name: "Full width — text spans the whole screen" }
@@ -443,7 +440,6 @@
       "</button></div>" +
       "<p>Changes the lesson only, and follows you across pages.</p>" +
       '<div class="reader-row"><span>Text size</span>' + segment("size", SIZE_CHOICES) + "</div>" +
-      '<div class="reader-row"><span>Alignment</span>' + segment("align", ALIGN_CHOICES) + "</div>" +
       /* Hidden by CSS outside focus mode and below 861px, where the measure
          cannot change. The row is always built so entering focus mode does not
          have to rebuild the panel. */
@@ -479,7 +475,7 @@
     var trigger = wrap.querySelector(".reader-btn");
 
     function refreshButtons() {
-      var groups = { size: settings.size, align: settings.align, width: settings.width };
+      var groups = { size: settings.size, width: settings.width };
       Object.keys(groups).forEach(function (group) {
         var buttons = panel.querySelectorAll("[data-reader-" + group + "] button");
         for (var i = 0; i < buttons.length; i++) {
@@ -488,16 +484,15 @@
           buttons[i].setAttribute("aria-pressed", active ? "true" : "false");
         }
       });
-      var custom = settings.size !== "default" || settings.width !== "default" || settings.align !== "left";
+      var custom = settings.size !== "m" || settings.width !== "wide";
       trigger.classList.toggle("is-custom", custom);
       panel.querySelector(".reader-reset").disabled = !custom;
     }
 
     function announce() {
-      var sizes = { small: "small", default: "standard", large: "large", xl: "extra large" };
-      var widths = { cozy: "cozy", default: "standard", wide: "wide", full: "full" };
-      var text = "Display: " + sizes[settings.size] + " text, " +
-        (settings.align === "justify" ? "justified" : "left aligned");
+      var sizes = { xs: "smallest", s: "compact", m: "standard", l: "large", xl: "extra large" };
+      var widths = { default: "standard", wide: "wide", full: "full" };
+      var text = "Display: " + sizes[settings.size] + " text";
       // The width only means something where the control is offered.
       if (document.body.classList.contains("focus-mode")) text += ", " + widths[settings.width] + " width";
       live.textContent = text + ".";
@@ -543,7 +538,7 @@
     });
     scrim.addEventListener("click", function () { open(false); });
 
-    ["size", "align", "width"].forEach(function (group) {
+    ["size", "width"].forEach(function (group) {
       panel.querySelector("[data-reader-" + group + "]").addEventListener("click", function (event) {
         var button = event.target.closest("button[data-value]");
         if (!button) return;
@@ -553,9 +548,8 @@
     });
 
     panel.querySelector(".reader-reset").addEventListener("click", function () {
-      settings.size = "default";
-      settings.width = "default";
-      settings.align = "left";
+      settings.size = "m";
+      settings.width = "wide";
       save();
     });
 
@@ -607,7 +601,11 @@
   }
 
   function setupSectionGuidance() {
-    var headings = Array.prototype.slice.call(document.querySelectorAll(".content h2[id]"));
+    /* A term dialog carries an <h2> for its accessible name, and those dialogs
+       live inside .content — so an unfiltered query lists every definition as a
+       chapter section. Section headings are the ones in the document flow. */
+    var headings = Array.prototype.slice.call(document.querySelectorAll(".content h2[id]"))
+      .filter(function (h) { return !h.closest("dialog"); });
     if (!headings.length || !window.IntersectionObserver) return;
 
     var visible = new Map();

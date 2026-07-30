@@ -1,6 +1,6 @@
 /* =========================================================================
    GenAI Learning Hub — shared sub-site page controller
-   Used by the sub-sites (learn-rag-mcp, teach-agents) so they share the exact
+   Used by the sub-sites (teach-agents, and the retired learn-rag-mcp pages) so they share the exact
    look + behaviour of the GenAI Mastery module pages, while keeping their own
    navigation. app.js is hard-wired to the Mastery module registry, so those
    sub-sites use THIS controller instead.
@@ -8,10 +8,10 @@
    Each page declares its own nav before loading this file:
 
      window.PORTAL = {
-       brand:    "RAG · MCP · Agents · LLMs",     // sidebar wordmark
-       tagline:  "Hands-on guide",
+       brand:    "Understanding AI Agents",       // sidebar wordmark
+       tagline:  "Agent Literacy course",
        mark:     "R",                              // letter in the brand square
-       here:     "02-rag.html",                    // current page (matches a page.file)
+       here:     "0001-what-is-an-agent.html",     // current page (matches a page.file)
        base:     "",                               // path prefix to reach sibling pages ("" or "../")
        pages: [ { file, title, num, kw } , ... ]   // sidebar + search registry
      };

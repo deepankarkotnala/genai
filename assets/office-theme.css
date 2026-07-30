@@ -7,6 +7,16 @@
 :root {
   --font-sans: "Segoe UI Variable", "Segoe UI", Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
   --font-mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  /* The face for running prose. A serif was tried here and rejected: this is
+     a technical portal sitting next to code, and it should read clean and
+     plain rather than book-like. It leads with `system-ui`, so prose renders
+     in whatever the reader's own operating system uses for interface text —
+     Segoe UI Variable Text on Windows 11, SF on macOS, Roboto on Android.
+     That is the most familiar, least noticeable face available on any given
+     machine, and it needs no download, which matters because the portal has
+     to work offline. Headings keep --font-sans. */
+  --font-read: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
 
   --bg: #f3f4f6;
   --bg-subtle: #ffffff;
@@ -54,6 +64,15 @@
   --shadow-sm: 0 1px 2px rgba(22, 27, 35, .05), 0 7px 22px rgba(22, 27, 35, .035);
   --shadow-md: 0 1px 2px rgba(22, 27, 35, .06), 0 10px 28px rgba(22, 27, 35, .055);
   --shadow-lg: 0 2px 4px rgba(22, 27, 35, .07), 0 16px 38px rgba(22, 27, 35, .07);
+  /* The card hover shadow, and the only thing a card hover does. Three layers
+     rather than one: a hairline to keep the edge crisp, a mid blur for the
+     body, and a wide low-opacity blur with a negative spread so the diffusion
+     reads as ambient light rather than a dark band under the card. Deliberately
+     softer and much wider than --shadow-lg, which is a modal shadow. */
+  --card-hover-shadow:
+    0 1px 2px rgba(22, 27, 35, .05),
+    0 8px 18px -8px rgba(22, 27, 35, .09),
+    0 22px 46px -18px rgba(22, 27, 35, .15);
 
   --sidebar-w: 238px;
   --toc-w: 214px;
@@ -68,7 +87,9 @@
   --radius-lg: 10px;
 
   --fs-base: 14.5px;
-  --fs-h1: clamp(31px, 3vw, 44px);
+  /* Was clamp(31px, 3vw, 44px) — at 44px the title dwarfed the lead below
+     it. Still clearly the largest thing on the page, no longer a poster. */
+  --fs-h1: clamp(26px, 2.05vw, 33px);
   --fs-h2: 20.5px;
   --fs-h3: 15px;
   --fs-lead: clamp(15px, 1.2vw, 17px);
@@ -122,6 +143,13 @@ html[data-theme="dark"] {
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, .22), 0 8px 22px rgba(0, 0, 0, .10);
   --shadow-md: 0 1px 2px rgba(0, 0, 0, .24), 0 12px 30px rgba(0, 0, 0, .13);
   --shadow-lg: 0 2px 4px rgba(0, 0, 0, .28), 0 18px 42px rgba(0, 0, 0, .16);
+  /* On a dark surface a shadow carries far less signal than on white, so the
+     opacities go up and the border-colour lift in the hover rule does the rest
+     of the work. Same three-layer structure. */
+  --card-hover-shadow:
+    0 1px 2px rgba(0, 0, 0, .26),
+    0 8px 20px -8px rgba(0, 0, 0, .30),
+    0 24px 50px -18px rgba(0, 0, 0, .40);
 }
 
 html,
@@ -1170,6 +1198,17 @@ body.focus-mode .focus-nav > .dsa-workspace-nav { display: flex !important; }
    control to the far end of the bar. */
 body.focus-mode .focus-nav > .ribbon-spacer { display: block; flex: 1 1 auto; }
 
+/* The workspace links are the only navigation left on screen in focus mode, so
+   they carry a size up from the dense breadcrumb-row treatment. */
+body.focus-mode .focus-nav > a,
+body.focus-mode .focus-nav > .dsa-workspace-nav > a {
+  padding: 0 13px;
+  font-size: 13.5px;
+  font-weight: 550;
+}
+body.focus-mode .focus-nav > a.active,
+body.focus-mode .focus-nav > .dsa-workspace-nav > a.active { font-weight: 650; }
+
 /* Exit control and theme toggle, docked in the bar as quiet flat buttons in
    the same idiom as the workspace links. */
 body.focus-mode .focus-nav > .focus-btn,
@@ -1391,7 +1430,7 @@ body.focus-mode .content > h4 { max-width: none; }
     --header-h: 42px;
     --ribbon-h: 36px;
     --fs-base: 14.5px;
-    --fs-h1: clamp(29px, 8vw, 38.5px);
+    --fs-h1: clamp(24px, 6.1vw, 30px);
     --fs-h2: 19.5px;
     --fs-h3: 15px;
     --fs-hero: clamp(31px, 9vw, 42px);
@@ -1682,10 +1721,11 @@ html[data-theme="dark"] .brand-mark {
   box-shadow: var(--shadow-sm) !important;
   transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
 }
+/* Kept in step with the single card hover in the CARDS section below — a
+   diffused shadow and nothing else. This rule used to add `translateY(-3px)`. */
 .content .card:hover {
-  transform: translateY(-3px) !important;
   border-color: var(--border-strong) !important;
-  box-shadow: var(--shadow-md) !important;
+  box-shadow: var(--card-hover-shadow) !important;
 }
 .content .card > * { position: relative; }
 .content .card .ico {
@@ -1896,7 +1936,10 @@ html[data-theme="dark"] .brand-mark {
 .content > .lead,
 .prep-content > .lead,
 .dsa-chead .dsa-outcome {
-  font-size: calc(var(--fs-lead) * var(--reading-scale)) !important;
+  /* Was calc(var(--fs-lead) * scale) = 19.4px against body prose at 17.9px.
+     The lead now matches body size and is distinguished by colour and
+     position rather than by being larger. */
+  font-size: var(--reader-font-size) !important;
   line-height: 1.62;
 }
 
@@ -2240,12 +2283,34 @@ body:not(.focus-mode) .office-ribbon a:focus-visible {
    and ribbon keep the root values. Only the handful of components that hard-
    code a px size (tables, code, cards, callouts, quizzes) need restating.
    ========================================================================= */
-:root { --reading-scale: 1; }
-html[data-reading-size="small"] { --reading-scale: .92; }
-html[data-reading-size="large"] { --reading-scale: 1.14; }
-html[data-reading-size="xl"] { --reading-scale: 1.28; }
+/* Five steps, evenly spaced, and the second is the default — the old scale
+   started too small and topped out where several readers wanted to begin. The
+   :root value matches "m" so the page is correct even before the pre-paint
+   script runs and if scripting is off entirely. */
+:root { --reading-scale: 1.14; }
+html[data-reading-size="xs"] { --reading-scale: .88; }
+html[data-reading-size="s"] { --reading-scale: 1; }
+html[data-reading-size="m"] { --reading-scale: 1.14; }
+html[data-reading-size="l"] { --reading-scale: 1.28; }
+html[data-reading-size="xl"] { --reading-scale: 1.42; }
 
-.content { font-size: calc(var(--fs-base) * var(--reading-scale)); }
+/* Body prose.
+   styles.css normalises every text element in the reading column with
+   `.content p, .content li, .content dd, ... { font-size: var(--reader-font-size) }`
+   at (0,2,0), which quietly outranked a font-size on `.content` — so setting
+   `.content` never moved a paragraph, and body copy stayed at the token's
+   14.5px while the lead sat at 19.4px and card text had crept to 17.7px. Body
+   copy was the smallest text in the reading column, which is backwards.
+   Defining the token itself fixes it at the source: every element in that
+   list scales together, the reading-scale finally reaches paragraphs, and the
+   ladder becomes lead > body > card. */
+/* `html:root`, not `:root`: styles.css still carries legacy blocks like
+   `html[data-reading-size="xl"] { --reader-font-size: 17.5px }` from the old
+   four-step scale. Those are (0,1,1) and outrank a bare `:root` (0,1,0)
+   whatever the file order, which pinned the largest step at 17.5px. Matching
+   their specificity lets file order decide, and this file is later. */
+html:root { --reader-font-size: calc(15.7px * var(--reading-scale)); }
+.content { font-size: var(--reader-font-size); }
 /* Headings and the lead are scaled by the ONE TYPE SCALE layer above, which
    states them with !important as the single source of truth; h4 is not part of
    that layer, so it is scaled here. */
@@ -2263,50 +2328,101 @@ html[data-reading-size="xl"] { --reading-scale: 1.28; }
 .content .recall .a { font-size: calc(13px * var(--reading-scale)); }
 .content .demo-title { font-size: calc(13px * var(--reading-scale)); }
 
-/* ---- ALIGNMENT (left / justified) ----
-   Applies everywhere: phone, tablet, desktop, focus mode. Justification is
-   limited to running prose — headings, code, tables and chips keep their own
-   alignment, and justifying a two-word table cell only opens gaps.
+/* ---- JUSTIFIED PROSE ----
+   Justification is now the house style rather than a setting: one way for the
+   portal to read, everywhere, with nothing to choose. It applies to running
+   prose only — headings, code, tables and chips keep their own alignment, and
+   justifying a two-word table cell only opens gaps.
 
-   Words are never split. Automatic hyphenation was tried first and rejected:
-   it produced breaks like "nor- / mally" mid-paragraph, which costs more in
-   reading effort than the tighter spacing buys back. `hyphens: manual` leaves
-   the browser to distribute the slack between words instead, and honours an
-   explicit &shy; if any content ever wants one. */
-html[data-reading-align="justify"] .content > p,
-html[data-reading-align="justify"] .content > .lead,
-html[data-reading-align="justify"] .content > ul > li,
-html[data-reading-align="justify"] .content > ol > li,
-html[data-reading-align="justify"] .content > blockquote,
-html[data-reading-align="justify"] .content > blockquote > p,
-html[data-reading-align="justify"] .content > dl > dd,
-html[data-reading-align="justify"] .content > .callout p,
-html[data-reading-align="justify"] .content > .card p,
-/* The hub and the question bank name their reading column differently; the
-   setting is about text on the page, not about one page family. */
-html[data-reading-align="justify"] .ih-content > p,
-html[data-reading-align="justify"] .ih-content > ul > li,
-html[data-reading-align="justify"] .ih-content > ol > li,
-html[data-reading-align="justify"] .prep-content > p,
-html[data-reading-align="justify"] .prep-content > .lead,
-html[data-reading-align="justify"] .prep-content > ul > li,
-html[data-reading-align="justify"] .prep-content > ol > li {
+   Words are never split. Automatic hyphenation was tried and rejected: it
+   produced breaks like "nor- / mally" mid-paragraph, and a hyphen the reader
+   has to reassemble costs more than the tighter spacing buys. `hyphens: manual`
+   leaves the browser to distribute the slack between words instead, and still
+   honours an explicit &shy; if content ever wants one. */
+.content p,
+.content li,
+.content dd,
+.content blockquote,
+.content .lead,
+.hero p,
+.hero .lead,
+/* The hub and the question bank name their reading column differently; this is
+   about text on the page, not about one page family. */
+.ih-content p,
+.ih-content li,
+.ih-content .lead,
+.prep-content p,
+.prep-content li,
+.prep-content .lead,
+.dsa-chead p {
   text-align: justify;
-  /* Spacing between words absorbs the slack — the alternative, inter-character,
-     stretches inside words and reads as broken tracking. */
+  /* Spacing between words absorbs the slack — the alternative,
+     inter-character, stretches inside words and reads as broken tracking. */
   text-justify: inter-word;
   hyphens: manual;
   -webkit-hyphens: manual;
 }
+/* Justification is for running prose in the full-width column. Inside a card
+   the measure is ~300px, so justifying without hyphenation leaves four words
+   and three big gaps per line — which is what made card text read as larger
+   and looser than the prose beside it. Cards, and anything else narrow, go
+   back to ragged-right. */
+.content .grid .card p,
+.content .grid .card li,
+.content .card p,
+.content .card li,
+.content .quiz .opt,
+.content .recall .a,
+.content .timeline .step p,
+.content .rm-why,
+.content td, .content th,
+.content pre, .content pre p,
+.content .pill, .content .chip, .content .tag, .content .eyebrow,
+.content figcaption, .content .diagram-caption,
+.content .meta-row p, .content .page-nav p, .content .toc p,
+.content .quiz .opt, .content .demo-controls p, .content .demo-title,
+.content .timeline .step p,
+.hero .meta-row p { text-align: left; }
+
 /* One exception to "never break a word": a token longer than the column has to
    break somewhere or it overflows. `break-word` only engages when the token
    cannot fit on a line of its own, so ordinary words are untouched — long URLs
    and code identifiers are the whole target. */
-html[data-reading-align="justify"] .content code,
-html[data-reading-align="justify"] .content a {
-  overflow-wrap: break-word;
-}
+.content code,
+.content a { overflow-wrap: break-word; }
 
+/* ---- READING TYPEFACE ----
+   Serif for the words you read in sequence, sans for everything you scan or
+   click: headings, navigation, chips, tables, code. The pairing is the oldest
+   trick in documentation design — the serif slows the eye down just enough for
+   paragraphs, and the sans keeps structure crisp. Line height rises slightly
+   with it, because serifs at this size want a little more air. */
+.content p,
+.content li,
+.content dd,
+.content blockquote,
+.content .lead,
+.hero p,
+.hero .lead,
+.ih-content p,
+.ih-content li,
+.ih-content .lead,
+.prep-content p,
+.prep-content li,
+.prep-content .lead {
+  font-family: var(--font-read);
+  line-height: 1.65;
+}
+/* Code is monospace, full stop — an earlier revision of this block sent it
+   through --font-sans and quietly de-monospaced every inline snippet. */
+.content pre, .content code, .content kbd, .content samp { font-family: var(--font-mono); }
+/* Everything else that is scanned rather than read keeps the UI sans. */
+.content td, .content th,
+.content .pill, .content .chip, .content .eyebrow, .content figcaption,
+.content .diagram-caption, .content .quiz .opt, .content .demo-title,
+.content .demo-controls, .content .page-nav, .content .toc {
+  font-family: var(--font-sans);
+}
 /* ---- TEXT WIDTH ----
    Focus mode only. Outside it, `body:not(.focus-mode) .content` is pinned to
    --content-max with !important by the ONE TYPE SCALE layer above, which is
@@ -2425,12 +2541,15 @@ html[data-reading-align="justify"] .content a {
 .reader-segment button:hover { color: var(--text); background: var(--bg-elevated); }
 .reader-segment button.active { color: #fff; background: var(--excel); }
 .reader-segment button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
-/* The text-size choices are the same letter at four sizes — the control shows
+/* The text-size choices are the same letter at five sizes — the control shows
    what it does rather than naming it. */
-.reader-segment .sz-s { font-size: 10.5px; }
-.reader-segment .sz-m { font-size: 12.5px; }
-.reader-segment .sz-l { font-size: 14.5px; }
-.reader-segment .sz-xl { font-size: 16.5px; }
+.reader-segment .sz-1 { font-size: 11px; }
+.reader-segment .sz-2 { font-size: 12.5px; }
+.reader-segment .sz-3 { font-size: 14px; }
+.reader-segment .sz-4 { font-size: 15.5px; }
+.reader-segment .sz-5 { font-size: 17px; }
+/* Five buttons in one row: they may shed a little padding to fit the panel. */
+.reader-row .reader-segment button { min-width: 28px; padding: 0 6px; }
 .reader-reset {
   width: 100%;
   height: 30px;
@@ -2668,4 +2787,145 @@ html[data-theme="dark"] .content dt { color: var(--prose-strong); }
 @media (max-width: 430px) {
   .meta-row { gap: 6px; }
   .meta-row .pill { min-height: 26px; padding: 3px 9px; }
+}
+
+/* =========================================================================
+   CARDS — readable body text, and one hover: a diffused shadow
+   =========================================================================
+   1. Card body copy was --text-muted (#7B8290) at 14.8px against prose at
+      --text-secondary (#505665) / 18.9px, so every card read as fine print —
+      the "too light" complaint. Card text is body text: it takes the prose
+      colour, and a size one step below prose rather than two.
+   2. Hover is a single effect for every card on every page: the card lifts in
+      light only — a wide, soft, diffused shadow — with nothing moving, no
+      colour wash, and no text inversion.
+
+      This replaces an earlier "hover fill" (a green seed in the bottom-right
+      corner growing to fill the card, with the text inverting to white on top
+      of it). It was too loud, and its resting seed collided with the chip in
+      that corner. Removed rather than tuned. The rules that supported it —
+      the ::before fill layer, the white-ink inversions in both themes, the
+      chip-on-green treatment, the `isolation`/`z-index` scaffolding — are gone
+      with it, so anything looking for them is looking at stale CSS.
+
+      Because a shadow needs no clipping and no stacking context, the only
+      thing left to suppress is the *other* hover effects the older stylesheets
+      declare (lifts, shadow bumps, sideways nudges); see section 3.
+   ========================================================================= */
+
+/* ---- 1. Card and component body text reads like prose ---- */
+.content .card p,
+.content .callout p,
+.content .quiz .q,
+.content .recall > summary,
+.content .recall .a,
+.content .demo-title,
+.module-card p,
+.prep-topic-card p {
+  color: var(--text-secondary);
+  /* One clear step below body prose, and ragged-right (above) so it does not
+     read loose in a narrow column. */
+  font-size: calc(14.2px * var(--reading-scale));
+  line-height: 1.55;
+}
+/* A callout spans the full column, so it keeps body-prose size — it is prose
+   in a box, not a card. */
+.content .callout p { font-size: var(--reader-font-size); line-height: 1.62; }
+/* A card title smaller than its own body text is the giveaway that these were
+   sized independently; the title steps back above it. */
+.content .card h3,
+.content .card h4,
+.module-card h3 { font-size: calc(16.5px * var(--reading-scale)); }
+/* Meta lines stay quieter than body copy, but not invisible. */
+.prep-topic-meta,
+.module-card .mc-num { color: var(--text-muted); }
+
+/* ---- 2a. At rest, a card chip is a label, not a filled chip ---- */
+/* The base `.pill` rule above paints every chip with `--bg-elevated` and a
+   border. Inside a card that chip is only ever a call to action ("Start here →",
+   "Open →"), and the filled box around it competes with the card's own panel,
+   so at rest it is bare text and the panel arrives on hover. Padding and border
+   width are unchanged between the two states — only the paint moves — so the
+   text never shifts under the pointer. `!important` answers the base rule's own
+   !important, not emphasis. */
+.card .pill,
+.module-card .pill,
+.prep-topic-card .pill {
+  background: transparent !important;
+  border-color: transparent !important;
+  /* A card is a column flex container, so a chip as a direct child stretches
+     across it — invisible while the chip is transparent, but on hover the panel
+     arrived as a full-width bar. The chip hugs its text instead. */
+  align-self: flex-start;
+}
+/* `color` and `transform` are here because styles.css's
+   `.module-card:hover .pill:not(.green)` still paints the chip white and slides
+   it 3px — that rule was written for the green fill this section replaced, and
+   white ink on the elevated panel is invisible. */
+.card:hover .pill, .card.is-hovered .pill, .card:focus-visible .pill,
+.module-card:hover .pill, .module-card.is-hovered .pill, .module-card:focus-visible .pill,
+.prep-topic-card:hover .pill, .prep-topic-card.is-hovered .pill, .prep-topic-card:focus-visible .pill {
+  color: var(--text-secondary) !important;
+  background: var(--bg-elevated) !important;
+  border-color: var(--border) !important;
+  transform: none !important;
+}
+
+/* ---- 3. The hover: one diffused shadow, on every card ---- */
+/* `--card-hover-shadow` (defined with the other shadow tokens at the top of
+   this file, per theme) is the whole effect. Nothing moves: the older
+   stylesheets declare a hover lift in three places — `.content .card:hover`
+   above in this file and `.card:hover` / `.card.hover:hover` in styles.css,
+   each with its own shadow bump — plus a sideways nudge on card headings, a
+   scaling decorative blob on `.prep-topic-card::before`, and a drifting circle
+   on `.module-card::after`. All of them are cancelled so a hover reads as a
+   single gesture rather than four.
+
+   Specificity: the lift at `.content .card:hover` is itself `!important`, so
+   `!important` alone does not win — among !important declarations specificity
+   still decides. `:is(.card.hover, …)` contributes the specificity of its most
+   specific argument (two classes), which puts this selector at 0-3-0 against
+   that rule's 0-2-1.
+
+   The list is every card class the pages actually use: `.card` (which
+   `.card.hover`, `a.card` and `.card.danger-card` all build on), `.module-card`
+   and `.prep-topic-card` (which `.scenario-card` builds on). `.card.hover` is
+   in the list for its specificity, described above, not for extra coverage.
+
+   `.is-hovered` is a forced state used for visual checks; `:focus-visible`
+   gives keyboard users the same affordance. `.is-soon` is the greyed-out
+   "coming soon" card — not a target, so it keeps its flat resting state. */
+:is(.card, .card.hover, .module-card,
+    .prep-topic-card):not(.is-soon):is(:hover, .is-hovered, :focus-visible) {
+  box-shadow: var(--card-hover-shadow) !important;
+  transform: none !important;
+  border-color: var(--border-strong) !important;
+}
+/* The nudges and decorations the shadow replaces. */
+.card:hover h3, .card:hover h4,
+.card.hover:hover h3, .card.hover:hover h4,
+.prep-topic-card:hover h3 { transform: none; }
+.module-card::after, .module-card:hover::after { content: none; }
+.prep-topic-card::before,
+.prep-topic-card:hover::before { transform: none; }
+.prep-topic-card:hover .prep-card-arrow { transform: none; }
+/* styles.css tints the prep card's surface green on hover; the shadow is the
+   whole signal now, so the surface holds still. */
+.prep-topic-card:hover,
+.prep-topic-card:focus-visible { background: var(--prep-surface) !important; }
+
+/* The transition lives in genai-motion.css (`box-shadow var(--gm-dur) ease`)
+   for these classes, and in `.content .card`'s own shorthand above; both
+   already cover box-shadow, so the shadow fades rather than snapping. Under
+   reduced motion the shadow simply is, or is not. */
+@media (prefers-reduced-motion: reduce) {
+  :is(.card, .module-card, .prep-topic-card) { transition: none !important; }
+}
+/* Touch devices have no pointer to leave, so a hover style applied by a tap
+   sticks until the next tap elsewhere. `:active` in genai-motion.css is the
+   press feedback there. */
+@media (hover: none) {
+  :is(.card, .card.hover, .module-card, .prep-topic-card):hover {
+    box-shadow: var(--shadow-sm) !important;
+  }
 }

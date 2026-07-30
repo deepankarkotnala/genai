@@ -19,10 +19,11 @@
       kw: "embedding vector cosine similarity semantic dense sparse sentence-transformers" },
     { id: "05", file: "05_vector_databases.html", title: "Vector Databases", track: "Retrieval",
       kw: "vector database faiss qdrant pgvector hnsw ann index recall" },
-    { id: "06", file: "06_rag_basics.html", title: "RAG Basics", track: "Retrieval",
-      kw: "rag retrieval augmented generation chunking context grounding" },
-    { id: "07", file: "07_advanced_rag.html", title: "Advanced RAG", track: "Retrieval",
-      kw: "hybrid search reranking query expansion parent document graph rag agentic rag context compression" },
+    // One RAG page, and it lives at the site root rather than under modules/.
+    // `atRoot` tells the grid and the fallback sidebar not to resolve it
+    // relative to the modules folder. See buildIndexGrid / buildSidebar.
+    { id: "06", file: "rag-deep-dive.html", title: "RAG, End-to-End", track: "Retrieval", atRoot: true,
+      kw: "rag retrieval augmented generation chunking context grounding citations hybrid search reranking query expansion parent document graph rag agentic rag evaluation" },
     { id: "08", file: "08_agents.html", title: "Agentic AI", track: "Agents",
       kw: "agent react tool calling planning reflection memory loop" },
     { id: "09", file: "09_mcp.html", title: "Model Context Protocol", track: "Agents",
@@ -76,7 +77,8 @@
       html += `<div class="nav-group-label">${track}</div>`;
       MODULES.filter(m => m.track === track).forEach(m => {
         const active = m.id === cur ? "active" : "";
-        html += `<a href="${m.file}" class="${active}"><span class="num">${m.id}</span> ${m.title}</a>`;
+        const file = m.atRoot ? `../${m.file}` : m.file;   // this fallback runs from modules/
+        html += `<a href="${file}" class="${active}"><span class="num">${m.id}</span> ${m.title}</a>`;
       });
     });
     nav.innerHTML = html;
@@ -142,7 +144,10 @@
     const rail = document.querySelector(".toc");
     const content = document.querySelector(".content");
     if (!rail || !content) return;
-    const heads = [...content.querySelectorAll("h2[id]")];
+    /* A term dialog carries an <h2> for its accessible name, and those dialogs
+       live inside .content — so an unfiltered query lists every definition as a
+       chapter section. Section headings are the ones in the document flow. */
+    const heads = [...content.querySelectorAll("h2[id]")].filter(h => !h.closest("dialog"));
     if (!heads.length) { const r = document.querySelector(".toc-rail"); if (r) r.style.display = "none"; return; }
 
     rail.classList.add("toc-textbook");
@@ -381,8 +386,7 @@
       "03": "Run models on your own hardware with Ollama. Qwen, Gemma, Llama, quantization & Modelfiles.",
       "04": "Turn text into vectors that capture meaning. The foundation of all semantic retrieval.",
       "05": "Store and search millions of vectors fast. FAISS, Qdrant, pgvector, HNSW & ANN tradeoffs.",
-      "06": "Ground LLMs in your data. Chunk → embed → retrieve → augment → generate.",
-      "07": "Hybrid search, reranking, query expansion, parent-document, Graph RAG & Agentic RAG.",
+      "06": "The one RAG page: chunk → embed → retrieve → augment → generate, then hybrid search, reranking and evaluation.",
       "08": "ReAct, tool calling, planning, reflection, memory and the agent loop — with failure modes.",
       "09": "The USB-C of AI tooling. Build MCP servers/clients, expose tools, resources & prompts.",
       "10": "Compose LLM apps with LCEL, runnables, retrievers and memory the production way.",
@@ -396,7 +400,8 @@
     TRACKS.forEach(track => {
       html += `<div class="track-label"><span>${track}</span><div class="line"></div></div><div class="module-grid">`;
       MODULES.filter(m => m.track === track).forEach(m => {
-        html += `<a href="${m.file}" class="card hover module-card" data-reveal>
+        // data-root keeps index.html's path fixer from prefixing "modules/".
+        html += `<a href="${m.file}" class="card hover module-card"${m.atRoot ? " data-root=\"1\"" : ""} data-reveal>
           <div class="mc-top"><span class="mc-num">Module ${m.id}</span><span class="pill">Open →</span></div>
           <h3>${m.title}</h3><p>${descs[m.id] || ""}</p></a>`;
       });
