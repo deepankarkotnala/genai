@@ -41,7 +41,7 @@
      exactly — same key, same "light" default — so the pre-paint value can never
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "m", unknown width -> "wide". Text is always justified. */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:"m";var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);}catch(e){}})();</script>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "s" on phones and "xs" above 860px, unknown width -> "wide", unknown align -> "left". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var mob=!!(window.matchMedia&&window.matchMedia("(max-width:860px)").matches);var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(mob?"s":"xs");var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);}catch(e){}})();</script>
 <link rel="stylesheet" href="assets/styles.css?v=20260731b">
 <link href="assets/office-theme.css?v=20260731b" rel="stylesheet"/>
 <link href="assets/genai-motion.css?v=20260728a" rel="stylesheet"/>
@@ -110,7 +110,7 @@
         <div class="meta-row">
           <span class="pill blue">⏱ Deep study + implementation · 24–36 h</span>
           <span class="pill">Module 06 · the only RAG page</span>
-          <span class="pill purple">Enterprise / plant &amp; process examples</span>
+          <span class="pill purple">Enterprise SaaS &amp; service-operations examples</span>
         </div>
 
         <div class="callout note">
@@ -173,7 +173,7 @@
         <p>These are the knowledge bases RAG retrieves from. The quality of RAG depends <em>heavily</em> on the quality of the source.</p>
         <div class="grid grid-2">
           <div class="card"><h4>Common sources</h4><p>PDFs · Word · Excel/CSV · database tables · web pages · SharePoint/Confluence · emails · logs · API docs · source code · images (via OCR) · knowledge graphs.</p></div>
-          <div class="card"><h4>Typical enterprise sources</h4><p>SOP documents · plant manuals · historical tickets · maintenance reports · QC templates · procurement RFQs · database metadata · API documentation · training logs.</p></div>
+          <div class="card"><h4>Typical enterprise sources</h4><p>runbooks · service runbooks · historical tickets · incident postmortems · release checklists · vendor contracts · database metadata · API documentation · training logs.</p></div>
         </div>
         <div class="callout tip">
           <div class="c-ico">💡</div>
@@ -190,18 +190,18 @@
         <div class="table-wrap">
           <table>
             <tr><th>Field</th><th>Example</th><th>Why it matters</th></tr>
-            <tr><td><code>source_file</code></td><td>PDI1043_model.pdf</td><td>Citations &amp; traceability</td></tr>
+            <tr><td><code>source_file</code></td><td>pg_latency_model.pdf</td><td>Citations &amp; traceability</td></tr>
             <tr><td><code>page_number</code> / <code>section_heading</code></td><td>p7 · "Input Tags"</td><td>Precise citations</td></tr>
-            <tr><td><code>document_type</code></td><td>limits · SOP · RFQ</td><td>Route &amp; filter by intent</td></tr>
-            <tr><td><code>plant · loop · equipment · tag_name</code></td><td>Ammonia · Loop10 · Pump A · PDI1043.PV</td><td>Industrial scoping</td></tr>
+            <tr><td><code>document_type</code></td><td>thresholds · runbook · contract</td><td>Route &amp; filter by intent</td></tr>
+            <tr><td><code>product · service · component · metric_id</code></td><td>Billing · Checkout · PaymentGateway · pg_latency_p99</td><td>Service scoping</td></tr>
             <tr><td><code>created_date · modified_date · version</code></td><td>2024-03-01 · v3</td><td>Resolve conflicts (see <a href="#conflicts">§18</a>)</td></tr>
-            <tr><td><code>confidentiality_level · business_unit</code></td><td>Internal · EnM</td><td>Access control (see <a href="#guardrails">§17</a>)</td></tr>
+            <tr><td><code>confidentiality_level · business_unit</code></td><td>Internal · Support</td><td>Access control (see <a href="#guardrails">§17</a>)</td></tr>
           </table>
         </div>
         <div class="callout note">
           <div class="c-ico">🧭</div>
           <div class="c-body"><div class="c-title">Filtering in action</div>
-          <p>User asks: <em>“What are the limits for Loop10 subloop2?”</em> Instead of searching every document, first filter <code>plant=Ammonia</code>, <code>loop=Loop10</code>, <code>subloop=2</code>, <code>document_type=limits</code> — then retrieve only inside that slice.</p></div>
+          <p>User asks: <em>“What are the limits for Checkout payments component?”</em> Instead of searching every document, first filter <code>product=Billing</code>, <code>service=Checkout</code>, <code>component=payments</code>, <code>document_type=limits</code> — then retrieve only inside that slice.</p></div>
         </div>
 
         <!-- ============ 3. CLEANING ============ -->
@@ -210,7 +210,7 @@
         <div class="grid grid-2">
           <div class="code-block">
             <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> bad extraction</span></div>
-            <pre><code>PDI1043.
+            <pre><code>pg_latency.
 PV is used for
 forecasting
 as per
@@ -218,11 +218,11 @@ the model input</code></pre>
           </div>
           <div class="code-block">
             <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> cleaned</span></div>
-            <pre><code>PDI1043.PV is used as one of the
+            <pre><code>pg_latency_p99 is used as one of the
 forecasting model inputs.</code></pre>
           </div>
         </div>
-        <p>For technical documents this matters enormously — tags, formulas and tables are exactly what gets distorted by naïve extraction.</p>
+        <p>For technical documents this matters enormously — metric ids, formulas and tables are exactly what gets distorted by naïve extraction.</p>
 
         <!-- ============ 4. CHUNKING ============ -->
         <h2 id="chunking">5 · Chunking — the unit of retrieval</h2>
@@ -250,7 +250,7 @@ forecasting model inputs.</code></pre>
         <details class="collapse"><summary>5.3 · Sentence-based chunking <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
           <div class="collapse-body">
             <p>Chunks are made of complete sentences, so embeddings get clean semantic units. <strong>Pros:</strong> never cuts a sentence, good embedding quality. <strong>Cons:</strong> inconsistent chunk sizes; may lose section-level context.</p>
-            <p><strong>Best for:</strong> natural-language docs, policies, SOPs, knowledge articles.</p>
+            <p><strong>Best for:</strong> natural-language docs, policies, runbooks, knowledge articles.</p>
           </div>
         </details>
 
@@ -264,7 +264,7 @@ forecasting model inputs.</code></pre>
         <details class="collapse"><summary>5.5 · Heading / section-based chunking <span class="pill green" style="margin-left:8px">practical favorite</span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
           <div class="collapse-body">
             <p>Split on document headings (1. Introduction, 2. Scope, 3. Input Tags…). Each section becomes one or more chunks. <strong>Pros:</strong> preserves hierarchy, great traceability, ideal for enterprise docs. <strong>Cons:</strong> depends on reliable heading detection; long sections still need sub-splitting.</p>
-            <p><strong>Best for:</strong> SOPs, technical manuals, API docs, project &amp; procurement &amp; regulatory documents. One of the most practical strategies for enterprise RAG.</p>
+            <p><strong>Best for:</strong> runbooks, technical manuals, API docs, project, vendor and compliance documents. One of the most practical strategies for enterprise RAG.</p>
           </div>
         </details>
 
@@ -286,10 +286,10 @@ forecasting model inputs.</code></pre>
         <details class="collapse"><summary>5.8 · Table-aware chunking <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
           <div class="collapse-body">
             <p>Tables must not be blindly split row-by-row or page-by-page. Convert them to a form the LLM reads well:</p>
-            <div class="code-block"><div class="code-head"><span class="lang">table → text</span></div><pre><code>The following table defines tag limits:
-- PDI1043 has LSL 0 and USL 10 kg/cm2.
-- TI1354  has LSL 20 and USL 200 °C.</code></pre></div>
-            <p><strong>Methods:</strong> Markdown conversion · row-wise text · a table-summary chunk · parent-child table chunking. <strong>Best for:</strong> Excel, procurement CBAs, QC templates, tag-limit tables, financial/KPI tables.</p>
+            <div class="code-block"><div class="code-head"><span class="lang">table → text</span></div><pre><code>The following table defines metric thresholds:
+- pg_latency has a warn threshold of 250 ms and a crit threshold of 800 ms.
+- gateway_cpu has a warn threshold of 70 % and a crit threshold of 90 %.</code></pre></div>
+            <p><strong>Methods:</strong> Markdown conversion · row-wise text · a table-summary chunk · parent-child table chunking. <strong>Best for:</strong> Excel, vendor cost analyses, release checklists, metric-threshold tables, financial/KPI tables.</p>
           </div>
         </details>
 
@@ -320,12 +320,12 @@ forecasting model inputs.</code></pre>
           <div class="c-body"><div class="c-title">This has a dedicated module</div>
           <p>Embeddings (what a vector is, cosine similarity, choosing a model) are covered in depth in <a href="modules/04_embeddings.html"><strong>04 · Embeddings →</strong></a>. Summary below; the cosine/distance math used to <em>score</em> them lives in <a href="#scoring">§10 Retrieval scoring</a>.</p></div>
         </div>
-        <p>An embedding converts text into a numeric vector that captures meaning: <code>"Pump A leakage prediction model" → [0.12, -0.45, 0.88, …]</code>. Similar concepts get similar vectors, so <em>“pump leakage”</em>, <em>“tube leakage”</em> and <em>“seal failure”</em> sit close together.</p>
+        <p>An embedding converts text into a numeric vector that captures meaning: <code>"checkout latency prediction model" → [0.12, -0.45, 0.88, …]</code>. Similar concepts get similar vectors, so <em>“slow checkout”</em>, <em>“payment timeout”</em> and <em>“gateway latency”</em> sit close together.</p>
         <p><strong>Model families:</strong> OpenAI, Sentence-Transformers, BGE, E5, Cohere, Instructor, multilingual and code embeddings. Choose based on language, domain vocabulary, latency, cost, accuracy, deployment and security constraints.</p>
         <div class="callout warn">
           <div class="c-ico">⚠️</div>
           <div class="c-body"><div class="c-title">Domain vocabulary breaks generic models</div>
-          <p>Tokens like <code>PDI1043.PV</code>, <code>FIC1002.PV</code>, <code>LSL</code>, <code>USL</code>, “trip tag”, “loop/subloop”, “factor/KPI mapping” may not be understood by a generic embedding model. Design your chunk text + metadata to spell these out, and lean on <a href="#sparse">keyword retrieval</a> for exact identifiers.</p></div>
+          <p>Tokens like <code>pg_latency_p99</code>, <code>cart_error_rate</code>, <code>warn</code>, <code>crit</code>, “alert metric”, “loop/component”, “factor/KPI mapping” may not be understood by a generic embedding model. Design your chunk text + metadata to spell these out, and lean on <a href="#sparse">keyword retrieval</a> for exact identifiers.</p></div>
         </div>
 
         <!-- ============ 6. INDEXING ============ -->
@@ -339,20 +339,20 @@ forecasting model inputs.</code></pre>
         <div class="code-block"><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> a stored chunk</span><button class="copy-btn">Copy</button></div>
 <pre><code>{
   "chunk_id": "doc_001_chunk_004",
-  "text": "PDI1043.PV is used as an input for forecasting...",
-  "source": "PDI1043_model_document.pdf",
+  "text": "pg_latency_p99 is used as an input for forecasting...",
+  "source": "pg_latency_model_document.pdf",
   "page": 7,
   "section": "Input Tags",
-  "plant": "Ammonia",
-  "loop": "Loop10",
+  "product": "Billing",
+  "service": "Checkout",
   "embedding": [0.12, -0.45, 0.88]
 }</code></pre></div>
 
         <!-- ============ 7. QUERY PROCESSING ============ -->
         <h2 id="query">8 · Query processing</h2>
-        <p>We don't always send the raw query to retrieval. A vague question like <em>“what are the inputs for this model?”</em> can first be turned into <em>“List the input tags used for the PDI1043 forecasting model.”</em></p>
+        <p>We don't always send the raw query to retrieval. A vague question like <em>“what are the inputs for this model?”</em> can first be turned into <em>“List the input metrics used for the pg_latency forecasting model.”</em></p>
         <div class="grid grid-2">
-          <div class="card"><h4>8.1 Query rewriting</h4><p>The LLM rewrites a short/vague query into a clear search query. <em>“what all tags are used?”</em> → <em>“input tags used in PDI1043 forecasting model”.</em></p></div>
+          <div class="card"><h4>8.1 Query rewriting</h4><p>The LLM rewrites a short/vague query into a clear search query. <em>“what all metrics are used?”</em> → <em>“input metrics used in pg_latency forecasting model”.</em></p></div>
           <div class="card"><h4>8.2 Query expansion</h4><p>Add related terms for recall: <em>“tube leakage”</em> → <em>tube leakage OR exchanger leakage OR heat-exchanger tube failure.</em> Great when teams use different vocabulary.</p></div>
           <div class="card"><h4 id="hyde">8.3 HyDE</h4><p><strong>Hypothetical Document Embeddings:</strong> the LLM drafts a hypothetical <em>answer</em>, then embeds <em>that</em> instead of the short query. Helps vague queries; costs an extra LLM call and can inject assumptions.</p></div>
           <div class="card"><h4>8.4 Multi-query retrieval</h4><p>Generate several phrasings of the query, retrieve for each, then merge → dedupe → rerank. Better recall, handles vocabulary mismatch, more retrieval calls.</p></div>
@@ -369,27 +369,27 @@ forecasting model inputs.</code></pre>
         </div>
 
         <h3 id="dense">9.1 Dense (vector) retrieval</h3>
-        <p>Embed the query, compare against chunk vectors, return nearest neighbours. Understands meaning and synonyms — <em>“pump failure reason”</em> can surface “seal damage”, “bearing issue”, “cavitation”. <strong>Weakness:</strong> exact IDs, tag names, codes and numbers (e.g. <code>PDI1043.PV</code>) may slip through.</p>
+        <p>Embed the query, compare against chunk vectors, return nearest neighbours. Understands meaning and synonyms — <em>“gateway failure reason”</em> can surface “connection pool exhausted”, “TLS handshake timeout”, “retry storm”. <strong>Weakness:</strong> exact IDs, metric ids, codes and numbers (e.g. <code>pg_latency_p99</code>) may slip through.</p>
 
         <h3 id="sparse">9.2 Sparse / keyword retrieval</h3>
         <p>Exact or near-exact word matching: <strong>BM25, TF-IDF, Elasticsearch/OpenSearch lexical, SQL LIKE.</strong> Excellent for exact tag names, part/document IDs, error codes, invoice/KPI ids, API endpoint names. Fast and explainable; poor at synonyms/meaning.</p>
 
         <h3 id="hybrid">9.3 Hybrid retrieval <span class="pill green">recommended default</span></h3>
-        <p>Combine dense + sparse. For <em>“PDI1043 pressure forecasting input tags”</em>, BM25 nails <code>PDI1043</code> and "input tags" while vector search captures "forecasting model features / pressure prediction variables". Best for technical enterprise data; needs score normalization (see <a href="#fusion">fusion</a>).</p>
+        <p>Combine dense + sparse. For <em>“pg_latency latency forecasting input metrics”</em>, BM25 nails <code>pg_latency</code> and "input metrics" while vector search captures "forecasting model features / latency prediction variables". Best for technical enterprise data; needs score normalization (see <a href="#fusion">fusion</a>).</p>
 
         <h3 id="metafilter">9.4 Metadata filtering</h3>
-        <p>Filter the candidate set before/with retrieval (<code>plant=Ammonia · loop=Loop10 · equipment=Pump A</code>). Improves precision, shrinks the search space and <strong>enforces access control</strong>.</p>
+        <p>Filter the candidate set before/with retrieval (<code>product=Billing · service=Checkout · component=PaymentGateway</code>). Improves precision, shrinks the search space and <strong>enforces access control</strong>.</p>
 
         <h3 id="graph">9.5 Knowledge-graph retrieval</h3>
-        <p>Store relationships — <code>PDI1043.PV is_input_to ForecastingModel</code>, <code>Pump A belongs_to Subloop2</code>, <code>KPI_X depends_on PDI1043.PV</code>. Excellent for relationship questions, asset hierarchy and root-cause/dependency tracing. Requires building &amp; maintaining the graph. (See <a href="#graphrag">Graph RAG, §16.7</a>.)</p>
+        <p>Store relationships — <code>pg_latency_p99 is_input_to ForecastingModel</code>, <code>PaymentGateway belongs_to the payments component</code>, <code>KPI_X depends_on pg_latency_p99</code>. Excellent for relationship questions, service dependency and root-cause/dependency tracing. Requires building &amp; maintaining the graph. (See <a href="#graphrag">Graph RAG, §16.7</a>.)</p>
 
         <h3 id="sqlretr">9.6 SQL / structured retrieval</h3>
         <p>If the answer lives in a database, query it directly rather than vectorizing it.</p>
-        <div class="code-block"><div class="code-head"><span class="lang">sql</span><button class="copy-btn">Copy</button></div><pre><code>SELECT * FROM tag_master WHERE TAG_NAME = 'PDI1043.PV';</code></pre></div>
-        <p>Best for live values, master data, KPI mappings, config tables, inventory, transactions, procurement. A strong enterprise design blends <strong>vector (docs) + SQL (structured) + graph (relationships)</strong>.</p>
+        <div class="code-block"><div class="code-head"><span class="lang">sql</span><button class="copy-btn">Copy</button></div><pre><code>SELECT * FROM metric_master WHERE METRIC_NAME = 'pg_latency_p99';</code></pre></div>
+        <p>Best for live values, master data, KPI mappings, config tables, inventory, transactions, vendor data. A strong enterprise design blends <strong>vector (docs) + SQL (structured) + graph (relationships)</strong>.</p>
 
         <h3 id="agenticretr">9.7 Agentic retrieval</h3>
-        <p>The LLM acts as a <em>router</em>, choosing the tool per question: tag limits → SQL; “explain the methodology” → vector search; “which equipment connects to this KPI?” → graph; “summarize the latest RFQ” → document retrieval.</p>
+        <p>The LLM acts as a <em>router</em>, choosing the tool per question: metric thresholds → SQL; “explain the methodology” → vector search; “which component connects to this KPI?” → graph; “summarize the latest RFQ” → document retrieval.</p>
 
         <!-- ============ 9. SCORING ============ -->
         <h2 id="scoring">10 · Retrieval scoring methods</h2>
@@ -427,7 +427,7 @@ forecasting model inputs.</code></pre>
         <div class="callout tip">
           <div class="c-ico">🎯</div>
           <div class="c-body"><div class="c-title">Why it helps</div>
-          <p>For <em>“input tags for PDI1043 forecasting?”</em>, retrieval might return a general description, the input-tag list, an output explanation and alarm logic. A good reranker pushes the <strong>input-tag list</strong> to the top.</p></div>
+          <p>For <em>“input metrics for pg_latency forecasting?”</em>, retrieval might return a general description, the input-metric list, an output explanation and alarm logic. A good reranker pushes the <strong>input-metric list</strong> to the top.</p></div>
         </div>
 
         <!-- ============ 11. CONTEXT SELECTION ============ -->
@@ -457,7 +457,7 @@ Context:
 [Chunk 2] ...
 
 Question:
-What are the input tags for PDI1043 forecasting?
+What are the input metrics for pg_latency forecasting?
 
 Instructions:
 - Answer only from the context.
@@ -483,8 +483,8 @@ Instructions:
         <h2 id="output-eval">15 · Output scoring &amp; evaluation</h2>
         <p>After generation, score the answer — essential in production. The main dimensions:</p>
         <div class="grid grid-2">
-          <div class="card"><h4>Faithfulness / groundedness</h4><p>Is every claim supported by the retrieved context? If context says “PDI1043.PV is an input” but the answer calls it the “final output KPI”, faithfulness is low. Methods: LLM-as-judge, NLI, claim verification, citation matching.</p></div>
-          <div class="card"><h4>Answer relevance</h4><p>Does the answer actually address the question? “The model is deployed using FastAPI” may be true but irrelevant to “what are the input tags?”.</p></div>
+          <div class="card"><h4>Faithfulness / groundedness</h4><p>Is every claim supported by the retrieved context? If context says “pg_latency_p99 is an input” but the answer calls it the “final output KPI”, faithfulness is low. Methods: LLM-as-judge, NLI, claim verification, citation matching.</p></div>
+          <div class="card"><h4>Answer relevance</h4><p>Does the answer actually address the question? “The model is deployed using FastAPI” may be true but irrelevant to “what are the input metrics?”.</p></div>
           <div class="card"><h4>Context precision</h4><p><code>relevant retrieved / total retrieved</code>. 3 useful of 10 retrieved → low precision.</p></div>
           <div class="card"><h4>Context recall</h4><p>Did retrieval find everything needed? Answer needs 9 tags but context has 5 → low recall.</p></div>
           <div class="card"><h4>Citation accuracy</h4><p>Does the cited source actually support the sentence? Cites p3 but the fact is on p8 → fail.</p></div>
@@ -522,14 +522,14 @@ Instructions:
           <div class="card"><h4 id="agentic">17.4 Agentic RAG</h4><p>The LLM dynamically chooses tools — vector search, SQL, graph, web search, calculator, code interpreter, API call. See <a href="modules/08_agents.html">08 · Agentic AI →</a>.</p></div>
           <div class="card"><h4>17.5 Corrective RAG</h4><p>Checks whether retrieval is good enough; if not, rewrites the query, retries, uses an alternate retriever, asks for clarification, or returns “insufficient context”. Cuts wrong answers.</p></div>
           <div class="card"><h4>17.6 Self-RAG</h4><p>The model reflects mid-generation — “need more retrieval”, “context insufficient”, “claim unsupported”, “weak citation”. Useful but more expensive.</p></div>
-          <div class="card"><h4 id="graphrag">17.7 Graph RAG</h4><p>Knowledge graph + documents. Traces <em>“which KPIs break if PDI1043.PV is faulty?”</em> via PDI1043.PV → model input → KPI → loop → equipment. See <a href="#graph">§9.5</a>.</p></div>
-          <div class="card"><h4>17.8 Multi-modal RAG</h4><p>Text + tables + images + charts + scans, via OCR, table extraction, image captioning, chart understanding, multi-modal embeddings. Best for engineering drawings, P&amp;IDs, scanned PDFs, dashboards, QC templates.</p></div>
+          <div class="card"><h4 id="graphrag">17.7 Graph RAG</h4><p>Knowledge graph + documents. Traces <em>“which KPIs break if pg_latency_p99 is faulty?”</em> via pg_latency_p99 → model input → KPI → service → component. See <a href="#graph">§9.5</a>.</p></div>
+          <div class="card"><h4>17.8 Multi-modal RAG</h4><p>Text + tables + images + charts + scans, via OCR, table extraction, image captioning, chart understanding, multi-modal embeddings. Best for architecture diagrams, scanned PDFs, dashboards, release checklists.</p></div>
           <div class="card"><h4 id="raptor">17.9 RAPTOR <span class="pill green">trending</span></h4><p>Recursively cluster chunks and summarize each cluster, building a <em>tree</em> of summaries (leaves = raw chunks, higher nodes = broader summaries). Retrieve across all levels, so a query can grab a single fact <em>or</em> a document-wide synthesis. Strong for “summarize everything about X” and multi-document questions where flat top-K misses the big picture.</p></div>
         </div>
         <div class="callout note">
           <div class="c-ico">🔀</div>
           <div class="c-body"><div class="c-title">Agentic-RAG worked example</div>
-          <p><em>“Compare this month's production KPI with the documented target and explain the deviation.”</em> → (1) SQL for current KPI, (2) retrieve the target definition from docs, (3) retrieve the deviation SOP, (4) compute the difference, (5) generate the explanation.</p></div>
+          <p><em>“Compare this month's service KPI with the documented target and explain the deviation.”</em> → (1) SQL for current KPI, (2) retrieve the target definition from docs, (3) retrieve the deviation runbook, (4) compute the difference, (5) generate the explanation.</p></div>
         </div>
 
         <!-- ============ 17. GUARDRAILS ============ -->
@@ -548,7 +548,7 @@ Instructions:
 
         <!-- ============ 18. CONFLICTS ============ -->
         <h2 id="conflicts">19 · Handling conflicting sources</h2>
-        <p>Documents disagree — old SOP says limit = 10, new SOP says 12. A good RAG system should <strong>prefer the latest approved source, surface both when they conflict, cite dates, flag uncertainty</strong>, and never silently pick one. The metadata that makes this possible: <code>approved_status · effective_date · version · owner · modified_date · document_type</code>.</p>
+        <p>Documents disagree — old runbook says limit = 10, new runbook says 12. A good RAG system should <strong>prefer the latest approved source, surface both when they conflict, cite dates, flag uncertainty</strong>, and never silently pick one. The metadata that makes this possible: <code>approved_status · effective_date · version · owner · modified_date · document_type</code>.</p>
 
         <!-- ============ 19. HALLUCINATION ============ -->
         <h2 id="hallucination">20 · Hallucination control</h2>
@@ -589,10 +589,10 @@ Instructions:
             <tr><td>General document Q&amp;A</td><td>Recursive chunking + vector search + reranking</td></tr>
             <tr><td>Technical documents</td><td>Section-aware chunking + hybrid retrieval</td></tr>
             <tr><td>Tag / code lookup</td><td>BM25 + metadata filtering</td></tr>
-            <tr><td>SOP search</td><td>Heading chunking + dense retrieval</td></tr>
+            <tr><td>Runbook search</td><td>Heading chunking + dense retrieval</td></tr>
             <tr><td>Tables / Excel</td><td>Table-aware chunking + structured extraction</td></tr>
             <tr><td>Database Q&amp;A</td><td>SQL retrieval + LLM explanation</td></tr>
-            <tr><td>Equipment hierarchy</td><td>Graph RAG</td></tr>
+            <tr><td>Service dependency graph</td><td>Graph RAG</td></tr>
             <tr><td>Complex multi-step question</td><td>Agentic RAG</td></tr>
             <tr><td>Long documents</td><td>Parent-child chunking + reranking</td></tr>
             <tr><td>High-accuracy enterprise RAG</td><td>Hybrid retrieval + reranker + evaluator</td></tr>
@@ -621,14 +621,14 @@ Instructions:
 
         <!-- ============ 23. END-TO-END EXAMPLE ============ -->
         <h2 id="example">24 · A simple end-to-end example</h2>
-        <p>User asks: <em>“What are the input tags used for PDI1043 forecasting?”</em></p>
+        <p>User asks: <em>“What are the input metrics used for pg_latency forecasting?”</em></p>
         <div class="timeline">
-          <div class="step"><h4>1 · Query preprocessing</h4><p>Detect entity = <code>PDI1043</code>; intent = input-tag lookup.</p></div>
-          <div class="step"><h4>2 · Retrieval</h4><p>BM25 matches exact “PDI1043”; vectors match “forecasting model input tags”; metadata filter <code>plant=Ammonia, model=PDI1043</code>.</p></div>
+          <div class="step"><h4>1 · Query preprocessing</h4><p>Detect entity = <code>pg_latency</code>; intent = input-tag lookup.</p></div>
+          <div class="step"><h4>2 · Retrieval</h4><p>BM25 matches exact “pg_latency”; vectors match “forecasting model input metrics”; metadata filter <code>product=Billing, model=pg_latency</code>.</p></div>
           <div class="step"><h4>3 · Scoring</h4><p>Cosine scores semantic matches, BM25 scores exact matches, hybrid fusion combines them.</p></div>
-          <div class="step"><h4>4 · Reranking</h4><p>Reranker selects the chunks that actually list input tags.</p></div>
+          <div class="step"><h4>4 · Reranking</h4><p>Reranker selects the chunks that actually list input metrics.</p></div>
           <div class="step"><h4>5 · Context selection</h4><p>Top 3 chunks go to the LLM.</p></div>
-          <div class="step"><h4>6 · Generation</h4><p>Answer lists: <code>FI1023.PV, FIC1002.PV, TI1354.PV, PDI1012.PV, FFI1001.CPV, TI1081.PV, TI1407.PV, PDI1163.PV, PDI1043.PV</code>.</p></div>
+          <div class="step"><h4>6 · Generation</h4><p>Answer lists: <code>checkout_rps, cart_error_rate, gateway_cpu, db_conn_wait, retry_ratio, cache_hit_rate, queue_depth, tls_handshake_ms, pg_latency_p99</code>.</p></div>
           <div class="step"><h4>7 · Output evaluation</h4><p>Check the answer is supported by the chunks, all tags are included, and no extra tags were hallucinated.</p></div>
         </div>
 
@@ -647,7 +647,7 @@ Instructions:
         </ul>
         <div class="callout tip">
           <div class="c-ico">🏭</div>
-          <div class="c-body"><div class="c-title">For plant APIs, tag mappings, QC &amp; procurement, database automation</div>
+          <div class="c-body"><div class="c-title">For service APIs, tag mappings, release &amp; vendor, database automation</div>
           <p>The best-fit design is usually: <strong>section-aware + table-aware chunking · hybrid retrieval · metadata filtering · SQL retrieval for structured tables · reranking · faithfulness evaluation · citation-based final answers.</strong></p></div>
         </div>
 

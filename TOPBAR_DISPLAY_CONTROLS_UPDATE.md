@@ -124,3 +124,63 @@ own forked copies of these files.
 - **Fixed on the way:** that experiment had briefly routed `code` and `pre`
   through `--font-sans`, which silently de-monospaced every inline snippet. Code
   is explicitly `--font-mono` again.
+
+## Revision 3: left-aligned by default, a smaller phone default, one size per box
+
+Three fixes, all of them walking back a decision from Revision 2.
+
+- **Alignment is a setting again, and Left is the default.** Revision 2 made
+  justification the house style with nothing to choose. Without hyphenation the
+  browser can only buy a flush right edge out of the word spaces, and the
+  narrower the measure the more it charges — a phone column and a card are the
+  worst cases, and they are most of the reading. `html[data-reading-align]` is
+  back with `left` as the fallback, the justify rules in `office-theme.css` are
+  gated behind `[data-reading-align="justify"]`, and the Display panel has an
+  Alignment row again.
+  - The ragged-right exception list (cards, table cells, chips, quiz options)
+    ties with the gated justify selectors on specificity and sits later in the
+    file, so it still wins. Gating only the justify block was enough.
+- **The default is the bottom of the ladder on desktop and one step up on a
+  phone** — `xs` (0.88) above 860px, `s` (1.0) below. `m` (1.14) had been the
+  default everywhere, which put prose at 17.9px on a wide column where the
+  smallest step reads comfortably and fits much more on screen. The phone default
+  is deliberately the larger of the two: at 0.88 a ~360px column drops to about
+  30 characters a line. The viewport decides only the *untouched* default — an
+  explicit choice still applies on every device.
+  - Four places implement this and must agree: the head script in all 124 pages,
+    `defaultSize()` in `enhance.js`, "Reset to default", and the bare `:root`
+    `--reading-scale` pair in `office-theme.css` that covers the no-JavaScript
+    path. The `:root` rules are (0,1,0) and every `[data-reading-size]` rule is
+    (0,1,1), so a stored choice always wins over the media query.
+  - Resulting sizes at the desktop default: prose 13.8px, card/callout body
+    12.5px, tables and code 11.0px. The bottom of that range is small for
+    sustained reading; the four larger steps and the Display panel are the escape
+    hatch, and the choice persists per reader.
+- **A phone column has one text size, not three.** Below 861px `.grid-2` /
+  `.grid-3` collapse, so a card, a callout and a paragraph are the same
+  full-width block in the same measure — but they rendered at three sizes
+  (17.9 / 16.2 / 17.9px at the default scale) and two leadings (1.62 / 1.55),
+  which is why a callout following a card read as both larger and looser. Card,
+  callout, recall and quiz *body* text now take `--reader-font-size` / 1.62 on
+  phones. Titles keep their own step. The desktop ladder is unchanged: there a
+  card really is a narrower thing beside the prose.
+
+### Fixed since: the contents rail is back
+
+The `wide` width rules this file claimed to have removed were still in
+`styles.css` (lines 2088-2094), and once Revision 2 made `wide` the pre-paint
+default they hid the right-hand chapter-contents rail for every reader on every
+page, leaving the reserved `var(--toc-w)` track as a blank band. They are now
+actually gone. Outside focus mode the column is pinned by the ONE TYPE SCALE
+layer regardless, so removing them changes nothing except restoring the rail.
+
+### Known: the same properties are still declared in several places
+
+`.card p` has a `font-size` in five rules across two files at three different
+values; `.callout p` has four. `styles.css` also still carries a dead
+`html[data-reading-size="small"|"large"]` vocabulary from the four-step scale,
+which the current `xs|s|m|l|xl` attribute never matches — except `xl`, where the
+two collide. Nothing here consolidated that; the fixes above were made in the
+last layer, which is the same move that produced the pile. Untangling it means
+deleting the superseded rules in `styles.css` and the earlier normalisation
+layers in `office-theme.css`, not adding a sixth.

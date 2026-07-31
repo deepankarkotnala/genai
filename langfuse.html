@@ -41,7 +41,7 @@
      exactly — same key, same "light" default — so the pre-paint value can never
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "m", unknown width -> "wide". Text is always justified. */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:"m";var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);}catch(e){}})();</script>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "s" on phones and "xs" above 860px, unknown width -> "wide", unknown align -> "left". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var mob=!!(window.matchMedia&&window.matchMedia("(max-width:860px)").matches);var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(mob?"s":"xs");var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);}catch(e){}})();</script>
 <link rel="stylesheet" href="assets/styles.css?v=20260731b">
 <link href="assets/office-theme.css?v=20260731b" rel="stylesheet"/>
 <link href="assets/genai-motion.css?v=20260728a" rel="stylesheet"/>
@@ -125,7 +125,7 @@
         <div class="table-wrap">
           <table class="kv">
             <tr><th>Object</th><th>What it represents</th><th>Example</th></tr>
-            <tr><td><strong>Trace</strong></td><td>One end-to-end request through your app. The top-level container.</td><td>"User asked: <em>What are the input tags for PDI1043?</em>"</td></tr>
+            <tr><td><strong>Trace</strong></td><td>One end-to-end request through your app. The top-level container.</td><td>"User asked: <em>What are the input metrics for pg_latency?</em>"</td></tr>
             <tr><td><strong>Span</strong></td><td>A unit of work <em>inside</em> a trace — anything with a start/end. Spans nest.</td><td><code>retrieve</code>, <code>rerank</code>, <code>build_prompt</code></td></tr>
             <tr><td><strong>Generation</strong></td><td>A special span for an <em>LLM call</em>. Captures model, prompt, completion, tokens, cost.</td><td>The <code>gpt-4o-mini</code> call that wrote the answer</td></tr>
             <tr><td><strong>Score</strong></td><td>A quality measurement attached to a trace/generation. Numeric, boolean or categorical.</td><td><code>faithfulness = 0.9</code>, <code>thumbs_up = true</code></td></tr>
@@ -191,7 +191,7 @@ langfuse = get_client()
 @observe()                       # ← this call becomes a SPAN
 def retrieve(question: str) -> list[str]:
     # ... your vector search ...
-    return ["PDI1043.PV is an input tag for the forecasting model."]
+    return ["pg_latency_p99 is an input metric for the forecasting model."]
 
 @observe()                       # ← outermost @observe = the TRACE
 def answer_question(question: str) -> str:
@@ -205,7 +205,7 @@ def answer_question(question: str) -> str:
     )
     return resp.choices[0].message.content
 
-print(answer_question("What is PDI1043.PV?"))
+print(answer_question("What is pg_latency_p99?"))
 langfuse.flush()</code></pre></div>
 
         <h3 id="openai-wrapper">4.2 The OpenAI drop-in wrapper (auto-captures LLM calls)</h3>
@@ -238,7 +238,7 @@ llm.invoke("Explain RAG in one sentence.",
 
         <!-- 5 -->
         <h2 id="metadata">5 · Sessions, users &amp; metadata</h2>
-        <p>Traces become useful when you can group and filter them. Attach a <code>user_id</code> to see everything one person did, a <code>session_id</code> to stitch a multi-turn conversation, and <code>tags</code>/<code>metadata</code> to slice by anything (plant, model version, feature flag).</p>
+        <p>Traces become useful when you can group and filter them. Attach a <code>user_id</code> to see everything one person did, a <code>session_id</code> to stitch a multi-turn conversation, and <code>tags</code>/<code>metadata</code> to slice by anything (product area, model version, feature flag).</p>
         <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
 <pre><code>from langfuse import observe, get_client
 
@@ -247,15 +247,15 @@ def answer_question(question: str) -> str:
     get_client().update_current_trace(
         user_id="alice",
         session_id="chat_42",
-        tags=["rag", "ammonia-plant"],
-        metadata={"plant": "Ammonia", "loop": "Loop10", "app_version": "1.4.0"},
+        tags=["rag", "billing-support"],
+        metadata={"product": "Billing", "service": "Checkout", "app_version": "1.4.0"},
     )
     ...
 </code></pre></div>
         <div class="callout tip">
           <div class="c-ico">🧭</div>
           <div class="c-body"><div class="c-title">Why this matters</div>
-          <p>In the UI you can then ask: <em>"show me all low-faithfulness traces for plant=Ammonia on app_version 1.4.0"</em> — which is exactly how you find a regression introduced by a deploy.</p></div>
+          <p>In the UI you can then ask: <em>"show me all low-faithfulness traces for product=Billing on app_version 1.4.0"</em> — which is exactly how you find a regression introduced by a deploy.</p></div>
         </div>
 
         <!-- 6 -->
@@ -368,7 +368,7 @@ langfuse = get_client()
 
 # --- tiny in-memory "vector store" stands in for a real retriever ---
 DOCS = {
-    "PDI1043": "PDI1043.PV is an input tag for the Loop10 forecasting model. "
+    "pg_latency": "pg_latency_p99 is an input metric for the Checkout forecasting model. "
                "Other inputs: FI1023.PV, FIC1002.PV, TI1354.PV.",
     "deploy":  "The API is deployed via a Kubernetes Deployment and Service YAML.",
 }
@@ -438,8 +438,8 @@ def feedback(body: Feedback):
 
 # ask a question
 curl -s localhost:8000/ask -H 'content-type: application/json' \
-  -d '{"question":"What is PDI1043.PV?","user_id":"alice","session_id":"chat_42"}'
-# → {"answer":"PDI1043.PV is an input tag...","faithfulness":0.95,
+  -d '{"question":"What is pg_latency_p99?","user_id":"alice","session_id":"chat_42"}'
+# → {"answer":"pg_latency_p99 is an input metric...","faithfulness":0.95,
 #    "trace_id":"...","trace_url":"https://cloud.langfuse.com/trace/..."}
 
 # open trace_url in the browser to see the full tree, then send feedback:
