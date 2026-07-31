@@ -72,15 +72,20 @@
       id: "agents",
       label: "Understanding AI Agents",
       mark: "A",
-      blurb: "Agent Literacy course",
+      blurb: "Interview-focused agent course",
       home: "teach-agents/index.html",
+      /* The 15-lesson course is being written wave by wave; lessons 01-03 are
+         live. The five lessons of the previous course are deliberately NOT
+         listed: they contradict these on setup (they require an API key), teach
+         a codebase that no longer exists, and their source data was never part
+         of this repository. Their files remain on disk only so later waves can
+         mine two pieces of still-useful prose -- the handoff/orchestrator
+         explanation and the workflow-vs-agent decision rule. */
       pages: [
         { path: "teach-agents/index.html", title: "Course index", num: "✦", kw: "agents course overview index start" },
-        { path: "teach-agents/lessons/0001-what-is-an-agent.html", title: "What is an agent?", num: "01", kw: "agent definition loop tools chatbot" },
-        { path: "teach-agents/lessons/0002-run-your-first-agent.html", title: "Run your first agent", num: "02", kw: "run agent python gemini hands-on first" },
-        { path: "teach-agents/lessons/0003-prediction-vs-threshold.html", title: "Prediction vs. threshold", num: "03", kw: "prediction threshold forecast z-score anomaly" },
-        { path: "teach-agents/lessons/0004-orchestration.html", title: "Orchestration", num: "04", kw: "orchestration chain anomaly rca remediation multi-agent" },
-        { path: "teach-agents/lessons/0005-workflow-vs-agent.html", title: "Workflow vs. agent", num: "05", kw: "workflow autonomous agent shape decide" }
+        { path: "teach-agents/lessons/0001-llm-mechanics.html", title: "LLM mechanics", num: "01", kw: "llm messages roles context window tokens temperature determinism structured output tool calling brain abstraction support triage" },
+        { path: "teach-agents/lessons/0002-agent-loop.html", title: "The agent loop", num: "02", kw: "agent loop observe decide act termination max steps workflow chain prompt when not to search_kb trace" },
+        { path: "teach-agents/lessons/0003-tool-calling.html", title: "Tools & validation", num: "03", kw: "tool schema validation arguments typed unknown tool parallel sequential read_ticket lookup_order trusted untrusted injection" }
       ]
     },
     {
@@ -500,8 +505,36 @@
     handle.tabIndex = 0;
     app.appendChild(handle);
 
+    /* The shell renders the desktop sidebar at `--density` (0.9) via `zoom`, so
+       a layout width of W is only 0.9W on screen. The handle is `position:
+       fixed` and therefore outside the zoomed subtree — it moves 1:1 with the
+       pointer while the edge it is dragging moves at 0.9. Dividing the pointer
+       delta by the factor makes the visible edge track the cursor exactly.
+       Read from the computed value rather than hard-coded so the stylesheet
+       stays the single source of truth (and mobile, where it is 1, needs no
+       special case). */
+    function density() {
+      var raw = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--density"));
+      return raw > 0 ? raw : 1;
+    }
+
+    /* Read once, here, before apply() ever writes an inline --sidebar-w on
+       <html>: after that the computed value is whatever the reader last dragged
+       to, and a minimum derived from it would rise to meet the current width and
+       make the panel impossible to shrink.
+
+       The old comment said this "mirrors the compact desktop --sidebar-w token
+       in styles.css" and mirrored clamp(220px, 15vw, 252px) — one of five
+       competing declarations, and not the one that actually won. There is a
+       single token now, so take the floor from it and keep the literals only for
+       the case where it is missing entirely. */
+    var STYLESHEET_DESKTOP_W = (function () {
+      var declared = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--sidebar-w"));
+      return declared > 0 ? Math.round(declared) : 0;
+    })();
+
     function desktopMinimum() {
-      // Mirrors the compact desktop --sidebar-w token in styles.css.
+      if (STYLESHEET_DESKTOP_W) return STYLESHEET_DESKTOP_W;
       return Math.round(Math.max(220, Math.min(252, window.innerWidth * 0.15)));
     }
 
@@ -523,8 +556,12 @@
     function activeMaximum() {
       var minimum = activeMinimum();
       if (isMobile()) return Math.max(minimum, Math.floor(window.innerWidth * 0.98));
-      // Keep a useful reading area even on smaller desktop windows.
-      return Math.max(minimum, Math.min(SIDEBAR_MAX_WIDTH, window.innerWidth - 560));
+      /* Keep a useful reading area even on smaller desktop windows. The 560px
+         budget is screen space but the value returned is a layout width, so it
+         has to be divided back out by the density factor — otherwise the cap
+         reserves 10% less for the article than it reads as. */
+      var budget = (window.innerWidth - 560) / density();
+      return Math.max(minimum, Math.min(SIDEBAR_MAX_WIDTH, Math.floor(budget)));
     }
 
     function activeCurrent() {
@@ -576,7 +613,10 @@
 
     handle.addEventListener("pointermove", function (event) {
       if (!dragging) return;
-      apply(startWidth + event.clientX - startX, false);
+      // Pointer travel is in screen pixels; --sidebar-w is a layout width that
+      // the shell then scales by --density. Divide so the edge follows the
+      // cursor 1:1 instead of lagging it by the factor.
+      apply(startWidth + (event.clientX - startX) / density(), false);
     });
 
     function finishResize(event) {

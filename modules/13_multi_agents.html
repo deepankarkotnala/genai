@@ -42,7 +42,7 @@
      exactly — same key, same "light" default — so the pre-paint value can never
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "m", unknown width -> "wide". Text is always justified. */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:"m";var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);}catch(e){}})();</script>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "s" on phones and "xs" above 860px, unknown width -> "wide", unknown align -> "left". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var mob=!!(window.matchMedia&&window.matchMedia("(max-width:860px)").matches);var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(mob?"s":"xs");var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);}catch(e){}})();</script>
 <link href="../assets/styles.css?v=20260731b" rel="stylesheet"/>
 <link href="../assets/office-theme.css?v=20260731b" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260728a" rel="stylesheet"/>
@@ -327,7 +327,7 @@ writer   = <span class="tok-fn">Agent</span>(role=<span class="tok-str">"Writer"
 analyst  = <span class="tok-fn">Agent</span>(role=<span class="tok-str">"Analyst"</span>, goal=<span class="tok-str">"Reason over data"</span>, backstory=<span class="tok-str">"..."</span>, llm=strong)
 
 crew = <span class="tok-fn">Crew</span>(agents=[analyst, writer],
-            tasks=[<span class="tok-fn">Task</span>(description=<span class="tok-str">"Summarize plant downtime causes."</span>,
+            tasks=[<span class="tok-fn">Task</span>(description=<span class="tok-str">"Summarize checkout incident causes."</span>,
                         expected_output=<span class="tok-str">"Ranked list + 1-paragraph summary"</span>,
                         agent=analyst)],
             process=Process.sequential)
@@ -428,7 +428,7 @@ crew = <span class="tok-fn">Crew</span>(agents=[analyst, writer],
 <!-- ============ 14. MINI PROJECT ============ -->
 <h2 id="mini-project">14 · Mini project — "Research-&amp;-Report Crew"</h2>
 <div class="card">
-<p><strong>Goal:</strong> A supervisor-led crew that turns a topic into a cited 1-page report — the pattern behind the Multi-Agent Plant Assistant capstone.</p>
+<p><strong>Goal:</strong> A supervisor-led crew that turns a topic into a cited 1-page report — the pattern behind the Multi-Agent SaaS Service-Operations Assistant capstone.</p>
 <h4>Requirements</h4>
 <ul>
 <li>Researcher (search/RAG tools), Analyst (reasoning), Writer (drafting), Critic (review loop)</li>
@@ -444,7 +444,7 @@ crew = <span class="tok-fn">Crew</span>(agents=[analyst, writer],
 <div class="table-wrap"><table>
 <thead><tr><th>Project</th><th>How multi-agent applies</th></tr></thead>
 <tbody>
-<tr><td><strong>Multi-Agent Plant Assistant</strong></td><td>This module <em>is</em> the project: supervisor routing to manuals/telemetry/maintenance specialists.</td></tr>
+<tr><td><strong>Multi-Agent SaaS Service-Operations Assistant</strong></td><td>This module <em>is</em> the project: supervisor routing to manuals/telemetry/maintenance specialists.</td></tr>
 <tr><td><strong>EDA Agent</strong></td><td>A planner delegating to data-loading, stats, and visualization specialists.</td></tr>
 <tr><td><strong>ElasticSearch Investigation Agent</strong></td><td>A triage agent routing to log-search vs metrics-analysis specialists, each with scoped MCP tools.</td></tr>
 <tr><td><strong>SQL Analysis Agent</strong></td><td>Optionally split query-writing, validation, and explanation into specialist roles.</td></tr>

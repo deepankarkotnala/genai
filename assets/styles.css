@@ -36,14 +36,19 @@
   --red:   #b34f73;  --red-soft:   rgba(179,79,115,0.10);
   --purple:#107c41;  --purple-soft:rgba(16,124,65,0.11);
 
-  /* Type */
-  --font-sans: ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-  --font-mono: ui-monospace, "SF Mono", "Cascadia Code", "JetBrains Mono", Menlo, Consolas, monospace;
+  /* Type — the @font-face blocks for Inter and JetBrains Mono live in
+     office-theme.css, which every page loads after this file. These stacks
+     name the same two faces so the type is identical whichever stylesheet
+     ends up winning the token. */
+  --font-sans: "Inter", ui-sans-serif, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", "Cascadia Code", Menlo, Consolas, monospace;
 
   /* Layout — fluid so it stays comfortable from 720p laptops up to large desktops.
      Widths/spacing scale with the viewport via clamp(); see the fluid type scale
      in the Typography section below. */
-  --sidebar-w: clamp(224px, 17vw, 268px);
+  /* --sidebar-w is declared once, in office-theme.css, which loads later and
+     so won every one of the declarations that used to sit here. See the
+     SIDEBAR GEOMETRY note there. */
   --toc-w: clamp(170px, 14vw, 220px);
   --content-max: 900px;          /* denser: a wider reading column, docs-style */
   --radius: 14px;
@@ -112,7 +117,7 @@ a:hover { color: var(--accent-hover); text-decoration: none; }
 img, svg { max-width: 100%; }
 
 /* ---------- App shell ---------- */
-.app { display: grid; grid-template-columns: var(--sidebar-w) minmax(0,1fr); min-height: 100vh; }
+.app { display: grid; grid-template-columns: var(--sidebar-track) minmax(0,1fr); min-height: 100vh; }
 
 /* Desktop sidebar collapse (toggled by the ☰ button; choice persisted).
    The grid drops to a single column and the sidebar is removed from flow so
@@ -661,7 +666,6 @@ tbody tr:hover { background: var(--bg-subtle); }
   --shadow-md: 0 18px 52px rgba(32, 28, 55, .095), 0 3px 10px rgba(32, 28, 55, .05);
   --shadow-lg: 0 32px 90px rgba(32, 28, 55, .14), 0 10px 30px rgba(32, 28, 55, .06);
 
-  --sidebar-w: clamp(244px, 18vw, 292px);
   --toc-w: clamp(176px, 14vw, 222px);
   --content-max: 860px;
   --radius-sm: 12px;
@@ -2082,13 +2086,18 @@ html[data-reading-contrast="high"] .content :is(.card, .callout, .quiz, .demo, .
   .reader-segment button { transition: none; }
 }
 
-/* Wide measure earns real space by folding away the secondary TOC rail. */
-html[data-reading-width="wide"] .content-wrap {
-  grid-template-columns: minmax(0, 1fr);
-  max-width: 1320px;
-}
-html[data-reading-width="wide"] .toc-rail { display: none; }
-html[data-reading-width="wide"] .content { margin-inline: auto; }
+/* The three regular-mode width rules that used to live here are gone. They were
+   already declared removed in TOPBAR_DISPLAY_CONTROLS_UPDATE.md ("the per-step
+   max-width, and hiding the contents rail at Wide/Full") but survived the edit,
+   and when Revision 2 made `wide` the pre-paint default they stopped affecting
+   only opt-in readers and started hiding the chapter-contents rail for
+   everyone, on every page, on a first visit. The reserved `var(--toc-w)` grid
+   track stayed behind as a blank band down the right of the article.
+
+   Text width is a focus-mode setting; outside focus mode the column is pinned
+   to `var(--content-max) !important` by the ONE TYPE SCALE layer in
+   office-theme.css, so none of these rules could change the measure anyway —
+   the only thing they still did was cause that bug. */
 html[data-reading-width="narrow"] .content { margin-inline: auto; }
 
 /* Do not rely only on inherited custom properties for the strongest mode;
@@ -2947,7 +2956,7 @@ html[data-theme="dark"] .diagram { box-shadow:var(--shadow-sm),inset 0 1px 0 rgb
   z-index: 65;
   top: 0;
   bottom: 0;
-  left: calc(var(--sidebar-w) - 7px);
+  left: calc(var(--sidebar-track) - 7px);
   width: 14px;
   border: 0;
   cursor: ew-resize;
@@ -3150,7 +3159,6 @@ html[data-theme="dark"] .nav .num { background: rgba(173, 193, 226, .07); }
    path is visible without making touch layouts or small screens cramped. */
 @media (min-width: 861px) {
   :root {
-    --sidebar-w: clamp(220px, 15vw, 252px);
     --toc-w: clamp(156px, 11.5vw, 196px);
     --content-max: 960px;
     --header-h: clamp(52px, 4.6vw, 60px);
@@ -3268,7 +3276,6 @@ html[data-theme="dark"] .nav .num { background: rgba(173, 193, 226, .07); }
    ========================================================================= */
 @media (min-width: 861px) {
   :root {
-    --sidebar-w: clamp(198px, 13.2vw, 226px);
     --toc-w: clamp(118px, 8.3vw, 142px);
     --content-max: none;
     --header-h: 42px;
@@ -3648,7 +3655,6 @@ html[data-theme="dark"] .toc-textbook a.active {
 /* Desktop density: smaller typography and controls, wider reading canvas. */
 @media (min-width: 861px) {
   :root {
-    --sidebar-w: clamp(184px, 12.2vw, 210px);
     --toc-w: clamp(154px, 10.1vw, 176px);
     --header-h: 38px;
     --fs-base: clamp(13.5px, .12vw + 12.5px, 14px);
@@ -4033,7 +4039,7 @@ html[data-theme="dark"] .toc-textbook a.active {
 }
 
 @media (min-width: 861px) and (max-width: 1080px) {
-  :root { --toc-w: 148px; --sidebar-w: 184px; }
+  :root { --toc-w: 148px; }
   .toc.toc-textbook a { grid-template-columns: 19px minmax(0, 1fr); gap: 4px; font-size: 8.9px; }
 }
 
@@ -4041,9 +4047,12 @@ html[data-theme="dark"] .toc-textbook a.active {
    90% (fonts, spacing and elements together). The right-hand chapter-contents
    TOC rail is intentionally left at full size. Desktop only — mobile unchanged. */
 @media (min-width: 861px) {
-  html .app { grid-template-columns: calc(var(--sidebar-w) * 0.9) minmax(0, 1fr); }
-  .app > .sidebar { zoom: 0.9; height: calc(100vh / 0.9); }
-  .content-wrap > .content { zoom: 0.9; }
+  /* The sidebar half of this block moved to office-theme.css, next to the
+     geometry tokens it depends on: `html .app` (0,1,1) outranked that file's
+     own `.app` rule while consuming a variable that file owns, and the handle
+     was positioned from the unscaled width. Only the article scaling is left,
+     and it reads the shared factor rather than repeating the literal. */
+  .content-wrap > .content { zoom: var(--density); }
 }
 
 /* =========================================================================

@@ -42,7 +42,7 @@
      exactly — same key, same "light" default — so the pre-paint value can never
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "m", unknown width -> "wide". Text is always justified. */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:"m";var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);}catch(e){}})();</script>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "s" on phones and "xs" above 860px, unknown width -> "wide", unknown align -> "left". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var mob=!!(window.matchMedia&&window.matchMedia("(max-width:860px)").matches);var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(mob?"s":"xs");var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);}catch(e){}})();</script>
 <link href="../assets/styles.css?v=20260731b" rel="stylesheet"/>
 <link href="../assets/office-theme.css?v=20260731b" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260728a" rel="stylesheet"/>
@@ -312,36 +312,36 @@
 <p><strong>Deployment:</strong> stdio for local/desktop; containerized HTTP transport behind auth for shared use; one server reused by Projects 7 and 9.</p>
 <div class="callout warn"><div class="c-ico">🏭</div><div class="c-body"><div class="c-title">Production considerations</div><p>Least privilege (read-only, allow-list, bounded size); auth on HTTP transport; treat returned log content as untrusted (injection); audit every call; versioned tool schemas so client upgrades don't break (Module 09).</p></div></div>
 <!-- =================================================================
-             PROJECT 9 — MULTI-AGENT PLANT ASSISTANT
+             PROJECT 9 — MULTI-AGENT SAAS SERVICE-OPERATIONS ASSISTANT
         ================================================================== -->
-<h2 id="p9">9 · Multi-Agent Plant Assistant</h2>
-<p><span class="pill red">Advanced</span>  A supervisor coordinating specialist agents over manuals, telemetry, and maintenance for an industrial plant. <span class="pill blue">Modules 06, 09, 12, 13, 14</span></p>
+<h2 id="p9">9 · Multi-Agent SaaS Service-Operations Assistant</h2>
+<p><span class="pill red">Advanced</span>  A supervisor coordinating specialist agents over runbooks, service telemetry and change management for a SaaS platform. <span class="pill blue">Modules 06, 09, 12, 13, 14</span></p>
 <div class="diagram">
-<svg aria-label="Plant assistant multi-agent" role="img" viewbox="0 0 620 210" width="620">
+<svg aria-label="Service-operations assistant multi-agent" role="img" viewbox="0 0 620 210" width="620">
 <defs><marker id="ar9" markerheight="9" markerwidth="9" orient="auto" refx="7" refy="3"><path d="M0,0 L7,3 L0,6 Z" fill="var(--text-muted)"></path></marker></defs>
 <rect class="flow-node-accent" height="46" rx="11" width="160" x="230" y="20"></rect><text class="flow-label" text-anchor="middle" x="310" y="48">Supervisor</text>
-<rect class="flow-node" height="50" rx="10" width="150" x="20" y="130"></rect><text class="flow-label" text-anchor="middle" x="95" y="152">Manuals agent</text><text class="flow-sub" text-anchor="middle" x="95" y="168">RAG over manuals</text>
+<rect class="flow-node" height="50" rx="10" width="150" x="20" y="130"></rect><text class="flow-label" text-anchor="middle" x="95" y="152">Runbooks agent</text><text class="flow-sub" text-anchor="middle" x="95" y="168">RAG over runbooks</text>
 <rect class="flow-node" height="50" rx="10" width="150" x="235" y="130"></rect><text class="flow-label" text-anchor="middle" x="310" y="152">Telemetry agent</text><text class="flow-sub" text-anchor="middle" x="310" y="168">ES/metrics (MCP)</text>
-<rect class="flow-node" height="50" rx="10" width="150" x="450" y="130"></rect><text class="flow-label" text-anchor="middle" x="525" y="152">Maintenance agent</text><text class="flow-sub" text-anchor="middle" x="525" y="168">tickets / actions</text>
+<rect class="flow-node" height="50" rx="10" width="150" x="450" y="130"></rect><text class="flow-label" text-anchor="middle" x="525" y="152">Change agent</text><text class="flow-sub" text-anchor="middle" x="525" y="168">tickets / actions</text>
 <path class="flow-arrow" d="M270,66 L110,128" style="marker-end:url(#ar9)"></path><path class="flow-arrow" d="M310,66 L310,128" style="marker-end:url(#ar9)"></path><path class="flow-arrow" d="M350,66 L515,128" style="marker-end:url(#ar9)"></path>
 </svg>
 <div class="diagram-caption">Figure 3 · Supervisor (Module 13) routes to specialists, each using RAG (07) and MCP tools (09), orchestrated on LangGraph (12).</div>
 </div>
 <div class="code-block"><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> structure</span><button class="copy-btn">Copy</button></div>
-<pre><code>plant-assistant/
+<pre><code>service-ops-assistant/
 ├── agents/
 │   ├── supervisor.py      <span class="tok-com"># routes + assembles (Module 13)</span>
-│   ├── manuals.py         <span class="tok-com"># RAG over equipment manuals (07/11)</span>
+│   ├── runbooks.py        <span class="tok-com"># RAG over runbooks &amp; API docs (07/11)</span>
 │   ├── telemetry.py       <span class="tok-com"># queries ES MCP server (Project 8)</span>
-│   └── maintenance.py     <span class="tok-com"># tickets; write actions need approval</span>
-├── graph/plant_graph.py   <span class="tok-com"># LangGraph supervisor + workers</span>
+│   └── change.py          <span class="tok-com"># tickets; write actions need approval</span>
+├── graph/ops_graph.py     <span class="tok-com"># LangGraph supervisor + workers</span>
 ├── mcp_clients/           <span class="tok-com"># connect to ES MCP server</span>
 └── api/main.py</code></pre></div>
-<p><strong>Data flow:</strong> "pump P-12 is vibrating, what do I do?" → supervisor → manuals agent (spec/limits) + telemetry agent (recent vibration trend via ES MCP) in parallel → maintenance agent drafts an action → human approves → cited recommendation.</p>
-<p><strong>Component design:</strong> supervisor topology (Module 13); each specialist has scoped tools (manuals=RAG, telemetry=ES MCP from Project 8); write actions gated by human-in-the-loop (Module 12).</p>
+<p><strong>Data flow:</strong> "checkout latency spiked on the payment gateway, what do I do?" → supervisor → runbooks agent (owner, thresholds, rollback steps) + telemetry agent (recent p99 trend via ES MCP) in parallel → change agent drafts a mitigation → human approves → cited recommendation.</p>
+<p><strong>Component design:</strong> supervisor topology (Module 13); each specialist has scoped tools (runbooks=RAG, telemetry=ES MCP from Project 8); write actions gated by human-in-the-loop (Module 12).</p>
 <p><strong>Implementation plan:</strong> ① build each specialist standalone → ② supervisor routing → ③ structured handoffs (brief, not transcript) → ④ approval on write actions → ⑤ per-agent tracing + eval vs single-agent baseline.</p>
 <p><strong>Deployment:</strong> supervisor + worker services; shared MCP servers; Postgres checkpointer; durable HITL.</p>
-<div class="callout danger"><div class="c-ico">🛡️</div><div class="c-body"><div class="c-title">Production considerations</div><p>Bounded handoffs (loops); human approval for any physical/maintenance action; per-agent attribution for debugging; right-sized models per role; safety guardrails — incorrect plant advice has real-world consequences.</p></div></div>
+<div class="callout danger"><div class="c-ico">🛡️</div><div class="c-body"><div class="c-title">Production considerations</div><p>Bounded handoffs (loops); human approval for any change or customer-visible action; per-agent attribution for debugging; right-sized models per role; safety guardrails — an incorrect mitigation applied to production has real consequences.</p></div></div>
 <!-- =================================================================
              PROJECT 10 — ENTERPRISE GENAI PLATFORM
         ================================================================== -->

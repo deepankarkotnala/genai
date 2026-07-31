@@ -4,18 +4,77 @@
    This file is loaded after all section-specific styles.
    ========================================================================== */
 
+/* --------------------------------------------------------------------------
+   Typefaces — self-hosted so the portal keeps working offline.
+   Inter carries UI, headings, and prose; JetBrains Mono carries code and the
+   letterspaced uppercase eyebrow labels. Both are the variable (wght axis)
+   cuts, so one file per style covers every weight the theme asks for and
+   `font-weight: 650` resolves to a real 650 instead of snapping to bold.
+   Files live in assets/fonts/ and the URLs below resolve relative to this
+   stylesheet, so pages in subdirectories load them without rewriting paths.
+   -------------------------------------------------------------------------- */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(fonts/inter-latin-wght-normal.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(fonts/inter-latin-ext-wght-normal.woff2) format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF,
+    U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(fonts/inter-latin-wght-italic.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url(fonts/jetbrains-mono-latin-wght-normal.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: italic;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url(fonts/jetbrains-mono-latin-wght-italic.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
 :root {
-  --font-sans: "Segoe UI Variable", "Segoe UI", Inter, system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
-  --font-mono: "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  --font-sans: "Inter", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Code", "SFMono-Regular", Consolas, monospace;
   /* The face for running prose. A serif was tried here and rejected: this is
      a technical portal sitting next to code, and it should read clean and
-     plain rather than book-like. It leads with `system-ui`, so prose renders
-     in whatever the reader's own operating system uses for interface text —
-     Segoe UI Variable Text on Windows 11, SF on macOS, Roboto on Android.
-     That is the most familiar, least noticeable face available on any given
-     machine, and it needs no download, which matters because the portal has
-     to work offline. Headings keep --font-sans. */
-  --font-read: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+     plain rather than book-like. Prose now shares Inter with the headings and
+     UI so the whole page reads as one typographic system — the earlier
+     `system-ui`-first stack existed only to avoid a download, and that reason
+     is gone since Inter is self-hosted above and works offline. The system
+     stack stays behind it as the fallback if the font files ever go missing. */
+  --font-read: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
     "Helvetica Neue", Arial, sans-serif;
 
   --bg: #f3f4f6;
@@ -74,7 +133,32 @@
     0 8px 18px -8px rgba(22, 27, 35, .09),
     0 22px 46px -18px rgba(22, 27, 35, .15);
 
+  /* SIDEBAR GEOMETRY — one source of truth.
+     `--sidebar-w` had been declared seven times across two files (four of them
+     inside `@media (min-width: 861px)` blocks in styles.css) and every one of
+     them was dead: this file loads later and media queries add no specificity,
+     so the last plain `:root` declaration won on every screen. The narrow-
+     desktop step that meant to drop the rail to 184px between 861 and 1080px
+     never applied. They are gone; this is the only declaration.
+
+     `--density` is the desktop density factor. The shell renders the left nav
+     and the article at 90% via `zoom`, and the factor used to be written as a
+     bare `0.9` in three unrelated places — the grid track, the sidebar's own
+     `zoom`, and its height correction — while the resize handle was positioned
+     from the *unscaled* `--sidebar-w` and so floated ~25px out in the gutter,
+     detached from the edge it was supposed to be dragging.
+
+     The distinction that fixes it:
+       --sidebar-w      layout width — what the resizer stores and JS writes
+       --sidebar-track  what you actually see, after density scaling
+     Anything positioned against the sidebar's visible edge uses the track. */
   --sidebar-w: 238px;
+  --density: .9;
+  --sidebar-track: calc(var(--sidebar-w) * var(--density));
+  /* No-JS fallback for the mobile drawer; sitenav.js overwrites it on <html>
+     once the reader drags it. Without a value here `min(98vw, var(--x))` is
+     invalid at parse time and the width silently falls back to another rule. */
+  --mobile-sidebar-w: 318px;
   --toc-w: 214px;
   --content-max: 1040px;
   --reading-line: 86ch;
@@ -165,6 +249,14 @@ body {
   line-height: 1.55;
   background-image: none !important;
   transition: none;
+  /* Inter is a variable font with an optical-size-sensitive design; letting the
+     browser pick the grade keeps small UI text from looking thin and large
+     headings from looking clotted. Grayscale smoothing matches the crisp,
+     lightly-weighted look Inter is drawn for rather than macOS's default
+     subpixel bolding. */
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 body::before,
@@ -181,7 +273,7 @@ a:hover { color: var(--accent-hover); text-shadow: none !important; }
 /* --- Application shell -------------------------------------------------- */
 .app {
   min-height: 100vh;
-  grid-template-columns: var(--sidebar-w) minmax(0, 1fr);
+  grid-template-columns: var(--sidebar-track) minmax(0, 1fr);
   isolation: auto;
 }
 
@@ -189,7 +281,13 @@ a:hover { color: var(--accent-hover); text-shadow: none !important; }
   position: sticky;
   top: 0;
   width: auto;
-  height: 100vh;
+  /* Density scaling lives here rather than in a separate `html .app` override
+     at the bottom of styles.css, which is where it was and which outranked this
+     rule by specificity while depending on a variable this file defines. The
+     height divides the factor back out so a 90%-zoomed panel still covers the
+     viewport instead of ending 10% short. */
+  zoom: var(--density);
+  height: calc(100vh / var(--density));
   padding: 0;
   overflow-x: hidden;
   overflow-y: auto;
@@ -385,7 +483,10 @@ a:hover { color: var(--accent-hover); text-shadow: none !important; }
 
 .sidebar-resizer {
   width: 8px;
-  left: calc(var(--sidebar-w) - 4px);
+  /* The track, not --sidebar-w: the handle is `position: fixed`, so it sits
+     outside the zoomed subtree and is not scaled with the panel. Positioning it
+     from the unscaled width is what detached it from the sidebar edge. */
+  left: calc(var(--sidebar-track) - 4px);
 }
 .sidebar-resizer::after {
   width: 1px;
@@ -1434,6 +1535,13 @@ body.focus-mode .content > h4 { max-width: none; }
     --fs-h2: 19.5px;
     --fs-h3: 15px;
     --fs-hero: clamp(31px, 9vw, 42px);
+    /* The density scaling is a desktop measure: it buys back screen on a wide
+       canvas. A phone drawer is already sized as a fraction of the viewport, so
+       shrinking it again only makes the tap targets smaller. Setting the factor
+       to 1 here neutralises the `zoom` and the height correction together, and
+       --sidebar-track collapses to --sidebar-w, which is what the drawer rules
+       below already assume. */
+    --density: 1;
   }
   .app { display: block; }
   .main { width: 100%; }
@@ -2283,11 +2391,20 @@ body:not(.focus-mode) .office-ribbon a:focus-visible {
    and ribbon keep the root values. Only the handful of components that hard-
    code a px size (tables, code, cards, callouts, quizzes) need restating.
    ========================================================================= */
-/* Five steps, evenly spaced, and the second is the default — the old scale
-   started too small and topped out where several readers wanted to begin. The
-   :root value matches "m" so the page is correct even before the pre-paint
-   script runs and if scripting is off entirely. */
-:root { --reading-scale: 1.14; }
+/* Five steps, evenly spaced. The default is the smallest step on desktop ("xs")
+   and the second smallest on a phone ("s") — a wide column reads comfortably at
+   the bottom of the ladder and fits far more on screen, while a ~360px column
+   at that multiplier drops to about 30 characters a line.
+
+   The bare `:root` values below are the no-JavaScript path: they mirror those
+   two defaults so the page is right before the pre-paint script runs, and stays
+   right if scripting is off entirely. They are (0,1,0), so every explicit
+   `html[data-reading-size="…"]` rule (0,1,1) still outranks them whatever the
+   order — a reader's stored choice is never overridden by the media query. */
+:root { --reading-scale: .88; }
+@media (max-width: 860px) {
+  :root { --reading-scale: 1; }
+}
 html[data-reading-size="xs"] { --reading-scale: .88; }
 html[data-reading-size="s"] { --reading-scale: 1; }
 html[data-reading-size="m"] { --reading-scale: 1.14; }
@@ -2328,33 +2445,43 @@ html:root { --reader-font-size: calc(15.7px * var(--reading-scale)); }
 .content .recall .a { font-size: calc(13px * var(--reading-scale)); }
 .content .demo-title { font-size: calc(13px * var(--reading-scale)); }
 
-/* ---- JUSTIFIED PROSE ----
-   Justification is now the house style rather than a setting: one way for the
-   portal to read, everywhere, with nothing to choose. It applies to running
-   prose only — headings, code, tables and chips keep their own alignment, and
-   justifying a two-word table cell only opens gaps.
+/* ---- ALIGNMENT: ragged-right by default, justified on request ----
+   Left-aligned is the default and justification is opt-in, via
+   html[data-reading-align="justify"]. Forced justification shipped briefly as
+   the house style and was wrong for this portal: without hyphenation the
+   browser can only pay for a flush right edge out of the word spaces, and the
+   narrower the measure the more it has to charge — a phone column or a card is
+   where it looks worst, and those are most of the reading. An even word space
+   and a ragged edge is the safer default; the flush edge is one tap away for
+   readers who prefer it.
+
+   Justification applies to running prose only — headings, code, tables and
+   chips keep their own alignment, and justifying a two-word table cell only
+   opens gaps. The exceptions immediately below tie with these selectors on
+   specificity and come later in the file, which is what pulls narrow contexts
+   back to ragged-right even when justification is on.
 
    Words are never split. Automatic hyphenation was tried and rejected: it
    produced breaks like "nor- / mally" mid-paragraph, and a hyphen the reader
    has to reassemble costs more than the tighter spacing buys. `hyphens: manual`
    leaves the browser to distribute the slack between words instead, and still
    honours an explicit &shy; if content ever wants one. */
-.content p,
-.content li,
-.content dd,
-.content blockquote,
-.content .lead,
-.hero p,
-.hero .lead,
+html[data-reading-align="justify"] .content p,
+html[data-reading-align="justify"] .content li,
+html[data-reading-align="justify"] .content dd,
+html[data-reading-align="justify"] .content blockquote,
+html[data-reading-align="justify"] .content .lead,
+html[data-reading-align="justify"] .hero p,
+html[data-reading-align="justify"] .hero .lead,
 /* The hub and the question bank name their reading column differently; this is
    about text on the page, not about one page family. */
-.ih-content p,
-.ih-content li,
-.ih-content .lead,
-.prep-content p,
-.prep-content li,
-.prep-content .lead,
-.dsa-chead p {
+html[data-reading-align="justify"] .ih-content p,
+html[data-reading-align="justify"] .ih-content li,
+html[data-reading-align="justify"] .ih-content .lead,
+html[data-reading-align="justify"] .prep-content p,
+html[data-reading-align="justify"] .prep-content li,
+html[data-reading-align="justify"] .prep-content .lead,
+html[data-reading-align="justify"] .dsa-chead p {
   text-align: justify;
   /* Spacing between words absorbs the slack — the alternative,
      inter-character, stretches inside words and reads as broken tracking. */
@@ -2831,6 +2958,32 @@ html[data-theme="dark"] .content dt { color: var(--prose-strong); }
 /* A callout spans the full column, so it keeps body-prose size — it is prose
    in a box, not a card. */
 .content .callout p { font-size: var(--reader-font-size); line-height: 1.62; }
+
+/* ---- 1b. On a phone the column has one text size, not three ----
+   The size ladder above (prose > callout > card) reads as deliberate on a wide
+   screen, where a card genuinely is a narrower thing sitting in a grid beside
+   the prose. Below 861px `.grid-2` / `.grid-3` collapse to one column, so a
+   card, a callout and a paragraph are all the same full-width block in the same
+   measure — and the step between them stops signalling anything and reads as
+   three arbitrary sizes stacked on top of each other. Worse, the card and the
+   callout also disagreed on leading (1.55 against 1.62), so a callout following
+   a card looked both larger and looser for no reason the reader can see.
+
+   One size and one leading for every text block in the column. The narrow-
+   measure argument for the smaller card step is a desktop argument; it does not
+   survive the grid collapsing. */
+@media (max-width: 860px) {
+  /* Body text only. The titles (.card h4, .c-title, .recall summary) keep their
+     own step so the weight-plus-size hierarchy inside a box survives. */
+  .content .card p,
+  .content .card li,
+  .content .callout p,
+  .content .recall .a,
+  .content .quiz .q {
+    font-size: var(--reader-font-size);
+    line-height: 1.62;
+  }
+}
 /* A card title smaller than its own body text is the giveaway that these were
    sized independently; the title steps back above it. */
 .content .card h3,

@@ -327,11 +327,21 @@
      changed from here:
 
        key    "gp.reading"
-       value  {"size":"xs|s|m|l|xl","width":"default|wide|full"}
+       value  {"size":"xs|s|m|l|xl","width":"default|wide|full","align":"left|justify"}
 
-     Anything unrecognised falls back to "m" for size and "wide" for width, so
-     values stored under the previous four-step scale land on the new default.
-     Text is justified everywhere and is no longer a setting.
+     Anything unrecognised falls back to "wide" for width, "left" for align, and
+     for size to "s" on a phone / "xs" above 860px, so values stored under the
+     previous four-step scale land on a sensible default for the device.
+
+     The size default is the only one that depends on the viewport, and the
+     phone default is the *larger* of the two, which looks backwards until you
+     remember the ladder is one set of multipliers over the same type tokens on
+     every screen. On a desktop measure the column is wide enough that the
+     smallest step still gives a long line and the page holds much more at once,
+     so "xs" is the default there. On a ~360px column that same multiplier drops
+     to roughly 30 characters a line, below the comfortable range, so the phone
+     starts one step up at "s". A reader who picks a size explicitly gets it on
+     every device — only the untouched default differs.
 
      Scope of each setting:
        size   everywhere
@@ -351,20 +361,32 @@
      the pre-Office palette, so nothing here writes them; clearLegacyReading-
      Classes() still strips any left over from an old session. */
   var READING_KEY = "gp.reading";
-  // Five steps; "m" is the default. Ids are deliberately not "default"/"large"
-  // any more — the old ids implied a default that is no longer the default,
-  // and a stored value from the previous scale simply falls back to "m".
+  // Five steps. Ids are deliberately not "default"/"large" any more — the old
+  // ids implied a default that is no longer the default, and a stored value
+  // from the previous scale simply falls back to defaultSize().
   var SIZES = ["xs", "s", "m", "l", "xl"];
   var WIDTHS = ["default", "wide", "full"];
+  var ALIGNS = ["left", "justify"];
+
+  /* Kept in step with the pre-paint script in every page's <head>, which runs
+     the same test before first paint. If these two disagree the lesson reflows
+     one step on load, which is the exact thing the head script exists to
+     prevent. */
+  function defaultSize() {
+    return window.matchMedia && window.matchMedia("(max-width: 860px)").matches ? "s" : "xs";
+  }
 
   function readReadingSettings() {
     var stored = {};
     try { stored = JSON.parse(getStored(READING_KEY, "{}")) || {}; } catch (error) { stored = {}; }
     return {
-      size: SIZES.indexOf(stored.size) >= 0 ? stored.size : "m",
+      size: SIZES.indexOf(stored.size) >= 0 ? stored.size : defaultSize(),
       // Wide is the default measure: on the wide screens where focus mode is
       // actually used, the old default left two thirds of the canvas empty.
-      width: WIDTHS.indexOf(stored.width) >= 0 ? stored.width : "wide"
+      width: WIDTHS.indexOf(stored.width) >= 0 ? stored.width : "wide",
+      // Ragged-right is the default; see the ALIGNMENT note in office-theme.css
+      // for why forced justification was withdrawn.
+      align: ALIGNS.indexOf(stored.align) >= 0 ? stored.align : "left"
     };
   }
 
@@ -372,6 +394,7 @@
     var root = document.documentElement;
     root.setAttribute("data-reading-size", settings.size);
     root.setAttribute("data-reading-width", settings.width);
+    root.setAttribute("data-reading-align", settings.align);
     /* Focus mode caps its canvas with --focus-measure, selected by
        data-focus-width. It used to carry its own Narrow/Medium/Wide/Full
        control, which meant two widgets writing two stored values for one
@@ -396,6 +419,10 @@
       { value: "m", label: "A", cls: "sz-3", name: "Standard text" },
       { value: "l", label: "A", cls: "sz-4", name: "Large text" },
       { value: "xl", label: "A", cls: "sz-5", name: "Extra large text" }
+    ];
+    var ALIGN_CHOICES = [
+      { value: "left", label: "Left", name: "Ragged right edge — even word spacing" },
+      { value: "justify", label: "Justified", name: "Flush right edge — word spacing varies per line" }
     ];
     // Focus mode only; see the scope note above applyReadingSettings.
     var WIDTH_CHOICES = [
@@ -440,6 +467,7 @@
       "</button></div>" +
       "<p>Changes the lesson only, and follows you across pages.</p>" +
       '<div class="reader-row"><span>Text size</span>' + segment("size", SIZE_CHOICES) + "</div>" +
+      '<div class="reader-row"><span>Alignment</span>' + segment("align", ALIGN_CHOICES) + "</div>" +
       /* Hidden by CSS outside focus mode and below 861px, where the measure
          cannot change. The row is always built so entering focus mode does not
          have to rebuild the panel. */
@@ -475,7 +503,7 @@
     var trigger = wrap.querySelector(".reader-btn");
 
     function refreshButtons() {
-      var groups = { size: settings.size, width: settings.width };
+      var groups = { size: settings.size, align: settings.align, width: settings.width };
       Object.keys(groups).forEach(function (group) {
         var buttons = panel.querySelectorAll("[data-reader-" + group + "] button");
         for (var i = 0; i < buttons.length; i++) {
@@ -484,7 +512,7 @@
           buttons[i].setAttribute("aria-pressed", active ? "true" : "false");
         }
       });
-      var custom = settings.size !== "m" || settings.width !== "wide";
+      var custom = settings.size !== defaultSize() || settings.align !== "left" || settings.width !== "wide";
       trigger.classList.toggle("is-custom", custom);
       panel.querySelector(".reader-reset").disabled = !custom;
     }
@@ -492,7 +520,8 @@
     function announce() {
       var sizes = { xs: "smallest", s: "compact", m: "standard", l: "large", xl: "extra large" };
       var widths = { default: "standard", wide: "wide", full: "full" };
-      var text = "Display: " + sizes[settings.size] + " text";
+      var text = "Display: " + sizes[settings.size] + " text, " +
+        (settings.align === "justify" ? "justified" : "left aligned");
       // The width only means something where the control is offered.
       if (document.body.classList.contains("focus-mode")) text += ", " + widths[settings.width] + " width";
       live.textContent = text + ".";
@@ -538,7 +567,7 @@
     });
     scrim.addEventListener("click", function () { open(false); });
 
-    ["size", "width"].forEach(function (group) {
+    ["size", "align", "width"].forEach(function (group) {
       panel.querySelector("[data-reader-" + group + "]").addEventListener("click", function (event) {
         var button = event.target.closest("button[data-value]");
         if (!button) return;
@@ -548,7 +577,8 @@
     });
 
     panel.querySelector(".reader-reset").addEventListener("click", function () {
-      settings.size = "m";
+      settings.size = defaultSize();
+      settings.align = "left";
       settings.width = "wide";
       save();
     });

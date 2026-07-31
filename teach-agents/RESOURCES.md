@@ -28,6 +28,10 @@ Curated, high-trust sources. Knowledge for lessons is drawn from here, not from 
   Use for: real-world patterns, "is this a good design?" gut checks.
 
 ## Gaps
-- No strong public, vendor-neutral source yet on **industrial / process-engineering** multi-agent
-  systems (the exact EnM niche). For those scenarios we'll reason from first principles +
-  the general agent sources above. Worth searching academic / OSIsoft / process-control sources later.
+- Public, vendor-neutral material on **agent evaluation** is still thin: most of what exists is
+  either a framework's own documentation or a vendor benchmark. For lesson 10 we reason from
+  first principles plus the general sources above, and treat trajectory evaluation as the part
+  you will have to design yourself.
+- Same for **irreversible actions and approval design** (lesson 8). The patterns come from
+  ordinary payments and workflow engineering rather than from anything agent-specific — which is
+  itself the useful insight.
