@@ -91,7 +91,9 @@
         { path: "teach-agents/lessons/0006-context-memory.html", title: "Context & memory", num: "06", kw: "context window token budget compaction summarisation truncation state versus memory recall long term" },
         { path: "teach-agents/lessons/0007-reliability.html", title: "Reliability", num: "07", kw: "timeout retry budget exponential backoff loop detection oscillation partial failure escalate safe termination circuit breaker" },
         { path: "teach-agents/lessons/0008-irreversible-actions.html", title: "Irreversible actions", num: "08", kw: "refund idempotency key approval token human in the loop audit log policy dry run duplicate payment money" },
-        { path: "teach-agents/lessons/0009-security.html", title: "Security & guardrails", num: "09", kw: "prompt injection indirect retrieval poisoning least privilege argument authorisation confused deputy exfiltration output validation" }
+        { path: "teach-agents/lessons/0009-security.html", title: "Security & guardrails", num: "09", kw: "prompt injection indirect retrieval poisoning least privilege argument authorisation confused deputy exfiltration output validation" },
+        { path: "teach-agents/lessons/0010-evaluation.html", title: "Agent evaluation", num: "10", kw: "golden set outcome trajectory evaluation regression suite llm as judge rubric adversarial unsafe trajectory coverage" },
+        { path: "teach-agents/lessons/0011-tracing-cost.html", title: "Tracing, latency & cost", num: "11", kw: "trace span correlation id token accounting cost per run quadratic prompt caching model routing p99 debug" }
       ]
     },
     {
@@ -682,33 +684,107 @@
     return url.href;
   }
 
-  function setupPageTransitions() {
-    if (REDUCED_MOTION) return;   // respect the user's preference — no transitions
+  /* ---------- The loading ring ----------
+     Shown only when a navigation is actually slow. The browser keeps painting
+     the *old* document until the new one is ready, so the wait belongs to the
+     page being left — which is why this lives here and not in the arriving
+     page's markup, where it could only ever appear after the wait was over.
 
-    // Any browser with the View Transitions API handles the transition via CSS
-    // (`@view-transition`), and the CSS gates the JS-fallback styling behind
-    // `@supports not (view-transition-name)`. So if VT is supported at all, the
-    // JS fade would either double up or have no styling to apply — skip it and
-    // keep the two paths perfectly aligned with the CSS.
-    var hasVT = (window.CSS && CSS.supports && CSS.supports("view-transition-name: none"));
-    if (hasVT) return;
+     GRACE is the whole design: on a warm cache a page swap is tens of
+     milliseconds, and a spinner that appears and vanishes inside that window
+     is itself the flicker we are removing. Nothing is built or shown until a
+     navigation has been outstanding that long, so the common case renders
+     no loader at all. */
+  var GRACE = 220;
+  // A navigation the user abandons — Escape, a cancelled prompt, a link that
+  // resolves to a download — never fires pagehide, and the ring would spin on a
+  // page that is going nowhere. It gives up rather than lying.
+  var MAX_VISIBLE = 12000;
+  var loaderTimer = null;
+  var loaderGiveUp = null;
+  var loaderEl = null;
+
+  function buildLoader() {
+    if (loaderEl) return loaderEl;
+    loaderEl = document.createElement("div");
+    loaderEl.className = "page-loader";
+    loaderEl.setAttribute("role", "status");
+    loaderEl.setAttribute("aria-live", "polite");
+    loaderEl.innerHTML =
+      '<svg width="30" height="30" viewBox="0 0 40 40" aria-hidden="true">' +
+        '<circle class="pl-track" cx="20" cy="20" r="16" fill="none" stroke-width="3.5"/>' +
+        '<circle class="pl-arc" cx="20" cy="20" r="16" fill="none" stroke-width="3.5" stroke-linecap="round"/>' +
+      '</svg><span class="sr-only">Loading…</span>';
+    document.body.appendChild(loaderEl);
+    return loaderEl;
+  }
+
+  function armLoader() {
+    clearTimeout(loaderTimer);
+    loaderTimer = window.setTimeout(function () {
+      buildLoader();
+      // Same tick as the insert: the fade is a keyframe (see styles.css), so it
+      // does not need the element to have rendered a frame first. That matters
+      // — a page slow enough to earn a spinner is a page whose frames may not
+      // be running.
+      document.documentElement.classList.add("is-loading");
+      loaderGiveUp = window.setTimeout(disarmLoader, MAX_VISIBLE);
+    }, GRACE);
+  }
+
+  function disarmLoader() {
+    clearTimeout(loaderTimer);
+    clearTimeout(loaderGiveUp);
+    document.documentElement.classList.remove("is-loading");
+  }
+
+  function setupPageTransitions() {
+    // A navigation the browser is animating for us, or one it is not: either
+    // way the loading ring applies, so it is armed before the paths split.
+    // `pagehide` covers every same-site navigation — link, form, back button,
+    // ribbon tab — without having to guess which clicks lead to one.
+    window.addEventListener("pagehide", disarmLoader);
+    window.addEventListener("pageshow", function () {
+      // Restored from the back/forward cache: clear both states so the page is
+      // never stuck faded out or spinning.
+      disarmLoader();
+      document.documentElement.classList.remove("is-leaving");
+    });
+
+    if (REDUCED_MOTION) {
+      // No fades, but a slow navigation should still say so. The ring's own
+      // reduced-motion form is a fade rather than a spin (see styles.css).
+      document.addEventListener("click", function (e) {
+        var a = e.target.closest && e.target.closest("a[href]");
+        if (shouldIntercept(a, e)) armLoader();
+      });
+      return;
+    }
+
+    /* Which path this browser is on. NOT `CSS.supports("view-transition-name")`
+       — that asks about *same-document* transitions, and answering it with
+       "yes" is exactly what used to switch this fallback off on Firefox,
+       Safari 18.0–18.1 and Chrome 111–125, none of which can do the
+       cross-document transition the CSS actually relies on. Those browsers got
+       no transition at all: the hard cut between documents that reads as a
+       flash. `PageRevealEvent` is the cross-document lifecycle, so it is the
+       thing worth testing, and the head script gates the CSS on the same
+       answer via the `.xvt` class. */
+    var hasCrossDocVT = ("PageRevealEvent" in window);
 
     document.addEventListener("click", function (e) {
       var a = e.target.closest && e.target.closest("a[href]");
       var dest = shouldIntercept(a, e);
       if (!dest) return;
+
+      armLoader();
+      if (hasCrossDocVT) return;   // the browser animates the swap itself
+
       e.preventDefault();
       // Fade the content out, then navigate; the next page's CSS page-enter
       // animation fades it in — giving a smooth out→in between pages.
       document.documentElement.classList.add("is-leaving");
       window.setTimeout(function () { window.location.href = dest; }, 180);
-    });
-
-    // Safety net: if navigation is somehow cancelled, or the page is restored
-    // from the back/forward cache, clear the leaving state so it isn't stuck
-    // faded out.
-    window.addEventListener("pageshow", function () {
-      document.documentElement.classList.remove("is-leaving");
     });
   }
 

@@ -1148,9 +1148,22 @@
       if (busy) { flip(); return; }
       busy = true;
 
+      /* A theme change is one crossfade of the whole page — that is the point
+         of routing it through a view transition at all. Page navigation names
+         the sidebar, top bar, ribbon and contents rail as separate groups and
+         holds them still (see "Page transitions" in styles.css), which is right
+         when the chrome is genuinely unchanged either side, and wrong here:
+         every one of those surfaces is repainted by the theme. Left named, the
+         chrome would snap to the new theme while the reading column faded, so
+         the names are withdrawn for the duration and the root snapshot carries
+         the whole page again. Set before the capture, cleared after finish. */
+      document.documentElement.classList.add("vt-theme");
       document.startViewTransition(flip).finished.then(done, done);
 
-      function done() { busy = false; }
+      function done() {
+        busy = false;
+        document.documentElement.classList.remove("vt-theme");
+      }
     }, true);
 
     function flip() {

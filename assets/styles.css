@@ -375,6 +375,36 @@ th { background: var(--surface); font-weight: 650; color: var(--text); font-size
 tr:last-child td { border-bottom: 0; }
 tbody tr:hover { background: var(--bg-subtle); }
 
+/* ---------- Clickable table rows ----------
+   For tables whose first cell links somewhere: the row is the click target,
+   not just the title text. The anchor stretches over the row with a
+   transparent overlay, which needs the <tr> as its containing block — hence
+   `position: relative` on the row.
+
+   No lift here, unlike the DSA cards: table rows share their borders with the
+   rows above and below, so raising one tears the grid. The row states its
+   hover with colour alone: accent mixed into the cell's own background, so
+   the tint follows whatever surface the theme gives the table. Dark needs
+   roughly twice the accent to shift a dark cell as visibly. It is set on the
+   <td>s rather than the <tr> because office-theme.css gives cells their own
+   opaque background, which would paint straight over a row-level tint. */
+table.rowlink { --rowlink-tint: 8%; --rowlink-hover-bg: color-mix(in srgb, var(--accent) var(--rowlink-tint), var(--bg-elevated)); }
+[data-theme="dark"] table.rowlink { --rowlink-tint: 14%; }
+
+table.rowlink tbody tr { position: relative; }
+table.rowlink tbody td { transition: background .16s ease; }
+table.rowlink tbody .row-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+}
+table.rowlink tbody tr:hover > td,
+table.rowlink tbody tr:focus-within > td { background: var(--rowlink-hover-bg); }
+table.rowlink tbody tr:hover .row-link { color: var(--accent-strong); }
+/* The focus ring belongs to the row, the same as on the DSA cards. */
+table.rowlink tbody .row-link:focus-visible { outline: none; }
+table.rowlink tbody .row-link:focus-visible::after { outline: 2px solid var(--accent); outline-offset: -2px; }
+
 /* ---------- Badges / pills ---------- */
 .pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12.5px; font-weight: 650; padding: 3px 10px; border-radius: 100px; border: 1px solid var(--border); background: var(--surface); color: var(--text-secondary); }
 .pill.green { color: var(--green); background: var(--green-soft); border-color: transparent; }
@@ -587,38 +617,179 @@ tbody tr:hover { background: var(--bg-subtle); }
    theme change and a page change feel like one gesture, and why the theme fade
    cannot stagger (a snapshot carries the gradients, glass and shadows that
    cannot interpolate between themes). Browsers on path 2 get the atomic flip
-   instead; see the `.theme-switching` block at the end of this file. */
+   instead; see the `.theme-switching` block at the end of this file.
 
-/* --- Fallback path (no View Transitions support) --- */
-@supports not (view-transition-name: none) {
-  .main { animation: page-enter .4s ease both; }
-  @keyframes page-enter {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: none; }
-  }
-  html.is-leaving .main {
-    opacity: 0; transform: translateY(-4px);
-    transition: opacity .18s ease, transform .18s ease;
-  }
+   WHICH PATH A BROWSER IS ON IS NOT `@supports (view-transition-name)`.
+   That was the bug behind the "jerky flash" on the ribbon tabs: the effect
+   above is a *cross-document* transition (`@view-transition`), but the test
+   gating the fallback asked about *same-document* support. Every browser that
+   has one and not the other — Firefox, Safari 18.0–18.1, Chrome 111–125 —
+   answered "yes, I have view transitions", so the fallback switched itself off
+   and those browsers got no transition at all: a hard cut between documents.
+
+   The honest test is whether the browser fires the cross-document lifecycle
+   events, i.e. `PageRevealEvent`. The pre-paint script in each page's <head>
+   runs it and writes `.xvt` on <html>, for the same reason it writes the theme
+   there: a body script would let the entry animation start and then cancel it,
+   which is the flash this is here to remove. */
+
+/* --- Fallback path: no cross-document view transitions --- */
+html:not(.xvt) .main { animation: page-enter .34s ease both; }
+@keyframes page-enter {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: none; }
+}
+html:not(.xvt).is-leaving .main {
+  opacity: 0; transform: translateY(-4px);
+  transition: opacity .18s ease, transform .18s ease;
 }
 
 /* --- Native View Transitions path --- */
 @view-transition { navigation: auto; }
-/* A gentle, eyes-friendly crossfade. Because the html background is themed,
-   there is no white frame between documents. */
+
+/* The chrome does not travel between pages. The sidebar, the top bar, the
+   ribbon and the contents rail hold the same pixels in the same place on both
+   documents, so crossfading them was work with nothing to show for it — and
+   because they are the frame the eye uses to hold position, fading them is
+   most of what read as "the page flashed". Each is lifted out of the root
+   snapshot into its own group and held still; only the reading column
+   actually transitions.
+
+   `view-transition-name` must be unique per document — each of these classes
+   appears exactly once on every page family (hub, modules, prep, DSA, ML,
+   scenario, teach-agents), which is what makes this safe. A duplicate would
+   not degrade, it would skip the transition entirely. */
+.sidebar      { view-transition-name: app-sidebar; }
+.topbar       { view-transition-name: app-topbar; }
+.office-ribbon{ view-transition-name: app-ribbon; }
+.toc-rail     { view-transition-name: app-toc; }
+.content-wrap { view-transition-name: page-body; }
+
+/* The one same-document transition in the portal is the light/dark toggle, and
+   it wants the opposite of the above: every surface listed there is repainted
+   by a theme change, so holding them still would flip the chrome instantly
+   while the reading column faded. enhance.js marks the toggle's transition and
+   the names are withdrawn for its duration, which puts the whole page back into
+   the single root snapshot the theme crossfade was designed around. */
+html.vt-theme .sidebar,
+html.vt-theme .topbar,
+html.vt-theme .office-ribbon,
+html.vt-theme .toc-rail,
+html.vt-theme .content-wrap { view-transition-name: none; }
+
 @media (prefers-reduced-motion: no-preference) {
-  ::view-transition-old(root),
-  ::view-transition-new(root) {
-    animation-duration: .28s;
-    animation-timing-function: ease;
+  /* Held still: no animation on the group (so it jumps straight to the new
+     geometry) and none on either snapshot (so identical pixels simply stay
+     put). The new snapshot is painted over the old, which is what makes the
+     swap invisible even where the two differ — the sidebar's active row, the
+     breadcrumb, the ribbon's underline. */
+  ::view-transition-group(app-sidebar),
+  ::view-transition-group(app-topbar),
+  ::view-transition-group(app-ribbon),
+  ::view-transition-group(app-toc),
+  ::view-transition-old(app-sidebar), ::view-transition-new(app-sidebar),
+  ::view-transition-old(app-topbar),  ::view-transition-new(app-topbar),
+  ::view-transition-old(app-ribbon),  ::view-transition-new(app-ribbon),
+  ::view-transition-old(app-toc),     ::view-transition-new(app-toc) {
+    animation: none;
   }
+
+  /* The reading column is the whole transition: the old one leaves slightly
+     faster than the new one arrives, and the new one carries a 6px rise —
+     the same gesture the fallback path uses, so the two paths feel like one
+     design rather than two. */
+  ::view-transition-old(page-body) { animation: vt-body-out .16s ease both; }
+  ::view-transition-new(page-body) { animation: vt-body-in .26s var(--ease-out, ease) 40ms both; }
+  @keyframes vt-body-out { to   { opacity: 0; } }
+  @keyframes vt-body-in  { from { opacity: 0; transform: translateY(6px); } }
+
+  /* Root is now only the page background, which is identical either side. */
+  ::view-transition-old(root),
+  ::view-transition-new(root) { animation-duration: .16s; animation-timing-function: ease; }
 }
+
+/* The second half of the flash: the arriving page used to run its own staggered
+   entry animation (genai-motion's `gm-rise`, `.reveal`, `[data-reveal]`) *under*
+   the crossfade, so the transition landed on a page whose content was still at
+   opacity 0 and then watched it climb in. When the browser is already animating
+   the navigation, the page arrives finished. `.vt-in` is set from the pagereveal
+   handler in the head script — before the first render of the new document, so
+   these never get a frame at zero. */
+html.vt-in .reveal,
+html.vt-in .main { animation: none !important; opacity: 1 !important; transform: none !important; }
 
 @media (prefers-reduced-motion: reduce) {
   .main { animation: none; }
   html.is-leaving .main { opacity: 1; transform: none; transition: none; }
   /* The UA already suppresses the @view-transition crossfade under
      prefers-reduced-motion, so nothing more is needed here. */
+}
+
+/* ---------- Loading indicator ----------
+   A navigation that resolves in 40ms should never show a spinner — the spinner
+   *is* the flash at that speed. So the element is built lazily and only shown
+   once a navigation has been outstanding for GRACE ms (see sitenav.js), which
+   on a local or warm-cache hop means never. It lives on the *outgoing* page,
+   which is the honest place for it: the browser keeps showing the old document
+   until the new one is ready to paint, so that whole wait belongs here.
+
+   It is a ring, not a bar or a full-screen cover: the chrome around it stays
+   readable and in place, which is the same promise the transition above makes. */
+.page-loader {
+  position: fixed;
+  z-index: 120;
+  left: 50%;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  margin: -29px 0 0 -29px;
+  border-radius: 50%;
+  border: 1px solid var(--border);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-md, 0 10px 30px rgba(15, 23, 42, .12));
+  opacity: 0;
+  pointer-events: none;
+  /* Its own group, so when the navigation finally resolves it leaves as itself
+     — an exit animation on an element the new document does not have — rather
+     than being crossfaded into the middle of the arriving page. */
+  view-transition-name: page-loader;
+}
+/* A keyframe, not a transition. A transition needs the element to render one
+   frame in its start state before the class lands, which means either a
+   two-frame rAF dance or no fade at all — and rAF is not dependable here: a
+   document that is unloading, throttled, or simply busy (the exact conditions
+   that make a navigation slow enough to need this) can starve it, and the ring
+   would then sit at opacity 0 and never appear. An animation runs from its own
+   keyframes the moment the class is applied, in the same tick, whatever the
+   frame budget is doing. */
+html.is-loading .page-loader { animation: pl-in .2s ease both; }
+@keyframes pl-in {
+  from { opacity: 0; transform: scale(.94); }
+  to   { opacity: 1; transform: none; }
+}
+/* Centred on the reading column rather than the window, so it does not sit
+   under the sidebar on a desktop. The drawer layout has no offset to make. */
+@media (min-width: 861px) {
+  .page-loader { left: calc(50% + (var(--sidebar-w, 0px) / 2)); }
+  .app.sidebar-collapsed .page-loader { left: 50%; }
+}
+.page-loader svg { display: block; }
+.page-loader .pl-track { stroke: var(--border); }
+.page-loader .pl-arc {
+  stroke: var(--accent);
+  stroke-dasharray: 30 90;
+  transform-origin: 50% 50%;
+  animation: pl-spin .9s linear infinite;
+}
+@keyframes pl-spin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) {
+  /* Present, not moving: the ring appears at once and breathes instead of
+     spinning, so a slow navigation still says so without a rotating object. */
+  html.is-loading .page-loader { animation: none; opacity: 1; }
+  .page-loader .pl-arc { animation: pl-fade 1.4s ease-in-out infinite alternate; }
+  @keyframes pl-fade { from { opacity: .3; } to { opacity: 1; } }
 }
 
 
@@ -1814,14 +1985,17 @@ a {
     opacity .18s ease;
 }
 
-/* Inline lesson links: a soft marker-like wash instead of an underline. */
-.content :where(p, li, td, dd, blockquote) a:not(.btn):not(.card):not(.rm-link) {
+/* Inline lesson links: a soft marker-like wash instead of an underline.
+   .dsa-list-link and .row-link are excluded because neither is an inline link
+   — both stretch over their whole row, so the wash would paint a highlight
+   around the title text while the real click target is the entire row. */
+.content :where(p, li, td, dd, blockquote) a:not(.btn):not(.card):not(.rm-link):not(.dsa-list-link):not(.row-link) {
   border-radius: .32em;
   -webkit-box-decoration-break: clone;
   box-decoration-break: clone;
 }
 
-.content :where(p, li, td, dd, blockquote) a:not(.btn):not(.card):not(.rm-link):hover {
+.content :where(p, li, td, dd, blockquote) a:not(.btn):not(.card):not(.rm-link):not(.dsa-list-link):not(.row-link):hover {
   color: var(--accent-strong);
   background: color-mix(in srgb, var(--accent) 9%, transparent);
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 5%, transparent);

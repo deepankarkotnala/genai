@@ -625,3 +625,34 @@ details > summary .chev {
   .hero,
   .main { opacity: 1 !important; transform: none !important; }
 }
+
+/* =========================================================================
+   10 · A navigation is one animation, not two
+   -------------------------------------------------------------------------
+   Everything in section 7 is an *arrival* animation: the first screenful rises
+   into place when a document loads. That is right for a cold load and wrong
+   the moment the browser is already animating the navigation itself — the
+   cross-document view transition crossfades into the new page while its
+   content is still at opacity 0, waits out the 0.02–0.26s stagger, and only
+   then shows the reader anything. Two entrances stacked on one navigation is
+   what reads as a flash.
+
+   `.vt-in` is written on <html> by the pagereveal handler in each page's head
+   script, before the first render of the new document, and removed when the
+   transition finishes — so on a transitioned navigation the page arrives
+   already composed, and on a cold load (no transition, no class) section 7
+   plays exactly as before. Scroll-driven `gm-rise` further down the page is
+   untouched: it is a scroll animation, not an arrival, and the reader has not
+   reached it yet. */
+html.vt-in .content > .eyebrow,
+html.vt-in .content > h1,
+html.vt-in .content > .lead,
+html.vt-in .content > .callout:nth-of-type(1),
+html.vt-in .content > .callout:nth-of-type(2),
+html.vt-in .hero,
+html.vt-in .soft-reveal,
+html.vt-in [data-reveal] {
+  animation: none !important;
+  opacity: 1 !important;
+  transform: none !important;
+}
