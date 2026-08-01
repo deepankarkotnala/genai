@@ -180,6 +180,7 @@ def run_controlled(
     token_budget: int = 8000,
     timeout_s: float = DEFAULT_TIMEOUT_S,
     verbose: bool = False,
+    trace: Any = None,
 ) -> ControlledResult:
     """
     Lesson 2's loop with the five controls, and one guarantee:
@@ -210,7 +211,21 @@ def run_controlled(
             interventions.append(f"token budget exhausted at {token_budget}")
             return finish(EXHAUSTED, _giving_up(state, "the token budget ran out"))
 
-        decision = brain.decide(messages, specs)
+        # One span per model call. Tracing is opt-in so the loop stays readable
+        # for Lessons 2-9; passing a Trace turns the same run into the tree that
+        # Lesson 11 debugs.
+        if trace is not None:
+            with trace.span(f"decide:{state.step + 1}", "model") as sp:
+                decision = brain.decide(messages, specs)
+                trace.record_usage(sp, getattr(brain, "model", "unknown"),
+                                   decision.prompt_tokens or 0,
+                                   decision.completion_tokens or 0)
+                sp.attributes["chose"] = (
+                    decision.tool_call.name if decision.tool_call else "final_answer"
+                )
+        else:
+            decision = brain.decide(messages, specs)
+
         state.step += 1
         state.spend((decision.prompt_tokens or 0) + (decision.completion_tokens or 0))
 
@@ -239,7 +254,16 @@ def run_controlled(
             return finish(BLOCKED, _giving_up(state, "the agent began cycling between two calls"))
 
         # -- control 3+4: timeout and retries ------------------------------
-        result, notes = guarded_execute(call.name, dict(call.arguments), timeout_s=timeout_s)
+        if trace is not None:
+            with trace.span(f"tool:{call.name}", "tool", **call.arguments) as sp:
+                result, notes = guarded_execute(call.name, dict(call.arguments),
+                                                timeout_s=timeout_s)
+                if result.get("error"):
+                    sp.ok = False
+                    sp.error_class = result["error"]
+                sp.attributes["retries"] = sum(1 for n in notes if "attempt" in n)
+        else:
+            result, notes = guarded_execute(call.name, dict(call.arguments), timeout_s=timeout_s)
         interventions.extend(notes)
 
         # -- partial results are surfaced, never silently accepted ---------
