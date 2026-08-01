@@ -2433,7 +2433,14 @@ html:root { --reader-font-size: calc(15.7px * var(--reading-scale)); }
    that layer, so it is scaled here. */
 .content h4 { font-size: calc(14px * var(--reading-scale)); }
 /* Components inside the reading column with their own px sizes. Anything not
-   listed here (p, li, td, dd, blockquote) inherits from `.content`. */
+   listed here (p, li, td, dd, blockquote) inherits from `.content`.
+
+   This block sets the scale but no longer settles the ladder: the CARDS section
+   at the end of this file (1a–1c) is where the sizes of the components that sit
+   in a box — cards, callouts, `<details>` headers, tables — are decided against
+   each other rather than one at a time, and it comes later. The declarations it
+   supersedes are left standing so this list still reads as the complete
+   inventory of components that carry a size of their own. */
 .content table { font-size: calc(12.5px * var(--reading-scale)); }
 .content pre { font-size: calc(12.5px * var(--reading-scale)); }
 .content .card p { font-size: calc(13px * var(--reading-scale)); }
@@ -2984,11 +2991,120 @@ html[data-theme="dark"] .content dt { color: var(--prose-strong); }
     line-height: 1.62;
   }
 }
+
+/* ---- 1c. One ladder, and everything on it moves with the size control ----
+   1b raised the body text inside every box to prose size and stopped there, on
+   the grounds that "the titles keep their own step". They do keep it — but the
+   step was measured against the old, smaller body size, so raising the body
+   moved the titles *under* the text they head. That is the size-jumble the
+   Study Plan reads as, and it is not only a phone problem: two of the four
+   cases below are worse on a wide screen than on a narrow one, because the
+   sizes come from tokens that the reading-scale never reaches at all.
+
+     - A callout title sits at 13.5px over a callout paragraph at 15.7px
+       (11.9 over 13.8 on desktop), so a box is titled in fine print.
+     - A `<details>` summary — the header over a whole table — comes from
+       styles.css's legacy `--reader-h4-size` clamp, also under body text. That
+       token belongs to the retired four-step text-size scale
+       ("small"/"large"/"xl"), so on the current five-step one it never moves
+       when the reader changes size: the summary is frozen at 14px on a phone
+       and 13.2px on a desktop while the prose under it runs from 13.8px to
+       22.3px. At the top of the scale a section header is two thirds the size
+       of its own body copy.
+     - `th` comes from the same stranded family, `--reader-th-size`, and is
+       frozen the same way. On a phone it lands a hair *under* its own `td`
+       (12.2 against 12.5) and on a desktop a hair *over* it (11.3 against
+       11.0): either way the header row carries no hierarchy, and it drifts
+       further out with every step of the size control.
+     - Table cells are the widest gap: 12.5px of table against 15.7px of prose
+       (11.0 against 13.8 on desktop), two steps down for no reason a reader
+       can see.
+
+   So, one ladder for the whole reading column, at every width: box and section
+   titles step above the body they head — the size the card headings below
+   already use, which is what makes a card, a callout and a `<details>` header
+   finally agree; table cells step one below it, alongside card copy, because
+   they are scanned rather than read; a header cell steps below the data it
+   labels. Every size is `calc(… * var(--reading-scale))`, never a bare px and
+   never a legacy token, so the whole ladder moves together when the reader
+   changes text size — which is precisely what the tokens above got wrong.
+
+   Table cells close to one step below prose rather than to parity because a
+   phone table cannot take full body size: measured at 360px, the Study Plan's
+   three columns stop fitting the column at 15.7px and start scrolling
+   sideways, and the prose column drops to three words a line. 14.2px is the
+   step the theme already gives dense, scanned copy. */
+.content .callout .c-title,
+.content .collapse > summary,
+.content .recall > summary,
+.content .demo-title { font-size: calc(16.5px * var(--reading-scale)); }
+
+.content table { font-size: calc(14.2px * var(--reading-scale)); }
+.content th { font-size: calc(11.8px * var(--reading-scale)); }
+
+/* Larger cells need the width back, and on a phone the only place left to take
+   it from is the padding around them: 11px of side padding per cell was tuned
+   for 12.5px text. Measured on the Study Plan at 360px — the narrowest width
+   the portal targets — this is what keeps all four of its tables inside the
+   column at the larger text instead of scrolling sideways, the widest of them
+   landing at exactly the available width. The two inside a `<details>` pay for
+   the disclosure box's own inset as well, so they get the tightest measure on
+   the page and the box gives most of that inset up; below 360px they still
+   scroll, but less far than they do today. Vertical padding is untouched — the
+   rows keep their air. */
+@media (max-width: 620px) {
+  .content th,
+  .content td { padding: 9px 8px; }
+  .content .collapse .collapse-body { padding-left: 6px; padding-right: 6px; }
+}
+
 /* A card title smaller than its own body text is the giveaway that these were
    sized independently; the title steps back above it. */
 .content .card h3,
 .content .card h4,
 .module-card h3 { font-size: calc(16.5px * var(--reading-scale)); }
+
+/* ---- 1d. The components that never got onto the ladder at all ----
+   1a–1c fixed the sizes that were *wrong relative to each other*. These are the
+   ones that were never in the system: bare px, set once when the component was
+   written, so they sit below the ladder at every width and stay put when the
+   reader changes text size. Measured inside `.content` at 360px they were the
+   only prose left under 14px on any page in the portal.
+
+   The reading-order list on the hub is the worst of them and the one a reader
+   notices first, because it is the first thing under the fold on the home page:
+   fourteen row titles at 12.5px and eighteen descriptions at 12.5px, against
+   15.7px prose in the same column — and on a phone `.rm-link` is already one
+   column (see the 620px block above), so a row is a full-width block in the
+   same measure as the paragraph above it, which is exactly the case 1b settled
+   for cards. A row title takes the title step; a description takes the
+   dense-copy step, and on a phone it joins the body text like every other
+   block. `.rm-ttl` sits at (0,1,0) in both stylesheets, hence the `.content`
+   scope here rather than a bare class.
+
+   A quiz explanation is body copy the reader reads once and slowly, so it takes
+   the same step as the card and callout copy around it, not two below it. Prep
+   meta lines ("16 questions · 12–18 h · start here") stay quieter than body
+   copy, as the rule below has always intended — but quiet is a colour and a
+   size *step*, not a frozen 12px. */
+.content .rm-ttl,
+.content .prep-source-grid strong { font-size: calc(16.5px * var(--reading-scale)); }
+.content .rm-why,
+.content .quiz .explain,
+.content .prep-source-grid span { font-size: calc(14.2px * var(--reading-scale)); }
+.content .prep-topic-meta { font-size: calc(12.5px * var(--reading-scale)); }
+
+@media (max-width: 860px) {
+  /* Same argument as 1b: in a one-column phone layout these are full-width
+     blocks of body text in the body measure. (`.prep-source-grid` collapses to
+     one column at 720px, so below that it is the same case again.) */
+  .content .rm-why,
+  .content .quiz .explain { font-size: var(--reader-font-size); line-height: 1.62; }
+}
+@media (max-width: 720px) {
+  .content .prep-source-grid span { font-size: var(--reader-font-size); line-height: 1.62; }
+}
+
 /* Meta lines stay quieter than body copy, but not invisible. */
 .prep-topic-meta,
 .module-card .mc-num { color: var(--text-muted); }

@@ -85,7 +85,13 @@
         { path: "teach-agents/index.html", title: "Course index", num: "✦", kw: "agents course overview index start" },
         { path: "teach-agents/lessons/0001-llm-mechanics.html", title: "LLM mechanics", num: "01", kw: "llm messages roles context window tokens temperature determinism structured output tool calling brain abstraction support triage" },
         { path: "teach-agents/lessons/0002-agent-loop.html", title: "The agent loop", num: "02", kw: "agent loop observe decide act termination max steps workflow chain prompt when not to search_kb trace" },
-        { path: "teach-agents/lessons/0003-tool-calling.html", title: "Tools & validation", num: "03", kw: "tool schema validation arguments typed unknown tool parallel sequential read_ticket lookup_order trusted untrusted injection" }
+        { path: "teach-agents/lessons/0003-tool-calling.html", title: "Tools & validation", num: "03", kw: "tool schema validation arguments typed unknown tool parallel sequential read_ticket lookup_order trusted untrusted injection" },
+        { path: "teach-agents/lessons/0004-reasoning-patterns.html", title: "Reasoning patterns", num: "04", kw: "react plan and execute reflection routing orchestration patterns draft_reply cost model calls" },
+        { path: "teach-agents/lessons/0005-retrieval.html", title: "Retrieval as a tool", num: "05", kw: "retrieval rag chunking bm25 rerank citations grounding relevance floor hybrid embeddings" },
+        { path: "teach-agents/lessons/0006-context-memory.html", title: "Context & memory", num: "06", kw: "context window token budget compaction summarisation truncation state versus memory recall long term" },
+        { path: "teach-agents/lessons/0007-reliability.html", title: "Reliability", num: "07", kw: "timeout retry budget exponential backoff loop detection oscillation partial failure escalate safe termination circuit breaker" },
+        { path: "teach-agents/lessons/0008-irreversible-actions.html", title: "Irreversible actions", num: "08", kw: "refund idempotency key approval token human in the loop audit log policy dry run duplicate payment money" },
+        { path: "teach-agents/lessons/0009-security.html", title: "Security & guardrails", num: "09", kw: "prompt injection indirect retrieval poisoning least privilege argument authorisation confused deputy exfiltration output validation" }
       ]
     },
     {

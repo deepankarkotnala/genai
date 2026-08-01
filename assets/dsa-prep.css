@@ -464,8 +464,23 @@ body[data-page="dsa-index"] .toc-rail { display: none !important; }
    Flat, linkable problem rows. Each row points at the chapter that already
    carries the full editorial, so nothing here duplicates chapter content. */
 .dsa-grp-count { margin-left: 8px; font-size: 13px; font-weight: 600; color: var(--text-secondary); letter-spacing: 0; }
-.dsa-list { list-style: none; margin: 12px 0 26px; padding: 0; display: flex; flex-direction: column; gap: 5px; }
+.dsa-list {
+  list-style: none;
+  margin: 12px 0 26px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  /* The lift shadow lives on the list so both themes can restate it in one
+     place. Two layers on purpose: a tight contact shadow that keeps the card
+     attached to the page, and a wide, offset-up blur that reads as height. */
+  --dsa-row-shadow: 0 2px 4px rgba(22, 27, 35, .05), 0 12px 26px -8px rgba(22, 27, 35, .16);
+}
+[data-theme="dark"] .dsa-list {
+  --dsa-row-shadow: 0 2px 6px rgba(0, 0, 0, .32), 0 14px 30px -8px rgba(0, 0, 0, .44);
+}
 .dsa-list-row {
+  position: relative;
   display: grid;
   grid-template-columns: 30px minmax(0, 20rem) 1fr auto auto;
   align-items: center;
@@ -474,16 +489,51 @@ body[data-page="dsa-index"] .toc-rail { display: none !important; }
   border: 1px solid var(--border);
   border-radius: 10px;
   background: var(--surface);
-  transition: border-color .18s ease, background .18s ease;
+  transition:
+    transform var(--gm-dur, .28s) var(--gm-ease-out, cubic-bezier(.16, 1, .3, 1)),
+    box-shadow var(--gm-dur, .28s) var(--gm-ease-out, cubic-bezier(.16, 1, .3, 1)),
+    border-color .18s ease,
+    background .18s ease;
 }
-.dsa-list-row:hover { border-color: color-mix(in srgb, var(--accent) 42%, var(--border)); background: var(--surface-2, var(--surface)); }
+/* The whole card is the link. Rather than restructure ~200 rows of markup,
+   the anchor stretches over the row with a transparent overlay — the row is
+   the positioned ancestor, so the overlay escapes the anchor's own
+   `overflow: hidden` (which is only there for the title ellipsis). */
+.dsa-list-link::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 10px;
+}
+.dsa-list-row:hover,
+.dsa-list-row:focus-within {
+  transform: translateY(-3px);
+  box-shadow: var(--dsa-row-shadow);
+  border-color: color-mix(in srgb, var(--accent) 42%, var(--border));
+  background: var(--surface-2, var(--surface));
+}
+/* Pressing settles the card back toward the page before the navigation. */
+.dsa-list-row:active { transform: translateY(-1px); transition-duration: .09s; }
 .dsa-list-no { font-size: 12px; font-weight: 700; color: var(--text-secondary); text-align: right; }
 .dsa-list-link { font-size: 15px; font-weight: 600; color: var(--text); text-decoration: none; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dsa-list-row:hover .dsa-list-link,
 .dsa-list-link:hover { color: var(--accent); }
+/* The focus ring belongs to the card now, not to the title text. */
+.dsa-list-link:focus-visible { outline: none; }
+.dsa-list-link:focus-visible::after { outline: 2px solid var(--accent); outline-offset: 2px; }
 .dsa-list-link .lc { display: inline-block; margin-right: 8px; font-size: 12px; font-weight: 700; color: var(--text-secondary); }
 .dsa-list-sub { font-size: 13.5px; color: var(--text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
 @media (max-width: 760px) {
   .dsa-list-row { grid-template-columns: 26px 1fr auto; row-gap: 4px; }
   .dsa-list-sub { grid-column: 2 / -1; white-space: normal; }
+}
+
+/* No travel when motion is unwelcome — the shadow and border still mark the
+   hovered card, so the affordance survives without anything moving. */
+@media (prefers-reduced-motion: reduce) {
+  .dsa-list-row { transition-duration: .01ms !important; }
+  .dsa-list-row:hover,
+  .dsa-list-row:focus-within,
+  .dsa-list-row:active { transform: none; }
 }
