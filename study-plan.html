@@ -23,10 +23,10 @@
      exactly — same key, same "light" default — so the pre-paint value can never
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "s" on phones and "xs" above 860px, unknown width -> "wide", unknown align -> "left". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var mob=!!(window.matchMedia&&window.matchMedia("(max-width:860px)").matches);var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(mob?"s":"xs");var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);}catch(e){}})();</script>
-<link rel="stylesheet" href="assets/styles.css?v=20260731b">
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "s" on phones and "xs" above 860px, unknown width -> "wide", unknown align -> "left". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var mob=!!(window.matchMedia&&window.matchMedia("(max-width:860px)").matches);var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(mob?"s":"xs");var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition — CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="assets/styles.css?v=20260801d">
 <link href="assets/office-theme.css?v=20260801a" rel="stylesheet"/>
-<link href="assets/genai-motion.css?v=20260728a" rel="stylesheet"/>
+<link href="assets/genai-motion.css?v=20260801a" rel="stylesheet"/>
 </head>
 <body data-page="study-plan" data-no-concept-lab>
 <div class="app">
@@ -70,15 +70,15 @@
         <h2 id="hours">Approximate hours by section</h2>
         <p>These are beginner-paced, first-principles estimates—not read times. Each section teaches its own material and nothing else, so the rows add up honestly. The DSA track is the one optional row: include it only if your target role has a coding screen.</p>
         <div class="table-wrap">
-          <table>
+          <table class="rowlink">
             <thead><tr><th>Section</th><th>Approx. time</th><th>How to use it</th></tr></thead>
             <tbody>
-              <tr><td><a href="modules/01_foundations.html"><strong>GenAI Mastery</strong></a></td><td><strong>205–335 h</strong></td><td>Primary curriculum. Learn the foundations, retrieval, agents, frameworks, production and capstones.</td></tr>
-              <tr><td><a href="teach-agents/index.html"><strong>Understanding AI Agents</strong></a></td><td><strong>~49 h</strong></td><td>Hands-on interview course: one support-ticket triage agent across 15 lessons, ~1 h/weekday for 6–7 weeks. Use before the advanced agent frameworks. <em>Lessons 1–3 (9 h) are live; the rest is being written.</em></td></tr>
-              <tr><td><a href="agent-protocols.html"><strong>Deep Dives</strong></a></td><td><strong>40–65 h</strong></td><td>Single-topic guides for agent protocols, evals, LLMOps, observability, guardrails, memory, LangGraph and local models.</td></tr>
-              <tr><td><a href="interview-prep/index.html"><strong>Interview Questions</strong></a></td><td><strong>110–170 h</strong></td><td>One section, three sub-sections: the GenAI question bank (50–80 h), the Python &amp; AI/ML question bank (36–54 h) and the per-technology drills (24–36 h).</td></tr>
-              <tr><td><a href="scenario-practice/index.html"><strong>Scenario Design Studio</strong></a></td><td><strong>18–28 h</strong></td><td>Eight timed architecture drills for system-design rounds.</td></tr>
-              <tr><td><a href="dsa-prep/index.html"><strong>DSA Interview Preparation</strong></a></td><td><strong>90–140 h</strong></td><td>Separate coding-round track. Only needed if your target role includes a DSA screen.</td></tr>
+              <tr><td><a class="row-link" href="modules/01_foundations.html"><strong>GenAI Mastery</strong></a></td><td><strong>205–335 h</strong></td><td>Primary curriculum. Learn the foundations, retrieval, agents, frameworks, production and capstones.</td></tr>
+              <tr><td><a class="row-link" href="teach-agents/index.html"><strong>Understanding AI Agents</strong></a></td><td><strong>~49 h</strong></td><td>Hands-on interview course: one support-ticket triage agent across 15 lessons, ~1 h/weekday for 6–7 weeks. Use before the advanced agent frameworks. <em>Lessons 1–3 (9 h) are live; the rest is being written.</em></td></tr>
+              <tr><td><a class="row-link" href="agent-protocols.html"><strong>Deep Dives</strong></a></td><td><strong>40–65 h</strong></td><td>Single-topic guides for agent protocols, evals, LLMOps, observability, guardrails, memory, LangGraph and local models.</td></tr>
+              <tr><td><a class="row-link" href="interview-prep/index.html"><strong>Interview Questions</strong></a></td><td><strong>110–170 h</strong></td><td>One section, three sub-sections: the GenAI question bank (50–80 h), the Python &amp; AI/ML question bank (36–54 h) and the per-technology drills (24–36 h).</td></tr>
+              <tr><td><a class="row-link" href="scenario-practice/index.html"><strong>Scenario Design Studio</strong></a></td><td><strong>18–28 h</strong></td><td>Eight timed architecture drills for system-design rounds.</td></tr>
+              <tr><td><a class="row-link" href="dsa-prep/index.html"><strong>DSA Interview Preparation</strong></a></td><td><strong>90–140 h</strong></td><td>Separate coding-round track. Only needed if your target role includes a DSA screen.</td></tr>
             </tbody>
           </table>
         </div>
@@ -177,8 +177,8 @@
   </div>
 </div>
 <script src="assets/app.js?v=20260731b"></script>
-<script src="assets/sitenav.js?v=20260731b"></script>
-<script src="assets/enhance.js?v=20260731b"></script>
+<script src="assets/sitenav.js?v=20260801a"></script>
+<script src="assets/enhance.js?v=20260801a"></script>
 <script src="assets/genai-motion.js?v=20260728a"></script>
 </body>
 </html>
