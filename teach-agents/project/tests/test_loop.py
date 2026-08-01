@@ -22,11 +22,12 @@ from brain import (
 
 
 # -- the trajectory --------------------------------------------------------
-def test_a_billing_ticket_produces_a_three_step_trajectory():
+def test_a_billing_ticket_gathers_facts_then_drafts():
+    """Lesson 4 added draft_reply, so the full path is four tools plus an answer."""
     result = run("Triage ticket TCK-1001 and recommend the next step.", StubBrain())
-    assert result.tool_calls == ["read_ticket", "lookup_order", "search_kb"]
+    assert result.tool_calls == ["read_ticket", "lookup_order", "search_kb", "draft_reply"]
     assert result.stopped_because == "final_answer"
-    assert len(result.steps) == 4  # three tool calls plus the answer
+    assert len(result.steps) == 5
 
 
 def test_the_order_lookup_is_driven_by_the_ticket_body_not_by_turn_number():
@@ -37,7 +38,7 @@ def test_the_order_lookup_is_driven_by_the_ticket_body_not_by_turn_number():
     """
     result = run("Triage ticket TCK-1005.", StubBrain())
     assert "lookup_order" not in result.tool_calls
-    assert result.tool_calls == ["read_ticket", "search_kb"]
+    assert result.tool_calls == ["read_ticket", "search_kb", "draft_reply"]
 
 
 def test_the_answer_cites_facts_that_came_from_tools():

@@ -154,7 +154,15 @@ class StubBrain:
         observed = _tool_results(messages)
         attempted = _attempted_tools(messages)
 
-        decision = self._choose(goal, observed, available, attempted)
+        # Lesson 4's patterns ask for a plan, a critique or a route instead of a
+        # tool call. With a real model these are just differently-worded
+        # prompts, so the stub detects them the same way a model would: by
+        # reading the request. No extra protocol method, no special API.
+        special = _special_request(messages)
+        if special:
+            decision = self._answer_special(special, messages, goal, observed)
+        else:
+            decision = self._choose(goal, observed, available, attempted)
         elapsed = int((time.perf_counter() - started) * 1000)
 
         # Token counts are a rough word count. Honest about being an estimate:
@@ -181,6 +189,59 @@ class StubBrain:
             prompt_tokens=prompt_words,
             completion_tokens=len(decision.split()),
         )
+
+    # -- responses to the pattern prompts (Lesson 4) ------------------------
+    def _answer_special(
+        self, kind: str, messages: list[Message], goal: str, observed: dict[str, Any]
+    ) -> str:
+        if kind == "ROUTE_REQUEST":
+            text = " ".join(m.content for m in messages).lower()
+            if any(w in text for w in ("refund", "invoice", "billing", "charged", "payment")):
+                return "billing"
+            if any(w in text for w in ("502", "error", "checkout fails", "technical", "outage")):
+                return "technical"
+            return "general"
+
+        if kind == "PLAN_REQUEST":
+            # A plan written before anything has run. Note it names a ticket it
+            # has not read and an order it cannot know -- which is exactly the
+            # weakness the lesson makes the learner observe.
+            ticket = _extract(goal, prefix="TCK-") or "TCK-1001"
+            return "\n".join(
+                [
+                    f"read_ticket({ticket})",
+                    "lookup_order(from ticket body)",
+                    "search_kb(from ticket category)",
+                    "draft_reply(cite what search_kb returned)",
+                ]
+            )
+
+        if kind == "CRITIQUE_REQUEST":
+            # Critique the DRAFT only. Scanning the whole history would let the
+            # system prompt's own words ("policy", "escalate") satisfy the
+            # checks and the critique would always come back clean -- a
+            # self-congratulating reviewer, which is worse than none.
+            draft = ""
+            for m in messages:
+                if m.role == "user" and "CRITIQUE_REQUEST" in m.content:
+                    _, _, after = m.content.partition("Draft answer:")
+                    draft = after
+                    break
+            gaps = []
+            if "refund_eligible" not in draft:
+                gaps.append("it does not state whether the order is refund eligible")
+            if "policy" not in draft.lower():
+                gaps.append("it cites no policy article")
+            if "escalat" not in draft.lower() and "review" not in draft.lower():
+                gaps.append("it does not say who acts next")
+            if not gaps:
+                return "No material gaps: the facts are cited and the next step is stated."
+            return "Gaps: " + "; ".join(gaps) + "."
+
+        # The revision turn: a plain final answer built from what was gathered.
+        return _summarise(
+            observed.get("read_ticket"), observed.get("lookup_order"), observed.get("search_kb")
+        ) + " Revised to name the eligibility, the policy and the reviewer explicitly."
 
     # -- the rules ---------------------------------------------------------
     def _choose(
@@ -211,9 +272,56 @@ class StubBrain:
                 return ToolCall("read_ticket", {"ticket_id": ticket_id})
 
         # If reading the ticket was tried and produced nothing usable, there is
-        # no path forward: say so rather than looping.
+        # no path forward. Prefer an explicit escalation over a text apology:
+        # escalation creates a record and a queue entry, prose creates neither.
         if ticket is None:
+            ticket_id = _extract(goal, prefix="TCK-") or "unknown"
+            if "escalate" in available and "escalate" not in attempted:
+                return ToolCall(
+                    "escalate",
+                    {
+                        "ticket_id": ticket_id,
+                        "reason": "Could not read the ticket, so no facts could be established.",
+                        "urgency": "normal",
+                    },
+                )
             return _summarise(None, None, None)
+
+        # A partially-successful call is the dangerous one: nothing raised, the
+        # shape is right, and a field we need is absent. Detecting it is the
+        # controller's job; *refusing to proceed on it* is this layer's job.
+        # Without this rule the agent produced "refund_eligible=None" in a
+        # customer-facing summary and reported the run as resolved.
+        incomplete = [name for name, res in observed.items()
+                      if isinstance(res, dict) and res.get("_partial")]
+        if incomplete and "escalate" in available and "escalate" not in attempted:
+            return ToolCall(
+                "escalate",
+                {
+                    "ticket_id": ticket.get("ticket_id", "unknown"),
+                    "reason": (
+                        f"{', '.join(incomplete)} returned incomplete data, so "
+                        "eligibility could not be confirmed."
+                    ),
+                    "urgency": "normal",
+                },
+            )
+
+        # A tool that stayed unavailable through its retries is not something to
+        # work around silently -- hand over, and say which tool failed.
+        broken = [
+            name for name in ("lookup_order", "search_kb")
+            if name in attempted and name not in observed
+        ]
+        if broken and "escalate" in available and "escalate" not in attempted:
+            return ToolCall(
+                "escalate",
+                {
+                    "ticket_id": ticket.get("ticket_id", "unknown"),
+                    "reason": f"Could not complete {', '.join(broken)} after retries.",
+                    "urgency": "high" if ticket.get("priority") in ("High", "Urgent") else "normal",
+                },
+            )
 
         # 2. Ticket mentions an order -> look it up before advising anything.
         #    Driven by the *content of the tool result*, not by a step counter.
@@ -227,7 +335,33 @@ class StubBrain:
             category = (ticket.get("category") or "billing").lower()
             return ToolCall("search_kb", {"query": category, "limit": 2})
 
-        # 4. Enough gathered -> answer, citing what was actually retrieved.
+        # 4. Facts gathered -> draft a reply for a human, citing only articles
+        #    the knowledge base actually returned. Citing from memory here is
+        #    how fabricated references get into customer mail; draft_reply
+        #    rejects unknown ids for exactly that reason.
+        if "draft_reply" not in attempted and "draft_reply" in available:
+            # Deduplicated: retrieval returns chunks, and two chunks from one
+            # article would otherwise be cited twice as if they were two sources.
+            cites: list[str] = []
+            for article in (kb or {}).get("articles", []):
+                aid = article.get("id")
+                if aid and aid not in cites:
+                    cites.append(aid)
+            cites = cites[:2]
+            return ToolCall(
+                "draft_reply",
+                {
+                    "ticket_id": ticket.get("ticket_id", ""),
+                    "summary": (
+                        f"Your {ticket.get('category', 'support')} issue at "
+                        f"{ticket.get('priority', 'normal')} priority has been reviewed."
+                    ),
+                    "next_step": "A support agent will confirm and reply to you.",
+                    "citations": cites,
+                },
+            )
+
+        # 5. Enough gathered -> answer, citing what was actually retrieved.
         return _summarise(ticket, order, kb)
 
 
@@ -249,8 +383,14 @@ def _summarise(ticket: Any, order: Any, kb: Any) -> str:
             f"{order.get('refund_eligible')}."
         )
     if kb:
-        titles = ", ".join(a.get("title", "?") for a in kb.get("articles", []))
-        lines.append(f"Relevant policy: {titles}.")
+        # Deduplicated: retrieval returns chunks, so two sections of one article
+        # would otherwise be listed as "Refund policy, Refund policy".
+        titles: list[str] = []
+        for article in kb.get("articles", []):
+            title = article.get("title", "?")
+            if title not in titles:
+                titles.append(title)
+        lines.append(f"Relevant policy: {', '.join(titles)}.")
     lines.append(
         "Recommended next step: draft a reply quoting the policy above. "
         "No refund is issued here -- that needs the approval path from Lesson 8."
@@ -447,6 +587,26 @@ def _tool_results(messages: list[Message]) -> dict[str, Any]:
             continue  # a failed call teaches nothing; let the rules retry or move on
         out[m.tool_name] = parsed
     return out
+
+
+def _special_request(messages: list[Message]) -> str | None:
+    """
+    Detect a pattern prompt. Only the most recent user turn counts: a run that
+    started with a plan request and has since moved on should not keep being
+    treated as a planning call.
+    """
+    for m in reversed(messages):
+        if m.role != "user":
+            continue
+        for token in ("PLAN_REQUEST", "CRITIQUE_REQUEST", "ROUTE_REQUEST"):
+            if token in m.content:
+                return token
+        # A later plain user turn (e.g. "now give the improved answer") ends the
+        # special mode but still needs a text answer rather than a tool call.
+        if "improved final answer" in m.content.lower():
+            return "REVISE"
+        return None
+    return None
 
 
 def _attempted_tools(messages: list[Message]) -> set[str]:

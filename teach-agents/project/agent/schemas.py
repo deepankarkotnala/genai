@@ -81,6 +81,76 @@ TOOL_SCHEMAS: list[dict[str, Any]] = [
         },
     },
     {
+        "name": "issue_refund",
+        # Every clause here is doing safety work. It says the default is a
+        # recommendation, that a human token is required to execute, and that
+        # policy is checked elsewhere -- so the model does not believe arguing
+        # about eligibility is part of its job.
+        "description": (
+            "Prepare a refund. By default this only CHECKS policy and returns a "
+            "recommendation -- it does not move money. Executing a refund "
+            "requires dry_run=false AND an approval_token issued by a human. "
+            "Eligibility is decided by policy, not by you: if policy refuses, "
+            "explain the reason to the customer or escalate."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "order_id": {"type": "string", "description": "Order to refund, e.g. ORD-5581"},
+                "amount": {
+                    "type": "number",
+                    "description": "Amount to refund; cannot exceed the order total",
+                    "minimum": 0.01,
+                },
+                "reason": {
+                    "type": "string",
+                    "description": "Why this refund is being requested",
+                    "minLength": 5,
+                },
+                "approval_token": {
+                    "type": "string",
+                    "description": "Token from a human approver. You cannot create one.",
+                },
+                "dry_run": {
+                    "type": "boolean",
+                    "description": "True (default) checks policy only. False attempts payment.",
+                },
+            },
+            "required": ["order_id", "amount", "reason"],
+            "additionalProperties": False,
+        },
+    },
+    {
+        "name": "escalate",
+        # Giving up needs to be an *available action*, not an absence of action.
+        # An agent with no escalate tool has only two options when it cannot
+        # establish the facts: guess, or loop. Both are worse than handing over.
+        "description": (
+            "Hand this ticket to a human, with a reason. Use this when you "
+            "cannot establish the facts, when policy forbids what the customer "
+            "asked for, or when the request needs authority you do not have. "
+            "Escalating is a correct outcome, not a failure."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "ticket_id": {"type": "string", "description": "Ticket being escalated"},
+                "reason": {
+                    "type": "string",
+                    "description": "Why a human is needed, specifically",
+                    "minLength": 10,
+                },
+                "urgency": {
+                    "type": "string",
+                    "description": "How soon a human should look",
+                    "enum": ["low", "normal", "high"],
+                },
+            },
+            "required": ["ticket_id", "reason"],
+            "additionalProperties": False,
+        },
+    },
+    {
         "name": "draft_reply",
         # Note what this description does NOT say: it does not say "send".
         # The name and the description together set the model's expectation of
@@ -254,6 +324,26 @@ def validate_arguments(tool_name: str, arguments: Any) -> dict[str, Any]:
                 raise ArgumentError(
                     f"{tool_name}.{key}: must be <= {rule['maximum']}, got {value}"
                 )
+
+        # Arrays need their *contents* checked, not just their type. A list of
+        # citations where one entry is a dict will pass an `isinstance(value,
+        # list)` check and then explode somewhere far away -- validate at the
+        # boundary, where the error can still name the offending index.
+        if expected == "array":
+            if "maxItems" in rule and len(value) > rule["maxItems"]:
+                raise ArgumentError(
+                    f"{tool_name}.{key}: at most {rule['maxItems']} items, "
+                    f"got {len(value)}"
+                )
+            item_type = (rule.get("items") or {}).get("type")
+            if item_type:
+                py = _JSON_TYPES.get(item_type)
+                for i, item in enumerate(value):
+                    if py and not isinstance(item, py):
+                        raise ArgumentError(
+                            f"{tool_name}.{key}[{i}]: expected {item_type}, "
+                            f"got {type(item).__name__}"
+                        )
 
         clean[key] = value
 

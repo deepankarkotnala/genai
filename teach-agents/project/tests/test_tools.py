@@ -46,9 +46,10 @@ def test_missing_ticket_is_a_recoverable_result_not_an_exception():
 
 
 def test_empty_kb_result_is_reported_not_invented():
+    """Lesson 5 replaced word counting with a relevance floor; the note changed."""
     out = search_kb("quantum tunnelling in badgers")
     assert out["returned"] == 0
-    assert out["note"] == "no matching article"
+    assert out["note"] == "no article passed the relevance floor"
 
 
 def test_unknown_tool_is_rejected():
@@ -106,14 +107,32 @@ def test_every_declared_tool_is_implemented_and_vice_versa():
     assert declared == implemented, "a declared tool with no handler is a live bug"
 
 
-def test_no_tool_can_write_or_execute():
+def test_no_tool_can_execute_code_or_reach_outside_the_fixtures():
     """
     The security boundary is architectural: capability is absent, not filtered.
-    If a later lesson adds a tool that writes, this test should fail loudly and
-    force the author to think about approval and audit first.
+
+    This test was written in Wave 1 as a canary listing `issue_refund` among the
+    forbidden tools, and it fired when Lesson 8 added it -- which is exactly what
+    it was for. The invariant is now stated properly: arbitrary execution, shell,
+    filesystem, network and database access remain absent, and the one tool that
+    *does* act on the world is gated (see the two tests below).
     """
-    write_ish = {"issue_refund", "send_email", "run_sql", "exec", "shell", "write_file"}
-    assert not (write_ish & set(REGISTRY))
+    dangerous = {"exec", "eval", "shell", "run_python", "read_file", "write_file",
+                 "http_get", "fetch_url", "run_sql", "send_email"}
+    assert not (dangerous & set(REGISTRY))
+
+
+def test_the_one_acting_tool_is_safe_by_default():
+    """`issue_refund` exists, so its default must not move money."""
+    out = execute("issue_refund", {"order_id": "ORD-5581", "amount": 120.0,
+                                   "reason": "duplicate charge"})
+    assert out["refunded"] is False
+    assert out["status"] == "requires_approval"
+
+
+def test_the_agent_cannot_mint_the_approval_it_needs():
+    """A gate the caller can open itself is not a gate."""
+    assert not any("approval" in name or "grant" in name for name in REGISTRY)
 
 
 def test_tools_do_not_mutate_the_fixtures():
