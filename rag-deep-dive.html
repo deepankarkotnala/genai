@@ -45,6 +45,7 @@
 <link rel="stylesheet" href="assets/styles.css?v=20260801d">
 <link href="assets/office-theme.css?v=20260801a" rel="stylesheet"/>
 <link href="assets/genai-motion.css?v=20260801a" rel="stylesheet"/>
+<link href="assets/glossary.css?v=20260802b" rel="stylesheet"/>
 <style>
   /* This standalone page builds its own section sidebar; keep the same look. */
   .nav .sec-num { font-family: var(--font-mono); }
@@ -228,90 +229,57 @@ forecasting model inputs.</code></pre>
         <h2 id="chunking">5 · Chunking — the unit of retrieval</h2>
         <p>Chunking splits documents into smaller pieces that can be embedded and retrieved. The chunk is the atomic unit of retrieval, so its design dominates retrieval quality. A good chunk is <strong>small enough</strong> to fit the context, <strong>large enough</strong> to preserve meaning, <strong>traceable</strong> to its source, and <strong>metadata-rich</strong>.</p>
 
-        <details class="collapse" open><summary>5.1 · Fixed-size chunking <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
-          <div class="collapse-body">
-            <p>Split by a fixed number of tokens/characters, usually with overlap (e.g. size 500, overlap 50 → chunks 1–500, 451–950, 901–1400).</p>
-            <div class="grid grid-2">
-              <div class="card"><h4 style="color:var(--green)">Pros</h4><p>Simple, fast, easy to implement; fine for generic text.</p></div>
-              <div class="card"><h4 style="color:var(--red)">Cons</h4><p>Cuts sentences/tables mid-stream; separates headings from content; loses meaning.</p></div>
-            </div>
-            <p><strong>Best for:</strong> large plain-text docs, logs, generic reports, quick prototypes.</p>
-          </div>
-        </details>
+        <h3 id="chunk-fixed">5.1 · Fixed-size chunking</h3>
+        <p>Split by a fixed number of tokens/characters, usually with overlap (e.g. size 500, overlap 50 → chunks 1–500, 451–950, 901–1400).</p>
+        <div class="grid grid-2">
+          <div class="card"><h4 style="color:var(--green)">Pros</h4><p>Simple, fast, easy to implement; fine for generic text.</p></div>
+          <div class="card"><h4 style="color:var(--red)">Cons</h4><p>Cuts sentences/tables mid-stream; separates headings from content; loses meaning.</p></div>
+        </div>
+        <p><strong>Best for:</strong> large plain-text docs, logs, generic reports, quick prototypes.</p>
 
-        <details class="collapse"><summary>5.2 · Recursive character chunking <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
-          <div class="collapse-body">
-            <p>Splits using a hierarchy of separators — try paragraphs (<code>\n\n</code>), then lines (<code>\n</code>), then sentences (<code>.</code>), then words (<code> </code>), then characters. Falls back only when a piece is still too large.</p>
-            <p><strong>Pros:</strong> preserves readability, better than pure fixed-size. <strong>Cons:</strong> still no real understanding of meaning; struggles with complex technical sections.</p>
-            <p><strong>Best for:</strong> general RAG, documentation, policy docs, manuals, FAQs.</p>
-          </div>
-        </details>
+        <h3 id="chunk-recursive">5.2 · Recursive character chunking</h3>
+        <p>Splits using a hierarchy of separators — try paragraphs (<code>\n\n</code>), then lines (<code>\n</code>), then sentences (<code>.</code>), then words (<code> </code>), then characters. Falls back only when a piece is still too large.</p>
+        <p><strong>Pros:</strong> preserves readability, better than pure fixed-size. <strong>Cons:</strong> still no real understanding of meaning; struggles with complex technical sections.</p>
+        <p><strong>Best for:</strong> general RAG, documentation, policy docs, manuals, FAQs.</p>
 
-        <details class="collapse"><summary>5.3 · Sentence-based chunking <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
-          <div class="collapse-body">
-            <p>Chunks are made of complete sentences, so embeddings get clean semantic units. <strong>Pros:</strong> never cuts a sentence, good embedding quality. <strong>Cons:</strong> inconsistent chunk sizes; may lose section-level context.</p>
-            <p><strong>Best for:</strong> natural-language docs, policies, runbooks, knowledge articles.</p>
-          </div>
-        </details>
+        <h3 id="chunk-sentence">5.3 · Sentence-based chunking</h3>
+        <p>Chunks are made of complete sentences, so embeddings get clean semantic units. <strong>Pros:</strong> never cuts a sentence, good embedding quality. <strong>Cons:</strong> inconsistent chunk sizes; may lose section-level context.</p>
+        <p><strong>Best for:</strong> natural-language docs, policies, runbooks, knowledge articles.</p>
 
-        <details class="collapse"><summary>5.4 · Paragraph-based chunking <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
-          <div class="collapse-body">
-            <p>Each paragraph (or small group) becomes a chunk. <strong>Pros:</strong> preserves human-written structure, interpretable. <strong>Cons:</strong> paragraphs vary wildly in length; tables/bullets get awkward.</p>
-            <p><strong>Best for:</strong> reports, business &amp; legal documents, technical descriptions.</p>
-          </div>
-        </details>
+        <h3 id="chunk-paragraph">5.4 · Paragraph-based chunking</h3>
+        <p>Each paragraph (or small group) becomes a chunk. <strong>Pros:</strong> preserves human-written structure, interpretable. <strong>Cons:</strong> paragraphs vary wildly in length; tables/bullets get awkward.</p>
+        <p><strong>Best for:</strong> reports, business &amp; legal documents, technical descriptions.</p>
 
-        <details class="collapse"><summary>5.5 · Heading / section-based chunking <span class="pill green" style="margin-left:8px">practical favorite</span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
-          <div class="collapse-body">
-            <p>Split on document headings (1. Introduction, 2. Scope, 3. Input Tags…). Each section becomes one or more chunks. <strong>Pros:</strong> preserves hierarchy, great traceability, ideal for enterprise docs. <strong>Cons:</strong> depends on reliable heading detection; long sections still need sub-splitting.</p>
-            <p><strong>Best for:</strong> runbooks, technical manuals, API docs, project, vendor and compliance documents. One of the most practical strategies for enterprise RAG.</p>
-          </div>
-        </details>
+        <h3 id="chunk-heading">5.5 · Heading / section-based chunking <span class="pill green" style="margin-left:8px">practical favorite</span></h3>
+        <p>Split on document headings (1. Introduction, 2. Scope, 3. Input Tags…). Each section becomes one or more chunks. <strong>Pros:</strong> preserves hierarchy, great traceability, ideal for enterprise docs. <strong>Cons:</strong> depends on reliable heading detection; long sections still need sub-splitting.</p>
+        <p><strong>Best for:</strong> runbooks, technical manuals, API docs, project, vendor and compliance documents. One of the most practical strategies for enterprise RAG.</p>
 
-        <details class="collapse"><summary>5.6 · Semantic chunking <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
-          <div class="collapse-body">
-            <p>Splits on <em>meaning</em>, not length. Embed each sentence, compare adjacent similarity, and start a new chunk when the topic shifts (similarity drops below a threshold). Sentences about model inputs land in one chunk; API endpoint details in another.</p>
-            <p><strong>Pros:</strong> meaning-preserving, higher retrieval accuracy, avoids mixing topics. <strong>Cons:</strong> more expensive/complex, needs embeddings <em>during</em> ingestion, threshold tuning, slower.</p>
-            <p><strong>Best for:</strong> knowledge-heavy docs, research papers, technical manuals, mixed-topic content.</p>
-          </div>
-        </details>
+        <h3 id="chunk-semantic">5.6 · Semantic chunking</h3>
+        <p>Splits on <em>meaning</em>, not length. Embed each sentence, compare adjacent similarity, and start a new chunk when the topic shifts (similarity drops below a threshold). Sentences about model inputs land in one chunk; API endpoint details in another.</p>
+        <p><strong>Pros:</strong> meaning-preserving, higher retrieval accuracy, avoids mixing topics. <strong>Cons:</strong> more expensive/complex, needs embeddings <em>during</em> ingestion, threshold tuning, slower.</p>
+        <p><strong>Best for:</strong> knowledge-heavy docs, research papers, technical manuals, mixed-topic content.</p>
 
-        <details class="collapse"><summary>5.7 · Sliding-window (overlapping) chunking <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
-          <div class="collapse-body">
-            <p>Overlapping windows (e.g. size 800, overlap 200) so information spanning a boundary isn't lost. <strong>Pros:</strong> reduces boundary context loss. <strong>Cons:</strong> more storage, duplicate context, can add retrieval noise (pair with <a href="#mmr">MMR</a>).</p>
-            <p><strong>Best for:</strong> long technical docs, manuals, legal contracts, large reports.</p>
-          </div>
-        </details>
+        <h3 id="chunk-sliding">5.7 · Sliding-window (overlapping) chunking</h3>
+        <p>Overlapping windows (e.g. size 800, overlap 200) so information spanning a boundary isn't lost. <strong>Pros:</strong> reduces boundary context loss. <strong>Cons:</strong> more storage, duplicate context, can add retrieval noise (pair with <a href="#mmr">MMR</a>).</p>
+        <p><strong>Best for:</strong> long technical docs, manuals, legal contracts, large reports.</p>
 
-        <details class="collapse"><summary>5.8 · Table-aware chunking <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
-          <div class="collapse-body">
-            <p>Tables must not be blindly split row-by-row or page-by-page. Convert them to a form the LLM reads well:</p>
-            <div class="code-block"><div class="code-head"><span class="lang">table → text</span></div><pre><code>The following table defines metric thresholds:
+        <h3 id="chunk-table">5.8 · Table-aware chunking</h3>
+        <p>Tables must not be blindly split row-by-row or page-by-page. Convert them to a form the LLM reads well:</p>
+        <div class="code-block"><div class="code-head"><span class="lang">table → text</span></div><pre><code>The following table defines metric thresholds:
 - pg_latency has a warn threshold of 250 ms and a crit threshold of 800 ms.
 - gateway_cpu has a warn threshold of 70 % and a crit threshold of 90 %.</code></pre></div>
-            <p><strong>Methods:</strong> Markdown conversion · row-wise text · a table-summary chunk · parent-child table chunking. <strong>Best for:</strong> Excel, vendor cost analyses, release checklists, metric-threshold tables, financial/KPI tables.</p>
-          </div>
-        </details>
+        <p><strong>Methods:</strong> Markdown conversion · row-wise text · a table-summary chunk · parent-child table chunking. <strong>Best for:</strong> Excel, vendor cost analyses, release checklists, metric-threshold tables, financial/KPI tables.</p>
 
-        <details class="collapse"><summary>5.9 · Code-aware chunking <svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
-          <div class="collapse-body">
-            <p>Chunk by code structure — function, class, method, API endpoint, module, config block — so a whole <code>def predict(): …</code> stays together. <strong>Best for:</strong> Python APIs, FastAPI code, SQL scripts, config-driven frameworks.</p>
-          </div>
-        </details>
+        <h3 id="chunk-code">5.9 · Code-aware chunking</h3>
+        <p>Chunk by code structure — function, class, method, API endpoint, module, config block — so a whole <code>def predict(): …</code> stays together. <strong>Best for:</strong> Python APIs, FastAPI code, SQL scripts, config-driven frameworks.</p>
 
-        <details class="collapse"><summary>5.10 · Parent-child chunking <span class="pill purple" style="margin-left:8px">advanced</span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
-          <div class="collapse-body">
-            <p>Store small, precise <strong>child</strong> chunks for <em>retrieval</em>, but return the larger <strong>parent</strong> section for <em>generation</em>. Search hits the precise child; the LLM receives the richer surrounding context.</p>
-            <p><strong>Pros:</strong> high retrieval precision + good answer context. <strong>Cons:</strong> more complex indexing, needs a child→parent map. <strong>Best for:</strong> enterprise RAG, long manuals, regulatory &amp; project documentation.</p>
-          </div>
-        </details>
+        <h3 id="chunk-parent-child">5.10 · Parent-child chunking <span class="pill purple" style="margin-left:8px">advanced</span></h3>
+        <p>Store small, precise <strong>child</strong> chunks for <em>retrieval</em>, but return the larger <strong>parent</strong> section for <em>generation</em>. Search hits the precise child; the LLM receives the richer surrounding context.</p>
+        <p><strong>Pros:</strong> high retrieval precision + good answer context. <strong>Cons:</strong> more complex indexing, needs a child→parent map. <strong>Best for:</strong> enterprise RAG, long manuals, regulatory &amp; project documentation.</p>
 
-        <details class="collapse"><summary>5.11 · Contextual Retrieval <span class="pill green" style="margin-left:8px">trending · Anthropic</span><svg class="chev" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 6l6 6-6 6"/></svg></summary>
-          <div class="collapse-body">
-            <p>Before embedding, prepend each chunk with a short LLM-generated blurb situating it in the whole document (<em>“This chunk is from the Q3 maintenance report, section on TI1354 tube leakage…”</em>). The standalone chunk <em>“the limit was raised to 200°C”</em> becomes self-contained instead of ambiguous, so it embeds and matches far better. Index the <em>contextualized</em> text with both vectors and BM25.</p>
-            <p><strong>Pros:</strong> large drop in retrieval-failure rate; fixes the classic “orphan chunk loses its context” problem; pairs especially well with hybrid + rerank. <strong>Cons:</strong> one LLM call per chunk at ingestion (mitigate with prompt caching), higher build cost &amp; storage. <strong>Best for:</strong> long manuals, SOPs, regulatory docs, anything where chunks lose meaning out of context.</p>
-          </div>
-        </details>
+        <h3 id="chunk-contextual">5.11 · Contextual Retrieval <span class="pill green" style="margin-left:8px">trending · Anthropic</span></h3>
+        <p>Before embedding, prepend each chunk with a short LLM-generated blurb situating it in the whole document (<em>“This chunk is from the Q3 maintenance report, section on TI1354 tube leakage…”</em>). The standalone chunk <em>“the limit was raised to 200°C”</em> becomes self-contained instead of ambiguous, so it embeds and matches far better. Index the <em>contextualized</em> text with both vectors and BM25.</p>
+        <p><strong>Pros:</strong> large drop in retrieval-failure rate; fixes the classic “orphan chunk loses its context” problem; pairs especially well with hybrid + rerank. <strong>Cons:</strong> one LLM call per chunk at ingestion (mitigate with prompt caching), higher build cost &amp; storage. <strong>Best for:</strong> long manuals, SOPs, regulatory docs, anything where chunks lose meaning out of context.</p>
 
         <!-- ============ 5. EMBEDDINGS ============ -->
         <h2 id="embeddings">6 · Embeddings</h2>
@@ -662,9 +630,10 @@ Instructions:
 </div>
 
 <script src="assets/app.js?v=20260731b"></script>
-<script src="assets/sitenav.js?v=20260801a"></script>
+<script src="assets/sitenav.js?v=20260801b"></script>
 <script src="assets/enhance.js?v=20260801a"></script>
 <script src="assets/genai-motion.js?v=20260728a"></script>
 <script src="assets/section-nav.js?v=20260731b"></script>
+<script src="assets/glossary.js?v=20260802b"></script>
 </body>
 </html>
