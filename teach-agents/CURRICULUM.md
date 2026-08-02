@@ -52,11 +52,28 @@ coding exercise → senior follow-ups → recap → next lesson → optional dee
 | 3 | Lessons 7–9 — reliability, refund approval path, security | **done** |
 | 4 | Lessons 10–13 — evaluation, tracing, MCP, multi-agent and A2A | **done** |
 | 5 | Lessons 14–15 — deployment, capstone, interview drills | **done** |
-| 6 | Supplementary EDA lab (local Gemma via Ollama) | in progress |
+| 6 | Supplementary EDA lab (local Gemma via Ollama) | **done** |
 
 The main course is complete: 15 lessons, 190 passing tests, a 13-case evaluation
 suite, an adversarial corpus of 10 attacks, six runnable milestones, and no API
 key required anywhere.
+
+## Supplementary · the EDA lab
+
+`eda-lab/` — 4–6 hours, optional, entirely local. A Gemma model running under
+Ollama turns a plain-English question into a structured **analysis plan**;
+eleven deterministic pandas functions execute it. The model never writes Python
+and never touches the dataframe, because no tool in the registry can.
+
+It is a second angle on Lessons 3, 9, 10, 14 and 15 rather than new material —
+each of those lessons now links to it — applied to a domain where the failure
+modes look different: a hallucinated column instead of a hallucinated tool, a
+silently dropped argument instead of a silently dropped retry.
+
+87 offline tests, 12 Ollama integration tests deselected by default, 11 golden
+cases scored on 10 metrics, and a seeded 800-row dataset that regenerates
+byte-identically. `eda-lab/docs/decisions.md` records 15 decisions and 8
+exposures that remain.
 
 ## Six runnable milestones
 
