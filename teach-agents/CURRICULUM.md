@@ -48,11 +48,15 @@ coding exercise → senior follow-ups → recap → next lesson → optional dee
 | Wave | Contents | Status |
 | --- | --- | --- |
 | 1 | Lessons 1–3, `brain.py`, tool layer, fixtures, `steps/l02_loop.py`, tests | **done** |
-| 2 | Lessons 4–6 — reasoning patterns, retrieval, memory | pending |
-| 3 | Lessons 7–9 — reliability, refund approval path, security | pending |
-| 4 | Lessons 10–13 — evaluation, tracing, MCP, multi-agent and A2A | pending |
-| 5 | Lessons 14–15 — deployment, capstone, interview drills | pending |
-| 6 | Supplementary EDA lab (local Gemma via Ollama) | pending |
+| 2 | Lessons 4–6 — reasoning patterns, retrieval, memory | **done** |
+| 3 | Lessons 7–9 — reliability, refund approval path, security | **done** |
+| 4 | Lessons 10–13 — evaluation, tracing, MCP, multi-agent and A2A | **done** |
+| 5 | Lessons 14–15 — deployment, capstone, interview drills | **done** |
+| 6 | Supplementary EDA lab (local Gemma via Ollama) | in progress |
+
+The main course is complete: 15 lessons, 190 passing tests, a 13-case evaluation
+suite, an adversarial corpus of 10 attacks, six runnable milestones, and no API
+key required anywhere.
 
 ## Six runnable milestones
 
