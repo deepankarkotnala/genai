@@ -39,8 +39,11 @@
       blurb: "DS → Senior GenAI Engineer",
       home: "index.html",
       pages: [
-        // Foundations
-        { path: "modules/00_basics.html", title: "The Basics", num: "00", track: "Foundations", kw: "basics primer beginner start here plain english what is a model token transformer attention neural network glossary vocabulary jargon no maths" },
+        // Foundations. Module 00 ("The Basics") is deliberately not listed: it
+        // is no longer part of the reading path, so it is out of the sidebar,
+        // the search index and the reading order on the hub. Its file stays on
+        // disk — the same treatment the retired RAG modules and the old
+        // teach-agents lessons get above — so nothing 404s for a bookmark.
         { path: "modules/01_foundations.html", title: "Foundations of LLMs", num: "01", track: "Foundations", kw: "llm token transformer attention prompt context window temperature decoding next token prediction" },
         { path: "modules/02_transformers.html", title: "Transformers Deep Dive", num: "02", track: "Foundations", kw: "transformer attention self-attention multi-head positional encoding qkv softmax feedforward residual layernorm" },
         { path: "modules/03_local_llms.html", title: "Local LLMs & Ollama", num: "03", track: "Foundations", kw: "ollama local llama qwen gemma quantization gguf gpu vram modelfile" },
@@ -74,13 +77,9 @@
       mark: "A",
       blurb: "Interview-focused agent course",
       home: "teach-agents/index.html",
-      /* The 15-lesson course is being written wave by wave; lessons 01-03 are
-         live. The five lessons of the previous course are deliberately NOT
-         listed: they contradict these on setup (they require an API key), teach
-         a codebase that no longer exists, and their source data was never part
-         of this repository. Their files remain on disk only so later waves can
-         mine two pieces of still-useful prose -- the handoff/orchestrator
-         explanation and the workflow-vs-agent decision rule. */
+      /* The complete 15-lesson course. The previous industrial-domain version
+         was removed in full -- its lessons, code and fixtures are gone, and the
+         two pieces of reusable prose were carried into CURRICULUM.md. */
       pages: [
         { path: "teach-agents/index.html", title: "Course index", num: "✦", kw: "agents course overview index start" },
         { path: "teach-agents/lessons/0001-llm-mechanics.html", title: "LLM mechanics", num: "01", kw: "llm messages roles context window tokens temperature determinism structured output tool calling brain abstraction support triage" },
@@ -93,7 +92,11 @@
         { path: "teach-agents/lessons/0008-irreversible-actions.html", title: "Irreversible actions", num: "08", kw: "refund idempotency key approval token human in the loop audit log policy dry run duplicate payment money" },
         { path: "teach-agents/lessons/0009-security.html", title: "Security & guardrails", num: "09", kw: "prompt injection indirect retrieval poisoning least privilege argument authorisation confused deputy exfiltration output validation" },
         { path: "teach-agents/lessons/0010-evaluation.html", title: "Agent evaluation", num: "10", kw: "golden set outcome trajectory evaluation regression suite llm as judge rubric adversarial unsafe trajectory coverage" },
-        { path: "teach-agents/lessons/0011-tracing-cost.html", title: "Tracing, latency & cost", num: "11", kw: "trace span correlation id token accounting cost per run quadratic prompt caching model routing p99 debug" }
+        { path: "teach-agents/lessons/0011-tracing-cost.html", title: "Tracing, latency & cost", num: "11", kw: "trace span correlation id token accounting cost per run quadratic prompt caching model routing p99 debug" },
+        { path: "teach-agents/lessons/0012-mcp.html", title: "MCP & the tool boundary", num: "12", kw: "mcp model context protocol host client server json rpc capability discovery allowlist withheld tool trust boundary" },
+        { path: "teach-agents/lessons/0013-multi-agent.html", title: "Multi-agent & A2A", num: "13", kw: "multi agent supervisor specialist a2a agent card task lifecycle artifact delegation handoff brief cost measured" },
+        { path: "teach-agents/lessons/0014-deployment.html", title: "Deployment & operations", num: "14", kw: "framework comparison langgraph checkpointer stateless service durable run state resume versioning prompt rollout slo runbook" },
+        { path: "teach-agents/lessons/0015-capstone.html", title: "Interview capstone", num: "15", kw: "capstone deliverables architecture threat model eval report drills whiteboard rapid fire coding round behavioural framing" }
       ]
     },
     {

@@ -1,0 +1,73 @@
+/* =========================================================================
+   Jargon glossary — companion stylesheet for assets/glossary.js
+
+   The marks themselves are plain `.term-link` buttons, styled in
+   office-theme.css alongside the hand-written "additional read" terms, and
+   they open the same `.term-dialog`. So this file is small on purpose: it only
+   states where the auto-glossary differs.
+
+   The one deliberate difference is WEIGHT. A page carries one or two
+   hand-authored term links but forty-odd glossary terms, so at full
+   `.term-link` strength the prose would read as a wall of green. These keep
+   the identical shape — accent colour, dashed underline, ⓘ, click to open —
+   at a lower volume, and come up to full strength on hover and focus.
+   ========================================================================= */
+
+.term-link.jargon {
+  font-weight: inherit;                 /* do not bold every technical word */
+  color: inherit;                       /* colour arrives on hover/focus */
+  border-bottom-color: var(--accent-ring, rgba(16, 124, 65, .35));
+  cursor: pointer;                      /* it opens a dialog, so: pointer */
+  transition: color .13s ease, background-color .13s ease, border-color .13s ease;
+  /* Stop the long-press magnifier and text-selection popup on iOS/Android
+     fighting the tap. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+.term-link.jargon::after {
+  color: var(--accent, #107c41);
+  opacity: .55;
+  transition: opacity .13s ease;
+}
+
+.term-link.jargon:hover,
+.term-link.jargon:focus-visible {
+  color: var(--accent, #107c41);
+  border-bottom-color: var(--accent, #107c41);
+  border-bottom-style: solid;
+  background: var(--accent-soft, rgba(16, 124, 65, .12));
+}
+
+.term-link.jargon:hover::after,
+.term-link.jargon:focus-visible::after { opacity: 1; }
+
+/* Inside a bolded or italic run, inherit the surrounding emphasis rather than
+   fighting it — the term should still read as part of the sentence. */
+strong .term-link.jargon,
+b .term-link.jargon { font-weight: inherit; }
+
+/* Phones: no hover state to discover the affordance with, so the mark carries
+   its accent colour permanently and the ⓘ is at full strength. */
+@media (hover: none) {
+  .term-link.jargon { color: var(--accent, #107c41); }
+  .term-link.jargon::after { opacity: 1; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .term-link.jargon, .term-link.jargon::after { transition: none; }
+}
+
+/* The shared dialog inherits .term-dialog wholesale; the auto-glossary entry
+   is a single sentence, so give it a touch more room to breathe. */
+.jargon-dialog .term-dialog-body p {
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.66;
+}
+
+/* Print: the dialog is never on paper, and the underlines are just noise. */
+@media print {
+  .jargon-dialog { display: none !important; }
+  .term-link.jargon { border-bottom: none; color: inherit; }
+  .term-link.jargon::after { content: ""; }
+}
