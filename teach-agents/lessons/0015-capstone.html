@@ -1,0 +1,300 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>Lesson 15 · Interview capstone — Understanding AI Agents</title>
+<meta name="description" content="The deliverables pack and four timed drills: a 15-minute coding round, a 2-minute whiteboard, a system-design exercise and an incident walkthrough — plus how to talk about the project honestly.">
+<link rel="icon" href="../../assets/brand/favicon.svg?v=20260727c" type="image/svg+xml">
+<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260727c" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260727c">
+<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260727c" sizes="180x180">
+<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260727c">
+<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260727c" color="#6f47f5">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var mob=!!(window.matchMedia&&window.matchMedia("(max-width:860px)").matches);var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(mob?"s":"xs");var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="../../assets/styles.css?v=20260801d">
+<link href="../../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
+<link href="../../assets/genai-motion.css?v=20260801a" rel="stylesheet"/>
+</head>
+<body data-page="ta-l15">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="../../index.html" aria-label="Switch job home">
+<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260727c" alt=""/></span>
+<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search the course…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Understanding AI Agents / <b>Lesson 15 · Interview capstone</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Lesson 15 · Shipping it</div>
+        <h1>The interview capstone</h1>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~4 h total · plan a weekend block</span>
+          <span class="pill">20 min read · 100 min deliverables · 120 min drills</span>
+          <span class="pill purple">Prereq · Lesson 14</span>
+          <span class="pill">Final lesson</span>
+        </div>
+
+        <div class="callout key">
+          <div class="c-ico">🎯</div>
+          <div class="c-body"><div class="c-title">By the end of this lesson you will have</div>
+          <ul>
+            <li>A deliverables pack you can send someone: README, architecture, threat model, eval report, traces.</li>
+            <li>A <strong>15-minute from-scratch coding round</strong> you have actually done under time.</li>
+            <li>A <strong>2-minute whiteboard answer</strong> you have said out loud.</li>
+            <li>A system-design exercise and an incident walkthrough.</li>
+            <li>An honest way to talk about your background that survives follow-ups.</li>
+          </ul></div>
+        </div>
+
+        <h2 id="inventory">1 · What you built</h2>
+
+<pre><code>cd teach-agents/project
+python steps/l15_capstone.py --inventory
+</code></pre>
+
+        <table>
+          <thead><tr><th>L</th><th>Artifact</th><th>What it does</th></tr></thead>
+          <tbody>
+            <tr><td>01</td><td><code>brain.py</code></td><td>one interface, three backends, no API key</td></tr>
+            <tr><td>02</td><td><code>agent/loop.py</code></td><td>the explicit loop, step limit, named outcomes</td></tr>
+            <tr><td>03</td><td><code>schemas.py</code> + <code>tools.py</code></td><td>schemas, validation, dispatch boundary</td></tr>
+            <tr><td>04</td><td><code>patterns.py</code></td><td>ReAct, plan-execute, reflection, routing</td></tr>
+            <tr><td>05</td><td><code>retrieval.py</code></td><td>chunk, BM25, rerank, relevance floor</td></tr>
+            <tr><td>06</td><td><code>state.py</code> + <code>memory.py</code></td><td>budgets, capping, compaction, recall</td></tr>
+            <tr><td>07</td><td><code>control.py</code> + <code>faults.py</code></td><td>timeouts, retries, loop detection</td></tr>
+            <tr><td>08</td><td><code>policy.py</code> + <code>approval.py</code></td><td>policy, idempotency, approval, audit</td></tr>
+            <tr><td>09</td><td><code>guards.py</code> + <code>adversarial/</code></td><td>authorisation, redaction, 10 attacks</td></tr>
+            <tr><td>10</td><td><code>evals/</code></td><td>13 cases, mostly refusals; non-zero exit</td></tr>
+            <tr><td>11</td><td><code>trace.py</code></td><td>spans, correlation ids, token cost</td></tr>
+            <tr><td>12</td><td><code>mcp_server/</code></td><td>JSON-RPC MCP, read-only allowlist</td></tr>
+            <tr><td>13</td><td><code>a2a_demo/</code> + <code>supervisor.py</code></td><td>peer delegation, measured split</td></tr>
+            <tr><td>14</td><td><code>persistence.py</code> + <code>service/</code></td><td>durable runs, resume, versioning</td></tr>
+            <tr><td>15</td><td><code>docs/</code> + <code>interview/</code></td><td>19 decisions, 45 questions, 4 drills</td></tr>
+          </tbody>
+        </table>
+
+        <p><strong>Six tools. Zero frameworks. No API key required anywhere.</strong></p>
+
+        <h2 id="deliverables">2 · The deliverables pack</h2>
+
+        <p>Five documents. Two exist; write the other three now, because writing them is how you find out what you cannot explain.</p>
+
+        <div class="steps">
+          <p><strong>1 · README</strong> <em>(exists)</em> — what it is, how to run it, what the stub backend cannot show you. That last section is the credibility one.</p>
+          <p><strong>2 · <code>docs/decisions.md</code></strong> <em>(exists)</em> — 19 decisions with trade-offs and an "open exposures" section. Re-read this before any interview: each entry is a question you may be asked, and the trade-off column is what separates a good answer from a recited one.</p>
+          <p><strong>3 · Architecture diagram</strong> — one page. The loop, the six tools, the approval gate, the store, the MCP boundary. Draw it by hand; if you cannot, you do not know it well enough to whiteboard it.</p>
+          <p><strong>4 · Threat model</strong> — one page from Lesson 9's corpus: assets (money, customer data, the reply channel), attackers (customer, poisoned document, compromised MCP server), controls in priority order, and what remains exposed.</p>
+          <p><strong>5 · Evaluation report</strong> — run <code>--eval</code>, paste the output, add two paragraphs: what the suite protects, and the coverage hole the regression drill found.</p>
+        </div>
+
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">Also collect: two traces and a cost line</div>
+          <p>Save one healthy trace and one broken one from <code>--trace</code> and <code>--debug</code>. Being able to show a real span tree, point at the failed span and say what the agent did next is worth more than any diagram.</p>
+          <p>And one number: <em>"about 1,080 tokens per run; at small-model prices that's under two dollars per ten thousand tickets."</em> Most candidates cannot cost their own system.</p></div>
+        </div>
+
+        <h2 id="drill1">3 · Drill 1 · The coding round (15 min, no notes)</h2>
+
+        <p>Implement a tool-calling loop from scratch. Set a timer. Ship in this order:</p>
+
+<pre><code>1  message list with roles
+2  a BOUNDED for loop — not while True
+3  call the model; branch on tool-call vs final answer
+4  dispatch through a DICTIONARY — never getattr or eval on model output
+5  catch tool errors and feed them back as observations
+6  append the decision and the result
+7  return an object carrying WHY it stopped
+</code></pre>
+
+        <p><strong>Say these while typing.</strong> The commentary is half the score:</p>
+
+        <ul>
+          <li>"The step limit is the actual bound — if termination depends on the model choosing to stop, it isn't bounded."</li>
+          <li>"Dictionary dispatch means a hallucinated tool name is a clean error."</li>
+          <li>"The tool error goes back to the model, not up the stack — a missing record is information it can act on."</li>
+          <li>"I return why it stopped, so the caller can tell a finished run from a truncated one."</li>
+        </ul>
+
+        <p><strong>Failing patterns:</strong> <code>while True</code>; <code>eval</code> dispatch; letting a tool exception escape; returning only a string.</p>
+
+        <p><strong>Self-check:</strong> run it against a ticket that does not exist. Does it terminate cleanly and say so?</p>
+
+        <h2 id="drill2">4 · Drill 2 · The whiteboard (2 min, spoken)</h2>
+
+        <p>Prompt: <em>"Design an agent that handles customer support tickets."</em> Do not start drawing boxes.</p>
+
+        <div class="steps">
+          <p><strong>Scope (15s).</strong> "What's the volume, and what can it do without a human? Those two change the design more than anything else."</p>
+          <p><strong>Shape (30s).</strong> "Most volume is a workflow, so route first with one cheap call and send only ambiguous or multi-step tickets to the agent. At 10k/day, if the agent takes 15% that's 1,500 runs — a budget I can state."</p>
+          <p><strong>The loop (30s).</strong> "Read the ticket, look up the order if referenced, search the KB for policy, draft a reply. Step budget of six, because measured runs finish in three or four."</p>
+          <p><strong>The hard part (30s).</strong> "Refunds are irreversible: policy in code, dry-run default, derived idempotency key, approval token bound to the exact amount that the agent cannot mint, append-only audit."</p>
+          <p><strong>Proof (15s).</strong> "A golden set that's mostly refusals and attacks, trajectory checks as well as outcome, traces with cost per run."</p>
+        </div>
+
+        <p>Then <strong>stop and ask what they want to go deeper on.</strong> Filling two minutes with architecture is worse than leaving room for their real question.</p>
+
+        <h2 id="drill3">5 · Drill 3 · System design (20 min)</h2>
+
+        <p>Pick one. Cover scope, shape, tools and permissions, failure handling, irreversible actions, security, evaluation, observability, cost — and what you would <em>not</em> build.</p>
+
+        <ol>
+          <li>Support triage at 10,000 tickets/day, three teams, four permission tiers.</li>
+          <li>An agent with email, calendar and CRM access for 10,000 employees.</li>
+          <li>Internal tools exposed to several AI applications across the company.</li>
+          <li>A refund agent for a marketplace where sellers, not you, hold the funds.</li>
+          <li>Retrieval over 50,000 documents, three languages, four permission tiers.</li>
+        </ol>
+
+        <p><strong>Score yourself:</strong> did you push back on any part of the premise? Name a cost or latency number? Say what you would leave out? Volunteer a failure mode unprompted? Four yeses is a strong answer.</p>
+
+        <h2 id="drill4">6 · Drill 4 · Production incident (10 min, verbal)</h2>
+
+        <p>For each: what do I look at first, candidate causes, immediate mitigation, systemic fix.</p>
+
+        <ol>
+          <li>"The agent has been looping for forty steps and timing out."</li>
+          <li>"A customer was refunded twice."</li>
+          <li>"Cost per ticket tripled overnight and no code shipped."</li>
+          <li>"The agent cited a policy document that says the opposite."</li>
+          <li>"Escalation rate went from 12% to 40% this morning."</li>
+          <li>"A ticket contained instructions and the agent followed them."</li>
+          <li>"p99 latency is 40s; mean is 3s."</li>
+          <li>"Eval scores went up but complaints went up too."</li>
+        </ol>
+
+        <div class="callout note">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The first question is always the same</div>
+          <p><strong>Do I have a trace?</strong> If the honest answer is no, that is the finding — and saying so is a better response than speculating.</p></div>
+        </div>
+
+        <h2 id="story">7 · Telling the story honestly</h2>
+
+        <div class="callout danger">
+          <div class="c-ico">⚖️</div>
+          <div class="c-body"><div class="c-title">Do not imply this shipped to customers</div>
+          <p>You are an experienced IT and ML engineer who has recently built a substantial, production-shaped agent system. That is the truth and it is a strong position. Claiming years of GenAI production experience is unnecessary and does not survive follow-ups — a well-built project you can defend in depth does.</p></div>
+        </div>
+
+        <p>The sentence that does the work:</p>
+
+        <div class="callout note"><div class="c-ico">🎤</div><div class="c-body">
+        <p>"I've got nine years in software and four to five in ML. GenAI is newer for me, so rather than read about agents I built one properly — a support-triage agent with an approval gate on refunds, an eval suite, tracing and an adversarial test corpus. Most of what made it work turned out to be ordinary engineering: idempotency, retry budgets, least privilege, audit trails."</p></div></div>
+
+        <p>That last clause reframes your background from a gap into the reason you are credible. Then map it explicitly when relevant — idempotency keys are payment APIs, retry budgets are circuit breakers, trajectory eval is an integration test asserting a call sequence, argument-level authorisation is row-level security, prompt versioning is schema migration plus a feature flag.</p>
+
+        <p>And name the two things that are genuinely different, so you do not sound like you are flattening the domain: <strong>the caller is probabilistic</strong> and may sincerely believe it has not already asked; and <strong>there is no parameterised query for natural language</strong>, which is why injection defence has to be architectural.</p>
+
+        <h3>The failure question, which is the one to want</h3>
+
+        <p>Four real ones, better material than any success:</p>
+
+        <ul>
+          <li><strong>Infinite retry.</strong> Failed tool results were filtered out of observed state, so "I have no ticket" stayed true however many times reading it failed.</li>
+          <li><strong>Partial data reached a customer-facing summary.</strong> <code>refund_eligible=None</code> formatted into prose and reported as a successful run. Needed two layers: the controller detects, the policy refuses.</li>
+          <li><strong>A self-congratulating critique.</strong> The reflection pass scanned the whole history, so the system prompt's own words satisfied its checks and it always came back clean.</li>
+          <li><strong>An eval hole in fully-covered code.</strong> Deleting a safety default passed 12/12 until a case was added to pin it.</li>
+        </ul>
+
+        <p>For "what would you do differently": measure the multi-agent split <em>before</em> building it, and write the eval suite earlier — several of those bugs would have been caught by it rather than by me.</p>
+
+        <p>For "what are you weakest on": production operation at scale. Built the mechanisms, have not run them under real traffic for a year. Then say what you would want in month one — real traces, the escalation rate, and a golden set built from actual tickets.</p>
+
+        <h2 id="checklist">8 · Readiness checklist</h2>
+
+        <div class="recap">
+        <ul>
+          <li>I can write the loop from memory in 15 minutes and narrate the four decisions.</li>
+          <li>I can give the 2-minute whiteboard answer without notes, and I stop early to ask.</li>
+          <li>I can state the cost of a run and why it is quadratic in steps.</li>
+          <li>I can explain the refund path end to end, including the ambiguous timeout.</li>
+          <li>I lead security answers with capability restriction, not prompt wording.</li>
+          <li>I can name three of my own open exposures without being prompted.</li>
+          <li>I can describe a bug I caused, how I found it, and what it changed.</li>
+          <li>I can say when <em>not</em> to use an agent, a framework, multi-agent, MCP and RAG.</li>
+          <li>I can show a trace and read it aloud.</li>
+        </ul>
+        </div>
+
+        <div class="callout key"><div class="c-ico">✅</div><div class="c-body"><div class="c-title">Course complete</div>
+        <p>Fifteen lessons, roughly 49 hours, one agent — from a forty-line loop to a versioned service with an approval gate, an eval suite that catches its own blind spots, and a measured argument against the pattern everyone reaches for first.</p>
+        <p>The drills live in <a href="../interview/drills.md">interview/drills.md</a>, the 45 rapid-fire questions in <a href="../interview/rapid-fire.md">rapid-fire.md</a>, the senior second-questions in <a href="../interview/senior-followups.md">senior-followups.md</a>, and the framing in <a href="../interview/behavioural-framing.md">behavioural-framing.md</a>. Come back to them the week before an interview.</p></div></div>
+
+        <h2 id="deeper">9 · Where to go next</h2>
+        <ul>
+          <li><a href="../../scenario-practice/index.html">Scenario Design Studio</a> — eight timed architecture drills for system-design rounds.</li>
+          <li><a href="../../interview-prep/index.html">GenAI interview question bank</a> — 107 questions across 10 topics.</li>
+          <li><a href="../../modules/15_capstone_projects.html">Module 15 · Capstone Projects</a> — nine more projects if you want a second one.</li>
+          <li><a href="../project/docs/decisions.md">docs/decisions.md</a> — the 19 decisions, to re-read before an interview.</li>
+        </ul>
+
+        <div class="page-nav">
+          <a href="0014-deployment.html"><div class="dir">← Previous</div><div class="ttl">Lesson 14 · Deployment &amp; operations</div></a>
+          <a class="next" href="../index.html"><div class="dir">Finished →</div><div class="ttl">Course index</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+
+<script>
+window.PORTAL = {
+  homeHref: "../../index.html",
+  navLabel: "The course",
+  here: "lessons/0015-capstone.html",
+  base: "../",
+  pages: [
+    { file: "index.html",                             title: "Course index",          num: "✦", kw: "overview start home index agents course" },
+    { file: "lessons/0001-llm-mechanics.html",        title: "LLM mechanics",         num: "01", kw: "llm messages roles context window structured output tool calling brain" },
+    { file: "lessons/0002-agent-loop.html",           title: "The agent loop",        num: "02", kw: "loop observe decide act max steps termination search_kb" },
+    { file: "lessons/0003-tool-calling.html",         title: "Tools & validation",    num: "03", kw: "tool schema validation arguments read_ticket lookup_order parallel" },
+    { file: "lessons/0004-reasoning-patterns.html",   title: "Reasoning patterns",    num: "04", kw: "react plan execute reflection routing draft_reply cost" },
+    { file: "lessons/0005-retrieval.html",            title: "Retrieval as a tool",   num: "05", kw: "retrieval rag chunking bm25 rerank citations relevance floor" },
+    { file: "lessons/0006-context-memory.html",       title: "Context & memory",      num: "06", kw: "context budget compaction summarisation state memory recall" },
+    { file: "lessons/0007-reliability.html",          title: "Reliability",           num: "07", kw: "timeout retry backoff loop detection partial failure escalate" },
+    { file: "lessons/0008-irreversible-actions.html", title: "Irreversible actions",  num: "08", kw: "refund idempotency approval token audit policy dry run" },
+    { file: "lessons/0009-security.html",             title: "Security & guardrails", num: "09", kw: "prompt injection poisoning least privilege authorisation exfiltration" },
+    { file: "lessons/0010-evaluation.html",           title: "Agent evaluation",      num: "10", kw: "golden set trajectory outcome regression llm as judge adversarial" },
+    { file: "lessons/0011-tracing-cost.html",         title: "Tracing, latency & cost", num: "11", kw: "trace span correlation id tokens cost prompt caching model routing" },
+    { file: "lessons/0012-mcp.html",                  title: "MCP & the tool boundary", num: "12", kw: "mcp host client server json rpc discovery allowlist withheld tool" },
+    { file: "lessons/0013-multi-agent.html",          title: "Multi-agent & A2A",     num: "13", kw: "supervisor specialist a2a agent card task artifact delegation measured" },
+    { file: "lessons/0014-deployment.html",           title: "Deployment & operations", num: "14", kw: "framework comparison langgraph stateless durable state resume versioning slo" },
+    { file: "lessons/0015-capstone.html",             title: "Interview capstone",    num: "15", kw: "capstone deliverables drills whiteboard rapid fire coding behavioural threat model" }
+  ]
+};
+</script>
+<script src="../../assets/sitenav.js?v=20260731b"></script>
+<script src="../../assets/portal-page.js?v=20260727c"></script>
+<script src="../../assets/enhance.js?v=20260731b"></script>
+<script src="../../assets/genai-motion.js?v=20260728a"></script>
+</body>
+</html>

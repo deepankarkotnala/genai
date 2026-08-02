@@ -1,0 +1,339 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>Lesson 14 · Frameworks, deployment and operations — Understanding AI Agents</title>
+<meta name="description" content="A framework comparison you can now judge, then the four things a service forces: stateless service with stateful runs, resume that restores rather than replays, the approval gate as a separate request, and prompt versioning.">
+<link rel="icon" href="../../assets/brand/favicon.svg?v=20260727c" type="image/svg+xml">
+<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260727c" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260727c">
+<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260727c" sizes="180x180">
+<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260727c">
+<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260727c" color="#6f47f5">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var mob=!!(window.matchMedia&&window.matchMedia("(max-width:860px)").matches);var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(mob?"s":"xs");var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="../../assets/styles.css?v=20260801d">
+<link href="../../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
+<link href="../../assets/genai-motion.css?v=20260801a" rel="stylesheet"/>
+</head>
+<body data-page="ta-l14">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="../../index.html" aria-label="Switch job home">
+<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260727c" alt=""/></span>
+<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search the course…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Understanding AI Agents / <b>Lesson 14 · Deployment</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Lesson 14 · Shipping it</div>
+        <h1>Frameworks, deployment and operations</h1>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~3.5 h total</span>
+          <span class="pill">30 min read · 85 min build · 50 min break/debug · 30 min interview</span>
+          <span class="pill purple">Prereq · Lesson 13</span>
+          <span class="pill">Next · Lesson 15</span>
+        </div>
+
+        <div class="callout key">
+          <div class="c-ico">🎯</div>
+          <div class="c-body"><div class="c-title">By the end of this lesson you will be able to</div>
+          <ul>
+            <li>Compare the agent frameworks and say what each actually buys — from experience, not marketing.</li>
+            <li>Explain <strong>stateless service, stateful run</strong>, and why that is one design not two.</li>
+            <li>Explain why resume <strong>restores</strong> rather than replays.</li>
+            <li>Explain why the approval gate only becomes real over HTTP.</li>
+            <li>Ship a prompt change safely — and say why a tool description edit is one too.</li>
+            <li>Say what you would monitor, and what you would alert on.</li>
+          </ul></div>
+        </div>
+
+        <div class="callout warn">
+          <div class="c-ico">💡</div>
+          <div class="c-body"><div class="c-title">Now you can judge a framework</div>
+          <p>You have built the loop, the tool layer, retrieval, memory, reliability controls, an approval gate, guardrails, evals, tracing, MCP and a supervisor — all without one. That is the only position from which a framework comparison is worth anything: you know what it would be replacing.</p></div>
+        </div>
+
+        <h2 id="frameworks">1 · The framework comparison</h2>
+
+        <table>
+          <thead><tr><th>Framework</th><th>Actually buys you</th><th>You would still write</th></tr></thead>
+          <tbody>
+            <tr><td><strong>None</strong> (this course)</td><td>full visibility, no version churn, minimal dependencies</td><td>everything — about 1,500 lines</td></tr>
+            <tr><td><strong>LangGraph</strong></td><td><em>durable state and resumability</em>: checkpointers, interrupts for human-in-the-loop, replayable graphs</td><td>policy, idempotency, evals, your guardrails</td></tr>
+            <tr><td><strong>LangChain</strong></td><td>a large library of integrations and loaders</td><td>the loop's control flow, and most of the safety</td></tr>
+            <tr><td><strong>CrewAI</strong></td><td>multi-agent scaffolding and role vocabulary</td><td>everything a single agent needs — and see Lesson 13</td></tr>
+            <tr><td><strong>Provider SDK agents</strong></td><td>tool-calling plumbing and a managed loop</td><td>persistence, approval, evaluation, cross-provider portability</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The honest framing</div>
+          <p>A framework earns its place on <strong>durable state, resumability and human-in-the-loop interrupts</strong> — the things that are genuinely fiddly and that you are about to build by hand in this lesson. It does <em>not</em> earn its place by naming control flow. "ReAct" is twenty lines; you wrote it in Lesson 2.</p>
+          <p>And note what no framework gives you: <strong>your policy, your approval gate, your evals, your threat model.</strong> Those are the parts that make an agent safe, and they are yours regardless.</p>
+          <p>The answer that lands in an interview: <em>"I built it without a framework so I'd understand the loop. For production I'd evaluate LangGraph specifically for checkpointing and durable interrupts, because that's the part I hand-rolled and the part I'd rather not own."</em></p></div>
+        </div>
+
+        <h2 id="four">2 · Four things a service forces</h2>
+
+        <p>Everything so far ran in one process, in memory. <a href="../project/service/api.py">service/api.py</a> forces four decisions the in-process loop let you avoid.</p>
+
+        <h3>1 · Stateless service, stateful run</h3>
+
+<pre><code>run_id = "run_" + uuid.uuid4().hex[:10]
+STORE.save(RunRecord(run_id=run_id, goal=goal, status="running"))   # BEFORE any work
+</code></pre>
+
+        <p>The service holds nothing. Run state lives in the store, so any process can serve any request. <strong>That is why horizontal scaling and crash recovery are the same mechanism</strong> — a scaled-out replica and a restarted process face the identical problem, and the store solves both.</p>
+
+        <p>Note the save happens <em>before</em> the work. A crash during step 1 must still leave a record that a run began; otherwise you have work in flight that nothing knows about.</p>
+
+        <h3>2 · Resume restores; it does not replay</h3>
+
+        <div class="callout danger">
+          <div class="c-ico">⚠️</div>
+          <div class="c-body"><div class="c-title">Replaying would re-execute side effects</div>
+          <p>Re-running completed steps is not merely wasteful. Any step with a side effect runs twice — the double-payment problem from Lesson 8, arriving through the recovery path this time.</p>
+          <p>So resume reloads the established facts and continues. And if it cannot restore safely, it <strong>escalates with the facts it has</strong> rather than starting again. Same instinct as Lesson 7: refuse to continue in a state you cannot reason about.</p></div>
+        </div>
+
+        <h3>3 · The approval gate becomes real</h3>
+
+<pre><code>POST /runs/{id}/refund           -> 202 awaiting_approval  + idempotency_key
+POST /runs/{id}/refund/approve   -> a human, a different request, hours later
+</code></pre>
+
+        <p>In-process, "approval" was a function argument. Over HTTP it is a genuine human step in a different request, possibly on a different process, possibly the next morning. The token is minted <em>in the service, by an authenticated human</em> — never by the agent.</p>
+
+        <p>And `202`-shaped rather than 200 or 400: the work is accepted and <em>pending a human</em>, which is a third thing distinct from succeeded and failed.</p>
+
+        <h3>4 · Long runs do not fit a request</h3>
+
+        <p>Four steps take seconds; a degraded run takes a minute. So the API is submit-and-poll. A blocking endpoint that sometimes takes 60s will be killed by a load balancer, and the run will be lost with it.</p>
+
+        <h2 id="versioning">3 · Versioning, and the refusal it enables</h2>
+
+<pre><code>PROMPT_VERSION  = "2026-08-02.1"
+TOOLSET_VERSION = "2026-08-02.1"
+</code></pre>
+
+        <p>Every response carries them, so an answer can be attributed to a configuration after the fact. And they enable something better than attribution:</p>
+
+<pre><code>python steps/l15_capstone.py --versions
+</code></pre>
+
+<pre><code>  run started under prompt 2026-01-01.0
+  current prompt version    2026-08-02.1
+
+  can_resume -> False
+  reason: prompt version changed (2026-01-01.0 -> 2026-08-02.1);
+          resuming would mix two behaviours in one run
+
+  -> abandoned: Cannot resume safely; handed to a human with the facts so far.
+</code></pre>
+
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">A run half-executed under two prompts is unexplainable</div>
+          <p>No trace will account for the discontinuity, and six weeks later someone will spend a day on it. Refusing costs one abandoned run, handed to a human with its facts intact.</p>
+          <p><strong>And say this explicitly in an interview: editing a tool description is a prompt change.</strong> The schema is identical, nothing fails, and selection behaviour moves. Descriptions belong under the same review and the same eval gate as prompts.</p></div>
+        </div>
+
+        <h2 id="shipping">4 · Shipping a prompt change</h2>
+
+        <div class="steps">
+          <p><strong>1 · Run the golden set</strong> and diff <em>outcome and trajectory</em>. Same answers via a different tool sequence can still be a cost regression.</p>
+          <p><strong>2 · Compare tokens, latency and cost</strong> per case. Lesson 11's point: anything you care about and do not assert will regress.</p>
+          <p><strong>3 · Shadow</strong> on real traffic without serving the output.</p>
+          <p><strong>4 · Roll out by percentage</strong> behind a flag, with the old version still reachable.</p>
+          <p><strong>5 · Bump the version</strong>, so in-flight runs abandon rather than mixing behaviours.</p>
+        </div>
+
+        <h2 id="run">5 · Run it</h2>
+
+<pre><code>cd teach-agents/project
+python steps/l15_capstone.py --service
+python steps/l15_capstone.py --resume
+</code></pre>
+
+<pre><code>  POST /triage
+      run_id           run_d386c27224
+      status           done
+      outcome          resolved
+      tokens           1080
+      prompt_version   2026-08-02.1
+
+  GET /runs/run_d386c27224
+      status=done step=5
+      facts=['draft_reply', 'lookup_order', 'read_ticket', 'search_kb']
+</code></pre>
+
+<pre><code>  a run died at step 2 with facts: ['read_ticket']
+  can_resume -> True (resumable)
+  resumed    -> done / resolved
+</code></pre>
+
+        <h2 id="break">6 · Break it</h2>
+
+        <div class="steps">
+          <p><strong>1 · Traverse the path.</strong> Call <code>STORE.load("../../../etc/passwd")</code>. Rejected — the run id arrives from an HTTP path parameter, so it is untrusted input like any other. Remove the guard and see what the store will happily open.</p>
+          <p><strong>2 · Break atomicity.</strong> Replace the temp-file-then-rename with a direct write, then kill the process mid-save. You now have a half-written state file that parses as corrupt or, worse, as plausible. A test asserts no <code>.tmp</code> files survive a save.</p>
+          <p><strong>3 · Make resume replay.</strong> Change <code>resume_run</code> to re-run from step 0 on a run that had already prepared a refund. Watch the audit log. This is the double-payment problem arriving through the recovery path.</p>
+          <p><strong>4 · Remove the version check.</strong> Resume a run started under an old prompt. Nothing fails; the run finishes; the answer is a blend of two behaviours and the trace says nothing about it. This is the bug you cannot debug later.</p>
+          <p><strong>5 · Corrupt a state file</strong> and list the runs. The listing skips it rather than raising — one bad file must not break recovery for every other run.</p>
+        </div>
+
+        <h2 id="operations">7 · Operations</h2>
+
+        <p><strong>Concurrency.</strong> Two requests for the same run id will race on the store. Ours does not lock; a real system needs optimistic concurrency (a version column) or a per-run lock. Say this rather than hoping nobody asks.</p>
+
+        <p><strong>Streaming.</strong> Submit-and-poll is honest but feels slow. Streaming partial output — "reading the ticket… checking the order…" — changes the perceived latency without changing the real one, and is worth more to users than most real optimisations.</p>
+
+        <p><strong>Secrets and config.</strong> Environment, never the request body. And note our authorisation context is server-side for exactly the reason from Lesson 9: an identity supplied by the caller is an invitation.</p>
+
+        <p><strong>SLOs and a runbook.</strong> Pick two or three: resolution rate, p99 latency, cost per resolved ticket. Then write down what to do when each breaches — the runbook is what makes an SLO more than a dashboard.</p>
+
+        <div class="callout warn">
+          <div class="c-ico">⚠️</div>
+          <div class="c-body"><div class="c-title">The hardest part of operating an agent</div>
+          <p><strong>The failures are quiet.</strong> A service that is down pages you. An agent that has got 8% worse looks identical from outside — same latency, same 200s, same shape of output — and you find out from complaints weeks later.</p>
+          <p>Everything else follows: a golden set with a non-zero exit, override and escalation rates as first-class metrics, readable traces, and budgets on cost and latency as well as correctness. The instrumentation is not overhead; it is the only way you find out.</p></div>
+        </div>
+
+        <div class="callout key">
+          <div class="c-ico">🧰</div>
+          <div class="c-body"><div class="c-title">You already know this</div>
+          <p>Stateless services with external state, atomic writes, idempotent recovery, schema migrations, feature flags, percentage rollouts, SLOs and runbooks. This is ordinary operations engineering — <strong>which is exactly why it is the strongest part of your background to lead with.</strong></p></div>
+        </div>
+
+        <h2 id="interview">8 · Interview practice</h2>
+
+        <h3>Two-minute answer — "How would you deploy this agent?"</h3>
+        <div class="callout note"><div class="c-ico">🎤</div><div class="c-body">
+        <p>"Stateless service, stateful run. Run state lives in a store rather than in memory, so any process can serve any request — which makes horizontal scaling and crash recovery the same mechanism. State is written before the work starts and after every step.</p>
+        <p>The API is submit-and-poll, because a degraded run can take a minute and a blocking endpoint would be killed by the load balancer with the run lost. Resume <em>restores</em> state rather than replaying — replaying would re-execute anything with a side effect, which is the double-payment problem arriving through the recovery path. If it can't restore safely, it escalates with the facts it has.</p>
+        <p>The approval gate becomes real here: preparing a refund returns 202 with an idempotency key, and a human approves via a separate request, possibly hours later. The token is minted in the service by an authenticated human, never by the agent.</p>
+        <p>Every response carries the prompt and toolset version, so an answer is attributable to a configuration — and a run started under one prompt refuses to resume under another, because that blend is a behaviour no trace explains.</p>
+        <p>What I'd flag as not done: the store is a directory of files rather than a database sharing a transaction boundary with the payment, and there's no concurrency control on a single run."</p></div></div>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> System design · Take this agent to 10,000 tickets a day across three regions. <span class="chev">›</span></summary><div class="a">
+        <p>Stateless workers behind a queue rather than synchronous HTTP — submit puts a job on the queue, workers pull, state goes to a shared store. That gives back-pressure, retries and horizontal scale for free, and it matches the fact that runs are already asynchronous.</p>
+        <p><strong>Regional:</strong> state and data residency per region, since ticket bodies are customer data; a model endpoint per region for latency and compliance. Version prompts globally but roll out per region so a bad change is contained.</p>
+        <p><strong>Capacity:</strong> at 10k/day with 15% reaching the agent, that's ~1,500 runs — small. The real constraint is provider rate limits and burst, so a queue with concurrency limits per model matters more than instance count.</p>
+        <p><strong>Recovery:</strong> a worker dies mid-run, the job returns to the queue, and the next worker resumes from stored state rather than restarting — which requires idempotency on every side effect, not just refunds.</p>
+        <p>Then the operational floor: SLOs on resolution rate and p99, alerting on escalation and override rates, cost budget per run, and a runbook for each. And I'd name the piece I'd fix first: the ledger and the payment need one transaction boundary.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Debugging · A worker crashed mid-run. What happens next? <span class="chev">›</span></summary><div class="a">
+        <p>Depends entirely on what was persisted and whether a side effect was in flight — those two questions come before anything else.</p>
+        <p>If state was written after each step, the next worker loads it and continues from the established facts. If a refund had been <em>prepared</em>, no money moved and the approval is still pending, so resume is safe. If a refund had been <em>executed</em> and the crash happened before the ledger write, the idempotency key makes the retry safe — that gap is my known exposure and I'd name it.</p>
+        <p>What must not happen is replay from zero, because that re-executes side effects. And a run that cannot be resumed safely — version drift, corrupt state — should be abandoned to a human with its facts rather than restarted.</p>
+        <p>Then the systemic answer: reconciliation against the payment provider, so a crash-window discrepancy is found by a job rather than by a customer.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Coding · Add durable state to an agent loop. <span class="chev">›</span></summary><div class="a">
+        <p>A record with run id, goal, step, established facts, attempted tools, status and version fields. Write before starting and after every step. Atomic write — temp file then rename — so a crash cannot leave a half-written document. Load-and-continue on resume, never replay. Validate the run id before it touches the filesystem.</p>
+        <p>Say while writing: "written before the work, so a crash still leaves a record a run began"; "atomic, because a half-written state file is worse than none"; "restore not replay, because side effects"; and "version fields so a resume across a prompt change can be refused".</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · When would you adopt a framework? <span class="chev">›</span></summary><div class="a">
+        <p>When it owns something genuinely fiddly that I would otherwise maintain. For me that is durable state, resumability and human-in-the-loop interrupts — LangGraph's checkpointer territory, and precisely the part I hand-rolled in this lesson.</p>
+        <p>What would not convince me is naming control flow. ReAct is twenty lines; routing is a classification call and a filtered tool list. A framework that gives those class names has added a dependency and a migration path, not capability.</p>
+        <p>And I would keep certain things regardless of framework: policy in code, the approval gate, the eval suite, the threat model. No framework provides those, and they are what make the agent safe rather than merely working.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · What are your SLOs, and what happens when one breaches? <span class="chev">›</span></summary><div class="a">
+        <p>Three: resolution rate without human intervention, p99 end-to-end latency, and cost per resolved ticket. Deliberately not "uptime" — the service being up tells you nothing about whether the agent is working.</p>
+        <p>Runbook per breach. <em>Resolution rate drops:</em> check escalation reasons first, since a dependency failing shows up here before it shows up as an error; then diff against the last prompt or toolset version. <em>p99 rises:</em> check step-count distribution and retry rate before blaming the model. <em>Cost rises:</em> check prompt-token growth per step, which catches prompt bloat and broken prefix caching.</p>
+        <p>And the meta-point: each of these is a <em>ratio</em>, so it moves with health rather than with traffic. Error counts move with traffic and will train people to ignore the channel.</p></div></details>
+
+        <h2 id="recap">9 · Recap</h2>
+        <div class="recap">
+        <ul>
+          <li>A framework earns its place on durable state, resumability and interrupts — not on naming control flow.</li>
+          <li>No framework gives you policy, approval, evals or a threat model. Those are yours.</li>
+          <li><strong>Stateless service, stateful run.</strong> Scaling and crash recovery become one mechanism.</li>
+          <li>Persist before the work starts, and after every step. Atomic writes only.</li>
+          <li><strong>Resume restores, never replays</strong> — replay re-executes side effects.</li>
+          <li>The approval gate only becomes real over HTTP: a separate request, by an authenticated human.</li>
+          <li>Version prompts and toolsets. Refuse to resume across a change; a blended run is unexplainable.</li>
+          <li><strong>Editing a tool description is a prompt change.</strong></li>
+          <li>Agent failures are quiet. Instrumentation is the only way you find out.</li>
+        </ul>
+        </div>
+
+        <div class="callout key"><div class="c-ico">🚀</div><div class="c-body"><div class="c-title">Next</div>
+        <p>The system is built. Lesson 15 turns it into something you can carry into an interview: the deliverables pack, and four timed drills.</p></div></div>
+
+        <h2 id="deeper">10 · Optional deep dives</h2>
+        <ul>
+          <li><a href="../../modules/12_langgraph.html">Module 12 · LangGraph</a> — checkpointers, durable interrupts, human-in-the-loop.</li>
+          <li><a href="../../modules/14_production_genai.html">Module 14 · Production GenAI</a> — deployment, rate limiting and cost control.</li>
+          <li><a href="../project/docs/decisions.md">docs/decisions.md</a> — all 19 decisions with their trade-offs.</li>
+        </ul>
+
+        <div class="page-nav">
+          <a href="0013-multi-agent.html"><div class="dir">← Previous</div><div class="ttl">Lesson 13 · Multi-agent &amp; A2A</div></a>
+          <a class="next" href="0015-capstone.html"><div class="dir">Next up →</div><div class="ttl">Lesson 15 · Interview capstone</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+
+<script>
+window.PORTAL = {
+  homeHref: "../../index.html",
+  navLabel: "The course",
+  here: "lessons/0014-deployment.html",
+  base: "../",
+  pages: [
+    { file: "index.html",                             title: "Course index",          num: "✦", kw: "overview start home index agents course" },
+    { file: "lessons/0001-llm-mechanics.html",        title: "LLM mechanics",         num: "01", kw: "llm messages roles context window structured output tool calling brain" },
+    { file: "lessons/0002-agent-loop.html",           title: "The agent loop",        num: "02", kw: "loop observe decide act max steps termination search_kb" },
+    { file: "lessons/0003-tool-calling.html",         title: "Tools & validation",    num: "03", kw: "tool schema validation arguments read_ticket lookup_order parallel" },
+    { file: "lessons/0004-reasoning-patterns.html",   title: "Reasoning patterns",    num: "04", kw: "react plan execute reflection routing draft_reply cost" },
+    { file: "lessons/0005-retrieval.html",            title: "Retrieval as a tool",   num: "05", kw: "retrieval rag chunking bm25 rerank citations relevance floor" },
+    { file: "lessons/0006-context-memory.html",       title: "Context & memory",      num: "06", kw: "context budget compaction summarisation state memory recall" },
+    { file: "lessons/0007-reliability.html",          title: "Reliability",           num: "07", kw: "timeout retry backoff loop detection partial failure escalate" },
+    { file: "lessons/0008-irreversible-actions.html", title: "Irreversible actions",  num: "08", kw: "refund idempotency approval token audit policy dry run" },
+    { file: "lessons/0009-security.html",             title: "Security & guardrails", num: "09", kw: "prompt injection poisoning least privilege authorisation exfiltration" },
+    { file: "lessons/0010-evaluation.html",           title: "Agent evaluation",      num: "10", kw: "golden set trajectory outcome regression llm as judge adversarial" },
+    { file: "lessons/0011-tracing-cost.html",         title: "Tracing, latency & cost", num: "11", kw: "trace span correlation id tokens cost prompt caching model routing" },
+    { file: "lessons/0012-mcp.html",                  title: "MCP & the tool boundary", num: "12", kw: "mcp host client server json rpc discovery allowlist withheld tool" },
+    { file: "lessons/0013-multi-agent.html",          title: "Multi-agent & A2A",     num: "13", kw: "supervisor specialist a2a agent card task artifact delegation measured" },
+    { file: "lessons/0014-deployment.html",           title: "Deployment & operations", num: "14", kw: "framework comparison langgraph stateless service durable state resume versioning slo runbook" },
+    { file: "lessons/0015-capstone.html",             title: "Interview capstone",    num: "15", kw: "capstone deliverables drills whiteboard rapid fire coding behavioural threat model" }
+  ]
+};
+</script>
+<script src="../../assets/sitenav.js?v=20260731b"></script>
+<script src="../../assets/portal-page.js?v=20260727c"></script>
+<script src="../../assets/enhance.js?v=20260731b"></script>
+<script src="../../assets/genai-motion.js?v=20260728a"></script>
+</body>
+</html>
