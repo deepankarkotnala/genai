@@ -31,8 +31,15 @@ cd teach-agents/project
 python -m pytest
 ```
 
-36 tests, fully offline and deterministic. Tests needing a real model backend are
-marked `live_model` and excluded by default; run them with `python -m pytest -m live_model`.
+190 tests, fully offline and deterministic — no key, no network, no model.
+
+The `live_model` marker is configured and excluded by default (`addopts` in
+`pyproject.toml`), but nothing here currently carries it: every claim this course
+makes about the agent is checked against the deterministic stub. If you want to
+see how a real model behaves against the same code, that is what the
+`AGENT_BRAIN=ollama` exercise in Lesson 3 is for, and the
+[EDA lab](../eda-lab/README.md) has 12 genuine integration tests under an
+equivalent `ollama` marker.
 
 ## Layout
 
