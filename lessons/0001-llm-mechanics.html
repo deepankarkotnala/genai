@@ -1,0 +1,358 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>Lesson 1 · LLM mechanics — Understanding AI Agents</title>
+<meta name="description" content="The model mechanics you must be able to explain in an interview: messages and roles, the context window, determinism, structured output and tool calling. Ends by building the brain abstraction the whole course uses.">
+<link rel="icon" href="../../assets/brand/favicon.svg?v=20260727c" type="image/svg+xml">
+<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260727c" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260727c">
+<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260727c" sizes="180x180">
+<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260727c">
+<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260727c" color="#6f47f5">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var mob=!!(window.matchMedia&&window.matchMedia("(max-width:860px)").matches);var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(mob?"s":"xs");var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition — CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="../../assets/styles.css?v=20260801d">
+<link href="../../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
+<link href="../../assets/genai-motion.css?v=20260801a" rel="stylesheet"/>
+<link href="../../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+</head>
+<body data-page="ta-l01">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="../../index.html" aria-label="Switch job home">
+<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260727c" alt=""/></span>
+<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search the course…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Understanding AI Agents / <b>Lesson 1 · LLM mechanics</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Lesson 1 · Foundations</div>
+        <h1>The model mechanics you must be able to explain</h1>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~2.5 h total</span>
+          <span class="pill">25 min read · 60 min build · 30 min break/debug · 25 min interview</span>
+          <span class="pill purple">Prereq · Python</span>
+          <span class="pill">Next · Lesson 2</span>
+        </div>
+
+        <div class="callout key">
+          <div class="c-ico">🎯</div>
+          <div class="c-body"><div class="c-title">By the end of this lesson you will be able to</div>
+          <ul>
+            <li>Say what a language model does, in one sentence, without the word "AI".</li>
+            <li>Explain <strong>messages and roles</strong>, and why the model has no memory between calls.</li>
+            <li>Explain the <strong>context window</strong> as a budget, and what gets evicted first.</li>
+            <li>Explain why the same prompt can give different answers, and what <code>temperature</code> actually controls.</li>
+            <li>Explain <strong>structured output</strong> and why schema-valid is not the same as correct.</li>
+            <li>Explain what really happens when a model "calls a tool" — it doesn't call anything.</li>
+            <li>Have built <code>brain.py</code>: one interface, three interchangeable backends, no API key.</li>
+          </ul></div>
+        </div>
+
+        <h2 id="what">1 · What a language model does</h2>
+
+        <p>Strip away the branding and a language model is a fixed pile of numbers that, given some text, scores which chunk of text plausibly comes next. It does this once, returns the result, and forgets everything.</p>
+
+        <div class="callout note">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The one-sentence version</div>
+          <p>A language model is a function from text to text. It has no memory, no clock, no file system and no network. Everything it appears to know about your situation was in the text you sent it.</p></div>
+        </div>
+
+        <p>Three consequences follow, and every one of them shows up in interviews:</p>
+
+        <ul>
+          <li><strong>It cannot act.</strong> It produces text. It cannot read your database or refund a customer. Anything an agent achieves, it achieves through code you wrote.</li>
+          <li><strong>It cannot remember.</strong> Each call is independent. A chat that "remembers" your name is re-sending your name every single time.</li>
+          <li><strong>It cannot look anything up.</strong> Facts it wasn't sent are either baked into its weights from training or unavailable. This is the entire reason retrieval exists (Lesson 5).</li>
+        </ul>
+
+        <div class="callout key">
+          <div class="c-ico">🧰</div>
+          <div class="c-body"><div class="c-title">You already know this</div>
+          <p>A model call is a <strong>stateless HTTP request</strong> against an expensive, slightly unreliable service that returns unstructured text. You have built systems against those before. Almost everything in this course is that instinct applied carefully.</p></div>
+        </div>
+
+        <h2 id="messages">2 · Messages and roles</h2>
+
+        <p>You don't send a model a string. You send it a list of messages, each with a <strong>role</strong>. Four roles matter:</p>
+
+        <table>
+          <thead><tr><th>Role</th><th>Who wrote it</th><th>What it's for</th></tr></thead>
+          <tbody>
+            <tr><td><code>system</code></td><td>you, the engineer</td><td>standing instructions: who the agent is, what it may and may not do</td></tr>
+            <tr><td><code>user</code></td><td>the person or calling code</td><td>the goal for this run</td></tr>
+            <tr><td><code>assistant</code></td><td>the model, previously</td><td>what it said or decided earlier in this run</td></tr>
+            <tr><td><code>tool</code></td><td>your code</td><td>the result of an action the model requested</td></tr>
+          </tbody>
+        </table>
+
+        <p>That last row is the whole trick of agents. Your code runs something, and the result is appended to the conversation as a <code>tool</code> message. On the next call the model sees it and can reason about it. Nothing magical — a growing list of messages.</p>
+
+        <div class="callout warn">
+          <div class="c-ico">⚠️</div>
+          <div class="c-body"><div class="c-title">The mistake that causes real incidents</div>
+          <p>Roles look like a security boundary. They are not one. A <code>system</code> message is not privileged in the way a kernel is privileged — it is text in the same stream as everything else, and text arriving from a customer can contradict it. Lesson 9 attacks this directly. For now: <strong>roles organise a conversation; they do not enforce anything.</strong></p></div>
+        </div>
+
+        <h2 id="context">3 · The context window is a budget</h2>
+
+        <div class="def"><strong>Context window</strong> — the maximum number of tokens the model can consider in one call, counting your input <em>and</em> its output.</div>
+
+        <p>A token is roughly ¾ of an English word. The number that matters is that the window is <strong>finite and shared</strong>. System prompt, tool declarations, conversation history, tool results and the answer all compete for the same space.</p>
+
+        <p>This is why agents degrade over long runs rather than failing cleanly. Each step appends a tool result. Twenty steps in, the original goal is a small fraction of what the model is looking at, and the useful signal is diluted. Lesson 6 is about managing this deliberately.</p>
+
+        <div class="callout note">
+          <div class="c-ico">✅</div>
+          <div class="c-body"><div class="c-title">In plain English</div>
+          <p>Think of one fixed-size whiteboard. Instructions, the question, everything discovered so far, and room to write the answer all share it. Fill it with tool output and there's no room left to think.</p></div>
+        </div>
+
+        <h2 id="determinism">4 · Deterministic vs probabilistic</h2>
+
+        <p>The model produces a probability distribution over possible next tokens. Something then has to <em>pick</em> one. That picking step is where variability comes from.</p>
+
+        <p><code>temperature</code> controls how sharply that distribution is sampled. At <code>0</code> you take the highest-probability token every time; higher values give lower-probability tokens a real chance.</p>
+
+        <div class="callout warn">
+          <div class="c-ico">⚠️</div>
+          <div class="c-body"><div class="c-title">temperature=0 is not determinism</div>
+          <p>It is the closest you can get, and it is not a guarantee. Floating-point non-associativity across batched requests, GPU kernel scheduling, load-dependent batching and silent model updates all mean identical input can produce different output. Interviewers like this question because "set temperature to 0" is the shallow answer.</p>
+          <p>The engineering conclusion: <strong>never rely on an exact-match assertion against a live model.</strong> Assert on structure, on constraints, and on whether the trajectory was acceptable — which is exactly what Lesson 10 builds.</p></div>
+        </div>
+
+        <h2 id="structured">5 · Structured output</h2>
+
+        <p>An agent needs decisions it can act on — <code>{"tool": "read_ticket", "ticket_id": "TCK-1001"}</code>, not "I'll take a look at that ticket for you!". Three mechanisms, in increasing reliability:</p>
+
+        <ol>
+          <li><strong>Ask nicely.</strong> "Reply with JSON only." Works most of the time, which is another way of saying it fails in production.</li>
+          <li><strong>JSON mode.</strong> The provider guarantees syntactically valid JSON. It does not guarantee <em>your</em> shape.</li>
+          <li><strong>Schema-constrained decoding.</strong> You supply a JSON Schema and the decoder can only emit tokens consistent with it. This is what native tool calling uses.</li>
+        </ol>
+
+        <div class="callout danger">
+          <div class="c-ico">🛡️</div>
+          <div class="c-body"><div class="c-title">Schema-valid is not semantically valid — say this in the interview</div>
+          <p>Constrained decoding guarantees the <em>shape</em>. It cannot guarantee the <em>content</em>. <code>{"ticket_id": "TCK-9999"}</code> is perfectly schema-valid and names a ticket that does not exist. Schema validation and semantic validation are separate layers and you need both. Lesson 3 builds the second one.</p></div>
+        </div>
+
+        <p>So every structured call needs a <strong>validate-and-repair</strong> path: parse, validate, and on failure send the error back once and let the model correct itself. Once — not in a loop. A retry loop against a model that cannot satisfy the schema burns money until something else stops it.</p>
+
+        <h2 id="toolcalling">6 · What "tool calling" actually is</h2>
+
+        <p>The name is misleading, and clearing it up is worth easy interview points.</p>
+
+        <p>The model <strong>never calls anything</strong>. You send a list of tool declarations — name, description, parameter schema — alongside the conversation. The model emits a structured message that <em>names</em> a tool and supplies arguments. Your code decides whether to honour it, runs the function, and appends the result as a <code>tool</code> message.</p>
+
+        <div class="callout note">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The two facts that follow</div>
+          <p><strong>1.</strong> A tool declaration is a <em>prompt</em>. The model never sees your Python — only the name, description and schema. When a tool gets picked at the wrong moment, fix the description before blaming the model.</p>
+          <p><strong>2.</strong> Every tool call passes through your code. That is the enforcement point. Not the system prompt — the dispatch function.</p></div>
+        </div>
+
+        <h2 id="build">7 · Build: <code>brain.py</code></h2>
+
+        <p>Here is the design decision that makes everything afterwards possible: <strong>the loop never imports a vendor SDK.</strong> It depends on one small interface.</p>
+
+        <p>Why it matters: weld the loop to a vendor and you cannot test without a network call, cannot swap models, and cannot reproduce a bug. Put one interface in between and all three become easy.</p>
+
+        <p>Open <a href="../project/brain.py">project/brain.py</a>. The contract is four lines:</p>
+
+<pre><code>class Brain(Protocol):
+    """The whole contract. If it has this method, the loop can drive it."""
+    name: str
+
+    def decide(self, messages: list[Message], tools: list[dict]) -&gt; BrainResult:
+        """Look at the conversation so far and choose the single next action."""
+</code></pre>
+
+        <p>And the return type carries the decision plus the numbers you'll be asked about later:</p>
+
+<pre><code>@dataclass(frozen=True)
+class BrainResult:
+    tool_call: ToolCall | None
+    final_text: str | None
+    backend: str
+    model: str
+    latency_ms: int
+    prompt_tokens: int | None = None
+    completion_tokens: int | None = None
+    truncated: bool = False
+
+    def __post_init__(self) -&gt; None:
+        if (self.tool_call is None) == (self.final_text is None):
+            raise MalformedDecision(...)
+</code></pre>
+
+        <p>Two things to notice. The telemetry fields aren't decoration — "what did this run cost and where did the time go" is a question about any agent you claim to have built, and you cannot answer it if the numbers were never captured. And <code>__post_init__</code> enforces the invariant that a decision is <em>either</em> an action <em>or</em> an answer. Making illegal states unrepresentable is cheaper than checking for them at every call site.</p>
+
+        <p>Errors are split by layer, because they need opposite responses:</p>
+
+<pre><code>class BrainError(Exception): ...            # the call itself
+class BrainUnavailable(BrainError): ...     # cannot reach the backend
+class BrainTimeout(BrainError): ...         # reached it, no answer in time
+class ModelNotInstalled(BrainError): ...    # backend up, model absent
+class MalformedDecision(BrainError): ...    # answered, but unusable
+</code></pre>
+
+        <div class="callout key">
+          <div class="c-ico">🧰</div>
+          <div class="c-body"><div class="c-title">You already know this</div>
+          <p>Retrying a connection-refused is pointless; retrying a malformed response might work. Same distinction you already make between 5xx and 4xx. Agents that collapse both into "retry the call" waste money on failures that can never succeed.</p></div>
+        </div>
+
+        <h3>The deterministic backend</h3>
+
+        <p><code>StubBrain</code> is the default, so this course needs no API key. It is <em>not</em> a mock returning a canned string. It is a small rule engine that reads the same conversation a real model reads, and decides from <strong>what it has learned</strong> rather than <strong>which turn it is on</strong>:</p>
+
+<pre><code>if ticket is None and "read_ticket" not in attempted and "read_ticket" in available:
+    ticket_id = _extract(goal, prefix="TCK-")
+    if ticket_id:
+        return ToolCall("read_ticket", {"ticket_id": ticket_id})
+</code></pre>
+
+        <p>Because the rules read state, the trajectory reacts: remove a tool and the path changes; edit a fixture and the path changes. A mock keyed on step number cannot do that, so it never tests the interesting part of a loop — what happens when a result arrives that you didn't expect.</p>
+
+        <h2 id="break">8 · Break it</h2>
+
+        <p>Three deliberate breakages. Do them in a REPL from <code>teach-agents/project</code>.</p>
+
+        <div class="steps">
+          <p><strong>1 · Violate the decision invariant.</strong></p>
+<pre><code>from brain import BrainResult, ToolCall
+BrainResult(tool_call=ToolCall("read_ticket", {}), final_text="also an answer",
+            backend="x", model="y", latency_ms=0)
+</code></pre>
+          <p>You get <code>MalformedDecision</code>. Now ask yourself what the loop would have done if this were allowed — acted <em>and</em> returned, in the same step. Every downstream trace and cost figure would be wrong.</p>
+
+          <p><strong>2 · Ask for a backend that isn't there.</strong></p>
+<pre><code>from brain import get_brain
+get_brain("gpt-9")
+</code></pre>
+          <p>Read the error. It names the valid options. An error that doesn't tell you what <em>is</em> allowed makes you go read the source.</p>
+
+          <p><strong>3 · Ask for Ollama without Ollama.</strong> Set <code>AGENT_BRAIN=ollama</code> and run <code>python steps/l02_loop.py</code>. You get <code>BrainUnavailable</code> telling you to run <code>ollama serve</code> — <em>not</em> a silent downgrade to the stub. This is deliberate: a fallback that hides a misconfiguration lets you believe you tested a real model when you tested a rule engine.</p>
+        </div>
+
+        <h2 id="production">9 · The production concern</h2>
+
+        <p>The interface in this lesson is the seam where real systems get their flexibility. With it you can route cheap models for easy steps and strong models for hard ones (Lesson 11), swap providers when pricing changes, run the identical loop in tests and production, and pin a model version so a silent provider update doesn't change your behaviour overnight.</p>
+
+        <p>Without it, every one of those becomes a refactor.</p>
+
+        <div class="callout warn">
+          <div class="c-ico">⚠️</div>
+          <div class="c-body"><div class="c-title">Don't over-abstract</div>
+          <p>One method, three implementations. If your abstraction needs a config system and a plugin registry before it runs, you have built a framework instead of an agent. Interviewers notice the difference.</p></div>
+        </div>
+
+        <h2 id="interview">10 · Interview practice</h2>
+
+        <h3>Two-minute answer — "What is an LLM and what are its limits?"</h3>
+        <div class="callout note"><div class="c-ico">🎤</div><div class="c-body">
+        <p>"A language model is a function from text to text — it scores which text plausibly continues what you sent it. It's stateless, so each call is independent: anything it seems to remember was re-sent. It can't take actions, so any real capability comes from code around it.</p>
+        <p>Practically that means three constraints. Everything it knows about the situation has to fit in a finite context window, which is a budget you manage rather than a limit you hit. Output is probabilistic — <code>temperature=0</code> gets you close to reproducible but doesn't guarantee it, so I never assert exact matches against a live model. And when it 'calls a tool' it isn't calling anything: it emits a structured request my code chooses whether to honour. That last point is where all the safety lives, because the dispatch function is the enforcement point, not the prompt."</p></div></div>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> System design · Your team wants one agent that can use models from three providers. How do you structure it? <span class="chev">›</span></summary><div class="a">
+        <p>One interface with a single decide-style method returning a normalised decision type; one adapter per provider translating to and from that type. The loop depends only on the interface. Provider-specific concerns — auth, retry, token accounting, tool-call encoding — live in the adapter.</p>
+        <p>Then say what you'd watch out for: providers disagree on tool-calling formats and on how they signal truncation, so the adapter must normalise both, and a "lowest common denominator" interface can quietly cost you provider-specific features like prompt caching. Also pin model versions per adapter — an unpinned model is an un-versioned dependency.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Debugging · An agent worked in staging and misbehaves in production with the same code and prompts. Where do you look? <span class="chev">›</span></summary><div class="a">
+        <p>Start from what differs, not from the prompt. Model version or alias drift between environments. Temperature or sampling config differing. Context length — production conversations are longer, so history that fit in staging is now being truncated. Tool declarations differing because a feature flag exposes a different tool set. Real data hitting edge cases the fixtures didn't have.</p>
+        <p>Then the answer they actually want: you cannot diagnose this without per-run traces recording model, version, sampling params, token counts and the tool sequence. If those weren't captured, the first fix is capturing them.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Coding · Write the model-boundary interface for an agent, from scratch, no framework. <span class="chev">›</span></summary><div class="a">
+        <p>What a strong answer includes: a message type with a role; a decision type that is <em>either</em> a tool call <em>or</em> a final answer, with that invariant enforced in the constructor; telemetry fields; an error hierarchy separating transport failures from content failures; and a deterministic implementation for tests that reacts to inputs rather than replaying a script.</p>
+        <p>What weak answers miss: returning a bare string (loses tool calls), allowing both fields to be set (makes illegal states representable), and one generic <code>LLMError</code> (destroys the retry policy).</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · How would you test an agent's model layer? <span class="chev">›</span></summary><div class="a">
+        <p>Three tiers. <strong>Unit</strong>: a deterministic backend, no network, asserting on trajectory and structure. <strong>Contract</strong>: for each real adapter, one marked integration test proving it translates tool calls and telemetry correctly — run on demand, not in the main suite. <strong>Behavioural</strong>: a golden set scored on outcome and trajectory, tolerating different-but-acceptable paths (Lesson 10).</p>
+        <p>The trap to name yourself: a mock that always returns the same call gives high coverage and tests nothing interesting, because it never exercises what the loop does with an unexpected result.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · A provider deprecates the model you pinned, in 30 days. What's your plan? <span class="chev">›</span></summary><div class="a">
+        <p>Treat it as a dependency upgrade with a behavioural contract. Run the golden set against the new model and diff outcome <em>and</em> trajectory — same answers via different tool sequences may still be a cost regression. Compare tokens, latency and cost per run. Shadow it on real traffic without serving its output. Roll out behind a flag by percentage, with the old model still reachable. Expect prompt adjustments: prompts are tuned to a model, so "same prompt, new model" is not a null change.</p>
+        <p>Then the honest part: without a golden set you cannot do any of this, which is why Lesson 10 exists.</p></div></details>
+
+        <h2 id="recap">11 · Recap</h2>
+        <div class="recap">
+        <ul>
+          <li>A model is a stateless function from text to text. No memory, no actions, no lookups.</li>
+          <li>Messages have roles. Roles organise; they do not enforce.</li>
+          <li>The context window is a shared budget, and long agent runs are what exhausts it.</li>
+          <li><code>temperature=0</code> is near-reproducible, not deterministic. Never assert exact matches on a live model.</li>
+          <li>Schema-valid ≠ semantically valid. You need both layers.</li>
+          <li>The model doesn't call tools. It <em>requests</em> them; your dispatch code decides. That's the enforcement point.</li>
+          <li>One interface, three backends, no API key — and a deterministic backend that reacts to state, not to turn count.</li>
+        </ul>
+        </div>
+
+        <div class="callout key"><div class="c-ico">🚀</div><div class="c-body"><div class="c-title">Next</div>
+        <p>You have a decision-maker. Lesson 2 wraps it in the loop that makes it an agent — about forty lines, no framework — and adds the first tool.</p></div></div>
+
+        <h2 id="deeper">12 · Optional deep dives</h2>
+        <ul>
+          <li><a href="../../modules/01_foundations.html">Module 01 · Foundations of LLMs</a> — tokenisation and next-token prediction in more depth.</li>
+          <li><a href="../../modules/08_agents.html">Module 08 · Agentic AI</a> — the reference page for agent patterns; Lesson 4 covers these hands-on.</li>
+        </ul>
+
+        <div class="page-nav">
+          <a href="../index.html"><div class="dir">← Back to</div><div class="ttl">Course index</div></a>
+          <a class="next" href="0002-agent-loop.html"><div class="dir">Next up →</div><div class="ttl">Lesson 2 · The agent loop</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+
+<script>
+window.PORTAL = {
+  homeHref: "../../index.html",
+  navLabel: "The course",
+  here: "lessons/0001-llm-mechanics.html",
+  base: "../",
+  pages: [
+    { file: "index.html",                     title: "Course index",        num: "✦", kw: "overview start home index agents course" },
+    { file: "lessons/0001-llm-mechanics.html", title: "LLM mechanics",      num: "01", kw: "llm messages roles context window temperature structured output tool calling brain" },
+    { file: "lessons/0002-agent-loop.html",    title: "The agent loop",     num: "02", kw: "loop observe decide act max steps termination search_kb" },
+    { file: "lessons/0003-tool-calling.html",  title: "Tools & validation", num: "03", kw: "tool schema validation arguments read_ticket lookup_order parallel" }
+  ]
+};
+</script>
+<script src="../../assets/sitenav.js?v=20260801b"></script>
+<script src="../../assets/portal-page.js?v=20260727c"></script>
+<script src="../../assets/enhance.js?v=20260801a"></script>
+<script src="../../assets/genai-motion.js?v=20260728a"></script>
+<script src="../../assets/glossary.js?v=20260802b"></script>
+</body>
+</html>

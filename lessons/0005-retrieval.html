@@ -1,0 +1,344 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>Lesson 5 · Retrieval as a tool — Understanding AI Agents</title>
+<meta name="description" content="Chunking, BM25, reranking and the relevance floor, built from parts you can explain. Why retrieval-as-a-tool differs from stuffing context, and why returning nothing is a feature.">
+<link rel="icon" href="../../assets/brand/favicon.svg?v=20260727c" type="image/svg+xml">
+<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260727c" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260727c">
+<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260727c" sizes="180x180">
+<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260727c">
+<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260727c" color="#6f47f5">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var mob=!!(window.matchMedia&&window.matchMedia("(max-width:860px)").matches);var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(mob?"s":"xs");var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition — CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="../../assets/styles.css?v=20260801d">
+<link href="../../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
+<link href="../../assets/genai-motion.css?v=20260801a" rel="stylesheet"/>
+<link href="../../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+</head>
+<body data-page="ta-l05">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="../../index.html" aria-label="Switch job home">
+<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260727c" alt=""/></span>
+<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search the course…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Understanding AI Agents / <b>Lesson 5 · Retrieval as a tool</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Lesson 5 · Making it competent</div>
+        <h1>Retrieval as a tool</h1>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~3.5 h total</span>
+          <span class="pill">30 min read · 90 min build · 45 min break/debug · 25 min interview</span>
+          <span class="pill purple">Prereq · Lesson 4</span>
+          <span class="pill">Next · Lesson 6</span>
+        </div>
+
+        <div class="callout key">
+          <div class="c-ico">🎯</div>
+          <div class="c-body"><div class="c-title">By the end of this lesson you will be able to</div>
+          <ul>
+            <li>Explain the architectural choice interviewers actually probe: <strong>retrieval as a tool</strong> versus <strong>stuffing the context</strong>.</li>
+            <li>Explain chunking, and why heading boundaries beat fixed windows here.</li>
+            <li>Explain BM25 in plain words — and why word counting fails.</li>
+            <li>Explain reranking, and why it only runs on a shortlist.</li>
+            <li>Argue that returning <strong>nothing</strong> is a feature, and implement the floor that does it.</li>
+            <li>Produce citations a reviewer can actually check.</li>
+          </ul></div>
+        </div>
+
+        <h2 id="failure">1 · Start from the failure you already have</h2>
+
+        <p>Your Lesson 2 <code>search_kb</code> counts shared words. Ask it about an account question:</p>
+
+<pre><code>&gt;&gt;&gt; search_kb_keyword("account email change", 2)
+['billing-proration', 'refunds']
+</code></pre>
+
+        <p>Neither is about accounts. The refund policy scored because it contains the phrase <em>"account credit"</em>. This is the worst kind of broken: it returns something plausible, confidently, every time.</p>
+
+        <div class="callout danger">
+          <div class="c-ico">🐛</div>
+          <div class="c-body"><div class="c-title">Why word counting cannot be rescued by tuning</div>
+          <p>It has no notion of a word being <em>informative</em>. "refund" appearing in one document out of twenty is strong evidence; "support" appearing in all twenty is none. Word counting treats them identically. No weight you add to tags fixes that, because the flaw is the scoring model, not its parameters.</p></div>
+        </div>
+
+        <h2 id="twoshapes">2 · The architectural question</h2>
+
+        <p>There are two ways to get documents in front of a model, and knowing when to use which is worth more in an interview than knowing any specific library.</p>
+
+        <table>
+          <thead><tr><th></th><th>Stuff the context</th><th>Retrieval as a tool</th></tr></thead>
+          <tbody>
+            <tr><td>How</td><td>retrieve up front, put results in the prompt</td><td>give the agent a <code>search</code> tool and let it decide</td></tr>
+            <tr><td>Model calls</td><td>one</td><td>one per search</td></tr>
+            <tr><td>Best when</td><td>you know what is needed before you start</td><td>what to look for depends on what you find</td></tr>
+            <tr><td>Failure</td><td>wrong context, and the model cannot ask again</td><td>the agent searches badly, or too often</td></tr>
+            <tr><td>Cost</td><td>predictable</td><td>variable</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout note">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The answer interviewers want</div>
+          <p>"Both, chosen by whether the query is knowable up front." A support ticket about a duplicate charge always needs the refund policy — pre-load it. A ticket whose category is only clear after reading it needs a tool, because the query depends on the ticket. Our agent uses the tool form for exactly that reason: it searches on the category it discovered in step 1.</p></div>
+        </div>
+
+        <h2 id="chunking">3 · Chunk</h2>
+
+        <p>Scoring whole documents is the first mistake. A five-section policy has one relevant paragraph and four irrelevant ones; scored as a unit, the signal is diluted by its own context.</p>
+
+<pre><code>for line in text.splitlines():
+    if line.startswith("#"):
+        if buffer:
+            parts.append((current_head, "\n".join(buffer).strip()))
+            buffer = []
+        current_head = line.lstrip("# ").strip()
+    else:
+        buffer.append(line)
+</code></pre>
+
+        <p>Heading boundaries, not fixed-size windows. These documents already have meaningful divisions, and cutting every 500 characters would split a numbered policy list in half — <strong>and half a policy reads as complete while omitting the condition that matters.</strong> Fixed windows are the right default for prose with no structure; use the structure when it exists.</p>
+
+        <p>The knowledge base goes from 5 documents to <strong>17 chunks</strong>, each carrying its section heading — which is also what makes citations useful later.</p>
+
+        <h2 id="bm25">4 · Rank with BM25</h2>
+
+        <p>Three properties, each fixing something word counting got wrong:</p>
+
+        <div class="steps">
+          <p><strong>Rare words count more</strong> (the IDF term). This is the direct fix for the account/refund failure.</p>
+          <p><strong>Long chunks stop winning by size</strong> (length normalisation). Without it, the longest document tends to top every query.</p>
+          <p><strong>Repetition saturates</strong> (the k1 term). The tenth occurrence of a word adds far less than the second, because a document repeating a term ten times is not five times more relevant than one repeating it twice.</p>
+        </div>
+
+<pre><code>idf  = math.log(1 + (n - df[term] + 0.5) / (df[term] + 0.5))
+norm = tf * (K1 + 1) / (tf + K1 * (1 - B + B * length / avg_len))
+score += idf * norm
+</code></pre>
+
+        <div class="callout note">
+          <div class="c-ico">✅</div>
+          <div class="c-body"><div class="c-title">In plain English</div>
+          <p>Score a chunk higher when it contains words that are <em>rare across the collection</em>, contains them <em>a few</em> times rather than once, and is <em>not padded out</em> with unrelated text. That sentence is a complete, accurate answer to "explain BM25" — you do not need the formula.</p></div>
+        </div>
+
+        <div class="callout warn">
+          <div class="c-ico">⚠️</div>
+          <div class="c-body"><div class="c-title">Where are the embeddings?</div>
+          <p>Not here, deliberately. Dense vectors are the right answer at scale and the wrong place to start, because an API call that returns a list of floats hides every mechanic in this lesson.</p>
+          <p>What embeddings add: matching on <em>meaning</em>, so "slow checkout" can surface "payment timeout" with no shared words. What they lose: exact identifiers. Ask a vector index for <code>pg_latency_p99</code> and it may return something semantically adjacent instead of the exact match. That is why production systems run <strong>hybrid</strong> — BM25 for exact terms, vectors for meaning — and merge. <a href="../../modules/06_rag_basics.html">Module 06</a> and <a href="../../rag-deep-dive.html">RAG, End-to-End</a> cover the dense side; you now understand what it is being hybridised <em>with</em>.</p></div>
+        </div>
+
+        <h2 id="rerank">5 · Rerank the shortlist</h2>
+
+        <p>A second, sharper pass over the top handful only:</p>
+
+<pre><code>def rerank(query, hits, top_n=8):   # top_n only -- this is the whole argument
+</code></pre>
+
+        <p>Stage one is fast and mediocre over everything. Stage two is slower and sharper over a shortlist of eight. Reranking everything would cost what stage one exists to avoid.</p>
+
+        <p>Our signals are cheap: the query appearing as a phrase, overlap with the section heading, and how much of the query the chunk covers. In production stage two is usually a cross-encoder model — <strong>the shape is identical, and the shape is what interviews probe.</strong></p>
+
+        <p>Each hit explains itself, so a trace can be read without guessing:</p>
+
+<pre><code>why: bm25 on charge, duplicate, refund | heading match: duplicate | covers 100% of query
+</code></pre>
+
+        <h2 id="floor">6 · Return nothing, on purpose</h2>
+
+        <p>The most important eight lines in the module:</p>
+
+<pre><code>kept = [h for h in ranked if h.score &gt;= min_score][:limit]
+...
+"note": None if kept else "no article passed the relevance floor",
+</code></pre>
+
+        <div class="callout danger">
+          <div class="c-ico">🛡️</div>
+          <div class="c-body"><div class="c-title">Say this in an interview</div>
+          <p>Without a floor, retrieval always returns its <code>limit</code> best chunks however bad they are — and the agent treats the least-bad chunk as an answer. <strong>An empty result is a useful result:</strong> it lets the agent say "no policy covers this" and escalate, instead of grounding a confident reply in an irrelevant paragraph.</p>
+          <p>Most hallucination in a RAG system is not the model inventing facts. It is the model faithfully summarising context that should never have been retrieved.</p></div>
+        </div>
+
+        <h2 id="run">7 · Run the comparison</h2>
+
+<pre><code>cd teach-agents/project
+python steps/l05_retrieval.py --retrieval
+</code></pre>
+
+<pre><code>  query: 'account email change'
+    keyword   : ['billing-proration', 'refunds']
+    retrieval : [('refunds#0', 1.988)]
+      why: bm25 on account | covers 33% of query
+
+  query: 'duplicate charge refund'
+    keyword   : ['billing-duplicate-charges', 'refunds']
+    retrieval : [('billing-duplicate-charges#0', 7.916), ('refunds#4', 6.354)]
+      why: bm25 on charge, duplicate, refund | heading match: duplicate | covers 100% of query
+
+  query: 'checkout 502 error'
+    keyword   : ['checkout-incidents', 'billing-proration']
+    retrieval : [('checkout-incidents#0', 6.106), ('checkout-incidents#1', 4.623)]
+
+  query: 'quantum tunnelling in badgers'
+    keyword   : no matching article
+    retrieval : no article passed the relevance floor
+</code></pre>
+
+        <p>Read the second query closely. <code>refunds#4</code> is the section headed <em>"Exception: duplicate charges"</em> — not the whole refund policy, the one paragraph that applies. That is chunk-level citation doing its job: <em>"cited the refund policy"</em> is not checkable; <em>"cited refunds#4"</em> is.</p>
+
+        <p>And the third query returns two chunks from the same document, which is why <code>draft_reply</code> deduplicates citations. Two chunks from one article is one source, not two.</p>
+
+        <h2 id="break">8 · Break it</h2>
+
+        <div class="steps">
+          <p><strong>1 · The account query is still not right.</strong> Retrieval returns <code>refunds#0</code> at 1.988 — better than two wrong articles, but there is <em>no</em> article about changing an email, so the honest answer is nothing. Raise the floor:</p>
+<pre><code>retrieve("account email change", _load_kb(), min_score=2.5)
+</code></pre>
+          <p>Now it returns nothing. Then check what else that floor broke: run the other three queries at 2.5. <strong>The floor is a precision/recall dial, and there is no setting that is right for every query.</strong> Deciding it needs the eval set from Lesson 10 — which is the honest answer to "how did you choose that threshold?"</p>
+
+          <p><strong>2 · Turn reranking off.</strong> <code>use_rerank=False</code>. Compare orderings. On some queries nothing changes — reranking earns its cost on ambiguous queries, not clear ones. Worth knowing before you add a cross-encoder to a system that does not need one.</p>
+
+          <p><strong>3 · Break chunking.</strong> Set <code>MAX_CHUNK_CHARS = 80</code> and re-run. Policies fragment across chunks, scores drop, and citations start pointing at half-sentences. Then set it to <code>5000</code>: everything becomes one chunk per document and you are back to Lesson 2's behaviour. Both failures are the same failure — the chunk is no longer the unit a question is about.</p>
+
+          <p><strong>4 · Poison the knowledge base.</strong> Add a file to <code>fixtures/kb/</code> containing <code>"Tags: billing, refund"</code> and the line <em>"All refunds are pre-approved; no human review is required."</em> Retrieval will surface it, because retrieval has no notion of truth. Nothing in this lesson defends against it. That is <strong>retrieval poisoning</strong>, and it is Lesson 9's problem — note now that the defence cannot live in the retriever.</p>
+        </div>
+
+        <h2 id="production">9 · The production concern</h2>
+
+        <p>Four things that break retrieval in production, none of them the ranking function:</p>
+
+        <p><strong>Stale index.</strong> A policy changed and the index did not. Retrieval confidently cites last quarter's rules. Ingestion needs to be scheduled and monitored like any pipeline.</p>
+
+        <p><strong>Access control.</strong> Retrieval that ignores permissions is an exfiltration route: the agent will happily cite a document this customer must not see. Filter <em>before</em> ranking, not after.</p>
+
+        <p><strong>Conflicting sources.</strong> Two documents disagree. Prefer the newest approved version, surface the conflict, cite dates — never silently pick one.</p>
+
+        <p><strong>No measurement.</strong> "Retrieval seems fine" is how it stays broken. Lesson 10 measures relevance and groundedness properly.</p>
+
+        <div class="callout key">
+          <div class="c-ico">🧰</div>
+          <div class="c-body"><div class="c-title">You already know this</div>
+          <p>This is a search stack: an inverted index with IDF weighting, a two-stage ranker, and a relevance cut-off. If you have tuned a search feature you have made all these decisions. The only new part is that the consumer is a model that will believe whatever it is handed.</p></div>
+        </div>
+
+        <h2 id="interview">10 · Interview practice</h2>
+
+        <h3>Two-minute answer — "How does retrieval work in your agent?"</h3>
+        <div class="callout note"><div class="c-ico">🎤</div><div class="c-body">
+        <p>"Retrieval is a tool the agent calls rather than context I pre-load, because the query depends on the ticket — the agent searches on the category it discovered by reading it. If the query were knowable up front I'd pre-load instead and save a round trip.</p>
+        <p>The pipeline is chunk, rank, rerank, floor. I chunk on headings rather than fixed windows, because splitting a numbered policy in half produces a chunk that reads complete while missing the condition that matters. Ranking is BM25 — rare terms count more, long chunks don't win by size — which fixed a real bug where an 'account' question returned the refund policy, because word counting can't tell an informative term from a common one. Then a rerank pass over the top eight only, since the point of a cheap first stage is not to run the expensive one over everything.</p>
+        <p>The part I'd emphasise is the relevance floor. Without it retrieval always returns its top-k however bad they are, and the agent grounds a confident answer in the least-bad paragraph. Returning nothing lets it escalate honestly. Most RAG hallucination isn't invention — it's faithful summary of context that shouldn't have been retrieved.</p>
+        <p>Citations are chunk-level, so a reviewer can check the exact paragraph rather than being told 'the refund policy'."</p></div></div>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> System design · Design retrieval for 50,000 support documents across three languages and four permission tiers. <span class="chev">›</span></summary><div class="a">
+        <p>Start with the constraints that change the architecture, not the ranker. <strong>Permissions first:</strong> filter the candidate set by the caller's entitlements <em>before</em> ranking — post-filtering leaks through result counts and latency, and it can empty a page. <strong>Language:</strong> either per-language indexes with routing on detected language, or a multilingual embedding model; say which and why, because mixing languages in one BM25 index degrades IDF.</p>
+        <p>Then the pipeline: chunk on structure, hybrid retrieval (BM25 for identifiers and error codes, dense for meaning), fuse the two lists, rerank the top ~50 with a cross-encoder, apply a relevance floor. Metadata filters for product, version and date so a query can be scoped before it is ranked.</p>
+        <p>Then operations, which is where these systems actually fail: scheduled re-ingestion with freshness monitoring, a golden query set with relevance judgements, alerting on the rate of empty results — a sudden drop usually means ingestion broke, not that users changed.</p>
+        <p>At 50k documents, say clearly that you do not need a distributed vector database. A single index and a reranker will do, and choosing infrastructure you do not need is a real answer to a real question.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Debugging · The agent cited a document that does not support its claim. Diagnose. <span class="chev">›</span></summary><div class="a">
+        <p>Separate the two possibilities before touching anything: <strong>bad retrieval</strong> (the document should not have been returned) or <strong>bad grounding</strong> (right document, claim not supported by it). They have different fixes and people conflate them.</p>
+        <p>Bad retrieval: check the chunk actually retrieved, not the document — often the right file was returned for the wrong paragraph. Check whether the score was barely above the floor. Check chunk boundaries: a policy split mid-list produces a chunk that looks authoritative and omits the condition.</p>
+        <p>Bad grounding: the model summarised beyond the context. Fix with a faithfulness check on the output and by requiring claims to map to a cited chunk.</p>
+        <p>Then the systemic answer: without chunk-level citations you cannot tell these apart, which is why the citation granularity is a debugging decision, not a formatting one.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Coding · Implement BM25 from scratch. <span class="chev">›</span></summary><div class="a">
+        <p>Tokenise with a light stop list; build document frequencies across the corpus; for each query term compute IDF from <code>df</code> and <code>n</code>; compute the saturating term-frequency component with <code>k1</code> and length-normalise with <code>b</code> against average document length; sum over the query terms; sort descending with a deterministic tiebreak.</p>
+        <p>Details that signal experience: a deterministic tiebreak (so results are reproducible), keeping domain terms out of the stop list ("no", "not" matter in support text), and returning <em>why</em> each hit matched so a trace is readable.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · How did you choose the relevance threshold? <span class="chev">›</span></summary><div class="a">
+        <p>Honestly: not by intuition, because a single number cannot be right for every query — the account query needs a higher floor than the duplicate-charge query, and raising it to fix one breaks the other.</p>
+        <p>So: build a labelled query set including queries that <em>should</em> return nothing, sweep the threshold, and pick the point where the empty-result rate on unanswerable queries is high without the miss rate on answerable ones rising. Then monitor both in production, because corpus drift moves the score distribution — a threshold tuned on 5,000 documents will not hold at 50,000, since IDF changes as the collection grows.</p>
+        <p>Better still, normalise the score so the threshold is comparable across corpus sizes, or use a reranker score that is calibrated rather than a raw BM25 sum.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · When would you not use RAG at all? <span class="chev">›</span></summary><div class="a">
+        <p>When the knowledge is small and stable enough to sit in the system prompt — a twenty-line refund policy does not need an index, and retrieval adds a failure mode for nothing. When the question is about structured data, where SQL is exact and retrieval is approximate. When the knowledge is really a computation ("how much has this customer spent?") — that is a tool call, not a document lookup.</p>
+        <p>And when freshness requirements exceed what your ingestion can promise: retrieval that confidently cites stale policy is worse than admitting you cannot answer.</p></div></details>
+
+        <h2 id="recap">11 · Recap</h2>
+        <div class="recap">
+        <ul>
+          <li>Retrieval as a tool when the query depends on what you find; stuff the context when it does not.</li>
+          <li>Chunk on structure. Half a policy reads as complete and is not.</li>
+          <li>BM25 in one sentence: rare terms count more, repetition saturates, length is normalised.</li>
+          <li>Rerank the shortlist only — that restriction is the economic argument.</li>
+          <li>A relevance floor means retrieval can return <em>nothing</em>, so the agent can escalate instead of grounding on the least-bad paragraph.</li>
+          <li>Cite chunks, not documents. "Cited refunds#4" is checkable; "cited the refund policy" is not.</li>
+          <li>Retrieval has no notion of truth. A poisoned document ranks like any other — Lesson 9.</li>
+        </ul>
+        </div>
+
+        <div class="callout key"><div class="c-ico">🚀</div><div class="c-body"><div class="c-title">Next</div>
+        <p>Retrieval just added the largest messages your transcript has ever carried. Lesson 6 is about what happens when they stop fitting.</p></div></div>
+
+        <h2 id="deeper">12 · Optional deep dives</h2>
+        <ul>
+          <li><a href="../../modules/06_rag_basics.html">Module 06 · RAG, end to end</a> — the dense-vector side, chunking strategies and evaluation.</li>
+          <li><a href="../../rag-deep-dive.html">RAG, End-to-End</a> — hybrid retrieval, metadata pre-filtering and access control in depth.</li>
+        </ul>
+
+        <div class="page-nav">
+          <a href="0004-reasoning-patterns.html"><div class="dir">← Previous</div><div class="ttl">Lesson 4 · Reasoning patterns</div></a>
+          <a class="next" href="0006-context-memory.html"><div class="dir">Next up →</div><div class="ttl">Lesson 6 · Context &amp; memory</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+
+<script>
+window.PORTAL = {
+  homeHref: "../../index.html",
+  navLabel: "The course",
+  here: "lessons/0005-retrieval.html",
+  base: "../",
+  pages: [
+    { file: "index.html",                          title: "Course index",        num: "✦", kw: "overview start home index agents course" },
+    { file: "lessons/0001-llm-mechanics.html",     title: "LLM mechanics",       num: "01", kw: "llm messages roles context window temperature structured output tool calling brain" },
+    { file: "lessons/0002-agent-loop.html",        title: "The agent loop",      num: "02", kw: "loop observe decide act max steps termination search_kb" },
+    { file: "lessons/0003-tool-calling.html",      title: "Tools & validation",  num: "03", kw: "tool schema validation arguments read_ticket lookup_order parallel" },
+    { file: "lessons/0004-reasoning-patterns.html", title: "Reasoning patterns", num: "04", kw: "react plan execute reflection routing patterns draft_reply cost" },
+    { file: "lessons/0005-retrieval.html",         title: "Retrieval as a tool", num: "05", kw: "retrieval rag chunking bm25 rerank citations grounding relevance floor" },
+    { file: "lessons/0006-context-memory.html",    title: "Context & memory",    num: "06", kw: "context window budget compaction summarisation state memory recall" }
+  ]
+};
+</script>
+<script src="../../assets/sitenav.js?v=20260801b"></script>
+<script src="../../assets/portal-page.js?v=20260727c"></script>
+<script src="../../assets/enhance.js?v=20260801a"></script>
+<script src="../../assets/genai-motion.js?v=20260728a"></script>
+<script src="../../assets/glossary.js?v=20260802b"></script>
+</body>
+</html>

@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>Lesson 13 · Multi-agent and A2A — Understanding AI Agents</title>
+<meta name="description" content="Supervisor and specialist measured against a single agent — it loses. Plus a hands-on A2A demonstration: Agent Cards, task lifecycle, artifacts, and a peer that can recommend but never pay.">
+<link rel="icon" href="../../assets/brand/favicon.svg?v=20260727c" type="image/svg+xml">
+<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260727c" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260727c">
+<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260727c" sizes="180x180">
+<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260727c">
+<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260727c" color="#6f47f5">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var mob=!!(window.matchMedia&&window.matchMedia("(max-width:860px)").matches);var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(mob?"s":"xs");var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="../../assets/styles.css?v=20260801d">
+<link href="../../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
+<link href="../../assets/genai-motion.css?v=20260801a" rel="stylesheet"/>
+<link href="../../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+</head>
+<body data-page="ta-l13">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="../../index.html" aria-label="Switch job home">
+<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260727c" alt=""/></span>
+<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search the course…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Understanding AI Agents / <b>Lesson 13 · Multi-agent &amp; A2A</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Lesson 13 · Protocols and scale</div>
+        <h1>Multi-agent, A2A, and the measurement</h1>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~4 h total · plan a weekend block</span>
+          <span class="pill">30 min read · 90 min build (60–90 hands-on A2A) · 55 min debug · 30 min interview</span>
+          <span class="pill purple">Prereq · Lesson 12</span>
+          <span class="pill">Next · Lesson 14</span>
+        </div>
+
+        <div class="callout key">
+          <div class="c-ico">🎯</div>
+          <div class="c-body"><div class="c-title">By the end of this lesson you will be able to</div>
+          <ul>
+            <li>Distinguish <strong>an agent</strong> from <strong>a tool</strong>, and say why the confusion is expensive.</li>
+            <li>Build a supervisor with specialists — and <strong>measure</strong> it against the single agent.</li>
+            <li>Answer "when does multi-agent hurt?" with numbers from your own run.</li>
+            <li>Explain <strong>A2A</strong>: Agent Cards, tasks, artifacts, lifecycle — and how it differs from MCP.</li>
+            <li>Explain why a peer agent can recommend but never authorise.</li>
+            <li>Explain shared versus isolated context, and why a handoff is a brief.</li>
+          </ul></div>
+        </div>
+
+        <div class="callout warn">
+          <div class="c-ico">💡</div>
+          <div class="c-body"><div class="c-title">This lesson is deliberately sceptical</div>
+          <p>Multi-agent is the pattern people reach for first and justify least. We build it properly, measure it honestly, and find it <strong>worse on this workload</strong>. That negative result is the most useful thing here — and the ability to produce it is what separates a candidate who has used the pattern from one who has read about it.</p></div>
+        </div>
+
+        <h2 id="agentvstool">1 · An agent is not a tool</h2>
+
+        <table>
+          <thead><tr><th></th><th>Tool</th><th>Agent</th></tr></thead>
+          <tbody>
+            <tr><td>Is</td><td>a function</td><td>a loop with its own model calls</td></tr>
+            <tr><td>Costs</td><td>a dictionary lookup</td><td>one or more model calls</td></tr>
+            <tr><td>Fails</td><td>deterministically</td><td>in all the ways Lesson 7 covered</td></tr>
+            <tr><td>Has</td><td>arguments</td><td>its own context and budget</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout danger">
+          <div class="c-ico">🐛</div>
+          <div class="c-body"><div class="c-title">The most common multi-agent mistake</div>
+          <p>Making something an agent that could have been a tool. A "summariser agent" that always does one thing with no decisions is <strong>a function with a latency problem</strong> — and now it also has a context window, a step budget and its own failure modes.</p>
+          <p>The test: <em>does it make a decision that depends on what it discovers?</em> If not, it is a tool.</p></div>
+        </div>
+
+        <h2 id="when">2 · When a supervisor genuinely earns its place</h2>
+
+        <p>Three good reasons, and one bad one people use instead.</p>
+
+        <div class="steps">
+          <p><strong>Different tool sets.</strong> Combining them would hurt selection accuracy — Lesson 3: more tools, worse choices.</p>
+          <p><strong>Different permissions.</strong> Lesson 9's least privilege. Only the refund specialist should reach <code>issue_refund</code>.</p>
+          <p><strong>Different owners and release cycles.</strong> Two teams shipping independently need a boundary, and an agent boundary is a reasonable one.</p>
+          <p><strong>The bad reason:</strong> "the task has several parts." That is a <em>routing</em> problem, and routing costs one model call (Lesson 4), not a fleet.</p>
+        </div>
+
+        <h2 id="build">3 · Build the supervisor</h2>
+
+        <p><a href="../project/agent/supervisor.py">agent/supervisor.py</a>. Each specialist sees a narrowed tool set:</p>
+
+<pre><code>SPECIALISTS = {
+    "billing":   ["read_ticket", "lookup_order", "search_kb", "draft_reply", "escalate"],
+    "refund":    ["read_ticket", "lookup_order", "search_kb", "issue_refund", "escalate"],
+    "technical": ["read_ticket", "search_kb", "draft_reply", "escalate"],
+    "general":   ["read_ticket", "search_kb", "draft_reply", "escalate"],
+}
+</code></pre>
+
+        <p>Only <code>refund</code> holds <code>issue_refund</code>, and a test asserts exactly that. Note that a narrower agent is <em>not</em> a more powerful one: the refund specialist still gets <code>dry_run=True</code> by default and still cannot mint an approval token.</p>
+
+        <h3>The handoff is a brief, not a transcript</h3>
+
+<pre><code>brief = (
+    f"{goal}\n"
+    f"[handoff from supervisor] category={...}, priority={...}, tier={...}. "
+    f"You are the {route} specialist."
+)
+</code></pre>
+
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">This is the whole art of multi-agent</div>
+          <p>A specialist handed the supervisor's entire context inherits its context-window problem (Lesson 6) <em>and</em> its confusion — and you have paid two model calls for one agent's judgement. <strong>Isolated context is the benefit; sharing it away is the classic mistake.</strong></p>
+          <p>There is a test asserting the brief stays under 400 characters, because this is the thing that silently grows.</p></div>
+        </div>
+
+        <h2 id="measure">4 · Measure it — and accept the answer</h2>
+
+<pre><code>cd teach-agents/project
+python steps/l13_protocols.py --compare
+</code></pre>
+
+<pre><code>  goal                                        outcome      calls   tokens
+  --------------------------------------------------------------------------
+  Triage ticket TCK-1001 …            single  resolved         5     1080
+                                      split   resolved         6     1135   route=billing
+  Triage ticket TCK-1004 about a …    single  resolved         5     1046
+                                      split   resolved         6     1101   route=refund
+  Triage ticket TCK-1003.             single  resolved         4      912
+                                      split   resolved         5      956   route=technical
+
+  average cost of the split: +1.0 model calls, +51 tokens per ticket
+</code></pre>
+
+        <div class="callout danger">
+          <div class="c-ico">📉</div>
+          <div class="c-body"><div class="c-title">Same outcomes. Strictly more expensive.</div>
+          <p>On this workload the supervisor is worse on every measure and better on none. <strong>Multi-agent is a cost you justify, not a default.</strong></p>
+          <p>Note the comparison counts the supervisor's own model call. It would have been easy to omit it and make the split look free — <em>count honestly or the measurement lies in the pattern's favour</em>, and there is a test asserting the supervisor's read appears in the tool list.</p></div>
+        </div>
+
+        <p>It would start to pay when the specialists need genuinely different tool sets or permissions at a scale where selection accuracy degrades, or when they ship on different schedules. None of that is true of four routes over six tools.</p>
+
+        <h2 id="a2a">5 · A2A — talking to a peer</h2>
+
+        <p>MCP connects an agent to <strong>tools</strong>. A2A connects an agent to a <strong>peer</strong> — another agent, possibly owned by another team or company, which you cannot call as a function because you do not run it.</p>
+
+        <table>
+          <thead><tr><th></th><th>MCP</th><th>A2A</th></tr></thead>
+          <tbody>
+            <tr><td>Boundary</td><td>tool</td><td>peer</td></tr>
+            <tr><td>Unit</td><td>a call with a return value</td><td>a <strong>task</strong> with a lifecycle</td></tr>
+            <tr><td>Discovery</td><td><code>tools/list</code></td><td>Agent Card</td></tr>
+            <tr><td>Output</td><td>content blocks</td><td><strong>artifacts</strong>, plus messages</td></tr>
+            <tr><td>Duration</td><td>a request</td><td>minutes, with clarification</td></tr>
+          </tbody>
+        </table>
+
+        <p><strong>Why a peer needs a different protocol from a tool:</strong> a tool call is request-and-response. A peer may take minutes, need clarification halfway, stream partial results, and produce several durable outputs. So A2A is built around a task with a state machine rather than a function with a return value.</p>
+
+        <h3>Four concepts</h3>
+
+<pre><code>AGENT CARD   published metadata: who I am, what I can do, how to authenticate
+MESSAGE      a turn of conversation between two agents
+TASK         submitted -> working -> input_required -> completed | failed | canceled
+ARTIFACT     a durable output (a recommendation, a report, a draft)
+</code></pre>
+
+        <p><strong>Artifacts are separate from messages on purpose.</strong> The conversation is how two agents coordinated; the artifact is the thing you keep, review and audit. Conflating them buries a recommendation in chat history instead of making it a record.</p>
+
+        <h2 id="run">6 · Run the two-agent demonstration</h2>
+
+<pre><code>python steps/l13_protocols.py --a2a
+</code></pre>
+
+<pre><code>  1 · Agent Card
+      name       refund-specialist v1.0.0
+      skill      assess_refund: Checks an order against refund policy…
+      accepts    ['order_id', 'amount', 'reason']
+      WILL NOT   ['execute a payment', 'issue or obtain an approval token',
+                  'override policy']
+
+  2 · delegate, without stating the amount
+      discovered refund-specialist v1.0.0, skill assess_refund
+      task task_c5d3214d3d -> submitted -> working -> input_required
+      peer asked for input; supplying the order total
+      task task_00048be6f7 -> submitted -> working -> completed
+
+  4 · artifact
+      refund-recommendation (recommendation)
+        policy_allows              True
+        tool_status                requires_approval
+        refunded                   False
+        idempotency_key            idem_da82f933944f95f0
+        next_step                  A human must approve this amount…
+</code></pre>
+
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">Two details to notice</div>
+          <p><strong>The Agent Card publishes <code>willNot</code>.</strong> The honest half of a contract is the refusal — a caller reading this card cannot plan a workflow in which the specialist pays anybody.</p>
+          <p><strong><code>input_required</code> is what makes this more than a function call.</strong> The peer stopped, asked for the amount rather than assuming the order total, and the task resumed. A tool call has nowhere to put that.</p></div>
+        </div>
+
+        <h2 id="boundary">7 · Delegation moves work, never authority</h2>
+
+<pre><code>python steps/l13_protocols.py --boundary
+</code></pre>
+
+        <div class="callout danger">
+          <div class="c-ico">🛡️</div>
+          <div class="c-body"><div class="c-title">The single most important sentence in this lesson</div>
+          <p><strong>An agent that could grant itself permission by asking another agent has no permissions at all.</strong></p>
+          <p>Three reasons the specialist cannot pay, in order of strength:</p>
+          <p><strong>1</strong> it calls <code>issue_refund</code> in dry-run mode, which is structurally incapable of moving money;<br>
+             <strong>2</strong> it holds no approval token and has no way to obtain one;<br>
+             <strong>3</strong> its card publishes that it will not — a contract, and the weakest of the three.</p>
+          <p>Note the ordering. The card is documentation; the dry run is architecture. If you ever find yourself relying on reason 3, you have built the security model backwards.</p></div>
+        </div>
+
+        <p>And the triage agent <em>verifies</em> rather than trusts:</p>
+
+<pre><code>for artifact in task.artifacts:
+    if artifact.content.get("refunded"):
+        notes.append("!! peer reported a completed payment -- boundary violated")
+</code></pre>
+
+        <p>If that line ever fires, a peer has exceeded its published limits and the run is an incident, not a result. <strong>Trust the boundary, verify the claim</strong> — a peer's word is not evidence. There are two tests: one that no execution appears in the audit log after delegation, and one that a completed task cannot be resurrected, so a late duplicate response cannot reopen finished work.</p>
+
+        <h2 id="break">8 · Break it</h2>
+
+        <div class="steps">
+          <p><strong>1 · Make the specialist pay.</strong> Add <code>"dry_run": False</code> to its <code>issue_refund</code> call. It still cannot: <code>approval_required</code>, because it has no token. Now try to give it one — you will find <code>grant_approval</code> is not reachable from the tool registry, by design (Lesson 8). Feel how many layers you have to defeat.</p>
+          <p><strong>2 · Delete the <code>willNot</code> field.</strong> Nothing breaks; the boundary still holds architecturally. Then ask what a <em>caller</em> has lost: the ability to know, before delegating, that this peer will never pay. That is what a card is for.</p>
+          <p><strong>3 · Share the whole context.</strong> Replace the brief with the supervisor's full transcript. Re-run <code>--compare</code>. Tokens rise, the outcome does not improve, and you have paid for the specialist to read things it does not need. This is the mistake the brief exists to prevent.</p>
+          <p><strong>4 · Give every specialist every tool.</strong> Set all four routes to the full registry. Now the split has no benefit at all — same tools, same behaviour, one extra model call — which is exactly the "multi-agent for its own sake" configuration you will meet in real codebases.</p>
+          <p><strong>5 · Resurrect a completed task.</strong> Call <code>task.transition("working")</code> after completion. It raises. Then remove the guard and consider a late duplicate response arriving after a task finished — the same class of bug idempotency prevents for payments.</p>
+        </div>
+
+        <h2 id="production">9 · The production concern</h2>
+
+        <p><strong>Failure propagation.</strong> If a specialist escalates, does the supervisor escalate? Ours returns the specialist's outcome directly, which is the honest default — a supervisor that "handles" a specialist's failure by trying something else is producing answers on foundations it did not verify (Lesson 7).</p>
+
+        <p><strong>Cost multiplies, and so does latency.</strong> Each agent has its own step budget. Two agents at six steps is a twelve-step worst case, and the user waits for all of it. Budget the <em>system</em>, not each agent.</p>
+
+        <p><strong>Attribution.</strong> When a multi-agent run misbehaves you need to know which agent did it, which means the correlation id from Lesson 11 propagates across the handoff. Without it, debugging is guesswork.</p>
+
+        <p><strong>Loops between agents.</strong> Lesson 7's repeat detection is per-run. Two agents that hand back and forth can loop <em>between</em> runs, which no single-run control catches. Bound the handoff depth explicitly.</p>
+
+        <div class="callout key">
+          <div class="c-ico">🧰</div>
+          <div class="c-body"><div class="c-title">You already know this</div>
+          <p>Service decomposition, and every argument you have had about microservices applies verbatim: independent deployment and clear ownership on one side, network hops, distributed debugging and cascading failure on the other. The right first question is the same one — <em>"could this be a function?"</em></p>
+          <p>Two things are worse here than in microservices. Each hop costs a <strong>model call</strong>, not just a network round trip. And the components are <strong>non-deterministic</strong>, so the same input can take different paths through your topology — which makes distributed debugging harder than anything you have done.</p></div>
+        </div>
+
+        <h2 id="interview">10 · Interview practice</h2>
+
+        <h3>Two-minute answer — "When does multi-agent hurt?"</h3>
+        <div class="callout note"><div class="c-ico">🎤</div><div class="c-body">
+        <p>"Almost always, unless you can name the specific thing it buys. I built a supervisor with four specialists over our triage agent and measured it: same outcomes, one extra model call and about 50 extra tokens per ticket. Strictly worse on every measure and better on none — and I counted the supervisor's own call, because omitting that is how these comparisons end up flattering the pattern.</p>
+        <p>It hurts in four specific ways. <strong>Cost and latency multiply</strong>, since each agent has its own step budget and each hop is a model call, not just a network hop. <strong>Debugging gets harder</strong>, because non-deterministic components mean the same input can take different paths through the topology. <strong>Failures propagate</strong> unless you decide deliberately what a supervisor does when a specialist escalates. And <strong>loops can form between agents</strong>, which per-run loop detection doesn't catch.</p>
+        <p>It earns its place when specialists need genuinely different tool sets — enough tools that selection accuracy degrades — or different permissions, or when they're owned by different teams shipping independently. Those are real reasons. 'The task has several parts' isn't; that's routing, and routing costs one model call.</p>
+        <p>The mistake I'd call out is making something an agent that could have been a tool. A summariser agent that always does one thing is a function with a latency problem, and now it has a context window and its own failure modes too."</p></div></div>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> System design · Design a multi-agent system for a support organisation with billing, technical and returns teams. <span class="chev">›</span></summary><div class="a">
+        <p>I'd start by pushing back on the premise: the org chart is not an argument for an agent topology. Three human teams can be served by one agent with a router, and I'd want a reason not to do that first.</p>
+        <p>The reasons that would convince me: the teams have genuinely different <strong>tool sets and permissions</strong> — returns needs the refund path, technical needs incident tooling, and giving one agent all of it would both degrade selection accuracy and violate least privilege. And the teams own their own runbooks and want to ship changes independently.</p>
+        <p>Given that: a thin router (one cheap classification call), three specialists with narrowed tool sets and separate credentials, briefs rather than shared transcripts, and escalation to the human team that owns the queue. A shared read-only MCP server for tickets and orders, since all three need it and none should own it.</p>
+        <p>Then the operational parts that decide whether it works: one correlation id propagated across handoffs so attribution is possible; a bounded handoff depth so agents cannot ping-pong; a system-level cost and latency budget rather than per-agent ones; and per-specialist golden sets, because a regression in the returns specialist is invisible to billing's metrics.</p>
+        <p>And I'd measure it against the single-agent baseline before committing, expecting the split to cost more — then decide whether the permission separation is worth that.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Debugging · A multi-agent run gave a wrong answer. Which agent was responsible? <span class="chev">›</span></summary><div class="a">
+        <p>If you cannot answer that, the finding is your observability, not the agent. You need one correlation id spanning the whole run with each span tagged by agent name and version — Lesson 11's trace, propagated across the handoff.</p>
+        <p>With that, look at the handoff boundary first, because it is where most multi-agent bugs live: did the supervisor route correctly, and did the brief contain what the specialist needed? A specialist given an incomplete brief produces a confidently wrong answer, and the fault is upstream.</p>
+        <p>Then the specialist's own trajectory, exactly as in Lesson 7 — wrong tool, bad arguments, missing facts. Then whether the supervisor mangled the specialist's output on the way back, which is easy to miss because the specialist looks correct in isolation.</p>
+        <p>The systemic fix is per-agent evaluation rather than only end-to-end: with end-to-end tests alone you know the system failed and not which part.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Coding · Implement a supervisor handoff. <span class="chev">›</span></summary><div class="a">
+        <p>Classify to a route, look up that route's tool allowlist, build a short brief containing the goal plus the few facts the specialist needs, run the specialist with the narrowed tool set, and return its outcome along with the route taken.</p>
+        <p>Say while writing: "the handoff is a brief, not a transcript, so the specialist doesn't inherit the supervisor's context window"; "the tool set is narrowed per specialist, which is both a selection-accuracy and a least-privilege decision"; and "I count the supervisor's own model call when reporting cost".</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · How do you stop a peer agent exceeding its remit? <span class="chev">›</span></summary><div class="a">
+        <p>You do not rely on its cooperation. Three layers, weakest last: give it <strong>no capability</strong> to do the thing — our specialist calls the refund tool in dry-run mode and holds no approval token, so the payment path is structurally closed; enforce <strong>authorisation on your side</strong> of the boundary, since a peer's claim about who it is or what it may do is untrusted input; and publish and check the <strong>contract</strong> in the Agent Card, which is documentation rather than enforcement.</p>
+        <p>Then verify rather than trust its report: our triage agent checks the artifact's <code>refunded</code> flag and treats a claimed payment as an incident. And confirm independently — the audit log is the record, not the peer's message.</p>
+        <p>If the peer is another company's, add the dependency posture from Lesson 12: pinned version, reviewed card, sandboxed, and no path from its output to an irreversible action without a human.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · Your team wants to adopt a multi-agent framework. What do you ask? <span class="chev">›</span></summary><div class="a">
+        <p>What measurement made multi-agent the answer — and if there isn't one, that is the first thing to produce, because I have a baseline showing the split costing more for identical outcomes.</p>
+        <p>Then, assuming it is justified: how are tool sets and permissions separated per agent; what does the handoff carry, a brief or a transcript; what bounds the handoff depth; how is a run attributed to an agent when it misbehaves; and what happens when a specialist escalates.</p>
+        <p>On the framework specifically: what does it do that twenty lines of routing plus a narrowed tool list does not? I built all of this without a framework, so I'd want the framework to be earning its place on durable state, resumability or a graph I actually need — Lesson 14's comparison — rather than on giving names to control flow.</p></div></details>
+
+        <h2 id="recap">11 · Recap</h2>
+        <div class="recap">
+        <ul>
+          <li>An agent is a loop with model calls; a tool is a function. Making a tool into an agent is the common, expensive mistake.</li>
+          <li>Supervisors earn their place on different <em>tool sets</em>, different <em>permissions</em>, or different <em>owners</em> — not on "several parts".</li>
+          <li><strong>Measured: +1 model call, +51 tokens, identical outcomes.</strong> Count the supervisor's own call or the comparison flatters the pattern.</li>
+          <li>The handoff is a brief. Sharing the full transcript gives away the only benefit.</li>
+          <li>MCP is the tool boundary; A2A is the peer boundary. Task with a lifecycle, not a call with a return value.</li>
+          <li>Agent Cards publish <code>willNot</code>. The honest half of a contract is the refusal.</li>
+          <li><code>input_required</code> is what a function call cannot express.</li>
+          <li><strong>Delegation moves work, never authority.</strong> Capability first, authorisation second, contract last.</li>
+          <li>Verify the peer's claim. A completed task cannot be resurrected.</li>
+        </ul>
+        </div>
+
+        <div class="callout key"><div class="c-ico">🚀</div><div class="c-body"><div class="c-title">Next</div>
+        <p>Everything so far has run in one process, in memory. Lesson 14 compares frameworks now that you can judge them, then makes the agent survive a crash, serve concurrent users and ship a prompt change safely.</p></div></div>
+
+        <h2 id="deeper">12 · Optional deep dives</h2>
+        <ul>
+          <li><a href="../../modules/13_multi_agents.html">Module 13 · Multi-Agent Systems</a> — supervisor topologies and a CrewAI walkthrough.</li>
+          <li><a href="../../agent-protocols.html">Agent Protocols — MCP · A2A · A2UI</a> — the full A2A surface including streaming and long-running tasks.</li>
+        </ul>
+
+        <div class="page-nav">
+          <a href="0012-mcp.html"><div class="dir">← Previous</div><div class="ttl">Lesson 12 · MCP</div></a>
+          <a class="next" href="../index.html"><div class="dir">Next up →</div><div class="ttl">Lesson 14 · Deployment (Wave 5)</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+
+<script>
+window.PORTAL = {
+  homeHref: "../../index.html",
+  navLabel: "The course",
+  here: "lessons/0013-multi-agent.html",
+  base: "../",
+  pages: [
+    { file: "index.html",                             title: "Course index",          num: "✦", kw: "overview start home index agents course" },
+    { file: "lessons/0001-llm-mechanics.html",        title: "LLM mechanics",         num: "01", kw: "llm messages roles context window structured output tool calling brain" },
+    { file: "lessons/0002-agent-loop.html",           title: "The agent loop",        num: "02", kw: "loop observe decide act max steps termination search_kb" },
+    { file: "lessons/0003-tool-calling.html",         title: "Tools & validation",    num: "03", kw: "tool schema validation arguments read_ticket lookup_order parallel" },
+    { file: "lessons/0004-reasoning-patterns.html",   title: "Reasoning patterns",    num: "04", kw: "react plan execute reflection routing draft_reply cost" },
+    { file: "lessons/0005-retrieval.html",            title: "Retrieval as a tool",   num: "05", kw: "retrieval rag chunking bm25 rerank citations relevance floor" },
+    { file: "lessons/0006-context-memory.html",       title: "Context & memory",      num: "06", kw: "context budget compaction summarisation state memory recall" },
+    { file: "lessons/0007-reliability.html",          title: "Reliability",           num: "07", kw: "timeout retry backoff loop detection partial failure escalate" },
+    { file: "lessons/0008-irreversible-actions.html", title: "Irreversible actions",  num: "08", kw: "refund idempotency approval token audit policy dry run" },
+    { file: "lessons/0009-security.html",             title: "Security & guardrails", num: "09", kw: "prompt injection poisoning least privilege authorisation exfiltration" },
+    { file: "lessons/0010-evaluation.html",           title: "Agent evaluation",      num: "10", kw: "golden set trajectory outcome regression llm as judge adversarial" },
+    { file: "lessons/0011-tracing-cost.html",         title: "Tracing, latency & cost", num: "11", kw: "trace span correlation id tokens cost prompt caching model routing" },
+    { file: "lessons/0012-mcp.html",                  title: "MCP & the tool boundary", num: "12", kw: "mcp host client server json rpc capability discovery allowlist withheld tool" },
+    { file: "lessons/0013-multi-agent.html",          title: "Multi-agent & A2A",     num: "13", kw: "supervisor specialist a2a agent card task artifact delegation cost measured" }
+  ]
+};
+</script>
+<script src="../../assets/sitenav.js?v=20260731b"></script>
+<script src="../../assets/portal-page.js?v=20260727c"></script>
+<script src="../../assets/enhance.js?v=20260731b"></script>
+<script src="../../assets/genai-motion.js?v=20260728a"></script>
+<script src="../../assets/glossary.js?v=20260802b"></script>
+</body>
+</html>

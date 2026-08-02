@@ -1,0 +1,352 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>Lesson 8 · Irreversible actions and human approval — Understanding AI Agents</title>
+<meta name="description" content="How to let an agent spend money safely: policy in code, idempotency keys, approval tokens bound to an exact amount, an append-only audit log, and the timeout where you genuinely do not know what happened.">
+<link rel="icon" href="../../assets/brand/favicon.svg?v=20260727c" type="image/svg+xml">
+<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260727c" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260727c">
+<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260727c" sizes="180x180">
+<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260727c">
+<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260727c" color="#6f47f5">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var mob=!!(window.matchMedia&&window.matchMedia("(max-width:860px)").matches);var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(mob?"s":"xs");var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition — CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="../../assets/styles.css?v=20260801d">
+<link href="../../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
+<link href="../../assets/genai-motion.css?v=20260801a" rel="stylesheet"/>
+<link href="../../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+</head>
+<body data-page="ta-l08">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="../../index.html" aria-label="Switch job home">
+<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260727c" alt=""/></span>
+<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search the course…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Understanding AI Agents / <b>Lesson 8 · Irreversible actions</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Lesson 8 · Making it reliable</div>
+        <h1>Irreversible actions and human approval</h1>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~4 h total · plan a weekend block</span>
+          <span class="pill">30 min read · 100 min build · 60 min break/debug · 30 min interview</span>
+          <span class="pill purple">Prereq · Lesson 7</span>
+          <span class="pill">Next · Lesson 9</span>
+        </div>
+
+        <div class="callout key">
+          <div class="c-ico">🎯</div>
+          <div class="c-body"><div class="c-title">By the end of this lesson you will be able to</div>
+          <ul>
+            <li>Answer <em>"how would you safely let an AI agent spend or refund money?"</em> completely.</li>
+            <li>Explain why business policy belongs in <strong>code</strong>, not in a prompt.</li>
+            <li>Derive an <strong>idempotency key</strong> — and explain why a UUID per attempt destroys the mechanism.</li>
+            <li>Bind an approval token to an exact order and amount, and say why "approved" alone is an open cheque.</li>
+            <li>Explain why the audit log is <strong>append-only</strong> and includes refusals.</li>
+            <li>Handle the case where a payment call times out and you genuinely do not know.</li>
+          </ul></div>
+        </div>
+
+        <div class="callout warn">
+          <div class="c-ico">💰</div>
+          <div class="c-body"><div class="c-title">Everything changes with one tool</div>
+          <p>Every tool so far has been reversible. A wasted <code>lookup_order</code> costs a few tokens. Lesson 7's retries were free.</p>
+          <p><code>issue_refund</code> moves money. Now a retry might pay twice, a hallucinated argument might pay the wrong person, and a persuasive ticket might pay someone who is not entitled to anything. <strong>Every control in this lesson exists because one of those has happened to somebody.</strong></p></div>
+        </div>
+
+        <h2 id="recommend">1 · Recommend versus execute</h2>
+
+        <p>The first and cheapest decision: <strong>make the safe thing the default.</strong></p>
+
+<pre><code>def issue_refund(order_id, amount, reason, approval_token=None, dry_run=True):
+</code></pre>
+
+        <p><code>dry_run=True</code>. An agent that wants to move money has to say so explicitly. The reasoning is not stylistic — the unsafe path will eventually be reached by an argument nobody validated, so the unsafe path must be the one requiring effort.</p>
+
+        <p>And the tool's description does safety work too:</p>
+
+<pre><code>"By default this only CHECKS policy and returns a recommendation -- it does not
+ move money. Executing a refund requires dry_run=false AND an approval_token
+ issued by a human. Eligibility is decided by policy, not by you: if policy
+ refuses, explain the reason to the customer or escalate."
+</code></pre>
+
+        <p>That last clause matters. It tells the model that arguing about eligibility is <em>not part of its job</em>, which removes a whole class of attempted negotiation.</p>
+
+        <h2 id="policy">2 · Policy lives in code</h2>
+
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The interview question underneath this</div>
+          <p>"Where does your business logic live?" If the answer is "in the system prompt", the follow-up will be unpleasant — because a policy in a prompt is a <em>suggestion</em>. A persuasive ticket can argue with it. <a href="../project/agent/policy.py">policy.py</a> cannot be argued with, because the model never gets a vote.</p></div>
+        </div>
+
+        <p>Note the split: the knowledge base <em>describes</em> the refund policy in prose so the agent can quote it to a customer. <code>policy.py</code> <em>enforces</em> it. Those are different jobs and they need different homes.</p>
+
+        <p>Two details worth copying:</p>
+
+<pre><code># Every failed condition is collected, not short-circuited on the first.
+if order["already_refunded"]:      reasons.append(...)
+if not order["refund_eligible"]:   reasons.append(...)
+if order["days_since_purchase"] &gt; MAX_REFUND_DAYS: reasons.append(...)
+</code></pre>
+
+        <p>A customer told "your order is too old" who is <em>also</em> over the amount limit comes back twice, and the agent looks evasive both times. Same instinct as collecting validation faults in Lesson 3.</p>
+
+<pre><code># A missing field is a refusal, not a default.
+missing = [f for f in required if f not in order]
+if missing:
+    return PolicyDecision(allowed=False, reasons=[f"order data incomplete ..."])
+</code></pre>
+
+        <p>This is Lesson 7's partial-failure problem applied to money. If eligibility could not be read, the answer is <strong>no</strong> — never "probably fine".</p>
+
+        <h2 id="idempotency">3 · Idempotency</h2>
+
+<pre><code>def idempotency_key(order_id, amount, reason):
+    material = f"{order_id.upper()}|{amount:.2f}|{reason.strip().lower()}"
+    return "idem_" + hashlib.sha256(material.encode()).hexdigest()[:16]
+</code></pre>
+
+        <div class="callout danger">
+          <div class="c-ico">⚠️</div>
+          <div class="c-body"><div class="c-title">Derived from the request. Not random, not time-based.</div>
+          <p>A UUID per attempt gives every retry a fresh key, so the second attempt looks like a new refund — <strong>you have implemented the mechanism and disabled it in the same line.</strong> This is the most common way idempotency is got wrong, and it is a good thing to be able to explain crisply.</p>
+          <p>Deriving from the request means the same request always produces the same key, whoever sends it and however many times. <code>reason</code> is included so two legitimately different refunds on one order — a duplicate charge, and later a returned item — stay distinct.</p></div>
+        </div>
+
+        <p>And when a duplicate is detected, the response is <strong>success</strong>, not an error:</p>
+
+<pre><code>{"status": "already_refunded", "duplicate": True, "refunded": True,
+ "message": "This exact refund was already processed. No second payment was made."}
+</code></pre>
+
+        <p>The caller asked for a state — "this refund exists" — and that state holds. Returning an error invites a workaround, and workarounds around idempotency are how double payments happen.</p>
+
+        <h2 id="approval">4 · Approval tokens</h2>
+
+        <p>Bound to an exact <em>(order, amount)</em> pair:</p>
+
+<pre><code>if record["order_id"] != order_id.upper():   return False, "issued for a different order"
+if abs(record["amount"] - amount) &gt; 0.001:   return False, "authorises a different amount"
+if record["used"]:                           return False, "already been used"
+</code></pre>
+
+        <p>A token authorising "a refund on ORD-5581" rather than "120.00 on ORD-5581" is an open cheque, and an agent that misread the amount would spend it. Three checks because each has been a real incident somewhere: forged or hallucinated token, token reused for a different refund, replay.</p>
+
+        <div class="callout key">
+          <div class="c-ico">🛡️</div>
+          <div class="c-body"><div class="c-title">The agent cannot mint its own approval</div>
+          <p><code>grant_approval()</code> is not in the tool registry. There is a test asserting no tool name contains "approval" or "grant".</p>
+          <p><strong>A gate the caller can open itself is not a gate</strong> — and this is the most common way the control is implemented wrongly. An "approval step" the agent performs is theatre.</p></div>
+        </div>
+
+        <h2 id="order">5 · The order of the checks is the design</h2>
+
+        <div class="steps">
+          <p><strong>1</strong> does the order exist — semantic validation</p>
+          <p><strong>2</strong> does policy permit it — <code>policy.py</code>, not the prompt</p>
+          <p><strong>3</strong> has this exact refund already run — idempotency</p>
+          <p><strong>4</strong> dry run? stop here and report — recommend vs execute</p>
+          <p><strong>5</strong> is there a valid human approval — the gate</p>
+          <p><strong>6</strong> execute, record, audit — durable, append-only</p>
+        </div>
+
+        <p>Steps 2 and 3 run <em>before</em> the approval gate deliberately. There is no point asking a human to approve something policy forbids or that already happened — <strong>and an approval request for an impossible action trains reviewers to click through.</strong> Approval fatigue is a security failure, and it is caused by asking too often.</p>
+
+        <h2 id="audit">6 · Append-only audit</h2>
+
+<pre><code>  outcome            order            amount  detail
+  --------------------------------------------------------------------------
+  policy_denied      ORD-5555          49.00  Refund not permitted: the order is 90 days…
+  dry_run            ORD-5581         120.00  policy passed; awaiting human approval
+  approval_required  ORD-5581         120.00  Executing a refund requires an approval token
+  executed           ORD-5581         120.00  duplicate charge
+</code></pre>
+
+        <p>Three rows for one refund: prepared, blocked, executed. <strong>A status column you overwrite could not tell that story.</strong> The question an audit answers is "what happened, in what order, and who decided" — and an overwritten row cannot answer it.</p>
+
+        <p>Every <em>attempt</em> is logged, refusals included. A log containing only successes cannot tell you that an agent tried forty times.</p>
+
+        <h2 id="run">7 · Run every branch</h2>
+
+<pre><code>cd teach-agents/project
+python steps/l08_safe_refund.py --refund
+</code></pre>
+
+<pre><code>  order does not exist            -> not_found          refunded=False
+  90 days old (limit 30)          -> policy_denied      refunded=False
+  already refunded                -> policy_denied      refunded=False
+  amount exceeds order total      -> policy_denied      refunded=False
+  dry run — the DEFAULT           -> requires_approval  refunded=False
+  execute without a token         -> approval_required  refunded=False
+
+  [a human approves 120.00 on ORD-5581 -> apr_0071fcc5df7e29c9]
+
+  execute with a valid token      -> refunded           refunded=True
+  THE SAME REQUEST AGAIN (a retry) -> already_refunded  refunded=True
+</code></pre>
+
+        <div class="callout key">
+          <div class="c-ico">✅</div>
+          <div class="c-body"><div class="c-title">Those last two lines are the whole lesson</div>
+          <p>Two calls, one payment. The audit log contains exactly one <code>executed</code> row. That is the property you are being asked about when someone says "how do you let an agent spend money".</p></div>
+        </div>
+
+        <h2 id="break">8 · Break it</h2>
+
+        <div class="steps">
+          <p><strong>1 · Make the key random.</strong> Change <code>idempotency_key</code> to return <code>"idem_" + uuid4().hex[:16]</code>. Run the last two lines again. <strong>Two payments.</strong> The audit log has two <code>executed</code> rows. This is the single most instructive minute in the lesson.</p>
+
+          <p><strong>2 · Reuse a token.</strong> Approve 480.00 on ORD-5590, then try to spend that token on ORD-5602, then on ORD-5590 for 100.00. Both refused, with different messages. Now delete the amount check and try again — the token becomes an open cheque.</p>
+
+          <p><strong>3 · Flip the default.</strong> Set <code>dry_run=False</code> as the default. Now every policy-passing refund attempt tries to execute, and only the missing token stops it. One default, one layer of defence removed.</p>
+
+          <p><strong>4 · Reorder the checks.</strong> Move the approval gate before the policy check. Now a human is asked to approve a refund on a 90-day-old order. Do that a hundred times and your reviewers stop reading.</p>
+
+          <p><strong>5 · The ambiguous timeout.</strong></p>
+<pre><code>set_faults(FaultPlan(slow={"issue_refund": 3.0}))
+guarded_execute("issue_refund", {...}, timeout_s=0.5)
+# {'error': 'timeout', 'message': '... Whether it took effect is unknown.'}
+</code></pre>
+          <p>You do not know whether the money moved. Retrying might double-pay; not retrying might strand a customer. <strong>The only safe design is to have decided in advance</strong> — which is exactly what the idempotency key bought you: the follow-up call is safe either way. Without it you are choosing between two bad options with a customer waiting.</p>
+        </div>
+
+        <h2 id="production">9 · The production concern</h2>
+
+        <p><strong>The ledger must be as durable as the payment.</strong> Ours is a JSONL file, which is honest for a course and wrong for production: if the ledger write fails after the payment succeeds, the next retry pays twice. Real systems make the payment and the idempotency record one transaction, or use the payment provider's own idempotency support.</p>
+
+        <p><strong>Approval needs a real UI, expiry and signing.</strong> Our tokens are in-memory and never expire. A token that lives forever is a credential.</p>
+
+        <p><strong>Reconciliation.</strong> Whatever you do, some records will disagree with the payment provider. You need a job that compares them and a runbook for the differences, because ambiguous timeouts guarantee drift.</p>
+
+        <p><strong>Blast radius.</strong> Per-caller caps (Lesson 9), daily totals, and an anomaly alert on refund volume. If the agent starts refunding everything, the question is how long before anyone notices.</p>
+
+        <div class="callout key">
+          <div class="c-ico">🧰</div>
+          <div class="c-body"><div class="c-title">You already know this</div>
+          <p>Idempotency keys, approval workflows, append-only audit, transaction boundaries, reconciliation, exactly-once versus at-least-once. This is payments engineering, and none of it is AI-specific. <strong>The only new part is that the caller is a probabilistic system which may sincerely believe it has not already asked.</strong> That is a genuinely strong thing to say in an interview: it reframes the problem as one you already know how to solve.</p></div>
+        </div>
+
+        <h2 id="interview">10 · Interview practice</h2>
+
+        <h3>Two-minute answer — "How would you safely let an AI agent spend or refund money?"</h3>
+        <div class="callout note"><div class="c-ico">🎤</div><div class="c-body">
+        <p>"I'd start by not letting it. The tool's default is a dry run: it checks policy and returns a recommendation, and moving money needs an explicit flag plus a token. The safe path has to be the default, because the unsafe path eventually gets reached by an argument nobody validated.</p>
+        <p>Then five layers. <strong>Policy in code</strong>, not the prompt — a prompt policy is a suggestion a persuasive ticket can argue with. <strong>An idempotency key derived from the request</strong>, so a retry can't pay twice; derived, not a UUID per attempt, because a fresh key per attempt disables the mechanism you just built. <strong>An approval token bound to the exact order and amount</strong>, minted by a function the agent cannot call — a gate the caller can open itself isn't a gate. <strong>An append-only audit log</strong> including refusals, because a log of successes can't tell you the agent tried forty times. And <strong>caps</strong> on per-caller and daily amounts to bound the blast radius.</p>
+        <p>The order matters: policy and idempotency are checked <em>before</em> a human is asked, because asking someone to approve an impossible action trains them to click through — approval fatigue is a security failure.</p>
+        <p>The case I'd want to talk about is the timeout. If the payment call times out you don't know whether it happened. Retrying might double-pay, not retrying might strand the customer — and the idempotency key is what makes that decision safe in advance rather than at incident time. Almost none of this is AI-specific; it's payments engineering, and the only new part is a caller that may sincerely believe it hasn't already asked."</p></div></div>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> System design · Design an approval workflow for an agent taking customer-visible actions. <span class="chev">›</span></summary><div class="a">
+        <p>Tier by consequence, not uniformly — approving everything produces fatigue and fatigue produces rubber-stamping. Reversible and small: auto-execute with audit. Irreversible but bounded: single approver, token bound to the exact action. Above a threshold, or unusual: second approver.</p>
+        <p>Mechanics: the agent <em>prepares</em> a request containing the action, the amount, the policy verdict and the evidence it relied on — the reviewer needs to check the reasoning, not just click yes. Tokens are signed, scoped to one action, single-use, and expiring. The agent cannot mint them.</p>
+        <p>Then the parts that decide whether it works in practice: measure approval latency, because a gate that adds two days will be routed around; measure the approval <em>rate</em>, because 99% approvals means the gate is theatre and the threshold is wrong; and give reviewers a reject reason that feeds back into policy, so refusals improve the system instead of just stopping it.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Debugging · A customer was refunded twice. Walk me through the investigation. <span class="chev">›</span></summary><div class="a">
+        <p>Start at the audit log and count <code>executed</code> rows for that order. Two rows means two distinct requests reached execution; one row plus two provider payments means the provider was called twice for one request.</p>
+        <p>If two rows: compare the idempotency keys. Different keys means the requests genuinely differed — most likely the <code>reason</code> or the amount varied slightly, so a retry looked new. That is a key-derivation bug: too much variable material in the key. Same key with two rows means the duplicate check didn't run or the ledger write failed between them.</p>
+        <p>If one row and two payments: the failure is between us and the provider — a timeout followed by a retry at their end, which is what provider-side idempotency support exists for.</p>
+        <p>Then the systemic fix, which is the answer they want: make the payment and the ledger record one transaction, and add reconciliation against the provider so this is detected by a job rather than by a customer.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Coding · Implement idempotent refunds. <span class="chev">›</span></summary><div class="a">
+        <p>Derive a key by hashing the normalised request — uppercase the id, fix the amount to two decimals, lowercase and strip the reason. Check a durable store for that key before acting. If present, return the original outcome as a <em>success</em> with a duplicate flag. If absent, act, then record the key and the outcome — ideally in the same transaction as the action.</p>
+        <p>Say out loud: "derived, not random, or every retry looks new"; "the duplicate response is success, not an error, or callers build workarounds"; and "the record and the action need to be atomic, otherwise a crash between them re-opens the hole".</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · Where is your remaining exposure? <span class="chev">›</span></summary><div class="a">
+        <p>Name it before you are asked. <strong>The ledger is not transactional with the payment</strong> — a crash between them allows a double payment on retry. <strong>Tokens are in-memory and never expire</strong>, so a leaked token is a standing credential. <strong>No reconciliation</strong>, so a provider-side discrepancy is invisible until a customer complains. <strong>No aggregate caps</strong>, so nothing stops a hundred individually-valid refunds. <strong>And the audit log is append-only by convention, not enforcement</strong> — a file anyone can edit is not an audit trail.</p>
+        <p>Being able to enumerate your own gaps is a stronger signal than a clean-sounding design, because every real system has them and the question is whether you know where they are.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · Would you ever let the agent refund without a human? <span class="chev">›</span></summary><div class="a">
+        <p>Yes, under conditions I'd state up front: a low amount cap, a category with an unambiguous policy (a confirmed duplicate charge is arithmetic, not judgement), full audit, aggregate daily limits, an anomaly alert, and a measured false-positive rate from evaluation before it ships.</p>
+        <p>The framing I'd use: the question isn't "human or not", it's "what is the cost of being wrong, times how often, versus the cost of the review". Approving thousands of £5 duplicate refunds by hand has its own failure mode — reviewers stop reading, and the gate becomes decorative while remaining expensive.</p>
+        <p>What I would not automate is anything requiring judgement about intent, anything above a threshold where a single error is material, or anything where the policy has ambiguity a model would have to resolve.</p></div></details>
+
+        <h2 id="recap">11 · Recap</h2>
+        <div class="recap">
+        <ul>
+          <li><code>dry_run=True</code> is the default. The unsafe path must be the one requiring effort.</li>
+          <li>Policy in code, not the prompt. A prompt policy is a suggestion.</li>
+          <li>A missing eligibility field is a refusal, never "probably fine".</li>
+          <li>Idempotency keys are <strong>derived from the request</strong>. A UUID per attempt disables the mechanism.</li>
+          <li>A duplicate is a <em>success</em> response, not an error — errors invite workarounds.</li>
+          <li>Approval tokens bind to an exact order and amount, are single-use, and the agent cannot mint them.</li>
+          <li>Check policy and idempotency <em>before</em> asking a human. Approval fatigue is a security failure.</li>
+          <li>Append-only audit, refusals included. Three rows for one refund tells a story a status column cannot.</li>
+          <li>A timeout on a payment means <strong>unknown</strong>. The idempotency key is what makes the follow-up safe.</li>
+        </ul>
+        </div>
+
+        <div class="callout key"><div class="c-ico">🚀</div><div class="c-body"><div class="c-title">Next</div>
+        <p>Remember fixture TCK-1008, the ticket asking for a £5000 refund "without checking policy"? In Lesson 3 it was inert because no refund tool existed. It exists now. Lesson 9 attacks it properly.</p></div></div>
+
+        <h2 id="deeper">12 · Optional deep dives</h2>
+        <ul>
+          <li><a href="../../modules/12_langgraph.html">Module 12 · LangGraph</a> — durable human-in-the-loop interrupts and checkpointing.</li>
+          <li><a href="../../guardrails.html">Guardrails</a> — the control catalogue Lesson 9 builds on.</li>
+        </ul>
+
+        <div class="page-nav">
+          <a href="0007-reliability.html"><div class="dir">← Previous</div><div class="ttl">Lesson 7 · Reliability</div></a>
+          <a class="next" href="0009-security.html"><div class="dir">Next up →</div><div class="ttl">Lesson 9 · Security &amp; guardrails</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+
+<script>
+window.PORTAL = {
+  homeHref: "../../index.html",
+  navLabel: "The course",
+  here: "lessons/0008-irreversible-actions.html",
+  base: "../",
+  pages: [
+    { file: "index.html",                            title: "Course index",         num: "✦", kw: "overview start home index agents course" },
+    { file: "lessons/0001-llm-mechanics.html",       title: "LLM mechanics",        num: "01", kw: "llm messages roles context window temperature structured output tool calling brain" },
+    { file: "lessons/0002-agent-loop.html",          title: "The agent loop",       num: "02", kw: "loop observe decide act max steps termination search_kb" },
+    { file: "lessons/0003-tool-calling.html",        title: "Tools & validation",   num: "03", kw: "tool schema validation arguments read_ticket lookup_order parallel" },
+    { file: "lessons/0004-reasoning-patterns.html",  title: "Reasoning patterns",   num: "04", kw: "react plan execute reflection routing patterns draft_reply cost" },
+    { file: "lessons/0005-retrieval.html",           title: "Retrieval as a tool",  num: "05", kw: "retrieval rag chunking bm25 rerank citations grounding relevance floor" },
+    { file: "lessons/0006-context-memory.html",      title: "Context & memory",     num: "06", kw: "context window budget compaction summarisation state memory recall" },
+    { file: "lessons/0007-reliability.html",         title: "Reliability",          num: "07", kw: "timeout retry backoff loop detection oscillation partial failure escalate safe termination" },
+    { file: "lessons/0008-irreversible-actions.html", title: "Irreversible actions", num: "08", kw: "refund idempotency approval token audit policy dry run duplicate payment" },
+    { file: "lessons/0009-security.html",            title: "Security & guardrails", num: "09", kw: "prompt injection retrieval poisoning least privilege authorisation exfiltration output validation" }
+  ]
+};
+</script>
+<script src="../../assets/sitenav.js?v=20260801b"></script>
+<script src="../../assets/portal-page.js?v=20260727c"></script>
+<script src="../../assets/enhance.js?v=20260801a"></script>
+<script src="../../assets/genai-motion.js?v=20260728a"></script>
+<script src="../../assets/glossary.js?v=20260802b"></script>
+</body>
+</html>

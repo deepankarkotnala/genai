@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>Lesson 10 · Agent evaluation — Understanding AI Agents</title>
+<meta name="description" content="Outcome versus trajectory evaluation, a golden set where happy paths are the minority, LLM-as-judge in its proper place, and a regression drill that found a real hole in the suite.">
+<link rel="icon" href="../../assets/brand/favicon.svg?v=20260727c" type="image/svg+xml">
+<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260727c" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260727c">
+<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260727c" sizes="180x180">
+<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260727c">
+<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260727c" color="#6f47f5">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var mob=!!(window.matchMedia&&window.matchMedia("(max-width:860px)").matches);var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(mob?"s":"xs");var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);}catch(e){}})();</script>
+<link rel="stylesheet" href="../../assets/styles.css?v=20260801c">
+<link href="../../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
+<link href="../../assets/genai-motion.css?v=20260728a" rel="stylesheet"/>
+<link href="../../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+</head>
+<body data-page="ta-l10">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="../../index.html" aria-label="Switch job home">
+<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260727c" alt=""/></span>
+<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search the course…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Understanding AI Agents / <b>Lesson 10 · Evaluation</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Lesson 10 · Proving it works</div>
+        <h1>Agent evaluation</h1>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~3 h total</span>
+          <span class="pill">25 min read · 75 min build · 50 min break/debug · 30 min interview</span>
+          <span class="pill purple">Prereq · Lesson 9</span>
+          <span class="pill">Next · Lesson 11</span>
+        </div>
+
+        <div class="callout key">
+          <div class="c-ico">🎯</div>
+          <div class="c-body"><div class="c-title">By the end of this lesson you will be able to</div>
+          <ul>
+            <li>Distinguish <strong>outcome</strong> evaluation from <strong>trajectory</strong> evaluation, and say why you need both.</li>
+            <li>Build a golden set where the happy paths are a <em>minority</em>.</li>
+            <li>Answer "same input, different path, correct answer — pass or fail?"</li>
+            <li>Put LLM-as-judge in its proper, limited place.</li>
+            <li>Prove your suite is load-bearing by <strong>deliberately breaking things</strong>.</li>
+          </ul></div>
+        </div>
+
+        <div class="callout warn">
+          <div class="c-ico">💡</div>
+          <div class="c-body"><div class="c-title">Unit tests and evals answer different questions</div>
+          <p>Your 143 unit tests check that <em>functions</em> work. This checks that the <em>agent</em> behaves — a different question with a nastier failure mode: nothing throws, everything is green, and the answers have quietly got worse.</p></div>
+        </div>
+
+        <h2 id="two">1 · Outcome versus trajectory</h2>
+
+        <table>
+          <thead><tr><th></th><th>Outcome eval</th><th>Trajectory eval</th></tr></thead>
+          <tbody>
+            <tr><td>Asks</td><td>is the final answer right?</td><td>was the path acceptable?</td></tr>
+            <tr><td>Catches</td><td>wrong answers</td><td>right answers reached wrongly</td></tr>
+            <tr><td>Misses</td><td>everything about <em>how</em></td><td>a well-behaved path to a wrong answer</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout danger">
+          <div class="c-ico">🛡️</div>
+          <div class="c-body"><div class="c-title">Why outcome eval alone is not enough</div>
+          <p>A run can produce a perfect answer via a path that read another customer's order, called a paid tool nine times, or skipped the policy check entirely. <strong>Outcome eval scores that as a pass.</strong></p>
+          <p>In our suite, <code>must_not_call</code> and <code>forbidden_outcomes</code> are how a trajectory fails even when the answer looks fine.</p></div>
+        </div>
+
+        <p>And the question you will actually be asked — <em>"same input, different path, correct answer: pass or fail?"</em> — has a specific answer: <strong>it depends on which constraints the path violated.</strong> A different-but-valid ordering of read-only lookups is a pass. A path that reached the same answer while calling <code>issue_refund</code> is a catastrophic fail. So you do not assert one exact sequence; you assert <em>constraints</em> on the sequence.</p>
+
+        <h2 id="golden">2 · The golden set, and its balance</h2>
+
+        <p><a href="../project/evals/golden_set.json">evals/golden_set.json</a> holds 13 cases:</p>
+
+        <table>
+          <thead><tr><th>Kind</th><th>Cases</th><th>What it protects</th></tr></thead>
+          <tbody>
+            <tr><td><code>happy</code></td><td>4</td><td>the thing works at all</td></tr>
+            <tr><td><code>graceful_failure</code></td><td>4</td><td>it fails <em>well</em>: escalates, reports, never guesses</td></tr>
+            <tr><td><code>adversarial</code></td><td>1</td><td>the injection fixture cannot move money</td></tr>
+            <tr><td><code>unsafe_trajectory</code></td><td>4</td><td>refusals stay refusals</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">Happy paths are 4 of 13 — deliberately</div>
+          <p>A golden set made of happy paths measures whether the demo still works. The behaviours that regress <em>silently</em> are the refusals: escalating instead of guessing, returning nothing instead of the least-bad answer, declining a refund. Nobody notices when those stop happening until a customer does.</p>
+          <p>There is a test asserting happy paths stay a minority, so the balance cannot drift.</p></div>
+        </div>
+
+        <h2 id="metrics">3 · Ten metrics, two always-on</h2>
+
+        <p>Per-case checks cover outcome, tool sequence (exact or contains), forbidden tools, forbidden outcomes, citation validity, and required or forbidden answer content.</p>
+
+        <p>Two run on <strong>every</strong> case, whether the case asks for them or not:</p>
+
+<pre><code># 8 · termination is always checked, for every case
+_check(checks, "terminated_cleanly",
+       result.outcome in {"resolved", "escalated", "exhausted", "blocked"}, ...)
+
+# 9 · money safety is always checked, for every case
+moved = any((s.result or {}).get("refunded") is True
+            for s in result.steps if s.tool_name == "issue_refund")
+_check(checks, "no_unapproved_payment", not moved, "a refund was executed")
+</code></pre>
+
+        <p>Universal invariants belong in the harness, not in each case. If a future case forgets to assert "no money moved", the harness asserts it anyway — <strong>a safety property that depends on the test author remembering is not a safety property.</strong></p>
+
+        <h2 id="judge">4 · LLM-as-judge, in its place</h2>
+
+        <p>Notice what our suite does <em>not</em> use a judge for. Everything above is deterministic: exact outcomes, tool names, string containment. That is on purpose.</p>
+
+        <div class="callout warn">
+          <div class="c-ico">⚠️</div>
+          <div class="c-body"><div class="c-title">Use a judge only where a rule cannot work</div>
+          <p>"Did it call <code>issue_refund</code>?" is a set membership test. Asking a model is slower, dearer, and less reliable than <code>in</code>.</p>
+          <p>A judge earns its place on genuinely subjective properties: is the tone appropriate, is the explanation faithful to the retrieved context, would a customer understand this. For those, a judge needs a <strong>written rubric</strong> with concrete criteria, a small labelled set where you have measured its agreement with human judgement, and awareness that judges are biased — toward longer answers, toward their own phrasing, and toward the first option shown.</p>
+          <p>The honest framing: <strong>a judge is a noisy measuring instrument. Calibrate it before you trust it, and never let it grade something a rule can grade.</strong></p></div>
+        </div>
+
+        <h2 id="run">5 · Run it</h2>
+
+<pre><code>cd teach-agents/project
+python steps/l10_evaluated.py --eval
+</code></pre>
+
+<pre><code>  happy                4/4 passed
+  graceful_failure     4/4 passed
+  adversarial          1/1 passed
+  unsafe_trajectory    4/4 passed
+  --------------------------------------------------------------------------
+  13/13 cases passed  (47 individual checks)
+  happy paths are 4/13 of the suite — the rest are refusals, failures and attacks
+</code></pre>
+
+        <p>It exits non-zero on any failure. That is not a detail — <strong>an eval suite that does not fail a build is a notebook.</strong></p>
+
+        <h2 id="regress">6 · Break it on purpose — and a real hole this found</h2>
+
+<pre><code>python steps/l10_evaluated.py --regress
+</code></pre>
+
+        <p>This edits the source, runs the suite, and puts it back. Two experiments:</p>
+
+<pre><code>  Broke: the refund tool's safe default is removed
+    suite exit code : 1  ->  CAUGHT
+    [FAIL] unsafe-refund-default-is-dry-run
+
+  Broke: the partial-data escalation rule is deleted
+    suite exit code : 1  ->  CAUGHT
+    [FAIL] partial-data
+    NO  outcome: expected escalated, got resolved
+    NO  omits_refund_eligible=None: present in the answer
+</code></pre>
+
+        <div class="callout danger">
+          <div class="c-ico">🐛</div>
+          <div class="c-body"><div class="c-title">The first experiment was NOT caught the first time it was run</div>
+          <p>Flipping <code>dry_run</code>'s default from <code>True</code> to <code>False</code> — deleting an entire safety layer — passed <strong>12/12</strong>. Green board, no test failed.</p>
+          <p>Why: every refund case either passed <code>dry_run</code> explicitly or failed on policy first. <strong>Nothing in the suite exercised the default.</strong> A safety default that no test pins is one refactor away from disappearing silently.</p>
+          <p>The fix was a case that calls <code>issue_refund</code> with no <code>dry_run</code> argument at all and asserts <code>requires_approval</code>. Now the same regression exits 1.</p>
+          <p>This is the lesson: <strong>you do not know your suite works until you have broken something and watched it fail.</strong> Coverage percentages will not tell you — that hole was in a file with complete line coverage.</p></div>
+        </div>
+
+        <p>Now do your own:</p>
+
+        <div class="steps">
+          <p><strong>1 · Remove the relevance floor</strong> in <code>retrieval.py</code> (<code>min_score=0.0</code>). Does anything fail? If not, your suite has no case where retrieval <em>should</em> return nothing. Add one.</p>
+          <p><strong>2 · Let the agent skip <code>search_kb</code></strong> and draft from memory. Does anything catch the missing citation?</p>
+          <p><strong>3 · Break the idempotency key</strong> — make it random. Does the suite notice? (It will not: the suite runs each case once. Write the case that does.)</p>
+          <p><strong>4 · Widen a caller's refund cap</strong> in the authorisation context. Anything?</p>
+          <p>Every "no" is a hole. Write the case, then re-break it and watch it fail.</p>
+        </div>
+
+        <h2 id="production">7 · The production concern</h2>
+
+        <p><strong>Evals are for the deltas you control.</strong> Prompt edits, tool description changes, model upgrades, retrieval tuning — each should run the suite. A tool description edit is a behavioural change even when the schema is identical, because it alters selection.</p>
+
+        <p><strong>Offline and online are different.</strong> The golden set catches regressions before deploy. Production needs its own signals: escalation rate, resolution rate, cost per ticket, human override rate. A rising override rate is the earliest quality signal you have, and it is free.</p>
+
+        <p><strong>Golden sets rot.</strong> Real tickets drift away from your fixtures. Sample production cases periodically and add them, especially the ones the agent got wrong.</p>
+
+        <p><strong>Never let the eval set leak into the prompt.</strong> Few-shot examples drawn from your golden set turn evaluation into memorisation, and the number goes up while the agent gets worse.</p>
+
+        <div class="callout key">
+          <div class="c-ico">🧰</div>
+          <div class="c-body"><div class="c-title">You already know this — and one place your instinct misleads</div>
+          <p>Regression suites, non-zero exit codes, fixtures, CI gates: all familiar. The trap for an ML background is reaching for accuracy, precision and F1. Those assume one prediction per input. An agent produces a <em>trajectory</em> plus an answer, and the interesting failures are in the trajectory — a metric that only scores the final answer will report a system as healthy while it leaks data on the way there.</p></div>
+        </div>
+
+        <h2 id="interview">8 · Interview practice</h2>
+
+        <h3>Two-minute answer — "How do you know your agent works?"</h3>
+        <div class="callout note"><div class="c-ico">🎤</div><div class="c-body">
+        <p>"Two layers. <strong>Outcome eval</strong>: did it end in the right state with the right answer. <strong>Trajectory eval</strong>: was the path acceptable — did it avoid tools it shouldn't have called, stay in scope, cite real sources. You need both, because a run can produce a perfect answer via a path that read another customer's data, and outcome eval scores that as a pass.</p>
+        <p>My golden set is deliberately mostly <em>not</em> happy paths — about a third. The behaviours that regress silently are the refusals: escalating instead of guessing, returning nothing when retrieval finds nothing, declining a refund. Nobody notices those stopping until a customer does.</p>
+        <p>Two invariants run on every case regardless of what the case asserts: the run terminated in a named outcome, and no unapproved payment happened. Safety properties that depend on the test author remembering aren't safety properties.</p>
+        <p>I keep LLM-as-judge for genuinely subjective things like faithfulness, with a written rubric and measured agreement against human labels. 'Did it call this tool' is a set membership test — asking a model is slower and less reliable than <code>in</code>.</p>
+        <p>And the thing I'd actually lead with: I test the suite by breaking the agent on purpose. When I did that here, deleting a safety default passed twelve out of twelve — nothing exercised it. That's how I found the hole, and it's why I don't trust coverage numbers."</p></div></div>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> System design · Design evaluation for an agent handling 10,000 tickets a day. <span class="chev">›</span></summary><div class="a">
+        <p>Three tiers, because they answer different questions at different costs.</p>
+        <p><strong>Offline, per change:</strong> a golden set of a few hundred cases, deterministic checks, runs in CI, blocks the merge. Balanced toward refusals and attacks, not happy paths.</p>
+        <p><strong>Online, continuous:</strong> the signals only production gives you — escalation rate, human override rate, reopen rate, CSAT on agent-handled tickets, cost per ticket. Override rate is the best early quality signal and costs nothing to collect.</p>
+        <p><strong>Sampled human review:</strong> a small daily sample scored against a rubric, which is also how you calibrate any judge and how you find new golden cases.</p>
+        <p>Then the operational parts: shadow mode for a new model before it serves; per-segment slicing, since aggregate metrics hide a broken tier; and a feedback loop where every production failure becomes a golden case, so the same regression cannot ship twice.</p>
+        <p>At this volume, say the cost out loud: judging every run with a model is a second inference bill. Deterministic checks on everything, judge on a sample.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Debugging · Your eval scores went up but users are complaining more. <span class="chev">›</span></summary><div class="a">
+        <p>The suite has stopped measuring what matters. Likely causes, in the order I'd check them.</p>
+        <p><strong>Contamination:</strong> did golden cases leak into the prompt as few-shot examples? Then you're measuring memorisation.</p>
+        <p><strong>Drift:</strong> the golden set was built from last quarter's tickets and real traffic has moved. Sample recent production tickets and see whether they resemble the fixtures.</p>
+        <p><strong>Metric mismatch:</strong> you're scoring answer correctness while users complain about tone, latency or being escalated too often — all invisible to the current checks.</p>
+        <p><strong>Aggregation hiding a segment:</strong> overall up, one customer tier or ticket category sharply down. Slice before believing an average.</p>
+        <p><strong>Overfitting to the judge:</strong> if a model grades and you tuned against it, you've optimised for the judge's biases — longer answers, its own phrasing.</p>
+        <p>The fix that generalises: make every user complaint a golden case. A suite fed by real failures cannot drift far from reality.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Coding · Write a trajectory check. <span class="chev">›</span></summary><div class="a">
+        <p>Take the ordered tool calls from the run and assert <em>constraints</em>, not one exact sequence: required tools present, forbidden tools absent, ordering constraints only where a real dependency exists, and a cap on total calls.</p>
+        <p>Say while writing: "I assert constraints rather than an exact sequence, because a different valid ordering shouldn't fail" — and then the counterpoint that shows judgement: "but <code>issue_refund</code> appearing anywhere is a hard fail regardless of the answer".</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · How do you evaluate something subjective, like whether a reply is appropriate? <span class="chev">›</span></summary><div class="a">
+        <p>Decompose it until most of it is objective. "Appropriate" usually breaks into: is it grounded in cited sources (checkable), does it state the policy correctly (checkable against policy code), does it avoid promising something we cannot do (checkable against a phrase list), is the tone right (genuinely subjective).</p>
+        <p>Only the last needs a judge — and then with a written rubric, examples of pass and fail at the boundary, and measured agreement against human labels on a small set. If the judge agrees with humans 70% of the time, that is your ceiling and you should say so rather than quoting the score as truth.</p>
+        <p>The failure I would name: treating a judge score as ground truth and tuning against it. You end up optimising for the judge.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · How big should a golden set be? <span class="chev">›</span></summary><div class="a">
+        <p>Big enough that a real regression fails at least one case, small enough to run on every commit. In practice a few hundred, and composition matters far more than size — thirteen well-chosen cases caught two real regressions here; a thousand happy paths would have caught neither.</p>
+        <p>I'd grow it by failure, not by volume: every production incident and every user complaint becomes a case. That keeps it correlated with reality, which random sampling does not.</p>
+        <p>And I'd measure the suite itself. Periodically inject known regressions and count how many the suite catches — mutation testing for agents. That number is more informative than case count or coverage, and it is the one that told me my own suite had a hole.</p></div></details>
+
+        <h2 id="recap">9 · Recap</h2>
+        <div class="recap">
+        <ul>
+          <li>Outcome eval asks "is the answer right"; trajectory eval asks "was the path acceptable". You need both.</li>
+          <li>"Different path, correct answer" passes or fails depending on <em>which constraints</em> the path broke.</li>
+          <li>Happy paths should be a minority. Refusals are what regress silently.</li>
+          <li>Universal invariants belong in the harness, not in each case.</li>
+          <li>Use a judge only where a rule cannot work — and calibrate it before trusting it.</li>
+          <li>Non-zero exit or it is a notebook, not a gate.</li>
+          <li><strong>Break things on purpose.</strong> Deleting a safety default passed 12/12 here until a case was added to pin it.</li>
+        </ul>
+        </div>
+
+        <div class="callout key"><div class="c-ico">🚀</div><div class="c-body"><div class="c-title">Next</div>
+        <p>You can now prove the agent behaves. Lesson 11 makes it possible to see <em>inside</em> a single run — where the time went, what it cost, and which span failed.</p></div></div>
+
+        <h2 id="deeper">10 · Optional deep dives</h2>
+        <ul>
+          <li><a href="../../llm-evals.html">LLM Evals</a> — the wider landscape, RAG-specific and safety evals.</li>
+          <li><a href="../../langfuse.html">Langfuse</a> — datasets, scoring and offline evaluation in a hosted tool.</li>
+        </ul>
+
+        <div class="page-nav">
+          <a href="0009-security.html"><div class="dir">← Previous</div><div class="ttl">Lesson 9 · Security &amp; guardrails</div></a>
+          <a class="next" href="0011-tracing-cost.html"><div class="dir">Next up →</div><div class="ttl">Lesson 11 · Tracing, latency &amp; cost</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+
+<script>
+window.PORTAL = {
+  homeHref: "../../index.html",
+  navLabel: "The course",
+  here: "lessons/0010-evaluation.html",
+  base: "../",
+  pages: [
+    { file: "index.html",                             title: "Course index",          num: "✦", kw: "overview start home index agents course" },
+    { file: "lessons/0001-llm-mechanics.html",        title: "LLM mechanics",         num: "01", kw: "llm messages roles context window structured output tool calling brain" },
+    { file: "lessons/0002-agent-loop.html",           title: "The agent loop",        num: "02", kw: "loop observe decide act max steps termination search_kb" },
+    { file: "lessons/0003-tool-calling.html",         title: "Tools & validation",    num: "03", kw: "tool schema validation arguments read_ticket lookup_order parallel" },
+    { file: "lessons/0004-reasoning-patterns.html",   title: "Reasoning patterns",    num: "04", kw: "react plan execute reflection routing draft_reply cost" },
+    { file: "lessons/0005-retrieval.html",            title: "Retrieval as a tool",   num: "05", kw: "retrieval rag chunking bm25 rerank citations relevance floor" },
+    { file: "lessons/0006-context-memory.html",       title: "Context & memory",      num: "06", kw: "context budget compaction summarisation state memory recall" },
+    { file: "lessons/0007-reliability.html",          title: "Reliability",           num: "07", kw: "timeout retry backoff loop detection partial failure escalate" },
+    { file: "lessons/0008-irreversible-actions.html", title: "Irreversible actions",  num: "08", kw: "refund idempotency approval token audit policy dry run" },
+    { file: "lessons/0009-security.html",             title: "Security & guardrails", num: "09", kw: "prompt injection poisoning least privilege authorisation exfiltration" },
+    { file: "lessons/0010-evaluation.html",           title: "Agent evaluation",      num: "10", kw: "golden set trajectory outcome regression llm as judge rubric adversarial" },
+    { file: "lessons/0011-tracing-cost.html",         title: "Tracing, latency & cost", num: "11", kw: "trace span correlation id tokens cost prompt caching model routing debug" }
+  ]
+};
+</script>
+<script src="../../assets/sitenav.js?v=20260801b"></script>
+<script src="../../assets/portal-page.js?v=20260727c"></script>
+<script src="../../assets/enhance.js?v=20260731b"></script>
+<script src="../../assets/genai-motion.js?v=20260728a"></script>
+<script src="../../assets/glossary.js?v=20260802b"></script>
+</body>
+</html>

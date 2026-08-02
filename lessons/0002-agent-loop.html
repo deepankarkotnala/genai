@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>Lesson 2 · The agent loop — Understanding AI Agents</title>
+<meta name="description" content="Build the agent loop in about forty lines of Python, with no framework. Covers observe-decide-act, termination conditions, max-step limits, and when not to build an agent at all.">
+<link rel="icon" href="../../assets/brand/favicon.svg?v=20260727c" type="image/svg+xml">
+<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260727c" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260727c">
+<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260727c" sizes="180x180">
+<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260727c">
+<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260727c" color="#6f47f5">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var mob=!!(window.matchMedia&&window.matchMedia("(max-width:860px)").matches);var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(mob?"s":"xs");var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition — CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="../../assets/styles.css?v=20260801d">
+<link href="../../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
+<link href="../../assets/genai-motion.css?v=20260801a" rel="stylesheet"/>
+<link href="../../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+</head>
+<body data-page="ta-l02">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="../../index.html" aria-label="Switch job home">
+<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260727c" alt=""/></span>
+<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search the course…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Understanding AI Agents / <b>Lesson 2 · The agent loop</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Lesson 2 · Foundations</div>
+        <h1>The agent loop, written out in full</h1>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~3 h total</span>
+          <span class="pill">25 min read · 75 min build · 40 min break/debug · 30 min interview</span>
+          <span class="pill purple">Prereq · Lesson 1</span>
+          <span class="pill">Next · Lesson 3</span>
+        </div>
+
+        <div class="callout key">
+          <div class="c-ico">🎯</div>
+          <div class="c-body"><div class="c-title">By the end of this lesson you will be able to</div>
+          <ul>
+            <li>Write the agent loop from memory, with no framework.</li>
+            <li>Distinguish a <strong>prompt</strong>, a <strong>chain</strong>, a <strong>workflow</strong> and an <strong>agent</strong> — and say which one a problem needs.</li>
+            <li>Answer "when would you <em>not</em> build an agent?" convincingly.</li>
+            <li>Name every way a loop can terminate, and explain why the step limit is not optional.</li>
+            <li>Read an execution trace and say what the agent knew at each step.</li>
+          </ul></div>
+        </div>
+
+        <h2 id="fourthings">1 · Four things people all call "an agent"</h2>
+
+        <p>Interviewers ask this to find out whether you reach for an agent by default. The distinction is <strong>who decides what happens next</strong>.</p>
+
+        <table>
+          <thead><tr><th>Shape</th><th>Who decides the next step</th><th>Use when</th></tr></thead>
+          <tbody>
+            <tr><td><strong>Prompt</strong></td><td>nobody — one call in, one answer out</td><td>the task is a single transformation: summarise, classify, rewrite</td></tr>
+            <tr><td><strong>Chain</strong></td><td>you, at build time — fixed sequence</td><td>the steps are always the same: extract → validate → format</td></tr>
+            <tr><td><strong>Workflow</strong></td><td>you, with branches — code branches on results</td><td>the paths are known and finite, and you want them auditable</td></tr>
+            <tr><td><strong>Agent</strong></td><td>the model, at run time</td><td>you genuinely cannot enumerate the paths in advance</td></tr>
+          </tbody>
+        </table>
+
+        <div class="callout warn">
+          <div class="c-ico">⚠️</div>
+          <div class="c-body"><div class="c-title">When <em>not</em> to build an agent</div>
+          <p>When you can draw the flowchart. If you can draw it, write it — a workflow is cheaper, faster, reproducible, and debuggable with a stack trace. Handing the flowchart to a model buys nothing and costs you determinism.</p>
+          <p>Also avoid an agent when: every run must take the identical path for audit reasons; the latency budget is tight (each step is another model round-trip); or a wrong action is expensive and you have no approval gate yet (Lesson 8).</p>
+          <p>The strongest answer names the real cost: <strong>an agent trades predictability for flexibility.</strong> Only pay that when you need the flexibility.</p></div>
+        </div>
+
+        <h2 id="theloop">2 · The loop</h2>
+
+        <p>Everything else in this course is a variation on five steps:</p>
+
+        <div class="steps">
+          <p><strong>① Perceive</strong> — the model sees the goal plus everything discovered so far.</p>
+          <p><strong>② Decide</strong> — it chooses one next action, or decides it can answer.</p>
+          <p><strong>③ Act</strong> — <em>your code</em> runs the requested tool.</p>
+          <p><strong>④ Observe</strong> — the result is appended to the conversation.</p>
+          <p><strong>⑤ Repeat</strong> — until an answer, or until a limit stops it.</p>
+        </div>
+
+        <div class="callout note">
+          <div class="c-ico">✅</div>
+          <div class="c-body"><div class="c-title">In plain English</div>
+          <p>Look → think → do → look again → repeat. It feels powerful only because "do" can touch real systems and "look again" lets the next decision use what just happened.</p></div>
+        </div>
+
+        <h2 id="build">3 · Build it</h2>
+
+        <p>Open <a href="../project/agent/loop.py">project/agent/loop.py</a>. This is the core, with nothing removed:</p>
+
+<pre><code>for n in range(1, max_steps + 1):
+    # 1. DECIDE -- the only place a model is consulted.
+    decision = brain.decide(messages, specs)
+
+    # 2. If it chose to answer, we are done.
+    if decision.final_text is not None:
+        return RunResult(answer=decision.final_text, steps=steps,
+                         stopped_because="final_answer", ...)
+
+    # 3. ACT -- run the tool it asked for.
+    call = decision.tool_call
+    try:
+        result = execute(call.name, call.arguments)
+    except ToolError as exc:
+        result = {"error": "invalid_call", "message": str(exc)}
+
+    steps.append(Step(n=n, kind="tool_call", tool_name=call.name,
+                      arguments=dict(call.arguments), result=result, ...))
+
+    # 4. OBSERVE -- the result becomes part of what the model sees next.
+    messages.append(Message("assistant", f"Calling {call.name} with {call.arguments}"))
+    messages.append(Message("tool", json.dumps(result), tool_name=call.name))
+
+# 5. The limit, not the model, ended this run.
+return RunResult(answer="Stopped after ... Escalating to a human.",
+                 steps=steps, stopped_because="max_steps")
+</code></pre>
+
+        <p>That is an agent. No framework, no graph, no orchestrator class.</p>
+
+        <h3>Three decisions worth defending</h3>
+
+        <p><strong>The step limit is the only real bound.</strong> A loop that exits when the model decides to stop is not bounded, because "the model decides" is the part you don't control. Note that <code>stopped_because</code> is returned, not just the answer — and that the milestone script exits <code>1</code> on a truncated run. A truncated run reported as a finished one is how silent failures reach production.</p>
+
+        <p><strong>Tool errors are fed back, not raised.</strong> A missing ticket is <em>information</em>. Turning it into an exception ends the run; putting it in the conversation lets the agent try something else or escalate honestly. Recoverable and fatal are different, and the loop must know which is which.</p>
+
+        <p><strong>Every step is recorded.</strong> <code>Step</code> keeps the tool name, arguments, result and telemetry. Without it, "it did something odd yesterday" is not a bug report. Lesson 11 turns this into real tracing.</p>
+
+        <h3>The first tool</h3>
+
+        <p><code>search_kb</code> is deliberately primitive — keyword overlap, tags weighted higher than body text:</p>
+
+<pre><code>terms = [t for t in query.lower().replace(",", " ").split() if len(t) &gt; 2]
+score = tag_hits * 3 + body_hits
+</code></pre>
+
+        <p>Starting crude is intentional. You should watch keyword search fail in an obvious way <em>before</em> meeting embeddings, so that in Lesson 5 embeddings arrive as the answer to a problem you have personally seen rather than as a technology you were told to use.</p>
+
+        <h2 id="run">4 · Run it</h2>
+
+<pre><code>cd teach-agents/project
+python steps/l02_loop.py
+</code></pre>
+
+        <p>Real output:</p>
+
+<pre><code>  STEP 1  ACT   read_ticket(ticket_id='TCK-1001')
+          OBSERVE  ticket_id=TCK-1001, created_at=2026-07-02T09:14:00,
+                   category=Billing, priority=High, ... (+5 fields)
+
+  STEP 2  ACT   lookup_order(order_id='ORD-5581')
+          OBSERVE  order_id=ORD-5581, customer_tier=Pro, amount=120.0, ... (+5 fields)
+
+  STEP 3  ACT   search_kb(query='billing', limit=2)
+          OBSERVE  query=billing, returned=2, articles=[{'id': 'billing-duplicate-charges'...
+
+  STEP 4  ANSWER
+          Ticket TCK-1001 is a Billing issue at High priority from a Pro customer.
+          Order ORD-5581 totals 120.0 USD and refund_eligible=True. Relevant policy:
+          Duplicate charges, Proration. Recommended next step: draft a reply quoting
+          the policy above. No refund is issued here.
+
+  stopped_because : final_answer
+  tools called    : read_ticket -&gt; lookup_order -&gt; search_kb
+</code></pre>
+
+        <div class="callout key">
+          <div class="c-ico">🔍</div>
+          <div class="c-body"><div class="c-title">Read the trace properly — this is a job skill</div>
+          <p>Step 2 is the interesting one. Nothing told the agent about <code>ORD-5581</code>. It appeared in the <em>body of the ticket returned by step 1</em>. The agent could only decide to look it up because step 1's result was fed back in.</p>
+          <p>That is the loop earning its keep. A chain would have needed the order id up front.</p></div>
+        </div>
+
+        <h2 id="break">5 · Break it, then debug it</h2>
+
+        <div class="steps">
+          <p><strong>1 · A ticket with no order.</strong></p>
+<pre><code>python steps/l02_loop.py TCK-1005
+</code></pre>
+          <p>Two tool calls, not three — <code>lookup_order</code> is skipped. Why? Because the decision to look up an order comes from finding an <code>ORD-</code> token in the ticket body, and TCK-1005 has none. The path is driven by content, not by a step counter.</p>
+
+          <p><strong>2 · Starve the loop.</strong></p>
+<pre><code>python steps/l02_loop.py TCK-1001 --max-steps 2
+</code></pre>
+          <p>It stops mid-investigation with <code>stopped_because: max_steps</code> and exit code <code>1</code>. Notice what it does <em>not</em> do: pretend to have an answer. Compare with what a caller would see if the loop just returned whatever it had.</p>
+
+          <p><strong>3 · A ticket that doesn't exist.</strong></p>
+<pre><code>python steps/l02_loop.py TCK-9999
+</code></pre>
+          <p><code>read_ticket</code> returns <code>{"error": "not_found", ...}</code>, the agent escalates instead of guessing, and the run still terminates cleanly.</p>
+
+          <div class="callout danger">
+            <div class="c-ico">🐛</div>
+            <div class="c-body"><div class="c-title">This case was a real bug, found by a test</div>
+            <p>The first version of this lesson's code hit the step limit on TCK-9999. The reason is worth studying: failed tool results were filtered out of the observed state, so "I have no ticket" stayed true no matter how many times reading it failed — and the agent retried <code>read_ticket</code> until the budget ran out.</p>
+            <p>The fix was to track <strong>attempted</strong> tools separately from <strong>successful</strong> results:</p>
+<pre><code>if ticket is None and "read_ticket" not in attempted and "read_ticket" in available:
+    ...
+if ticket is None:
+    return _summarise(None, None, None)   # no path forward: say so
+</code></pre>
+            <p>Retrying a call that already failed identically is the most common way an agent burns its step budget. Lesson 7 builds a proper controller for this. Notice the shape of the bug: the loop was fine; the <em>state model</em> conflated "unknown" with "known to be unavailable".</p></div>
+          </div>
+        </div>
+
+        <h2 id="production">6 · The production concern</h2>
+
+        <p>Four things this loop still lacks, each a later lesson: no timeout on a tool call (7), no detection of identical repeated calls (7), no cost ceiling (11), and no persistence — crash at step 3 and all work is lost (14).</p>
+
+        <p>What it does have is the property that matters most: <strong>it always terminates, and it always says how.</strong>
+
+        <div class="callout key">
+          <div class="c-ico">🧰</div>
+          <div class="c-body"><div class="c-title">You already know this</div>
+          <p><code>max_steps</code> is a redelivery limit. Feeding tool errors back is error handling that distinguishes retryable from fatal. Recording every step is request logging. You have built all three; the loop is just where they go in an agent.</p></div>
+        </div>
+
+        <h2 id="interview">7 · Interview practice</h2>
+
+        <h3>Two-minute answer — "Explain how an agent works."</h3>
+        <div class="callout note"><div class="c-ico">🎤</div><div class="c-body">
+        <p>"An agent is a loop around a model with tools. Each turn, the model sees the goal plus every result so far and picks one next action. My code executes it, appends the result to the conversation, and calls the model again. It ends when the model produces an answer or when a step limit stops it.</p>
+        <p>Two details I'd flag. The step limit isn't a safety net, it's the actual bound — if termination depends on the model choosing to stop, the loop isn't bounded. And tool failures go back into the conversation as results rather than raised as exceptions, because a missing record is information the agent can act on, whereas an exception just ends the run.</p>
+        <p>The reason to use the loop instead of a workflow is that the second step can depend on what the first one returned. In our triage agent the order id only exists inside the ticket body, so nothing could have looked it up in advance."</p></div></div>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> System design · Support wants automated triage for 10,000 tickets a day. Agent or workflow? <span class="chev">›</span></summary><div class="a">
+        <p>Start by refusing the false choice: most of that volume is a workflow, and the agent earns its place on the remainder.</p>
+        <p>Classify first with one cheap model call. Tickets matching known shapes — password reset, invoice copy, delivery status — go down deterministic paths: fast, auditable, roughly free. Route only the ambiguous or multi-step ones to the agent.</p>
+        <p>Then the numbers, because at 10k/day they dominate. Each agent step is a round trip; 4 steps at 2s is 8s per ticket plus 4× the token cost of a single call. If the agent handles 15% that's 1,500 runs a day, which is a budget you can state. Add per-run step and cost ceilings, and make escalation a first-class outcome rather than a failure.</p>
+        <p>The trap: "use an agent for everything" signals you haven't costed it.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Debugging · An agent in production runs 40 steps and times out. Walk me through it. <span class="chev">›</span></summary><div class="a">
+        <p>Get the trace and look at the <em>sequence</em>, not the final output. Four patterns and their fixes:</p>
+        <p><strong>Identical repeated calls</strong> — same tool, same arguments. Usually a failing tool whose error the agent can't act on, or state that conflates "not tried" with "tried and failed". Fix: track attempted calls; on a repeat, stop or escalate.</p>
+        <p><strong>Two-call oscillation</strong> — A, B, A, B. The agent has contradictory instructions or a tool result it can't interpret. Fix: detect a repeated cycle, and check the tool descriptions.</p>
+        <p><strong>Genuine drift</strong> — plausible but unrelated calls. The goal has been diluted by 40 steps of tool output in the context window. Fix: compaction (Lesson 6) and a tighter step budget.</p>
+        <p><strong>Missing termination</strong> — it has the answer and keeps going. The system prompt never said what "done" looks like, or there's no way to signal it.</p>
+        <p>Then the real answer: 40 steps means <code>max_steps</code> was too high or absent. A 4-step task should never have a 40-step budget — a limit that only trips after the damage is a limit in name only.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Coding · Implement a tool-calling loop from scratch in 15 minutes. No framework. <span class="chev">›</span></summary><div class="a">
+        <p>Ship these, in this order: the message list; the bounded <code>for</code> loop; call the model; branch on tool-call vs final answer; dispatch through a dictionary (never <code>getattr</code> or <code>eval</code> on a model-supplied name); catch tool errors and feed them back; append both the decision and the result; return a result object carrying <em>why</em> it stopped.</p>
+        <p>Say out loud while writing: "the step limit bounds the loop", "a dictionary lookup means a hallucinated tool name is a clean error", "the error goes back to the model rather than up the stack".</p>
+        <p>Common failures: <code>while True</code>; dispatching with <code>eval</code>; letting a tool exception escape; and returning only a string, so the caller can't tell a finished run from a truncated one.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · How do you set <code>max_steps</code> for a real workload? <span class="chev">›</span></summary><div class="a">
+        <p>Measure, don't guess. Run the golden set, take the distribution of steps for successful runs, and set the limit a little above the tail — say p99 plus a small margin. Our triage agent finishes in 3–4 steps, so 6 is generous and 40 would be negligent.</p>
+        <p>Then make it not a single number: budget by <em>cost</em> and <em>wall-clock</em> as well as steps, because one expensive step can cost more than five cheap ones. Alert on the rate of limit-hits — a rise means either the tasks changed or the agent regressed, and both are worth knowing before a customer tells you.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · The same tool call is issued three times in one run. Is that a bug? <span class="chev">›</span></summary><div class="a">
+        <p>Depends on idempotency and on whether the arguments changed. Three identical reads are wasteful but harmless — still worth fixing, since it usually means the result isn't reaching the model in a usable form. Three calls with <em>different</em> arguments may be legitimate investigation.</p>
+        <p>Three identical <em>writes</em> are an incident. That's why Lesson 8 attaches an idempotency key to the refund path: the fix isn't "stop the agent repeating itself", it's "make the repeat harmless". Prevention at the loop layer and protection at the tool layer are different defences, and irreversible actions need both.</p></div></details>
+
+        <h2 id="recap">8 · Recap</h2>
+        <div class="recap">
+        <ul>
+          <li>Prompt / chain / workflow / agent differ by <em>who decides the next step</em>. If you can draw the flowchart, write the workflow.</li>
+          <li>The loop is perceive → decide → act → observe → repeat. Forty lines, no framework.</li>
+          <li>The step limit is the real bound, and the run must report <em>why</em> it stopped.</li>
+          <li>Tool errors are observations, not exceptions.</li>
+          <li>The loop earns its keep when step N+1 depends on what step N returned — like an order id that only exists inside a ticket body.</li>
+          <li>Conflating "not attempted" with "attempted and failed" causes infinite retries. That was a real bug here, caught by a test.</li>
+        </ul>
+        </div>
+
+        <h2 id="deeper">9 · Optional deep dives</h2>
+        <ul>
+          <li><a href="../../modules/08_agents.html">Module 08 · Agentic AI</a> — reference page with an interactive ReAct trace.</li>
+          <li><a href="https://www.anthropic.com/engineering/building-effective-agents">Anthropic · Building Effective Agents</a> — read "Workflows vs. agents"; it argues the same point from production experience.</li>
+        </ul>
+
+        <div class="page-nav">
+          <a href="0001-llm-mechanics.html"><div class="dir">← Previous</div><div class="ttl">Lesson 1 · LLM mechanics</div></a>
+          <a class="next" href="0003-tool-calling.html"><div class="dir">Next up →</div><div class="ttl">Lesson 3 · Tools &amp; validation</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+
+<script>
+window.PORTAL = {
+  homeHref: "../../index.html",
+  navLabel: "The course",
+  here: "lessons/0002-agent-loop.html",
+  base: "../",
+  pages: [
+    { file: "index.html",                     title: "Course index",        num: "✦", kw: "overview start home index agents course" },
+    { file: "lessons/0001-llm-mechanics.html", title: "LLM mechanics",      num: "01", kw: "llm messages roles context window temperature structured output tool calling brain" },
+    { file: "lessons/0002-agent-loop.html",    title: "The agent loop",     num: "02", kw: "loop observe decide act max steps termination search_kb" },
+    { file: "lessons/0003-tool-calling.html",  title: "Tools & validation", num: "03", kw: "tool schema validation arguments read_ticket lookup_order parallel" }
+  ]
+};
+</script>
+<script src="../../assets/sitenav.js?v=20260801b"></script>
+<script src="../../assets/portal-page.js?v=20260727c"></script>
+<script src="../../assets/enhance.js?v=20260801a"></script>
+<script src="../../assets/genai-motion.js?v=20260728a"></script>
+<script src="../../assets/glossary.js?v=20260802b"></script>
+</body>
+</html>

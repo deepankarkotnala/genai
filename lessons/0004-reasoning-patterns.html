@@ -1,0 +1,331 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>Lesson 4 · Reasoning patterns — Understanding AI Agents</title>
+<meta name="description" content="ReAct, plan-and-execute, reflection and routing, run on the same ticket so the cost and the failure modes are measured rather than asserted. No framework.">
+<link rel="icon" href="../../assets/brand/favicon.svg?v=20260727c" type="image/svg+xml">
+<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260727c" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260727c">
+<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260727c" sizes="180x180">
+<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260727c">
+<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260727c" color="#6f47f5">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var mob=!!(window.matchMedia&&window.matchMedia("(max-width:860px)").matches);var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(mob?"s":"xs");var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition — CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="../../assets/styles.css?v=20260801d">
+<link href="../../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
+<link href="../../assets/genai-motion.css?v=20260801a" rel="stylesheet"/>
+<link href="../../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+</head>
+<body data-page="ta-l04">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="../../index.html" aria-label="Switch job home">
+<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260727c" alt=""/></span>
+<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search the course…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Understanding AI Agents / <b>Lesson 4 · Reasoning patterns</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> Lesson 4 · Making it competent</div>
+        <h1>Reasoning patterns, measured rather than argued</h1>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~3 h total</span>
+          <span class="pill">25 min read · 75 min build · 45 min break/debug · 30 min interview</span>
+          <span class="pill purple">Prereq · Lesson 3</span>
+          <span class="pill">Next · Lesson 5</span>
+        </div>
+
+        <div class="callout key">
+          <div class="c-ico">🎯</div>
+          <div class="c-body"><div class="c-title">By the end of this lesson you will be able to</div>
+          <ul>
+            <li>Explain <strong>ReAct</strong>, <strong>plan-and-execute</strong>, <strong>reflection</strong> and <strong>routing</strong> by name, and implement each.</li>
+            <li>Say what each one costs, in model calls, not adjectives.</li>
+            <li>Name the specific failure each pattern is prone to — and show it happening.</li>
+            <li>Explain why a reasoning pattern is <em>control flow</em>, not a framework feature.</li>
+            <li>Add a tool whose name deliberately limits what the model thinks it may do.</li>
+          </ul></div>
+        </div>
+
+        <h2 id="onething">1 · The thing to understand before the four names</h2>
+
+        <p>Every pattern in this lesson calls the same <code>brain.decide()</code> and the same <code>execute()</code>. Nothing new is imported. What changes is only:</p>
+
+        <ol>
+          <li>what you put in the messages, and</li>
+          <li>what your code does with the answer.</li>
+        </ol>
+
+        <div class="callout note">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">A reasoning pattern is control flow</div>
+          <p>"ReAct" and "plan-and-execute" are about twenty lines of Python each. Frameworks give them class names, which makes them look like features you must adopt. Knowing they are control flow is what lets you say in an interview: <em>"I'd implement routing directly — it's one classification call and a filtered tool list."</em></p></div>
+        </div>
+
+        <h2 id="react">2 · ReAct — reason and act, interleaved</h2>
+
+        <p>You already built this. It is Lesson 2's loop: decide one action, run it, feed the result back, repeat.</p>
+
+        <p><strong>Strength:</strong> it adapts. Step 2 can use what step 1 returned — the only reason to prefer an agent over a workflow at all.</p>
+
+        <p><strong>Weakness:</strong> one model call per step, so cost and latency scale with trajectory length, and there is no global view. It never committed to a route, so it can wander.</p>
+
+        <h2 id="plan">3 · Plan-and-execute — decide everything up front</h2>
+
+        <p>Ask for the whole plan in one call, then run it without re-planning, then synthesise.</p>
+
+        <p><strong>Strength:</strong> two model calls, regardless of plan length. And you can show the plan to a human <em>before</em> anything runs — which is why regulated workflows like this shape.</p>
+
+        <p><strong>Weakness:</strong> the plan is made in ignorance. §7 shows exactly what that costs.</p>
+
+        <h2 id="reflect">4 · Reflection — critique once, then revise</h2>
+
+        <p>Produce an answer, ask for a critique, revise. <strong>Once.</strong></p>
+
+        <div class="callout warn">
+          <div class="c-ico">⚠️</div>
+          <div class="c-body"><div class="c-title">Two things to say about reflection that most candidates miss</div>
+          <p><strong>It does not converge.</strong> Critique-revise loops oscillate or drift into agreeable rewording while the token bill grows. One pass. If one pass is not enough, the fix is a better first prompt or a real evaluator, not more passes.</p>
+          <p><strong>A model critiquing itself shares its own blind spots.</strong> Reflection cannot find an error the model cannot see. It catches <em>omissions</em> well and <em>wrong beliefs</em> badly. It is not a substitute for evaluation (Lesson 10) or a human.</p></div>
+        </div>
+
+        <h2 id="route">5 · Routing — classify first, then narrow</h2>
+
+        <p>One cheap call decides the kind of ticket; the agent then runs with a <em>smaller tool set</em>.</p>
+
+        <p>This is the pattern production systems actually use and candidates mention least. It pays twice: fewer tools means better selection accuracy (Lesson 3), and a router can send the easy majority down a deterministic path so the agent only sees the remainder — the answer to Lesson 2's 10,000-tickets-a-day question.</p>
+
+<pre><code>ROUTES = {
+    "billing":   ["read_ticket", "lookup_order", "search_kb", "draft_reply"],
+    "technical": ["read_ticket", "search_kb", "draft_reply"],
+    "general":   ["read_ticket", "search_kb", "draft_reply"],
+}
+</code></pre>
+
+        <p>Note the billing route is the only one with <code>lookup_order</code>. A technical ticket about a failed checkout has no order to look up — no order was created. Removing the tool removes the temptation.</p>
+
+        <h2 id="build">6 · Build: <code>patterns.py</code> and <code>draft_reply</code></h2>
+
+        <p>Open <a href="../project/agent/patterns.py">project/agent/patterns.py</a>. Four functions, one shared loop.</p>
+
+        <p>The new tool is <code>draft_reply</code>, and its declaration carries a deliberate decision:</p>
+
+<pre><code>"description": (
+    "Compose a draft reply to the customer. Returns the draft for a "
+    "human to review -- it does not send anything. Cite the knowledge "
+    "base article ids you relied on so the reviewer can check them."
+),
+</code></pre>
+
+        <div class="callout key">
+          <div class="c-ico">🔑</div>
+          <div class="c-body"><div class="c-title">The tool is called <code>draft_reply</code>, not <code>send_reply</code></div>
+          <p>The name and description together set the model's belief about how far its authority reaches. A tool called <code>send_reply</code> invites the model to act as though the customer has already been contacted — and to tell the customer so. Naming is part of the safety design, not cosmetics.</p></div>
+        </div>
+
+        <p>It also does two <strong>semantic</strong> checks the schema cannot:</p>
+
+<pre><code>known = {a["id"] for a in _load_kb()}
+unknown = [c for c in citations if c not in known]
+if unknown:
+    return {"error": "unknown_citation", "message": ...}
+</code></pre>
+
+        <p>A schema-valid citation list can contain <code>refund-policy-v2</code> — plausible, authoritative-sounding, nonexistent. <strong>Fabricated citations are worse than none, because they survive a skim.</strong> Try it:</p>
+
+<pre><code>&gt;&gt;&gt; execute("draft_reply", {"ticket_id": "TCK-1001", "summary": "Duplicate charge confirmed.",
+...                        "next_step": "Agent will review.", "citations": ["refund-policy-v2"]})
+{'error': 'unknown_citation',
+ 'message': "These article ids do not exist: refund-policy-v2. ..."}
+</code></pre>
+
+        <h2 id="compare">7 · Run all four and read the numbers</h2>
+
+<pre><code>cd teach-agents/project
+python steps/l05_retrieval.py
+</code></pre>
+
+<pre><code>  pattern        model calls  tools   trajectory
+  --------------------------------------------------------------------------
+  react                    5      4   read_ticket -&gt; lookup_order -&gt; search_kb -&gt; draft_reply
+  plan_execute             2      4   read_ticket -&gt; lookup_order -&gt; search_kb -&gt; draft_reply
+  reflect                  7      4   read_ticket -&gt; lookup_order -&gt; search_kb -&gt; draft_reply
+  route                    6      4   read_ticket -&gt; lookup_order -&gt; search_kb -&gt; draft_reply
+</code></pre>
+
+        <p>Same work, four prices. <code>plan_execute</code> is flat at 2 calls however long the plan; <code>react</code> grows with steps; <code>reflect</code> is react plus 2; <code>route</code> is react plus 1, buying a smaller tool set.</p>
+
+        <p>On this ticket every pattern reaches the same place, which is the honest result: <strong>on an easy ticket the pattern does not matter, so pick the cheap one.</strong> Patterns earn their keep on hard tickets.</p>
+
+        <h2 id="break">8 · Break it — the planning blind spot</h2>
+
+        <p>Now a ticket that mentions no order. <code>TCK-1005</code> is an account question.</p>
+
+<pre><code>python steps/l05_retrieval.py TCK-1005
+</code></pre>
+
+<pre><code>  react                    4      3   read_ticket -&gt; search_kb -&gt; draft_reply
+  plan_execute             2      4   read_ticket -&gt; lookup_order -&gt; search_kb -&gt; draft_reply
+</code></pre>
+
+        <p>ReAct reads the ticket, sees no order id, and <strong>skips</strong> <code>lookup_order</code>. Plan-and-execute committed to it before reading anything, so it calls it anyway:</p>
+
+<pre><code>  1. read_ticket({'ticket_id': 'TCK-1005'})
+  2. lookup_order({'order_id': 'ORD-0000'})  -&gt; ERROR not_found
+  3. search_kb({'query': 'account', 'limit': 2})
+  4. draft_reply({'ticket_id': 'TCK-1005', 'citations': ['refunds']})
+</code></pre>
+
+        <div class="callout danger">
+          <div class="c-ico">🐛</div>
+          <div class="c-body"><div class="c-title">Where <code>ORD-0000</code> came from, and why it matters</div>
+          <p>The plan said <code>lookup_order(from ticket body)</code>. There was no order in the body, so the executor substituted a placeholder and called the tool with fiction. That is plan-and-execute's structural weakness in one line: <strong>a plan written before anything ran cannot reference a value that only exists after step 1.</strong></p>
+          <p>Real plan-executors fix this with typed slots — <code>lookup_order(order_id=$1.order_id)</code> — and with "re-plan if a step fails". Both are re-planning wearing a disguise, and they are most of why plan-and-execute stops being the simple option.</p></div>
+        </div>
+
+        <div class="callout warn">
+          <div class="c-ico">🔬</div>
+          <div class="c-body"><div class="c-title">Exercise · make one failure become three</div>
+          <p>In <code>_arguments_for()</code>, delete the <code>_is_placeholder(arg)</code> guard so the planner's literal text is passed straight through as a query. Run <code>TCK-1005</code> again. You will see a cascade: a nonsense query <code>'from ticket category'</code> → the wrong article retrieved → <strong>that wrong article cited in a customer reply</strong>. One unresolved placeholder, three failures, and only the third is visible to the customer.</p>
+          <p>This is the shape of most agent incidents: not a dramatic error, but a small unvalidated value flowing downhill until it reaches something a person reads.</p></div>
+        </div>
+
+        <p>Two more experiments worth running:</p>
+
+        <div class="steps">
+          <p><strong>Reflection on a thin answer.</strong> <code>python steps/l05_retrieval.py --pattern reflect TCK-1005</code> — the critique is specific: <em>"Gaps: it does not state whether the order is refund eligible; it does not say who acts next."</em> Now run it on <code>TCK-1001</code> and watch the critique shrink, because there was less missing.</p>
+          <p><strong>Routing on a technical ticket.</strong> <code>--pattern route TCK-1003</code> (a checkout 502). Route becomes <code>technical</code> and <code>lookup_order</code> is not even offered.</p>
+        </div>
+
+        <h2 id="production">9 · The production concern</h2>
+
+        <p>Pattern choice is a cost and latency decision, so it belongs in the same conversation as budgets. Three things follow:</p>
+
+        <p><strong>Mix them.</strong> Real systems route first, then run ReAct on what survives, and reflect only on outputs a customer will see. "Which pattern do you use?" is often the wrong question.</p>
+
+        <p><strong>Reflection is the first thing to cut.</strong> It roughly doubles cost for a quality gain you should measure before paying for. Lesson 10 gives you the means.</p>
+
+        <p><strong>Where autonomy sits is a spectrum,</strong> not a switch: fixed code → workflow → workflow with local autonomy → fully autonomous. All four patterns here sit at "workflow with local autonomy" — the model decides <em>within</em> a step, while your code owns the shape. Lesson 13 pushes further right and measures what it costs.</p>
+
+        <div class="callout key">
+          <div class="c-ico">🧰</div>
+          <div class="c-body"><div class="c-title">You already know this</div>
+          <p>Routing is a load balancer with a classifier. Plan-and-execute is a query planner: build the plan, then run it, and the reason databases separate the two is exactly the reason agents do. Reflection is code review — valuable, and weakest when the reviewer wrote the code.</p></div>
+        </div>
+
+        <h2 id="interview">10 · Interview practice</h2>
+
+        <h3>Two-minute answer — "Explain ReAct, and when you'd use something else."</h3>
+        <div class="callout note"><div class="c-ico">🎤</div><div class="c-body">
+        <p>"ReAct interleaves reasoning and acting: the model picks one action, my code runs it, the result goes back into the conversation, and it decides again. It's adaptive, which is the only reason to use an agent rather than a workflow — step two can depend on what step one returned.</p>
+        <p>The cost is one model call per step. So when the steps are knowable up front I'd use plan-and-execute instead: two calls regardless of plan length, and I can show the plan to a human before anything runs. Its weakness is that the plan is made in ignorance — in our triage agent, a plan that includes 'look up the order' will call it even on a ticket with no order, because the order id only exists inside the ticket body.</p>
+        <p>In practice I'd combine them: route first with one cheap classification call to narrow the tool set, ReAct for the genuinely open cases, and reflection only on output a customer will read, because it roughly doubles cost. And I'd measure that before paying for it."</p></div></div>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> System design · Your agent averages 8 steps and costs too much. Reduce it without losing quality. <span class="chev">›</span></summary><div class="a">
+        <p>Get the trajectory distribution first — you cannot cut what you have not measured. Then, in order of payoff:</p>
+        <p><strong>Route.</strong> One cheap call to classify, then a narrowed tool set. Often the easy majority does not need the agent at all.</p>
+        <p><strong>Collapse tool calls.</strong> Eight steps often means several separate lookups that could be one coarser tool. Each round trip is a model call; merging two tools removes one.</p>
+        <p><strong>Model routing.</strong> Cheap model for gathering, strong model for the final judgement (Lesson 11).</p>
+        <p><strong>Cache.</strong> Repeated prefixes across runs are what prompt caching is for.</p>
+        <p><strong>Drop reflection</strong> unless evaluation shows it earning its keep.</p>
+        <p>Then the discipline: set a cost ceiling per run and alert on breaches, so this does not recur silently.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Debugging · An agent using plan-and-execute keeps calling a tool with obviously wrong arguments. Why? <span class="chev">›</span></summary><div class="a">
+        <p>Almost certainly unresolved plan placeholders. The plan was written before any tool ran, so it refers to values that did not exist yet — "the order from the ticket" — and the executor substituted something to make the call go through.</p>
+        <p>Check whether the executor resolves references from earlier results, or whether it passes the plan's prose through as an argument. Then look for the cascade: a bad argument produces a bad result, which is used to build the next call. The visible symptom is usually two or three steps downstream of the cause.</p>
+        <p>Fixes, cheapest first: validate arguments and reject placeholder-looking values; have the planner emit typed slots referencing step outputs; re-plan when a step fails; or switch to ReAct for this task, since a plan that cannot be written in advance is a signal the task is not plannable.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Coding · Implement routing, from scratch, in 10 minutes. <span class="chev">›</span></summary><div class="a">
+        <p>One classification call with a constrained output ("reply with exactly one word from this list"), validate the answer against your route map and fall back to a default if it is not in it, then run the normal loop with the tool list filtered to that route.</p>
+        <p>Say while writing: "I validate the route rather than trusting the string" and "the fallback is a real route, not an exception". A router that crashes on an unexpected word has moved the failure rather than handled it.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · How do you decide whether reflection is worth its cost? <span class="chev">›</span></summary><div class="a">
+        <p>Make it an A/B on a golden set, not a judgement call. Run with and without reflection, score both on the outcome metrics that matter, and compare against the cost and latency delta. Reflection typically helps most where the failure mode is "incomplete" and least where it is "confidently wrong", because a model cannot critique what it cannot see.</p>
+        <p>If it wins on only some ticket types, apply it selectively — reflect on refund recommendations, skip it on password resets. Selective application is usually where the real win is.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · A colleague wants to add a fifth pattern for every new problem. What do you say? <span class="chev">›</span></summary><div class="a">
+        <p>That patterns are control flow, so each one is cheap to write and expensive to <em>own</em>: another path to test, trace, evaluate and explain at 3 a.m. The question is not "does this pattern help sometimes" but "does it help enough to justify a permanent branch".</p>
+        <p>I'd want a measured win on the golden set, a named owner, and an answer to what it does when its assumption breaks — the way plan-and-execute breaks on unplannable tasks. Absent those, prefer tuning the tool descriptions and the router, which usually moves the number more than a new pattern does.</p></div></details>
+
+        <h2 id="recap">11 · Recap</h2>
+        <div class="recap">
+        <ul>
+          <li>A reasoning pattern is control flow plus prompting. Same <code>decide()</code>, same tools.</li>
+          <li><strong>ReAct</strong>: adaptive, one call per step. <strong>Plan-and-execute</strong>: 2 calls, blind to what it has not yet seen. <strong>Reflection</strong>: +2 calls, catches omissions not errors, exactly one pass. <strong>Routing</strong>: +1 call, buys a smaller tool set.</li>
+          <li>On easy tickets all four agree — so pick the cheap one. Patterns matter on hard tickets.</li>
+          <li>Plan-and-execute called <code>lookup_order(ORD-0000)</code> on a ticket with no order. That is the pattern's structural weakness, not a bug.</li>
+          <li>One unresolved placeholder became three failures, and only the last was customer-visible.</li>
+          <li><code>draft_reply</code>, not <code>send_reply</code> — naming limits what the model believes it may do. Fabricated citations are rejected because they survive a skim.</li>
+        </ul>
+        </div>
+
+        <div class="callout key"><div class="c-ico">🚀</div><div class="c-body"><div class="c-title">Next</div>
+        <p>Your agent cites policy from a keyword search that returns the refund policy for an <em>account</em> question. Lesson 5 replaces it with real retrieval and makes you watch the difference.</p></div></div>
+
+        <h2 id="deeper">12 · Optional deep dives</h2>
+        <ul>
+          <li><a href="../../modules/08_agents.html">Module 08 · Agentic AI</a> — an interactive ReAct trace and the pattern catalogue.</li>
+          <li><a href="../../langgraph.html">LangGraph</a> — when these patterns become a graph, and what a graph buys. Lesson 14 compares frameworks properly.</li>
+        </ul>
+
+        <div class="page-nav">
+          <a href="0003-tool-calling.html"><div class="dir">← Previous</div><div class="ttl">Lesson 3 · Tools &amp; validation</div></a>
+          <a class="next" href="0005-retrieval.html"><div class="dir">Next up →</div><div class="ttl">Lesson 5 · Retrieval as a tool</div></a>
+        </div>
+      </main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+
+<script>
+window.PORTAL = {
+  homeHref: "../../index.html",
+  navLabel: "The course",
+  here: "lessons/0004-reasoning-patterns.html",
+  base: "../",
+  pages: [
+    { file: "index.html",                          title: "Course index",        num: "✦", kw: "overview start home index agents course" },
+    { file: "lessons/0001-llm-mechanics.html",     title: "LLM mechanics",       num: "01", kw: "llm messages roles context window temperature structured output tool calling brain" },
+    { file: "lessons/0002-agent-loop.html",        title: "The agent loop",      num: "02", kw: "loop observe decide act max steps termination search_kb" },
+    { file: "lessons/0003-tool-calling.html",      title: "Tools & validation",  num: "03", kw: "tool schema validation arguments read_ticket lookup_order parallel" },
+    { file: "lessons/0004-reasoning-patterns.html", title: "Reasoning patterns", num: "04", kw: "react plan execute reflection routing patterns draft_reply cost" },
+    { file: "lessons/0005-retrieval.html",         title: "Retrieval as a tool", num: "05", kw: "retrieval rag chunking bm25 rerank citations grounding relevance floor" },
+    { file: "lessons/0006-context-memory.html",    title: "Context & memory",    num: "06", kw: "context window budget compaction summarisation state memory recall" }
+  ]
+};
+</script>
+<script src="../../assets/sitenav.js?v=20260801b"></script>
+<script src="../../assets/portal-page.js?v=20260727c"></script>
+<script src="../../assets/enhance.js?v=20260801a"></script>
+<script src="../../assets/genai-motion.js?v=20260728a"></script>
+<script src="../../assets/glossary.js?v=20260802b"></script>
+</body>
+</html>

@@ -1,0 +1,23 @@
+[project]
+name = "support-triage-agent"
+version = "0.1.0"
+description = "Support-ticket triage agent, built step by step across the Understanding AI Agents course"
+requires-python = ">=3.10"
+
+# Nothing here needs installing on a machine that already has these.
+# The course runs on the deterministic stub backend, which needs no third-party
+# package at all. `requests` is only touched if you switch to the Ollama backend.
+dependencies = []
+
+[project.optional-dependencies]
+ollama = ["requests>=2.28"]
+claude = ["anthropic>=0.40"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+# Integration tests that need a live model are marked and excluded by default,
+# so `python -m pytest` is always offline and deterministic.
+markers = [
+    "live_model: requires a real model backend (Ollama or a hosted provider)",
+]
+addopts = '-m "not live_model"'
