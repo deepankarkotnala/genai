@@ -36,11 +36,26 @@
 <link href="assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
 <!-- /Machine Learning brand metadata -->
 <meta content="The bias-variance decomposition, every hyperparameter as a position on the dial, the bagging variance identity, time-series validation with an embargo, and nested cross-validation." name="description"/>
-<link href="assets/styles.css?v=20260727c" rel="stylesheet"/>
-<link href="assets/office-theme.css?v=20260727e" rel="stylesheet"/>
+<!-- Theme before first paint. Without this the document paints with the light
+     tokens and only flips when app.js runs at the end of <body>, which is a
+     white flash on every navigation in dark mode. Mirrors app.js's getTheme()
+     exactly — same key, same "light" default — so the pre-paint value can never
+     disagree with what the scripts apply a moment later. Inline and blocking on
+     purpose: an external file would cost a round trip before first paint. -->
+<script>(function(){try{var t=localStorage.getItem("gp.theme")||"light";document.documentElement.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Page transitions — see the same block in the other page families. `PageRevealEvent` is the only honest test for a CROSS-document view transition, and it has to run pre-paint or the arrival animation starts and is then cancelled. */var d=document.documentElement;if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260801d" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
 <link href="assets/ml-visuals.css?v=20260728a" rel="stylesheet"/>
+<link href="assets/ml-mobile.css?v=20260801a" rel="stylesheet"/>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="../assets/curriculum.js?v=20260804c"></script>
+<script defer src="../assets/page-nav.js?v=20260804c"></script>
 </head>
-<body data-page="ml-05-bias-variance-cross-validation" data-prep-section="ml">
+<body data-curriculum-id="ml-05" data-page="ml-05-bias-variance-cross-validation" data-prep-section="ml">
 <div class="app">
 <aside class="sidebar">
 <div class="brand">
@@ -56,7 +71,7 @@
 <div class="main">
 <header class="topbar">
 <button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
-<div class="crumbs">Machine Learning / Part A / Module 05</div>
+<div class="crumbs">Machine Learning / Part A / <b>Module 05</b></div>
 <button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
 </header>
 <div class="content-wrap">
@@ -177,7 +192,77 @@
 <p>Plot training and validation error against training-set size. Both high and close together means <strong>underfitting</strong> — add capacity or better features; more data will not help. Low training error with a large persistent gap means <strong>overfitting</strong> — regularize, simplify, or add data; here more data <em>will</em> help, and the curve shows roughly how much.</p>
 <h3>Double descent, stated carefully</h3>
 <p>In heavily over-parameterized regimes — especially deep networks — test error can fall again after the interpolation threshold, producing a second descent beyond the classical U-curve. It is real and important in modern deep learning, but it is <strong>not</strong> a licence to ignore overfitting in the tabular models this curriculum covers, where the classical U-curve is what you will actually observe.</p>
-<h2 id="formulas">4 · Whiteboard formulas</h2>
+<h2 id="splitters">4 · Choosing a splitter — which one for which leak</h2>
+<p>Section 1 settled <em>how many</em> folds (five or ten, trading the estimate's bias against compute and fold correlation). This section settles the harder question: <strong>which splitter</strong>. Get it wrong and cross-validation still returns a confident number — it is just measuring the wrong thing, and it will be optimistic every time.</p>
+<p>Three questions decide it, and you should ask them in this order before writing any <code>cross_val_score</code>:</p>
+<div class="gu-ladder">
+<div class="gu-step"><h4>Is there a time arrow?</h4><p>If the rows are ordered in time and you will deploy on the future, any splitter that puts a later row in training and an earlier row in validation is training on the future. <strong>This overrides everything else</strong> — decide it first, because it eliminates most splitters outright.</p></div>
+<div class="gu-step"><h4>Are rows independent, or do they cluster into entities?</h4><p>Several rows per patient, per user, per device, per shop? Then rows are not exchangeable. A random fold will put the same entity on both sides, and the model gets credit for recognising the entity rather than learning the pattern.</p></div>
+<div class="gu-step"><h4>Is the target balanced enough for random folds?</h4><p>With a rare positive class, random folds vary wildly in how many positives they contain — some may contain none at all, which makes recall undefined and the fold spread meaningless.</p></div>
+</div>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Your data looks like…</th><th>Use</th><th>What plain <code>KFold</code> would do instead</th></tr></thead>
+<tbody>
+<tr><td>Independent rows, roughly balanced target</td><td><code>KFold(shuffle=True)</code></td><td>Nothing wrong — this is the base case.</td></tr>
+<tr><td>Classification, especially imbalanced or small</td><td><code>StratifiedKFold</code></td><td>Fold positive counts swing wildly; a fold with zero positives makes recall undefined and inflates the apparent variance.</td></tr>
+<tr><td>Repeated rows per entity (patient, user, device, session)</td><td><code>GroupKFold</code> <span class="muted">(pass <code>groups=</code>)</span></td><td>The same entity lands in train <em>and</em> validation. The model memorises the entity; the score is optimistic and does not survive a new entity.</td></tr>
+<tr><td>Imbalanced <em>and</em> grouped</td><td><code>StratifiedGroupKFold</code></td><td>You must have both guarantees. Choosing one splitter gives up the other — this is the case people most often get wrong.</td></tr>
+<tr><td>Time-ordered, deployed on the future</td><td><code>TimeSeriesSplit</code>, or walk-forward</td><td>Trains on the future to predict the past. The single most damaging split error, and it always flatters the model.</td></tr>
+<tr><td>Time-ordered with slow-arriving labels or rolling features</td><td>Walk-forward <strong>+ embargo</strong></td><td>Even a correct train/validation ordering leaks if a feature window or a label delay straddles the boundary. The embargo is the gap that removes it.</td></tr>
+<tr><td>Time-ordered <em>and</em> entity-grouped (panel data)</td><td>Group-aware walk-forward</td><td>Both leaks at once. Split by time, then confirm no entity crosses the boundary within the window.</td></tr>
+<tr><td>Small <code>n</code>, estimate too noisy to act on</td><td><code>RepeatedStratifiedKFold</code></td><td>A single K-fold run gives a mean whose own uncertainty you cannot see. Repeating with different seeds averages the fold assignment away.</td></tr>
+<tr><td>Very small <code>n</code> (tens of rows)</td><td><code>LeaveOneOut</code>, reluctantly</td><td>Nearly unbiased but high variance, costs <code>n</code> fits, and cannot stratify — every held-out fold is one class by construction.</td></tr>
+<tr><td>You are also selecting a model or tuning</td><td><strong>Nested CV</strong> — inner loop tunes, outer loop scores</td><td>Tuning and reporting on the same folds. The winning configuration is partly fitted to the fold noise, so the reported score is biased upward.</td></tr>
+</tbody>
+</table>
+</div>
+<div class="mlviz">
+<div class="mlviz-title">The same twelve rows, split four ways — two leak, two do not</div>
+<div class="mlviz-scroll">
+<svg viewbox="0 0 660 346" role="img" aria-label="Twelve data rows shown under four split strategies. Plain K-fold on grouped data puts entities A and B on both sides, leaking. GroupKFold holds out one whole entity. Random K-fold on time-ordered data puts validation rows before training rows, leaking the future. TimeSeriesSplit trains on a prefix, leaves an embargo gap, then validates on later rows.">
+<text class="mv-lbl-xs mv-fill-5" x="20" y="20">GROUPED DATA · four entities, three rows each</text>
+<text class="mv-lbl-xs" x="20" y="34">colour = entity · outlined block = the validation fold</text>
+<text class="mv-lbl-sm" x="20" y="52">KFold</text>
+<g class="mv-fill-1"><rect x="60" y="58" width="34" height="24" rx="5" opacity=".85"></rect><rect x="96" y="58" width="34" height="24" rx="5" opacity=".85"></rect><rect x="132" y="58" width="34" height="24" rx="5" opacity=".85"></rect></g><g class="mv-fill-2"><rect x="168" y="58" width="34" height="24" rx="5" opacity=".85"></rect><rect x="204" y="58" width="34" height="24" rx="5" opacity=".85"></rect><rect x="240" y="58" width="34" height="24" rx="5" opacity=".85"></rect></g><g class="mv-fill-4"><rect x="276" y="58" width="34" height="24" rx="5" opacity=".85"></rect><rect x="312" y="58" width="34" height="24" rx="5" opacity=".85"></rect><rect x="348" y="58" width="34" height="24" rx="5" opacity=".85"></rect></g><g class="mv-fill-3"><rect x="384" y="58" width="34" height="24" rx="5" opacity=".85"></rect><rect x="420" y="58" width="34" height="24" rx="5" opacity=".85"></rect><rect x="456" y="58" width="34" height="24" rx="5" opacity=".85"></rect></g><g class="mv-lbl-xs" text-anchor="middle" fill="#fff"><text x="77" y="74">A</text><text x="113" y="74">A</text><text x="149" y="74">A</text><text x="185" y="74">B</text><text x="221" y="74">B</text><text x="257" y="74">B</text><text x="293" y="74">C</text><text x="329" y="74">C</text><text x="365" y="74">C</text><text x="401" y="74">D</text><text x="437" y="74">D</text><text x="473" y="74">D</text></g>
+<rect x="129" y="55" width="112" height="30" rx="7" fill="none" class="mv-str-5" stroke-width="2.6"></rect>
+<text class="mv-lbl-xs mv-fill-5" x="168" y="99" text-anchor="middle">validation</text>
+<text class="mv-lbl-xs mv-fill-5" x="502" y="74">✗ A and B on both sides</text>
+<text class="mv-lbl-sm" x="20" y="130">GroupKFold</text>
+<g class="mv-fill-1"><rect x="60" y="136" width="34" height="24" rx="5" opacity=".85"></rect><rect x="96" y="136" width="34" height="24" rx="5" opacity=".85"></rect><rect x="132" y="136" width="34" height="24" rx="5" opacity=".85"></rect></g><g class="mv-fill-2"><rect x="168" y="136" width="34" height="24" rx="5" opacity=".85"></rect><rect x="204" y="136" width="34" height="24" rx="5" opacity=".85"></rect><rect x="240" y="136" width="34" height="24" rx="5" opacity=".85"></rect></g><g class="mv-fill-4"><rect x="276" y="136" width="34" height="24" rx="5" opacity=".85"></rect><rect x="312" y="136" width="34" height="24" rx="5" opacity=".85"></rect><rect x="348" y="136" width="34" height="24" rx="5" opacity=".85"></rect></g><g class="mv-fill-3"><rect x="384" y="136" width="34" height="24" rx="5" opacity=".85"></rect><rect x="420" y="136" width="34" height="24" rx="5" opacity=".85"></rect><rect x="456" y="136" width="34" height="24" rx="5" opacity=".85"></rect></g><g class="mv-lbl-xs" text-anchor="middle" fill="#fff"><text x="77" y="152">A</text><text x="113" y="152">A</text><text x="149" y="152">A</text><text x="185" y="152">B</text><text x="221" y="152">B</text><text x="257" y="152">B</text><text x="293" y="152">C</text><text x="329" y="152">C</text><text x="365" y="152">C</text><text x="401" y="152">D</text><text x="437" y="152">D</text><text x="473" y="152">D</text></g>
+<rect x="165" y="133" width="112" height="30" rx="7" fill="none" class="mv-str-1" stroke-width="2.6"></rect>
+<text class="mv-lbl-xs mv-fill-1" x="204" y="177" text-anchor="middle">validation</text>
+<text class="mv-lbl-xs mv-fill-1" x="502" y="152">✓ all of B, and only B</text>
+<text class="mv-lbl-xs mv-fill-5" x="20" y="214">TIME-ORDERED DATA · row 1 oldest, row 12 newest</text>
+<text class="mv-lbl-xs" x="20" y="228">blue = train · green = validation · dashed = embargoed</text>
+<text class="mv-lbl-sm" x="20" y="246">KFold</text>
+<g class="mv-box"><rect x="60" y="252" width="34" height="24" rx="5"></rect><rect x="96" y="252" width="34" height="24" rx="5"></rect><rect x="132" y="252" width="34" height="24" rx="5"></rect><rect x="168" y="252" width="34" height="24" rx="5"></rect><rect x="204" y="252" width="34" height="24" rx="5"></rect><rect x="240" y="252" width="34" height="24" rx="5"></rect><rect x="276" y="252" width="34" height="24" rx="5"></rect><rect x="312" y="252" width="34" height="24" rx="5"></rect><rect x="348" y="252" width="34" height="24" rx="5"></rect><rect x="384" y="252" width="34" height="24" rx="5"></rect><rect x="420" y="252" width="34" height="24" rx="5"></rect><rect x="456" y="252" width="34" height="24" rx="5"></rect></g>
+<g class="mv-fill-5"><rect x="96" y="252" width="34" height="24" rx="5" opacity=".72"></rect><rect x="240" y="252" width="34" height="24" rx="5" opacity=".72"></rect><rect x="384" y="252" width="34" height="24" rx="5" opacity=".72"></rect></g>
+<g class="mv-lbl-xs" text-anchor="middle"><text x="77" y="268">1</text><text x="113" y="268" fill="#fff">2</text><text x="149" y="268">3</text><text x="185" y="268">4</text><text x="221" y="268">5</text><text x="257" y="268" fill="#fff">6</text><text x="293" y="268">7</text><text x="329" y="268">8</text><text x="365" y="268">9</text><text x="401" y="268" fill="#fff">10</text><text x="437" y="268">11</text><text x="473" y="268">12</text></g>
+<text class="mv-lbl-xs mv-fill-5" x="502" y="268">✗ 11–12 predict row 2</text>
+<text class="mv-lbl-sm" x="20" y="306">TimeSeriesSplit</text>
+<g class="mv-fill-2"><rect x="60" y="312" width="34" height="24" rx="5" opacity=".8"></rect><rect x="96" y="312" width="34" height="24" rx="5" opacity=".8"></rect><rect x="132" y="312" width="34" height="24" rx="5" opacity=".8"></rect><rect x="168" y="312" width="34" height="24" rx="5" opacity=".8"></rect><rect x="204" y="312" width="34" height="24" rx="5" opacity=".8"></rect><rect x="240" y="312" width="34" height="24" rx="5" opacity=".8"></rect><rect x="276" y="312" width="34" height="24" rx="5" opacity=".8"></rect></g>
+<rect x="312" y="312" width="34" height="24" rx="5" class="mv-box mv-dash"></rect>
+<g class="mv-fill-1"><rect x="348" y="312" width="34" height="24" rx="5" opacity=".85"></rect><rect x="384" y="312" width="34" height="24" rx="5" opacity=".85"></rect><rect x="420" y="312" width="34" height="24" rx="5" opacity=".85"></rect><rect x="456" y="312" width="34" height="24" rx="5" opacity=".85"></rect></g>
+<g class="mv-lbl-xs" text-anchor="middle" fill="#fff"><text x="77" y="328">1</text><text x="113" y="328">2</text><text x="149" y="328">3</text><text x="185" y="328">4</text><text x="221" y="328">5</text><text x="257" y="328">6</text><text x="293" y="328">7</text><text x="365" y="328">9</text><text x="401" y="328">10</text><text x="437" y="328">11</text><text x="473" y="328">12</text></g>
+<text class="mv-lbl-xs" x="329" y="328" text-anchor="middle">8</text>
+<text class="mv-lbl-xs" x="329" y="306" text-anchor="middle">embargo</text>
+<text class="mv-lbl-xs mv-fill-1" x="502" y="328">✓ past → gap → future</text>
+</svg>
+</div>
+<p class="mlviz-cap">The two failures look nothing alike but share one property: <b>both produce a higher score than the model deserves</b>, so neither announces itself. That is why the splitter is chosen from the data's structure up front, and never adjusted afterwards because the number looked disappointing.</p>
+</div>
+<div class="callout warn">
+<div class="c-ico">⚠️</div>
+<div class="c-body"><div class="c-title">The splitter is only half of it</div>
+<p>Choosing <code>GroupKFold</code> and then fitting your scaler, imputer, encoder or feature selector on the full dataset re-introduces the leak you just removed. Every preprocessing step that learns from data must live inside a <code>Pipeline</code> so it is re-fitted on each training fold alone. <strong>Resampling for imbalance belongs inside the fold too</strong> — SMOTE applied before splitting synthesises validation rows out of training rows, which is the same crime in a different costume (<a href="12-imbalanced-data.html">Module 12</a>).</p></div>
+</div>
+<div class="callout key">
+<div class="c-ico">🔑</div>
+<div class="c-body"><div class="c-title">The sentence to say in an interview</div>
+<p>"Before I pick a splitter I ask whether there is a time arrow, whether rows cluster into entities, and whether the target is balanced enough for random folds. <strong>Time beats grouping beats stratification</strong> when they conflict, because training on the future is the error that flatters a model most — and whatever I choose, every fitted preprocessing step goes inside the pipeline so the fold boundary is real."</p></div>
+</div>
+<h2 id="formulas">5 · Whiteboard formulas</h2>
 <div class="code-block" data-reveal="">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>bias_variance.txt</span><button class="copy-btn">Copy</button></div>
 <pre><code>Expected squared error at a point x, over training sets:
@@ -200,10 +285,10 @@ Variance of an average of B correlated models (the bagging identity):
     floor</code></pre>
 </div>
 <p>That last identity is the mathematical reason Random Forest randomizes features: raising <code>B</code> only helps down to the <code>ρσ²</code> floor, so improving further means <em>reducing ρ</em> by decorrelating the trees. Being able to state it earns real credit in Module 16.</p>
-<h2 id="drill">5 · Hands-on drill</h2>
+<h2 id="drill">6 · Hands-on drill</h2>
 <ol><li>Fit polynomial regressions of degree 1 to 15 on a small noisy sample; plot training and test error against degree and produce the U-curve yourself.</li><li>Plot learning curves for a high-bias and a high-variance model on the same data; confirm you can identify which is which from the curves alone.</li><li>Take a time-ordered dataset and score the same model with random K-fold and with <code>TimeSeriesSplit</code>. <strong>Record the gap</strong> — that number is your answer to the leakage question.</li><li>Implement nested CV manually and compare its estimate against a single tuned-CV estimate on the same data. Note the optimism.</li></ol>
 <div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">Gotchas that fail candidates</div><ul><li><strong>Random K-fold on time series.</strong> Trains on the future to predict the past.</li><li><strong>Not stratifying</strong> a K-fold on an imbalanced target, so some folds have too few positives for a stable estimate.</li><li><strong>Tuning on the test set</strong> and then reporting the test score as unbiased.</li><li><strong>Reporting a single CV number with no spread.</strong> 0.82 ± 0.09 is a very different result from 0.82 ± 0.01.</li><li><strong>Claiming more data always helps.</strong> Under high bias, it does not.</li><li><strong>Confusing the effect of <code>n_estimators</code></strong> in Random Forest versus in boosting.</li></ul></div></div>
-<h2 id="questions">6 · Interview questions</h2>
+<h2 id="questions">7 · Interview questions</h2>
 <div class="prep-toolbar" data-sticky-prep=""><label class="prep-filter"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><input data-question-filter="" placeholder="Filter these questions…"/></label><button class="btn ghost" data-expand-answers="" type="button">Open all</button><span class="prep-count" data-question-count="">6 questions</span></div>
 <section aria-label="Bias-variance and cross-validation interview questions" class="prep-question-list">
 <details class="prep-question" data-question="write and explain the bias variance decomposition" data-tags="derivation fundamentals">
@@ -235,15 +320,16 @@ Variance of an average of B correlated models (the bagging identity):
 <summary><span class="prep-q-no">09</span><span class="prep-q-title">Cross-validation says 0.88, the untouched test set says 0.79. Same data, same code. Explain the gap.<span class="prep-tags"><span>2026</span><span>debugging</span><span>tuning bias</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>Several causes produce this pattern, and I would rank them by how often they are the real one.</p><ol><li><strong>You tuned on the CV score.</strong> This is the most likely explanation and the most-missed. If you evaluated a few hundred hyperparameter combinations and reported the best mean CV score, that number is the maximum of many noisy estimates, so it is optimistically biased by construction — you have partially fitted the fold structure itself. The honest number requires <strong>nested CV</strong>, or exactly what you did: a truly untouched test set. In that reading, 0.79 is not the anomaly; 0.88 was never an unbiased estimate.</li><li><strong>The test set is not exchangeable with the training data.</strong> If it is a later time period — which it should be — then part of the drop is real drift, and that is useful information rather than a bug. Check by scoring the model on each time slice of the training period and looking for a trend.</li><li><strong>Leakage inside the CV but not the test.</strong> If a preprocessing step was fitted on the whole training set rather than inside each fold, the CV folds were mildly contaminated while the held-out test set was not — producing exactly this gap.</li><li><strong>Small test set.</strong> A 0.09 difference on 500 rows may be within sampling noise. Compute a confidence interval before treating it as a finding; the fold-to-fold standard deviation is your reference for what a real difference looks like.</li><li><strong>Group structure respected in one and not the other.</strong> If CV was plain k-fold on data with repeated entities and the test split was by entity, the CV number is inflated by recognition.</li></ol><p>What I would say I do about it: report <strong>0.79</strong> as the expected performance, because a number from data that influenced no decision is the only trustworthy one, and use the gap itself as the diagnostic for which of the causes above applies.</p><div class="prep-say"><strong>30-second version</strong><p>Most likely tuning bias — the best of many noisy CV scores is optimistically biased by construction, so 0.88 was never unbiased and 0.79 is the real number. Then check whether the test set is a later period, which makes part of the drop genuine drift; whether preprocessing was fitted outside the fold; whether the test set is simply too small; and whether group structure was handled the same way in both.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Whether you know that a selected maximum is a biased estimator. This is the specific insight nested CV exists for, and it is the difference between a candidate who runs cross-validation and one who understands what it estimates.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> “How much optimism should you expect from tuning?” — it scales with how many configurations you tried and how noisy each fold estimate is, and shrinks as the validation set grows. On small data with hundreds of trials it can easily be a few points; with a handful of trials on a large validation set it is negligible. Practical mitigations: search fewer, better-chosen configurations, prefer the simplest configuration within one standard error of the best rather than the outright best, and keep a locked test set.</div></div></details>
 </section>
-<div class="page-nav"><a href="04-data-prep-feature-engineering.html"><div class="dir">← Previous</div><div class="ttl">Data Prep &amp; Feature Engineering</div></a><a class="next" href="06-linear-regression.html"><div class="dir">Next →</div><div class="ttl">Linear Regression</div></a></div>
+<div class="page-nav" data-page-nav><a href="04-data-prep-feature-engineering.html"><div class="dir">← Previous</div><div class="ttl">Data Prep &amp; Feature Engineering</div></a><a class="next" href="06-linear-regression.html"><div class="dir">Next →</div><div class="ttl">Linear Regression</div></a></div>
 </main>
 <div class="toc-rail"><nav class="toc"></nav></div>
 </div>
 </div>
 </div>
-<script src="assets/app.js?v=20260727c"></script>
-<script src="assets/ml-sitenav.js?v=20260727c"></script>
-<script src="assets/enhance.js?v=20260727c"></script>
+<script src="assets/app.js?v=20260731b"></script>
+<script src="assets/ml-sitenav.js?v=20260801b"></script>
+<script src="assets/enhance.js?v=20260801a"></script>
 <script src="assets/interview-prep.js?v=20260727c"></script>
+<script src="assets/ml-mobile.js?v=20260728c"></script>
 </body>
 </html>

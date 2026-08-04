@@ -177,6 +177,53 @@
     button.className = "focus-btn";
     button.setAttribute("aria-label", "Toggle distraction-free focus mode");
 
+    /* ---------- Reading-width control ----------
+       Focus mode hides both rails, which on a wide monitor left the text
+       running the full width of the screen — well past a readable line length.
+       The canvas is now capped by --focus-measure in office-theme.css, and
+       this control lets the reader choose that cap. The choice is stored, so
+       it carries across pages and sessions. */
+    var WIDTH_KEY = "genai-focus-width";
+    var WIDTHS = [
+      { id: "narrow", label: "Narrow", hint: "Narrow reading width (~800px)" },
+      { id: "medium", label: "Medium", hint: "Medium reading width (~1000px)" },
+      { id: "wide", label: "Wide", hint: "Wide reading width (~1360px)" },
+      { id: "full", label: "Full", hint: "Use the full screen width" }
+    ];
+
+    function validWidth(value) {
+      for (var i = 0; i < WIDTHS.length; i++) if (WIDTHS[i].id === value) return value;
+      return "medium";
+    }
+
+    var widthWrap = document.createElement("div");
+    widthWrap.className = "focus-width";
+    widthWrap.setAttribute("role", "group");
+    widthWrap.setAttribute("aria-label", "Reading width");
+
+    function applyWidth(value, persist) {
+      value = validWidth(value);
+      document.body.setAttribute("data-focus-width", value);
+      var buttons = widthWrap.children;
+      for (var i = 0; i < buttons.length; i++) {
+        buttons[i].setAttribute("aria-pressed", buttons[i].dataset.width === value ? "true" : "false");
+      }
+      if (persist) setStored(WIDTH_KEY, value);
+    }
+
+    WIDTHS.forEach(function (option) {
+      var choice = document.createElement("button");
+      choice.type = "button";
+      choice.dataset.width = option.id;
+      choice.textContent = option.label;
+      choice.title = option.hint;
+      choice.setAttribute("aria-label", option.hint);
+      choice.addEventListener("click", function () { applyWidth(option.id, true); });
+      widthWrap.appendChild(choice);
+    });
+
+    applyWidth(getStored(WIDTH_KEY, "medium"), false);
+
     // In focus mode a single navigation bar is pinned to the top of the
     // viewport and the exit control plus the theme toggle live inside it, so
     // nothing floats above the lesson. Which element becomes that bar depends
@@ -207,6 +254,10 @@
       } else {
         host.appendChild(button);
       }
+      // The width control only makes sense while the rails are hidden, so it
+      // rides along with the exit button and sits just before it.
+      if (active) host.insertBefore(widthWrap, button);
+      else if (widthWrap.parentNode) widthWrap.parentNode.removeChild(widthWrap);
     }
 
     function apply(active, persist) {
@@ -872,6 +923,110 @@
     new MutationObserver(update).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
   }
 
+  /* ---------- Light↔dark switching, without the stagger ----------
+     Every surface, border and text colour is a `var(--…)` that changes the
+     instant `data-theme` changes on <html>. Left alone the flip arrives in
+     pieces: each component carries its own transition (`all .15s`, `.2s`,
+     `border-color .3s`…) so each starts and finishes re-colouring on its own
+     clock, while gradients, glass and shadows — which cannot interpolate
+     between themes — snap over immediately.
+
+     So the switch is made atomic instead: `.theme-switching` suppresses every
+     transition on the page (see styles.css), the new colours paint in a single
+     frame, and the class comes straight back off. Nothing animates, so there is
+     nothing left to fall out of step. This is the fallback path; where view
+     transitions exist, setupThemeCrossfade below fades it properly.
+
+     Driven by a MutationObserver rather than by the toggle handler, so it covers
+     the theme however it was set. Observer callbacks run before the browser
+     paints, so the class is in place for the same frame that applies the new
+     colours. */
+  function setupThemeTransition() {
+    var root = document.documentElement;
+    var release = null;
+
+    new MutationObserver(function () {
+      root.classList.add("theme-switching");
+      // Two frames: the first paints the new theme with transitions off, the
+      // second is when it is safe to hand hover/focus transitions back. A
+      // timeout backs this up in case the tab is hidden and rAF never fires.
+      if (release) window.clearTimeout(release);
+      release = window.setTimeout(drop, 300);
+      window.requestAnimationFrame(function () {
+        window.requestAnimationFrame(drop);
+      });
+    }).observe(root, { attributes: true, attributeFilter: ["data-theme"] });
+
+    function drop() {
+      if (release) { window.clearTimeout(release); release = null; }
+      root.classList.remove("theme-switching");
+    }
+  }
+
+  /* ---------- Light↔dark as a crossfade ----------
+     The atomic flip above is correct but abrupt. A view transition is the one
+     way to fade it without the stagger: it crossfades a *snapshot* of the
+     rendered page, so the gradients, `backdrop-filter` glass and shadows that
+     cannot interpolate between themes are carried along with everything else.
+     There is no per-element colour animation involved, so nothing can arrive
+     late. Where the API is missing (Firefox today) this does nothing and the
+     atomic flip above remains the behaviour.
+
+     The listener is on `document` in the capture phase deliberately. Listeners
+     added to the button itself run in registration order regardless of the
+     capture flag, and app.js registers its handler first — so a listener on the
+     button could never run before the theme had already flipped. Document
+     capture runs ahead of any listener on the target.
+
+     Rather than reimplementing the toggle (it also swaps the button's icon and
+     writes localStorage), the same click is re-dispatched inside the update
+     callback, with a flag so the interceptor lets that one through. app.js
+     stays the only copy of the logic. */
+  function setupThemeCrossfade() {
+    if (REDUCED || !document.startViewTransition) return;
+    var passthrough = false;
+    var busy = false;
+
+    document.addEventListener("click", function (event) {
+      if (passthrough) return;                     // our own re-dispatch — let it through
+      var button = event.target.closest && event.target.closest("[data-theme-toggle]");
+      if (!button) return;
+
+      event.preventDefault();
+      event.stopImmediatePropagation();            // app.js must not flip it yet
+
+      // Rapid double-clicks would otherwise queue transitions and skip frames;
+      // flipping straight through keeps the toggle honest under a fast tap.
+      if (busy) { flip(); return; }
+      busy = true;
+
+      /* A theme change is one crossfade of the whole page — that is the point
+         of routing it through a view transition at all. Page navigation names
+         the sidebar, top bar, ribbon and contents rail as separate groups and
+         holds them still (see "Page transitions" in styles.css), which is right
+         when the chrome is genuinely unchanged either side, and wrong here:
+         every one of those surfaces is repainted by the theme. Left named, the
+         chrome would snap to the new theme while the reading column faded, so
+         the names are withdrawn for the duration and the root snapshot carries
+         the whole page again. Set before the capture, cleared after finish. */
+      document.documentElement.classList.add("vt-theme");
+      document.startViewTransition(flip).finished.then(done, done);
+
+      function done() {
+        busy = false;
+        document.documentElement.classList.remove("vt-theme");
+      }
+    }, true);
+
+    function flip() {
+      var button = document.querySelector("[data-theme-toggle]");
+      if (!button) return;
+      passthrough = true;
+      button.click();                              // app.js flips the theme + icon here
+      passthrough = false;
+    }
+  }
+
   function clearLegacyReadingClasses() {
     var body = document.body;
     var root = document.documentElement;
@@ -922,7 +1077,14 @@
   function init() {
     clearLegacyReadingClasses();
     addDsaWorkspaceNav();
-    addOfficeRibbon();
+    // The Home / Learn / Practice / Interview ribbon is NOT injected in the ML
+    // portal. Its links are resolved against this folder (ml-sitenav.js makes
+    // machine-learning/ the site root so the directory stays deployable on its
+    // own), and machine-learning/ has no modules/, scenario-practice/ or
+    // interview-hub/ — so three of the four tabs pointed at nothing. The
+    // sidebar, the topbar Home button and the mobile "Jump to section" bar
+    // already cover navigation here.
+    // addOfficeRibbon();
     addHomeButton();
     addFocusButton();
     setupTermDialogs();
@@ -933,6 +1095,8 @@
     setupSoftReveal();
     addScrollTop();
     setupThemeColor();
+    setupThemeTransition();
+    setupThemeCrossfade();
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);

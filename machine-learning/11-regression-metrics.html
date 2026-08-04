@@ -36,11 +36,26 @@
 <link href="assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
 <!-- /Machine Learning brand metadata -->
 <meta content="Which statistic each loss actually predicts, the RMSE/MAE gap as a free diagnostic, why MAPE biases you low, and how to encode an asymmetric business cost with quantile loss." name="description"/>
-<link href="assets/styles.css?v=20260727c" rel="stylesheet"/>
-<link href="assets/office-theme.css?v=20260727e" rel="stylesheet"/>
+<!-- Theme before first paint. Without this the document paints with the light
+     tokens and only flips when app.js runs at the end of <body>, which is a
+     white flash on every navigation in dark mode. Mirrors app.js's getTheme()
+     exactly — same key, same "light" default — so the pre-paint value can never
+     disagree with what the scripts apply a moment later. Inline and blocking on
+     purpose: an external file would cost a round trip before first paint. -->
+<script>(function(){try{var t=localStorage.getItem("gp.theme")||"light";document.documentElement.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Page transitions — see the same block in the other page families. `PageRevealEvent` is the only honest test for a CROSS-document view transition, and it has to run pre-paint or the arrival animation starts and is then cancelled. */var d=document.documentElement;if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260801d" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
 <link href="assets/ml-visuals.css?v=20260728a" rel="stylesheet"/>
+<link href="assets/ml-mobile.css?v=20260801a" rel="stylesheet"/>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="../assets/curriculum.js?v=20260804c"></script>
+<script defer src="../assets/page-nav.js?v=20260804c"></script>
 </head>
-<body data-page="ml-11-regression-metrics" data-prep-section="ml">
+<body data-curriculum-id="ml-11" data-page="ml-11-regression-metrics" data-prep-section="ml">
 <div class="app">
 <aside class="sidebar">
 <div class="brand">
@@ -56,7 +71,7 @@
 <div class="main">
 <header class="topbar">
 <button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
-<div class="crumbs">Machine Learning / Part C / Module 11</div>
+<div class="crumbs">Machine Learning / Part C / <b>Module 11</b></div>
 <button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
 </header>
 <div class="content-wrap">
@@ -66,9 +81,126 @@
 <p class="lead">The deepest idea here makes several interview questions trivial: your loss choice decides <em>which statistic</em> you predict — the mean, the median, or a quantile.</p>
 <div class="meta-row"><span class="pill purple">Prerequisites · Modules 03, 06</span><span class="pill">Study time · 4 h</span><span class="pill blue">4 interview questions</span><span class="pill">THEORY · APPLIED</span></div>
 <div class="callout key"><div class="c-ico">🎯</div><div class="c-body"><div class="c-title">Your interview goal</div><p>Explain MAE versus RMSE in terms of the statistic each targets, read the RMSE/MAE gap as a diagnostic, and turn an asymmetric cost into a quantile objective.</p></div></div>
-<h2 id="what-to-learn">1 · What to learn</h2>
+<h2 id="ground-up">1 · From the ground up</h2>
+<div class="callout plain"><div class="c-ico">🧩</div><div class="c-body"><div class="c-title">In plain words</div><p>In classification you were either right or wrong. In regression you are off by an amount, and every row is off by a different amount. So the job is to squash a pile of errors into one number. The surprise is that this choice is not just reporting — <em>it changes what the model tries to predict</em>. Square the errors and the model aims for the average. Take absolute values and it aims for the middle value. Same data, same algorithm, different answer.</p></div></div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>Start with the problem, not the formula</h4><p>You predicted 100 house prices. Each one is off by some amount. You want one number that says how good the model is.</p><p>The obvious idea — average the errors — fails immediately. A miss of +50k and a miss of −50k cancel to zero, and the model looks perfect while being wrong twice. So you have to remove the signs first. There are two natural ways: take the absolute value, or square them.</p><div class="gu-so"><strong>So what:</strong> that small choice is not cosmetic. Squaring makes a 10× bigger error count 100× more. Absolute value makes it count 10× more. You are deciding how much you hate a large mistake compared to several small ones.</div></div>
+<div class="gu-step"><h4>The bit almost nobody says out loud</h4><p>Here is a question with a clean answer. If you had to predict one single number for a whole group, and you were scored on <strong>squared</strong> error, what number should you pick? The answer is the <strong>mean</strong>. Score it on <strong>absolute</strong> error instead, and the best single number is the <strong>median</strong>.</p><p>That is not a coincidence or a rule of thumb — it falls out of the algebra. And it matters because a model is doing exactly this inside every leaf, every neighbourhood, every region of the data: picking one number for a group.</p><div class="gu-so"><strong>So what:</strong> <b>your loss function chooses which statistic the model chases.</b> MSE builds a model of the average. MAE builds a model of the typical case. On skewed data — income, claim size, delivery time — those two are very different numbers, and neither is wrong. You just have to know which one you asked for.</div></div>
+<div class="gu-step"><h4>Watch the two losses disagree</h4><p>Below, five values: <code>10, 20, 30, 40, 900</code>. Their mean is 200, their median is 30. The chart sweeps a candidate prediction from 0 to 400 and plots what each loss says. The two curves bottom out in completely different places.</p></div>
+</div>
+<div class="mlviz">
+<div class="mlviz-title">Same five numbers — squared error picks 200, absolute error picks 30</div>
+<div class="mlviz-scroll">
+<svg viewbox="0 0 660 300" role="img" aria-label="Two loss curves plotted against a candidate prediction from 0 to 400 for the values 10, 20, 30, 40 and 900. The squared-error curve reaches its lowest point at 200, the mean. The absolute-error curve reaches its lowest point at 30, the median.">
+<g class="mv-gridline"><path d="M90 90 H610"></path><path d="M90 140 H610"></path><path d="M90 190 H610"></path><path d="M90 240 H610"></path></g>
+<path class="mv-axis" d="M90 70 V255 H610"></path>
+<g class="mv-lbl-xs" text-anchor="middle"><text x="90" y="272">0</text><text x="218" y="272">100</text><text x="345" y="272">200</text><text x="473" y="272">300</text><text x="600" y="272">400</text></g>
+<text class="mv-lbl-sm" x="350" y="292" text-anchor="middle">the single number you predict →</text>
+<text class="mv-lbl-xs" x="46" y="164" text-anchor="middle" transform="rotate(-90 46 164)">loss (each on its own scale)</text>
+
+<!-- the data -->
+<text class="mv-lbl-xs" x="98" y="60">the five values: 10, 20, 30, 40, 900</text>
+
+<!-- squared error -->
+<path class="mv-str-2" stroke-width="2.8" fill="none" stroke-linecap="round" d="M90 90 L128 131.6 L218 202.5 L281 230.6 L345 240 L409 230.6 L473 202.5 L536 155.6 L600 90"></path>
+<circle class="mv-fill-2 mv-pulse" cx="345" cy="240" r="5.5"></circle>
+<path class="mv-str-2 mv-dash" stroke-width="1.4" d="M345 240 V255"></path>
+<text class="mv-lbl mv-fill-2" x="356" y="232">squared error</text>
+<text class="mv-lbl-xs mv-fill-2" x="356" y="246">lowest at 200 = the mean</text>
+
+<!-- absolute error -->
+<path class="mv-str-1" stroke-width="2.8" fill="none" stroke-linecap="round" d="M90 227.6 L128 240 L218 213.9 L345 172.6 L473 131.3 L600 90"></path>
+<circle class="mv-fill-1 mv-pulse" cx="128" cy="240" r="5.5"></circle>
+<path class="mv-str-1 mv-dash" stroke-width="1.4" d="M128 240 V255"></path>
+<text class="mv-lbl mv-fill-1" x="140" y="118">absolute error</text>
+<text class="mv-lbl-xs mv-fill-1" x="140" y="132">lowest at 30 = the median</text>
+
+<text class="mv-lbl-xs mv-fill-3" x="366" y="90">one value of 900 drags the mean</text>
+<text class="mv-lbl-xs mv-fill-3" x="366" y="104">from 30 all the way to 200</text>
+</svg>
+</div>
+<div class="mv-keys"><span><i class="mv-k2"></i>squared error → the mean</span><span><i class="mv-k1"></i>absolute error → the median</span></div>
+<p class="mlviz-cap">Four of the five values sit between 10 and 40, yet squared error insists the best guess is 200 — a number nothing in the data is close to. <b>That is not a bug.</b> It is squaring doing its job: the single value of 900 contributes so much that moving toward it pays. If that is the behaviour you want, use it. If it is not, you wanted MAE.</p>
+</div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>So what RMSE and MAE actually mean</h4><p><strong>MAE</strong> is the average size of a miss, in the original units. If MAE is 12,000 the typical prediction is off by about 12,000. It is the easiest metric to explain to anyone.</p><p><strong>RMSE</strong> squares first, averages, then takes the square root to get back to the original units. The square root makes it <em>look</em> like MAE, but the squaring already happened — so big misses have already been given extra weight.</p><div class="gu-so"><strong>So what:</strong> pick RMSE when one huge error genuinely is worse than several small ones — a delivery three hours late is worse than six deliveries ten minutes late. Pick MAE when an error is an error, or when the data has outliers you do not want the model chasing.</div></div>
+<div class="gu-step"><h4>The gap between them is a free diagnostic</h4><p>RMSE is always greater than or equal to MAE. They are only equal when every error is exactly the same size. So the size of the gap tells you something for nothing: <strong>it tells you how uneven your errors are.</strong></p><p>Two models, both averaging small misses. Model A is off by 10 on every one of ten rows: MAE 10, RMSE 10, gap zero. Model B is off by 1 on nine rows and by 30 on one row: MAE 3.9, RMSE 9.53, gap 5.6. Model B has the far better MAE and the far worse tail.</p><div class="gu-so"><strong>So what:</strong> report both. <b>RMSE close to MAE means your errors are all about the same size. RMSE much bigger than MAE means a handful of rows are doing most of the damage</b> — and those rows are usually worth looking at individually, because they are often a data problem rather than a model problem.</div></div>
+</div>
+<div class="mlviz">
+<div class="mlviz-title">Same average miss, very different failure — and the gap shows it</div>
+<div class="mlviz-scroll">
+<svg viewbox="0 0 660 250" role="img" aria-label="Two error profiles over ten rows. Model A has an error of 10 on every row, giving MAE 10 and RMSE 10. Model B has an error of 1 on nine rows and 30 on one row, giving MAE 3.9 and RMSE 9.53. A bar chart compares MAE and RMSE for both.">
+<!-- model A -->
+<g class="mv-in" style="--d:.05s">
+  <text class="mv-lbl mv-fill-2" x="20" y="24">Model A — every row off by 10</text>
+  <path class="mv-axis" d="M28 130 H300"></path>
+  <g class="mv-fill-2" opacity=".8">
+    <rect x="34" y="90" width="18" height="40" rx="3"></rect><rect x="60" y="90" width="18" height="40" rx="3"></rect>
+    <rect x="86" y="90" width="18" height="40" rx="3"></rect><rect x="112" y="90" width="18" height="40" rx="3"></rect>
+    <rect x="138" y="90" width="18" height="40" rx="3"></rect><rect x="164" y="90" width="18" height="40" rx="3"></rect>
+    <rect x="190" y="90" width="18" height="40" rx="3"></rect><rect x="216" y="90" width="18" height="40" rx="3"></rect>
+    <rect x="242" y="90" width="18" height="40" rx="3"></rect><rect x="268" y="90" width="18" height="40" rx="3"></rect>
+  </g>
+  <text class="mv-lbl-xs" x="28" y="146">ten rows, identical errors</text>
+  <text class="mv-mono-sm" x="28" y="176">MAE  = 10.00</text>
+  <text class="mv-mono-sm" x="28" y="192">RMSE = 10.00</text>
+  <text class="mv-mono-sm mv-fill-1" x="28" y="212">gap  =  0.00  → errors are even</text>
+</g>
+<!-- model B -->
+<g class="mv-in" style="--d:.30s">
+  <text class="mv-lbl mv-fill-5" x="356" y="24">Model B — one row off by 30</text>
+  <path class="mv-axis" d="M364 130 H636"></path>
+  <g class="mv-fill-5" opacity=".8">
+    <rect x="370" y="126" width="18" height="4" rx="2"></rect><rect x="396" y="126" width="18" height="4" rx="2"></rect>
+    <rect x="422" y="126" width="18" height="4" rx="2"></rect><rect x="448" y="126" width="18" height="4" rx="2"></rect>
+    <rect x="474" y="126" width="18" height="4" rx="2"></rect><rect x="500" y="126" width="18" height="4" rx="2"></rect>
+    <rect x="526" y="126" width="18" height="4" rx="2"></rect><rect x="552" y="126" width="18" height="4" rx="2"></rect>
+    <rect x="578" y="126" width="18" height="4" rx="2"></rect>
+    <rect x="604" y="10" width="18" height="120" rx="3"></rect>
+  </g>
+  <text class="mv-lbl-xs mv-fill-5" x="540" y="150">this one row</text>
+  <text class="mv-lbl-xs" x="364" y="146">nine tiny errors…</text>
+  <text class="mv-mono-sm" x="364" y="176">MAE  =  3.90  ← looks better!</text>
+  <text class="mv-mono-sm" x="364" y="192">RMSE =  9.53</text>
+  <text class="mv-mono-sm mv-fill-5" x="364" y="212">gap  =  5.63  → one row dominates</text>
+</g>
+<text class="mv-lbl-xs" x="20" y="240">Judge Model B on MAE alone and it wins. Judge it on RMSE and it barely differs from A. The gap is what tells you why.</text>
+</svg>
+</div>
+<p class="mlviz-cap">This is why "which is better, MAE or RMSE?" is the wrong question. <b>Report both and read the distance between them.</b> It costs nothing and it points you straight at the rows worth investigating.</p>
+</div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>R² is a comparison, which is why it can go negative</h4><p><code>R² = 1 − SSE / SST</code>. The top is your model's squared error. The bottom is the squared error you would get by <strong>ignoring every feature and always predicting the average</strong>.</p><p>So R² is not "how much of the data you explain" in any deep sense. It is simply: <em>how much better are you than always guessing the mean?</em> R² of 0 means no better at all. And on a test set, R² below zero means <strong>worse</strong> than the mean — perfectly possible, and a sign the model has learned something that does not hold outside training.</p><div class="gu-so"><strong>So what:</strong> R² is unitless, which makes it easy to compare across problems, and that is also its weakness — it hides whether being off by 0.3 matters. Report an error in real units next to it. Also note R² never falls when you add a feature, however useless, which is what adjusted R² exists to punish.</div></div>
+<div class="gu-step"><h4>MAPE quietly pushes your forecasts down</h4><p>MAPE averages the percentage error, so it works across different scales. It also has two flaws worth knowing.</p><p>First, it breaks when the actual value is near zero — dividing by 0.01 makes one row swamp everything. Second, and less obvious, it is <strong>lopsided</strong>. Under-predicting can never cost more than 100%, because the worst you can do is predict zero. Over-predicting has no ceiling — predict 1000 when the truth is 100 and that single row scores 900%.</p><div class="gu-so"><strong>So what:</strong> because over-prediction is punished harder, <b>anything trained or tuned to minimise MAPE will systematically forecast low</b>. In inventory or demand planning that bias has a direct cost. Reach for sMAPE, WAPE, or plain MAE on log-transformed values instead.</div></div>
+<div class="gu-step"><h4>Picking one, quickly</h4><div class="table-wrap"><table>
+<thead><tr><th>What you care about</th><th>Use</th><th>Because</th></tr></thead>
+<tbody>
+<tr><td>A big miss is much worse than several small ones</td><td><strong>RMSE</strong></td><td>Squaring makes large errors dominate, and the model works hardest to avoid them.</td></tr>
+<tr><td>Every unit of error costs the same</td><td><strong>MAE</strong></td><td>Straightforward, and outliers cannot drag the model toward them.</td></tr>
+<tr><td>Explaining the number to a non-technical stakeholder</td><td><strong>MAE</strong></td><td>"On average we are off by 12,000" needs no further explanation.</td></tr>
+<tr><td>Comparing across series of very different sizes</td><td><strong>WAPE</strong> or sMAPE</td><td>Percentage-based, but without MAPE's low-bias and divide-by-zero problems.</td></tr>
+<tr><td>You need a range, not a point</td><td><strong>Pinball loss</strong></td><td>Trains the model to predict a chosen quantile — the honest way to give a best-and-worst case.</td></tr>
+<tr><td>Is the model beating a trivial baseline at all?</td><td><strong>R²</strong>, alongside a real-unit metric</td><td>It is defined as the comparison against always predicting the mean.</td></tr>
+</tbody>
+</table></div><div class="gu-so"><strong>So what:</strong> whichever you report, <b>use the same loss to train that you use to judge</b>. Training on MSE and reporting MAE means you optimised for the mean and then graded yourself on the median — so the model is being marked on a task it was never asked to do.</div></div>
+</div>
+<div class="gu-analogy"><b>Analogy</b> — you are asked how long a commute takes. Answer with the <em>mean</em> and one snowstorm that took four hours pulls your answer up, even though almost every day is 25 minutes. Answer with the <em>median</em> and you say 25 minutes, which describes nearly every day and completely hides the snowstorm. <b>Neither answer is dishonest — they answer different questions.</b> "How much time will I spend commuting this year?" needs the mean. "How long will it take today?" needs the median. Choosing MSE or MAE is choosing which of those two questions your model is answering.</div>
+<div class="gu-jargon">
+<div><strong>MAE</strong><span>mean absolute error. The average size of a miss, in real units. Aims the model at the median.</span></div>
+<div><strong>MSE</strong><span>mean squared error. Punishes big misses hard. Aims the model at the mean.</span></div>
+<div><strong>RMSE</strong><span>the square root of MSE, so it reads in the original units. The squaring has already happened.</span></div>
+<div><strong>the RMSE − MAE gap</strong><span>zero means all errors are the same size; a large gap means a few rows dominate.</span></div>
+<div><strong>R²</strong><span>1 − SSE/SST. How much better than always predicting the mean. Zero means no better; negative means worse.</span></div>
+<div><strong>adjusted R²</strong><span>R² with a penalty per feature, so adding a useless column no longer looks free.</span></div>
+<div><strong>MAPE</strong><span>mean absolute percentage error. Breaks near zero, and pushes forecasts low because over-prediction is punished harder.</span></div>
+<div><strong>sMAPE / WAPE</strong><span>percentage metrics built to avoid MAPE's two failure modes.</span></div>
+<div><strong>pinball / quantile loss</strong><span>an intentionally lopsided loss that trains the model to predict a chosen quantile instead of the middle.</span></div>
+<div><strong>Huber loss</strong><span>squared for small errors, absolute for large ones. Behaves like MSE normally and stops chasing outliers.</span></div>
+<div><strong>heteroscedastic</strong><span>the error size grows with the prediction. A sign to model on a log scale, or report percentage error.</span></div>
+</div>
+<h2 id="what-to-learn">2 · What to learn</h2>
 <ol><li><strong>MSE</strong>, <strong>RMSE</strong>, <strong>MAE</strong> — definitions, units, and outlier sensitivity.</li><li>Why RMSE ≥ MAE always, and what the gap tells you about your error distribution.</li><li><strong>MAPE</strong> and its failure modes — undefined at zero, asymmetric penalty — plus SMAPE, WAPE, MASE.</li><li><code>R²</code> and adjusted <code>R²</code>; out-of-sample <code>R²</code> and why it can be negative.</li><li><strong>Huber loss</strong> and <strong>quantile loss</strong>.</li><li>Which statistic each loss actually predicts: MSE → the conditional <strong>mean</strong>, MAE → the conditional <strong>median</strong>, quantile loss → a conditional <strong>quantile</strong>. The highest-value idea in the module.</li><li><strong>RMSLE</strong> for multiplicative or skewed targets.</li><li>Aligning the metric with the business cost of over- versus under-prediction.</li><li>Residual analysis as evaluation, not just as an assumption check.</li><li>Time-series evaluation: naive and seasonal-naive baselines, backtesting, forecast horizons.</li></ol>
-<h2 id="intuitions">2 · Core intuitions</h2>
+<h2 id="intuitions">3 · Core intuitions</h2>
 <h3>Your loss choice decides which statistic you predict</h3>
 <p>Minimizing squared error over a set of numbers gives the <strong>mean</strong>; minimizing absolute error gives the <strong>median</strong>; minimizing asymmetric quantile (pinball) loss gives that <strong>quantile</strong>. So a model trained with MSE predicts the conditional mean of <code>y|x</code>, and one trained with MAE predicts the conditional median. On a right-skewed target — house prices, insurance claims, revenue — those are very different numbers, and choosing between them is a business decision, not a technical preference.</p>
 <h3>RMSE punishes large errors; MAE treats all errors linearly</h3>
@@ -79,7 +211,7 @@
 <p><code>|y−ŷ|/|y|</code> is undefined when <code>y = 0</code> and explodes as <code>y → 0</code>. Worse, it penalizes over-prediction more than under-prediction: predicting 150 when the truth is 100 gives 50% error, predicting 50 gives the same 50%, while predicting 0 caps out at 100%. So a MAPE-optimizing model is <strong>systematically biased low</strong>. It is popular because “percent error” communicates well — so if you must report it, pair it with WAPE (total absolute error over total actual, robust to near-zero rows) or MASE (scaled against a naive forecast).</p>
 <h3>Always report against a baseline</h3>
 <p>An RMSE of 4,200 is meaningless alone. RMSE of 4,200 versus 11,000 for “predict the mean” and 5,100 for “predict last month’s value” is a result. For time series the seasonal-naive baseline is the standard bar, and beating it is genuinely harder than people expect.</p>
-<h2 id="formulas">3 · Whiteboard formulas</h2>
+<h2 id="formulas">4 · Whiteboard formulas</h2>
 <div class="code-block" data-reveal="">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>regression_metrics.txt</span><button class="copy-btn">Copy</button></div>
 <pre><code>MSE    = (1/n) S (y - yhat)²                    units: target²
@@ -103,10 +235,10 @@ Which statistic does the minimizer predict?
    MAE          -> conditional MEDIAN
    pinball(tau) -> conditional tau-QUANTILE</code></pre>
 </div>
-<h2 id="drill">4 · Hands-on drill</h2>
+<h2 id="drill">5 · Hands-on drill</h2>
 <ol><li>On a right-skewed target, train two models — one with MSE, one with MAE — and compare their predictions against the conditional mean and median. Confirm the theory holds.</li><li>Add 1% extreme outliers and re-measure both. Quantify how much more the MSE model moves.</li><li>Fit a quantile-regression model (or <code>LGBMRegressor(objective='quantile', alpha=0.9)</code>) and produce a 10th/50th/90th-percentile prediction interval. Being able to say “I shipped a P90 rather than a mean, because under-supply cost 5× over-supply” is a strong applied answer.</li><li>Compute RMSE, MAE and their ratio on a real dataset, and interpret the ratio.</li></ol>
 <div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">Gotchas that fail candidates</div><ul><li><strong>Reporting MSE rather than RMSE</strong> to a stakeholder. Squared units are uninterpretable.</li><li><strong>Using MAPE on data containing zeros or near-zeros.</strong></li><li><strong>Not knowing that MSE targets the mean and MAE the median.</strong> This is the differentiating fact.</li><li><strong>Reporting a metric with no baseline.</strong></li><li><strong>Assuming <code>R²</code> near 1 means a good model</strong> — it can be leakage, or a trivially predictable target.</li><li><strong>Ignoring the sign of the error</strong> when over- and under-prediction have different costs.</li></ul></div></div>
-<h2 id="questions">5 · Interview questions</h2>
+<h2 id="questions">6 · Interview questions</h2>
 <div class="prep-toolbar" data-sticky-prep=""><label class="prep-filter"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><input data-question-filter="" placeholder="Filter these questions…"/></label><button class="btn ghost" data-expand-answers="" type="button">Open all</button><span class="prep-count" data-question-count="">4 questions</span></div>
 <section aria-label="Regression metrics interview questions" class="prep-question-list">
 <details class="prep-question" data-question="rmse or mae how do you choose mean median" data-tags="RMSE MAE mean vs median trap">
@@ -122,15 +254,16 @@ Which statistic does the minimizer predict?
 <summary><span class="prep-q-no">04</span><span class="prep-q-title">Your regression has <code>R² = 0.95</code>. Is the model good?<span class="prep-tags"><span>R-squared</span><span>scepticism</span><span>trap</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>Probably suspicious rather than good, and I would check four things before celebrating. <strong>(1) Is it out-of-sample?</strong> In-sample <code>R²</code> rises mechanically with feature count. <strong>(2) Leakage</strong> — a very high <code>R²</code> on a genuinely hard target is the classic leakage signature; I would look for a feature computed from or after the outcome. <strong>(3) Is the target trivially predictable?</strong> If <code>y</code> is nearly a linear function of an obvious input — predicting total price from quantity × unit price — then 0.95 is unimpressive; compare against a naive baseline first. <strong>(4) Autocorrelation</strong> — on a trending time series, <code>R²</code> against the mean is flattering because the mean is a terrible baseline; compare against a seasonal-naive forecast instead.</p><p>Separately, <code>R²</code> says nothing about whether errors are <em>usefully</em> small: I would want RMSE and MAE in the target’s own units plus a residual plot, because <code>R²</code> can be high while errors remain operationally unacceptable.</p><div class="prep-say"><strong>30-second version</strong><p>Suspicious rather than good. Check it is out-of-sample, rule out leakage, ask whether the target is trivially predictable, and compare against a proper baseline — then look at RMSE in real units.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Scepticism toward good news. Interviewers deliberately offer a flattering number to see whether you interrogate it.</p></div></div></details>
 </section>
-<div class="page-nav"><a href="10-classification-metrics.html"><div class="dir">← Previous</div><div class="ttl">Classification Metrics</div></a><a class="next" href="12-imbalanced-data.html"><div class="dir">Next →</div><div class="ttl">Imbalanced Data</div></a></div>
+<div class="page-nav" data-page-nav><a href="10-classification-metrics.html"><div class="dir">← Previous</div><div class="ttl">Classification Metrics</div></a><a class="next" href="12-imbalanced-data.html"><div class="dir">Next →</div><div class="ttl">Imbalanced Data</div></a></div>
 </main>
 <div class="toc-rail"><nav class="toc"></nav></div>
 </div>
 </div>
 </div>
-<script src="assets/app.js?v=20260727c"></script>
-<script src="assets/ml-sitenav.js?v=20260727c"></script>
-<script src="assets/enhance.js?v=20260727c"></script>
+<script src="assets/app.js?v=20260731b"></script>
+<script src="assets/ml-sitenav.js?v=20260801b"></script>
+<script src="assets/enhance.js?v=20260801a"></script>
 <script src="assets/interview-prep.js?v=20260727c"></script>
+<script src="assets/ml-mobile.js?v=20260728c"></script>
 </body>
 </html>

@@ -36,11 +36,26 @@
 <link href="assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
 <!-- /Machine Learning brand metadata -->
 <meta content="Why metric and threshold come before SMOTE, why resampling belongs inside the training fold, how it breaks calibration, and when to reframe as anomaly detection or ranking." name="description"/>
-<link href="assets/styles.css?v=20260727c" rel="stylesheet"/>
-<link href="assets/office-theme.css?v=20260727e" rel="stylesheet"/>
+<!-- Theme before first paint. Without this the document paints with the light
+     tokens and only flips when app.js runs at the end of <body>, which is a
+     white flash on every navigation in dark mode. Mirrors app.js's getTheme()
+     exactly — same key, same "light" default — so the pre-paint value can never
+     disagree with what the scripts apply a moment later. Inline and blocking on
+     purpose: an external file would cost a round trip before first paint. -->
+<script>(function(){try{var t=localStorage.getItem("gp.theme")||"light";document.documentElement.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Page transitions — see the same block in the other page families. `PageRevealEvent` is the only honest test for a CROSS-document view transition, and it has to run pre-paint or the arrival animation starts and is then cancelled. */var d=document.documentElement;if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260801d" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
 <link href="assets/ml-visuals.css?v=20260728a" rel="stylesheet"/>
+<link href="assets/ml-mobile.css?v=20260801a" rel="stylesheet"/>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="../assets/curriculum.js?v=20260804c"></script>
+<script defer src="../assets/page-nav.js?v=20260804c"></script>
 </head>
-<body data-page="ml-12-imbalanced-data" data-prep-section="ml">
+<body data-curriculum-id="ml-12" data-page="ml-12-imbalanced-data" data-prep-section="ml">
 <div class="app">
 <aside class="sidebar">
 <div class="brand">
@@ -56,7 +71,7 @@
 <div class="main">
 <header class="topbar">
 <button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
-<div class="crumbs">Machine Learning / Part C / Module 12</div>
+<div class="crumbs">Machine Learning / Part C / <b>Module 12</b></div>
 <button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
 </header>
 <div class="content-wrap">
@@ -66,9 +81,113 @@
 <p class="lead">Nearly every real classification problem, and every fraud or churn case study. The order in which you attack it is what interviewers actually grade.</p>
 <div class="meta-row"><span class="pill purple">Prerequisites · Modules 04, 05, 10</span><span class="pill">Study time · 6 h</span><span class="pill blue">5 interview questions</span><span class="pill">APPLIED · CODE</span></div>
 <div class="callout key"><div class="c-ico">🎯</div><div class="c-body"><div class="c-title">Your interview goal</div><p>Lead with metrics and thresholds rather than SMOTE, state exactly why resampling before the split leaks, and know when the problem is not classification at all.</p></div></div>
-<h2 id="what-to-learn">1 · What to learn</h2>
+<h2 id="ground-up">1 · From the ground up</h2>
+<div class="callout plain"><div class="c-ico">🧩</div><div class="c-body"><div class="c-title">In plain words</div><p>One class is rare. Fraud, disease, machine failure — the interesting thing almost never happens. Everyone's first instinct is to fix the <em>data</em>: duplicate the rare rows, or invent new ones with SMOTE. That is usually the wrong first move. Most of the time the data is fine and the <strong>metric</strong> is broken, or the <strong>cutoff</strong> is wrong. Both of those are free to fix. Changing the data comes later, if at all.</p></div></div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>Start with the problem, not the formula</h4><p>A hundred thousand card transactions. Two hundred are fraud — that is 0.2%. Train anything on this and it quickly discovers a very effective strategy: <strong>say "not fraud" every single time</strong>. It scores 99.8% accuracy and catches nothing.</p><p>This is not the model being stupid. It is the model doing exactly what you asked. You told it to minimise total error, and the fastest way to do that is to ignore a class that makes up one row in five hundred.</p><div class="gu-so"><strong>So what:</strong> "imbalanced data" is rarely a data problem. It is a <em>mismatch between what you optimised and what you wanted</em>. That reframing decides everything below — you fix the objective before you touch the rows.</div></div>
+<div class="gu-step"><h4>Fix the metric first — it costs nothing</h4><p>Before you resample anything, stop using accuracy. Use precision and recall, PR-AUC, or a cost-weighted score. This is free, changes no data, and very often the "problem" was only ever that you were reading the wrong number.</p><p>Ask the question that decides which metric: <strong>which mistake actually costs more?</strong> Missing a fraud costs the transaction value. Blocking a good customer costs a support call and some goodwill. Those are rarely equal, and once you know the ratio you know what to optimise.</p><div class="gu-so"><strong>So what:</strong> if you cannot state which error is worse and roughly by how much, no amount of resampling will help — <b>you do not yet have a target to aim at</b>. This is also the first thing a good interviewer wants to hear.</div></div>
+<div class="gu-step"><h4>Fix the cutoff second — also free</h4><p>Your model already ranks fraud above non-fraud reasonably well. The problem is the 0.5 cutoff: with a rare class, almost nothing ever scores above 0.5, so almost nothing gets flagged.</p><p>Drop the cutoff to 0.08 and suddenly you catch most of the fraud. The model did not change, the data did not change, and no synthetic rows were invented. From <a href="10-classification-metrics.html">Module 10</a>, the principled cutoff is <code>C_FP / (C_FP + C_FN)</code> — if a miss is nine times worse than a false alarm, that is 0.10.</p><div class="gu-so"><strong>So what:</strong> a great many "my model can't detect the minority class" complaints are cured by moving one number. <b>Try the free fixes before the expensive ones</b>, and say so in that order in an interview — it signals you have actually done this.</div></div>
+<div class="gu-step"><h4>Only now consider changing the training data</h4><p>If the metric is right and the cutoff is tuned and the model still cannot separate the classes, then it genuinely lacks signal about the rare class. Now the options are worth it, roughly cheapest first:</p><ul>
+<li><strong>Class weights.</strong> Tell the loss function that a minority mistake counts more — <code>class_weight="balanced"</code>, or <code>scale_pos_weight</code> in XGBoost. No rows invented, no rows discarded, one argument.</li>
+<li><strong>Random undersampling.</strong> Throw away majority rows. Fast, and you are deleting real information — reasonable only when the majority class is enormous.</li>
+<li><strong>Random oversampling.</strong> Duplicate minority rows. Adds nothing new, and encourages the model to memorise those exact rows.</li>
+<li><strong>SMOTE.</strong> Invent new minority rows by interpolating between a real one and one of its neighbours. Adds variety rather than copies — but the new rows are guesses, not observations.</li>
+</ul><div class="gu-so"><strong>So what:</strong> the order matters. <b>Class weights are almost always the right first attempt</b> — same effect as resampling in most cases, none of the risk, and one line of code.</div></div>
+<div class="gu-step"><h4>The mistake that quietly ruins everything</h4><p>Whatever you choose, resample <strong>inside the cross-validation fold</strong>, never before splitting. This one is worth slowing down for, because the failure is invisible.</p><p>SMOTE builds a synthetic row by interpolating between two real minority rows. Do it before splitting, and a synthetic row built partly from row 47 can land in the training set while row 47 itself lands in validation. The model has now effectively seen a blurred copy of a validation row. Your scores go up beautifully and mean nothing.</p><div class="gu-so"><strong>So what:</strong> use <code>imblearn.pipeline.Pipeline</code> so resampling is re-run per fold, and <b>resample the training fold only — never the validation fold</b>. A validation set must always keep the real class ratio, because that ratio is what production looks like.</div></div>
+</div>
+<div class="mlviz">
+<div class="mlviz-title">SMOTE before the split leaks; SMOTE inside the fold does not</div>
+<div class="mlviz-scroll">
+<svg viewbox="0 0 660 300" role="img" aria-label="Two workflows compared. In the wrong one, SMOTE runs on the whole dataset before splitting, so a synthetic row built from a validation row ends up in training. In the right one, the split happens first and SMOTE runs only on the training fold, leaving the validation fold at its real class ratio.">
+<!-- WRONG -->
+<g class="mv-in" style="--d:.05s">
+  <text class="mv-lbl mv-fill-5" x="16" y="22">✗ resample, then split</text>
+  <rect class="mv-box" x="16" y="34" width="300" height="106" rx="12"></rect>
+  <text class="mv-lbl-xs" x="30" y="54">all data</text>
+  <g class="mv-fill-2"><circle cx="44" cy="76" r="5"></circle><circle cx="62" cy="76" r="5"></circle><circle cx="80" cy="76" r="5"></circle><circle cx="98" cy="76" r="5"></circle></g>
+  <g class="mv-fill-1"><circle cx="124" cy="76" r="5"></circle><circle cx="142" cy="76" r="5"></circle></g>
+  <text class="mv-lbl-xs" x="160" y="80">← row 47 is here</text>
+  <path class="mv-str-5" stroke-width="1.8" d="M60 88 V102"></path>
+  <polygon class="mv-fill-5" points="60,110 55,98 65,98"></polygon>
+  <text class="mv-mono-sm mv-fill-5" x="74" y="108">SMOTE invents rows from row 47</text>
+  <g class="mv-fill-1" opacity=".55"><circle cx="124" cy="126" r="5"></circle><circle cx="142" cy="126" r="5"></circle><circle cx="160" cy="126" r="5"></circle><circle cx="178" cy="126" r="5"></circle></g>
+  <text class="mv-lbl-xs" x="196" y="130">synthetic copies of row 47</text>
+</g>
+<g class="mv-in" style="--d:.20s">
+  <path class="mv-str-5" stroke-width="1.8" d="M166 142 V158"></path>
+  <polygon class="mv-fill-5" points="166,166 161,154 171,154"></polygon>
+  <rect class="mv-box-5" x="16" y="170" width="144" height="52" rx="10"></rect>
+  <text class="mv-lbl-xs" x="88" y="190" text-anchor="middle">TRAIN</text>
+  <text class="mv-lbl-xs" x="88" y="206" text-anchor="middle">holds synthetic row 47</text>
+  <rect class="mv-box-5" x="172" y="170" width="144" height="52" rx="10"></rect>
+  <text class="mv-lbl-xs" x="244" y="190" text-anchor="middle">VALIDATION</text>
+  <text class="mv-lbl-xs" x="244" y="206" text-anchor="middle">holds the real row 47</text>
+  <text class="mv-lbl mv-fill-5" x="16" y="248">the model has already seen a blur of row 47</text>
+  <text class="mv-lbl-xs mv-fill-5" x="16" y="266">score looks great · means nothing</text>
+</g>
+<!-- RIGHT -->
+<g class="mv-in" style="--d:.40s">
+  <text class="mv-lbl mv-fill-1" x="344" y="22">✓ split, then resample the training fold</text>
+  <rect class="mv-box" x="344" y="34" width="300" height="106" rx="12"></rect>
+  <text class="mv-lbl-xs" x="358" y="54">all data</text>
+  <g class="mv-fill-2"><circle cx="372" cy="76" r="5"></circle><circle cx="390" cy="76" r="5"></circle><circle cx="408" cy="76" r="5"></circle><circle cx="426" cy="76" r="5"></circle></g>
+  <g class="mv-fill-1"><circle cx="452" cy="76" r="5"></circle><circle cx="470" cy="76" r="5"></circle></g>
+  <path class="mv-str-1" stroke-width="1.8" d="M400 88 V102"></path>
+  <polygon class="mv-fill-1" points="400,110 395,98 405,98"></polygon>
+  <text class="mv-mono-sm mv-fill-1" x="414" y="108">split first — nothing invented yet</text>
+  <text class="mv-lbl-xs" x="358" y="130">the fold boundary is real from here on</text>
+</g>
+<g class="mv-in" style="--d:.55s">
+  <path class="mv-str-1" stroke-width="1.8" d="M494 142 V158"></path>
+  <polygon class="mv-fill-1" points="494,166 489,154 499,154"></polygon>
+  <rect class="mv-box-1" x="344" y="170" width="144" height="52" rx="10"></rect>
+  <text class="mv-lbl-xs" x="416" y="190" text-anchor="middle">TRAIN</text>
+  <text class="mv-lbl-xs" x="416" y="206" text-anchor="middle">SMOTE runs here only</text>
+  <rect class="mv-box" x="500" y="170" width="144" height="52" rx="10"></rect>
+  <text class="mv-lbl-xs" x="572" y="190" text-anchor="middle">VALIDATION</text>
+  <text class="mv-lbl-xs" x="572" y="206" text-anchor="middle">untouched · real ratio</text>
+  <text class="mv-lbl mv-fill-1" x="344" y="248">nothing synthetic ever reaches validation</text>
+  <text class="mv-lbl-xs mv-fill-1" x="344" y="266">score is lower · and it is true</text>
+</g>
+</svg>
+</div>
+<p class="mlviz-cap">The left-hand pipeline is not obviously wrong when you read the code — the two lines are simply in the wrong order. <b>It produces a better score, which is exactly why it survives code review.</b> The only defence is structural: put the resampler in the pipeline so it physically cannot run before the split.</p>
+</div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>Resampling breaks your probabilities</h4><p>Here is the cost people forget. If you oversample fraud from 0.2% up to 50% and train on that, the model now believes fraud happens half the time. Its output of 0.6 means "likely fraud in a world where half of everything is fraud" — which is not your world.</p><p>The ranking is usually still fine, so AUC looks unaffected. But the probabilities are inflated, sometimes by two orders of magnitude, and anything downstream that multiplies by that number — expected loss, a risk score, an auto-decline rule — is now wrong.</p><div class="gu-so"><strong>So what:</strong> if you resample, <b>recalibrate afterwards on data with the true class ratio</b>, or shift the intercept back. If you only ever needed a ranking, you may not care. If the number feeds a decision, you must. <a href="10-classification-metrics.html">Module 10</a> covers the calibration check.</div></div>
+<div class="gu-step"><h4>When the class is <em>really</em> rare, stop treating it as classification</h4><p>At 1 in 500 you have a hard classification problem. At 1 in 100,000 you often have the wrong framing altogether. With a handful of positive examples there is simply not enough there to learn what the positive class looks like.</p><p>Flip the question. Instead of "what does fraud look like?", ask "what does <em>normal</em> look like, and how far is this from normal?" That is <strong>anomaly detection</strong> — isolation forests, one-class SVM, autoencoder reconstruction error — and it trains on the abundant class you actually have plenty of.</p><div class="gu-so"><strong>So what:</strong> knowing when to abandon the classifier is a senior signal. The rough line: <b>below a few hundred positive examples, or when new kinds of fraud keep appearing that look nothing like the old ones</b>, anomaly detection is the better frame — because it does not need examples of the thing it is catching.</div></div>
+<div class="gu-step"><h4>The order to work through, and what to say</h4><div class="table-wrap"><table>
+<thead><tr><th>Step</th><th>Do this</th><th>Cost</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Drop accuracy. Pick a metric from the cost of each mistake — PR-AUC, recall at a fixed precision, or expected cost.</td><td>Free</td></tr>
+<tr><td>2</td><td>Tune the cutoff on validation data. Often this alone is enough.</td><td>Free</td></tr>
+<tr><td>3</td><td>Set class weights — <code>class_weight="balanced"</code> or <code>scale_pos_weight</code>.</td><td>One argument</td></tr>
+<tr><td>4</td><td>Try resampling <em>inside the fold</em>: SMOTE, undersampling, or a combination.</td><td>Pipeline work · risk of leakage</td></tr>
+<tr><td>5</td><td>Try ensembles built for imbalance — BalancedRandomForest, EasyEnsemble, RUSBoost.</td><td>Moderate</td></tr>
+<tr><td>6</td><td>Recalibrate if you changed the class ratio and need real probabilities.</td><td>Small, and easy to forget</td></tr>
+<tr><td>7</td><td>If positives are extremely few, reframe as anomaly detection.</td><td>A redesign</td></tr>
+<tr><td>8</td><td>Get more labels for the rare class. Slow, and beats every technique above.</td><td>Time and money</td></tr>
+</tbody>
+</table></div><div class="gu-so"><strong>So what:</strong> if you are asked "how do you handle imbalanced data?" and your answer starts with SMOTE, you have started at step 4. <b>Starting at step 1 and explaining why the first two are free is the answer that stands out</b> — and it is also what actually works.</div></div>
+</div>
+<div class="gu-analogy"><b>Analogy</b> — a smoke alarm in a building where there is one real fire a decade. An alarm that never sounds is "right" 99.99% of the time, and useless. Nobody fixes that by <em>starting a few small fires to give it more practice</em> — which is what SMOTE does. You first agree that a missed fire is far worse than a false alarm, then you turn the sensitivity up until it triggers on the smoke you care about. <b>Only if it still cannot tell burnt toast from a real fire do you go looking for better training data.</b></div>
+<div class="gu-jargon">
+<div><strong>class imbalance</strong><span>one class is much rarer than the other. A problem for the objective, not usually for the data.</span></div>
+<div><strong>class weights</strong><span>telling the loss that a minority mistake costs more. Usually the best first fix.</span></div>
+<div><strong>scale_pos_weight</strong><span>XGBoost's version. Often set to (negatives / positives) as a starting point.</span></div>
+<div><strong>undersampling</strong><span>dropping majority rows. Fast, throws away real data.</span></div>
+<div><strong>oversampling</strong><span>duplicating minority rows. Adds no new information and invites memorising.</span></div>
+<div><strong>SMOTE</strong><span>invents minority rows by interpolating between a real row and a neighbour. Must run inside the fold.</span></div>
+<div><strong>Borderline-SMOTE / ADASYN</strong><span>SMOTE variants that focus new rows near the decision boundary, where they help most.</span></div>
+<div><strong>Tomek links / ENN</strong><span>cleaning steps that delete majority rows sitting right against minority ones, to sharpen the boundary.</span></div>
+<div><strong>BalancedRandomForest</strong><span>a forest that re-balances each bootstrap sample, so the fix lives inside the ensemble.</span></div>
+<div><strong>calibration drift</strong><span>the probability inflation caused by training on a ratio that is not the real one.</span></div>
+<div><strong>anomaly detection</strong><span>modelling only the normal class and flagging what is far from it. The right frame when positives are extremely rare.</span></div>
+<div><strong>PR-AUC</strong><span>the summary metric to report when positives are rare — see Module 10.</span></div>
+</div>
+<h2 id="what-to-learn">2 · What to learn</h2>
 <ol><li>Why imbalance is a problem — and, importantly, <strong>when it is not</strong>.</li><li>Metric-level responses, usually the first and best move: PR-AUC, recall at fixed precision, expected cost, MCC, threshold tuning.</li><li>Algorithm-level responses: <code>class_weight='balanced'</code>, <code>scale_pos_weight</code> in XGBoost, focal loss, cost-sensitive learning.</li><li>Data-level responses: random over- and under-sampling, <strong>SMOTE</strong>, Borderline-SMOTE, ADASYN, Tomek links, edited nearest neighbours, hybrids.</li><li><strong>The critical rule: resample only the training fold, never validation or test</strong> — and always inside the CV loop.</li><li>Why resampling distorts calibration, and how to correct predicted probabilities afterwards.</li><li>Ensemble approaches: BalancedRandomForest, EasyEnsemble, RUSBoost.</li><li>Threshold moving as the cheapest and often best intervention.</li><li>Anomaly-detection framing for extreme imbalance below ~0.1%: Isolation Forest, One-Class SVM, LOF, autoencoder reconstruction error.</li><li>Collecting better data, and reframing the problem — for example ranking instead of classification.</li></ol>
-<h2 id="intuitions">2 · Core intuitions</h2>
+<h2 id="intuitions">3 · Core intuitions</h2>
 <h3>Imbalance is usually a metric and threshold problem before it is a data problem</h3>
 <p>The model’s <em>ranking</em> is often fine; what is broken is that a 0.5 threshold on a 1%-positive problem predicts almost nothing positive, and accuracy hides it. So the correct first moves are free: switch to PR-AUC and MCC, tune the threshold on validation, and use <code>class_weight='balanced'</code>. Reach for SMOTE later, if at all. <strong>Candidates who open with “I’d apply SMOTE” reveal a recipe-following mindset; candidates who open with “first I’d fix the metric and the threshold” sound like practitioners.</strong></p>
 <h3>Class weighting and resampling do similar things by different means</h3>
@@ -81,7 +200,7 @@
 <p>After oversampling the minority class, the model’s implied base rate is the resampled one, not reality, so predicted probabilities are systematically too high. If you only need a ranking or a tuned threshold, that is tolerable. If you need honest probabilities for an expected-cost calculation, either avoid resampling, recalibrate on an unresampled held-out set, or apply the prior-correction adjustment to shift probabilities back to the true base rate.</p>
 <h3>Below roughly 0.1% positive, reconsider the framing</h3>
 <p>With extreme rarity you may have too few positives to learn a supervised boundary at all. Then anomaly detection trained mostly on the normal class can outperform supervised learning, or a two-stage design: a cheap high-recall filter, then a supervised model on the much more balanced survivors. Reframing as <em>ranking</em> — “give the review team the 500 riskiest cases today” — often matches operational reality better than classification.</p>
-<h2 id="order">3 · The order to try things</h2>
+<h2 id="order">4 · The order to try things</h2>
 <p>Steps 1–3 are cheap, safe, and usually sufficient. Presenting them in this order makes you sound markedly more experienced than a candidate who starts at step 4.</p>
 <div class="code-block" data-reveal="">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>imbalance_playbook.txt</span><button class="copy-btn">Copy</button></div>
@@ -93,10 +212,10 @@
 6. Reconsider the FRAMING-> anomaly detection, two-stage cascade, ranking
 7. Get more POSITIVES    -> targeted labelling beats any algorithmic trick</code></pre>
 </div>
-<h2 id="drill">4 · Hands-on drill</h2>
+<h2 id="drill">5 · Hands-on drill</h2>
 <ol><li>Build a 1%-positive dataset. Train a baseline and report accuracy, precision, recall, F1, ROC-AUC, PR-AUC and MCC. Note how differently they behave.</li><li>Apply, one at a time: threshold tuning, <code>class_weight='balanced'</code>, random over-sampling, random under-sampling, SMOTE, and <code>scale_pos_weight</code>. Build a comparison table on PR-AUC and on expected cost. <strong>In many runs threshold tuning alone matches or beats SMOTE</strong> — get that empirical result into your own hands so you can cite it.</li><li>Deliberately apply SMOTE before the split and measure the inflation in CV score. Record the number.</li><li>Plot calibration curves before and after oversampling to see the distortion directly.</li><li>Use <code>imblearn.pipeline.Pipeline</code> to do it correctly and confirm the CV score drops to something honest.</li></ol>
 <div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">Gotchas that fail candidates</div><ul><li><strong>SMOTE before the split.</strong> The signature leakage error of this module.</li><li><strong>Leading with SMOTE</strong> instead of metrics and thresholds.</li><li><strong>Resampling the validation or test set</strong>, which makes your reported metrics describe a distribution that does not exist in production.</li><li><strong>Not knowing resampling breaks calibration.</strong></li><li><strong>Setting <code>scale_pos_weight</code> and also oversampling</strong>, double-counting the correction.</li><li><strong>Claiming imbalance is always a problem.</strong> With enough absolute positives and a tuned threshold, 1:100 often needs no special handling.</li></ul></div></div>
-<h2 id="questions">5 · Interview questions</h2>
+<h2 id="questions">6 · Interview questions</h2>
 <div class="prep-toolbar" data-sticky-prep=""><label class="prep-filter"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><input data-question-filter="" placeholder="Filter these questions…"/></label><button class="btn ghost" data-expand-answers="" type="button">Open all</button><span class="prep-count" data-question-count="">5 questions</span></div>
 <section aria-label="Imbalanced data interview questions" class="prep-question-list">
 <details class="prep-question" data-question="one percent of your rows are positive walk me through your approach" data-tags="applied playbook imbalance">
@@ -115,15 +234,16 @@
 <summary><span class="prep-q-no">05</span><span class="prep-q-title">Positives are 0.01% of your data. Still a classification problem?<span class="prep-tags"><span>anomaly detection</span><span>reframing</span><span>applied</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>Maybe not, and I would consider three reframings.</p><p><strong>(1) Anomaly detection</strong> — with so few positives you may not have enough to learn a supervised boundary, so methods modelling the <em>normal</em> class and flagging deviations (Isolation Forest, One-Class SVM, LOF, autoencoder reconstruction error) can outperform supervised learning, and they generalize to novel failure modes the training positives never contained.</p><p><strong>(2) A two-stage cascade</strong> — a cheap high-recall rule or model filters 99% of traffic, then a supervised model runs on the much more balanced survivors. This is how most production fraud systems are actually built, and it also solves the latency and cost problem.</p><p><strong>(3) Ranking rather than classification</strong> — the operational reality is usually “the review team can handle 500 cases a day”, so what is needed is a good ordering and precision@500, not a binary label.</p><p>I would also weigh a hybrid: use unsupervised scores as <em>features</em> in the supervised model, letting the few known positives inform the ranking without carrying the whole burden. And I would push hard on getting more labelled positives, including active learning to prioritize which ambiguous cases get human review — with 0.01% positives, better labels beat every algorithmic choice.</p><div class="prep-say"><strong>30-second version</strong><p>Possibly not. Consider anomaly detection on the normal class, a two-stage cascade, or reframing as ranking with precision@k — and use unsupervised scores as features in the supervised model.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Whether you can step outside the supervised-classification frame. The two-stage cascade and the precision@k reframing are both strong production-experience signals.</p></div></div></details>
 </section>
-<div class="page-nav"><a href="11-regression-metrics.html"><div class="dir">← Previous</div><div class="ttl">Regression Metrics</div></a><a class="next" href="13-knn-naive-bayes.html"><div class="dir">Next →</div><div class="ttl">KNN, Naive Bayes &amp; LDA</div></a></div>
+<div class="page-nav" data-page-nav><a href="11-regression-metrics.html"><div class="dir">← Previous</div><div class="ttl">Regression Metrics</div></a><a class="next" href="13-knn-naive-bayes.html"><div class="dir">Next →</div><div class="ttl">KNN, Naive Bayes &amp; LDA</div></a></div>
 </main>
 <div class="toc-rail"><nav class="toc"></nav></div>
 </div>
 </div>
 </div>
-<script src="assets/app.js?v=20260727c"></script>
-<script src="assets/ml-sitenav.js?v=20260727c"></script>
-<script src="assets/enhance.js?v=20260727c"></script>
+<script src="assets/app.js?v=20260731b"></script>
+<script src="assets/ml-sitenav.js?v=20260801b"></script>
+<script src="assets/enhance.js?v=20260801a"></script>
 <script src="assets/interview-prep.js?v=20260727c"></script>
+<script src="assets/ml-mobile.js?v=20260728c"></script>
 </body>
 </html>

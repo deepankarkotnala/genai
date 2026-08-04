@@ -1,0 +1,1108 @@
+/* =========================================================================
+   ml-mobile.css — the mobile experience for the Machine Learning portal
+   =========================================================================
+
+   Loaded LAST, after styles.css → office-theme.css → ml-visuals.css, so it is
+   the single place that owns how this portal behaves on a phone or tablet.
+   Everything here is inside a max-width query: the desktop workspace is
+   untouched by design.
+
+   Why a separate file rather than edits scattered through two 100 KB
+   stylesheets: the mobile rules in those files were written at four different
+   breakpoints (1180 / 980 / 860 / 640 / 620 / 430) by successive passes, and
+   several later desktop patches overrode earlier mobile intent. One file with
+   one breakpoint pair is reviewable; surgery across six overlapping blocks is
+   not.
+
+   Structure
+     1  Breakpoint tokens & the single gutter
+     2  Navigation chrome (topbar · ribbon · jump-to-section)
+     3  Typography and vertical rhythm
+     4  Components
+     5  Overflow containment
+     6  Touch targets, safe areas, input affordances
+     7  The navigation drawer
+     8  Motion — entrances, press feedback, page transitions
+     9  Reduced motion & print
+
+   Breakpoints
+     <= 980px   tablet + phone: single column, chrome becomes mobile chrome
+     <= 640px   phone: tighter gutter, compact components
+     <= 400px   small phone: last-resort compressions
+   ========================================================================= */
+
+
+/* =========================================================================
+   1 · Breakpoint tokens & the single gutter
+   ========================================================================= */
+@media (max-width: 980px) {
+  :root {
+    /* ONE horizontal gutter for the whole portal. Every full-bleed-to-gutter
+       element derives from this, which is what makes headings, cards, callouts
+       and code blocks share a left edge instead of each carrying its own
+       padding from a different breakpoint. */
+    --ml-gutter: 18px;
+
+    /* Chrome heights, declared so sticky offsets and scroll-padding can be
+       computed from them rather than hard-coded in three places. */
+    --header-h: 52px;
+    /* 0 because the ML portal no longer injects the workspace ribbon (see
+       enhance.js — its Learn/Practice/Interview links resolved into this folder,
+       which has no such sections). html scroll-padding-top below reads this
+       :root value, so it has to be zeroed here and not only on body. */
+    --ribbon-h: 0px;
+    --ml-jumpbar-h: 46px;
+
+    /* Motion. Short, non-bouncy, and consistent — the same two curves used by
+       the desktop theme so the portal feels like one product. */
+    --ml-dur-fast: .18s;
+    --ml-dur: .28s;
+    --ml-dur-slow: .42s;
+    --ml-ease: cubic-bezier(.22, .61, .36, 1);
+    --ml-ease-out: cubic-bezier(.16, 1, .3, 1);
+  }
+
+  /* Anchor jumps must clear the sticky chrome, or tapping a "Jump to section"
+     entry lands with the heading hidden behind the bars.
+
+     Only the topbar and ribbon stay pinned — the jump bar hides itself on
+     scroll-down — so the offset is those two plus a small gap. It is set ONCE,
+     here: the base theme also puts scroll-margin-top on headings, and
+     container scroll-padding and target scroll-margin ADD, which landed
+     headings ~250px down the viewport with a band of dead space above them.
+     Zeroing the per-heading margin below leaves this as the only authority. */
+  html {
+    scroll-padding-top: calc(var(--header-h) + var(--ribbon-h) + 10px);
+    -webkit-text-size-adjust: 100%;
+  }
+  .content h1, .content h2, .content h3, .content h4,
+  .prep-content h1, .prep-content h2, .prep-content h3,
+  .content [id], .prep-content [id] { scroll-margin-top: 0 !important; }
+
+  /* The reading column owns the full viewport and applies the gutter once.
+     The grid wrapper carries no padding so there is exactly one source of
+     horizontal inset. */
+  .content-wrap {
+    grid-template-columns: minmax(0, 1fr) !important;
+    padding-inline: 0 !important;
+    max-width: none !important;
+  }
+  .content,
+  .prep-content,
+  .ih-content {
+    max-width: none !important;
+    margin-inline: 0 !important;
+    padding-inline: var(--ml-gutter) !important;
+    padding-top: 20px !important;
+  }
+}
+
+@media (max-width: 640px) {
+  :root { --ml-gutter: 15px; }
+}
+
+@media (max-width: 400px) {
+  :root { --ml-gutter: 13px; --header-h: 48px; }
+}
+
+
+/* =========================================================================
+   2 · Navigation chrome
+   -------------------------------------------------------------------------
+   Three bars stack at the top of a phone: the topbar, the workspace ribbon
+   and the jump-to-section bar. Previously each had its own background, its
+   own border and its own radius, so they read as three unrelated strips
+   eating a third of the screen. They are now one continuous surface with a
+   single bottom edge — visually one component, still three rows.
+   ========================================================================= */
+@media (max-width: 980px) {
+
+  /* --- Topbar ----------------------------------------------------------- */
+  .topbar {
+    position: sticky;
+    top: 0;
+    z-index: 40;
+    width: 100% !important;
+    height: var(--header-h);
+    min-height: var(--header-h);
+    margin: 0 !important;
+    padding: 0 max(8px, env(safe-area-inset-left)) 0 max(8px, env(safe-area-inset-right)) !important;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    box-shadow: none !important;
+    transition: box-shadow var(--ml-dur) ease, background var(--ml-dur) ease;
+  }
+  /* A shadow appears only once the page has scrolled, so the chrome is flat
+     and quiet at rest and lifts off the content while scrolling. */
+  body.ml-scrolled .topbar {
+    box-shadow: 0 1px 0 var(--border), 0 6px 18px -12px rgba(15, 23, 42, .28) !important;
+  }
+
+  /* Breadcrumb: show the part that identifies the page. The full trail
+     ("Machine Learning / Part A / Module 04") cannot fit, and truncating it
+     left-to-right yields "Machine Learning /…", which names every page in the
+     portal equally. Collapsing to the bolded leaf gives "Module 04". */
+  .topbar .crumbs {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    font-size: 13px;
+    letter-spacing: -.01em;
+    color: var(--text-secondary);
+  }
+  .topbar .crumbs:has(b) { font-size: 0; }
+  .topbar .crumbs:has(b) > b {
+    font-size: 13.5px;
+    font-weight: 660;
+    letter-spacing: -.012em;
+    color: var(--text);
+  }
+
+  /* --- Workspace ribbon ------------------------------------------------- */
+  .office-ribbon {
+    top: var(--header-h);
+    z-index: 38;
+    min-height: var(--ribbon-h);
+    height: var(--ribbon-h);
+    gap: 0;
+    padding: 0 max(4px, env(safe-area-inset-left)) 0 max(4px, env(safe-area-inset-right));
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    backdrop-filter: blur(16px) saturate(140%);
+    -webkit-backdrop-filter: blur(16px) saturate(140%);
+    border-bottom: 1px solid var(--border);
+    /* Tabs scroll rather than squeeze if a section name is long. */
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+  }
+  .office-ribbon::-webkit-scrollbar { display: none; }
+
+  /* The status chip is desktop reassurance; on a phone it is 40% of the bar
+     for zero navigational value. */
+  .office-ribbon .ribbon-status,
+  .office-ribbon .ribbon-spacer { display: none !important; }
+
+  .office-ribbon a {
+    flex: 0 0 auto;
+    display: flex;
+    align-items: center;
+    min-height: 40px;
+    padding: 0 14px;
+    font-size: 14px;
+    font-weight: 560;
+    white-space: nowrap;
+    border-radius: 0;
+    transition: color var(--ml-dur-fast) ease;
+  }
+  /* The active indicator slides between tabs instead of hard-cutting. */
+  .office-ribbon a::after {
+    content: "";
+    position: absolute;
+    left: 12px;
+    right: 12px;
+    bottom: 0;
+    height: 2.5px;
+    border-radius: 3px 3px 0 0;
+    background: var(--accent);
+    transform: scaleX(0);
+    transform-origin: 50% 100%;
+    transition: transform var(--ml-dur) var(--ml-ease-out);
+  }
+  .office-ribbon a.active::after { transform: scaleX(1); }
+
+  /* --- Jump-to-section bar --------------------------------------------- */
+  .toc-rail {
+    top: calc(var(--header-h) + var(--ribbon-h));
+    z-index: 36;
+    padding: 5px var(--ml-gutter);
+    border-bottom: 1px solid var(--border);
+    background: color-mix(in srgb, var(--surface) 92%, transparent);
+    backdrop-filter: blur(14px) saturate(130%);
+    -webkit-backdrop-filter: blur(14px) saturate(130%);
+    transition:
+      transform var(--ml-dur-slow) var(--ml-ease),
+      opacity var(--ml-dur) ease;
+    will-change: transform;
+  }
+
+  .toc-toggle {
+    width: 100%;
+    min-height: 38px;
+    padding: 0 12px;
+    border-radius: 10px;
+    font-size: 13px;
+    font-weight: 560;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    transition:
+      background var(--ml-dur-fast) ease,
+      border-color var(--ml-dur-fast) ease,
+      transform var(--ml-dur-fast) var(--ml-ease);
+  }
+  .toc-toggle:active { transform: scale(.99); }
+  .toc-toggle .toc-toggle-label {
+    flex: 1 1 auto;
+    min-width: 0;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    text-align: left;
+  }
+  .toc-toggle .toc-toggle-caret {
+    flex: 0 0 auto;
+    transition: transform var(--ml-dur) var(--ml-ease-out);
+  }
+  /* app.js puts the open class on `.toc` (the <nav>), not on `.toc-rail`, and
+     the base theme matches it with unqualified descendant selectors. Follow
+     that convention — qualifying these as `.toc-rail.toc-open` silently never
+     matches, which leaves the dropdown permanently shut. */
+  .toc-open .toc-toggle {
+    border-color: var(--accent);
+    background: var(--surface);
+  }
+  .toc-open .toc-toggle-caret { transform: rotate(180deg); }
+
+  /* The list is an absolutely-positioned overlay (so it never pushes the page
+     down) that the base theme reveals with `display: none → block`. A display
+     switch cannot be transitioned, so the panel appeared instantly. Keeping it
+     displayed and gating on visibility/opacity/transform gives it a real
+     entrance while staying inert and unreachable when closed. */
+  .toc .toc-list {
+    display: block !important;
+    visibility: hidden;
+    opacity: 0;
+    transform: translateY(-6px) scale(.99);
+    transform-origin: 50% 0;
+    pointer-events: none;
+    max-height: min(58vh, 420px);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    transition:
+      opacity var(--ml-dur) ease,
+      transform var(--ml-dur) var(--ml-ease-out),
+      visibility 0s linear var(--ml-dur);
+  }
+  .toc-open .toc-list {
+    visibility: visible;
+    opacity: 1;
+    transform: none;
+    pointer-events: auto;
+    transition:
+      opacity var(--ml-dur) ease,
+      transform var(--ml-dur) var(--ml-ease-out),
+      visibility 0s;
+  }
+
+  .toc .toc-list a {
+    min-height: 42px;
+    padding: 7px 11px;
+    border-radius: 8px;
+    font-size: 13.5px;
+    line-height: 1.35;
+  }
+  .toc .toc-list a .toc-num {
+    flex: 0 0 auto;
+    font-size: 11px;
+    opacity: .6;
+  }
+}
+
+
+/* =========================================================================
+   3 · Typography and vertical rhythm
+   -------------------------------------------------------------------------
+   The base stylesheet drove h1 from 9vw, which on a 360px screen produced a
+   heading that filled a third of the first screen. Mobile type is set from a
+   narrow clamp on the viewport with a hard ceiling instead.
+   ========================================================================= */
+@media (max-width: 980px) {
+  :root {
+    --fs-h1:   clamp(25px, 6.2vw, 32px);
+    --fs-h2:   clamp(19.5px, 4.6vw, 23px);
+    --fs-h3:   clamp(16px, 3.9vw, 18px);
+    --fs-lead: clamp(15.5px, 3.9vw, 17px);
+    --fs-base: 15.5px;
+  }
+
+  .content > h1,
+  .prep-content > h1 {
+    margin: 6px 0 10px !important;
+    font-size: var(--fs-h1) !important;
+    line-height: 1.14 !important;
+    letter-spacing: -.026em !important;
+    text-wrap: balance;
+  }
+  .content > .lead,
+  .prep-content > .lead {
+    margin: 0 0 20px !important;
+    font-size: var(--fs-lead) !important;
+    line-height: 1.58 !important;
+    color: var(--text-secondary);
+  }
+
+  /* Section headings get air above and a hairline, so a long scrolling page
+     reads as discrete sections rather than one undifferentiated column. */
+  .content > h2,
+  .prep-content > h2 {
+    margin: 34px 0 12px !important;
+    padding-top: 14px;
+    font-size: var(--fs-h2) !important;
+    line-height: 1.22 !important;
+    letter-spacing: -.02em;
+    border-top: 1px solid var(--border);
+    text-wrap: balance;
+  }
+  .content > h2:first-of-type { border-top: 0; padding-top: 0; }
+  .content > h3,
+  .prep-content > h3 {
+    margin: 22px 0 8px !important;
+    font-size: var(--fs-h3) !important;
+    line-height: 1.3 !important;
+  }
+
+  .content > p,
+  .content > ul,
+  .content > ol {
+    margin: 0 0 14px;
+    font-size: var(--fs-base);
+    line-height: 1.66;
+  }
+  .content > ul,
+  .content > ol { padding-left: 20px; }
+  .content > ul > li,
+  .content > ol > li { margin-bottom: 7px; }
+
+  .eyebrow {
+    margin-bottom: 4px;
+    font-size: 11px;
+    letter-spacing: .085em;
+    line-height: 1.4;
+  }
+}
+
+
+/* =========================================================================
+   4 · Components
+   ========================================================================= */
+@media (max-width: 980px) {
+
+  /* --- Metric pills ----------------------------------------------------- */
+  /* These were a hidden-scrollbar horizontal strip, which clipped the last
+     pill mid-word with no affordance that anything was scrollable — it simply
+     looked broken. Pills are short; wrapping is strictly better. */
+  .meta-row {
+    display: flex !important;
+    flex-wrap: wrap !important;
+    gap: 7px !important;
+    overflow: visible !important;
+    margin: 12px 0 18px !important;
+    padding-bottom: 0 !important;
+  }
+  .meta-row .pill {
+    flex: 0 0 auto !important;
+    margin: 0 !important;
+    border-radius: 7px !important;
+  }
+  .pill {
+    min-height: 26px;
+    padding: 3px 9px;
+    font-size: 11.5px;
+    line-height: 1.35;
+  }
+
+  /* --- Hero card -------------------------------------------------------- */
+  .prep-hero {
+    grid-template-columns: 1fr !important;
+    gap: 0;
+    margin: 18px 0 22px !important;
+    padding: 20px 18px !important;
+    border-radius: 18px !important;
+  }
+  .prep-hero h2 {
+    margin: 8px 0 10px !important;
+    font-size: clamp(20px, 5.2vw, 25px) !important;
+    line-height: 1.2 !important;
+    letter-spacing: -.028em !important;
+    text-wrap: balance;
+  }
+  .prep-hero p {
+    max-width: none !important;
+    font-size: 14.5px;
+    line-height: 1.6;
+  }
+  .prep-kicker { font-size: 10.5px; letter-spacing: .09em; }
+  /* The decorative orbs are sized for a desktop card; at phone width they
+     cover the text they sit behind. */
+  .prep-hero::before,
+  .prep-hero::after { opacity: .5; }
+
+  /* --- Module / topic cards -------------------------------------------- */
+  /* Was a 43px | 1fr | auto grid with a 150px min-height and 21px padding:
+     on a phone that reserved a tall empty band under short descriptions and
+     dropped the affordance arrow off the side. Now the number and the arrow
+     share one header row with the title, and the card is only as tall as its
+     content. */
+  .prep-topic-grid {
+    grid-template-columns: 1fr !important;
+    gap: 10px !important;
+  }
+  .prep-topic-card {
+    grid-template-columns: auto minmax(0, 1fr) auto !important;
+    grid-template-rows: auto auto auto;
+    gap: 0 11px !important;
+    align-items: center !important;
+    min-height: 0 !important;
+    padding: 15px 16px !important;
+    border-radius: 15px !important;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .prep-topic-card > .prep-topic-no {
+    grid-column: 1;
+    grid-row: 1;
+    width: 34px;
+    height: 26px;
+    font-size: 12.5px;
+    border-radius: 7px;
+    display: grid;
+    place-items: center;
+  }
+  .prep-topic-card > div {
+    grid-column: 2;
+    grid-row: 1 / span 2;
+    min-width: 0;
+  }
+  .prep-topic-card > .prep-card-arrow {
+    grid-column: 3;
+    grid-row: 1;
+    align-self: center;
+    display: block !important;
+    font-size: 15px;
+    opacity: .4;
+    transition: transform var(--ml-dur) var(--ml-ease-out), opacity var(--ml-dur) ease;
+  }
+  .prep-topic-card h3 {
+    margin: 0 0 5px !important;
+    font-size: 15.5px !important;
+    line-height: 1.28 !important;
+    letter-spacing: -.015em;
+  }
+  .prep-topic-card p {
+    margin: 0 0 8px !important;
+    font-size: 13.5px !important;
+    line-height: 1.5 !important;
+    color: var(--text-secondary);
+  }
+  .prep-topic-card .prep-topic-meta {
+    display: block;
+    font-size: 11.5px;
+    letter-spacing: .01em;
+    opacity: .82;
+  }
+  .prep-topic-card::before { opacity: .45; }
+
+  /* --- Generic cards & grids ------------------------------------------- */
+  .grid-2,
+  .grid-3,
+  .grid-4,
+  .module-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
+
+  /* Icon and title share a row instead of the icon claiming its own line.
+     On a phone that saved band is worth more than the vertical emphasis, and
+     it lines the card up with the topic cards above it. */
+  .card {
+    display: grid !important;
+    grid-template-columns: auto minmax(0, 1fr);
+    grid-template-rows: auto auto;
+    gap: 3px 11px;
+    align-items: center;
+    padding: 15px 16px !important;
+    border-radius: 14px !important;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .card > .ico {
+    grid-column: 1;
+    grid-row: 1;
+    width: 30px; height: 30px;
+    margin: 0 !important;
+    font-size: 13.5px;
+    font-weight: 700;
+    display: grid; place-items: center;
+    border-radius: 8px;
+  }
+  .card > h4 {
+    grid-column: 2;
+    grid-row: 1;
+    margin: 0 !important;
+    font-size: 15px;
+    line-height: 1.28;
+    letter-spacing: -.014em;
+  }
+  .card > p {
+    grid-column: 1 / -1;
+    grid-row: 2;
+    margin: 4px 0 0 !important;
+    font-size: 13.5px;
+    line-height: 1.52;
+  }
+  /* Cards with no icon must not leave an empty first column. */
+  .card:not(:has(> .ico)) { grid-template-columns: minmax(0, 1fr); }
+  .card:not(:has(> .ico)) > h4 { grid-column: 1; }
+
+  /* --- Callouts --------------------------------------------------------- */
+  .callout {
+    gap: 11px;
+    margin: 16px 0 !important;
+    padding: 14px 15px !important;
+    border-radius: 13px !important;
+  }
+  .callout .c-ico {
+    flex: 0 0 28px;
+    width: 28px; height: 28px;
+    font-size: 14px;
+    border-radius: 8px;
+  }
+  .callout .c-title { font-size: 14px; margin-bottom: 3px; }
+  .callout .c-body p { font-size: 13.5px; line-height: 1.56; }
+
+  /* --- Collapsibles ---------------------------------------------------- */
+  .collapse { border-radius: 13px !important; margin: 16px 0; overflow: hidden; }
+  .collapse > summary {
+    min-height: 46px;
+    padding: 12px 15px;
+    font-size: 14px;
+    line-height: 1.35;
+    cursor: pointer;
+    list-style: none;
+    gap: 10px;
+  }
+  .collapse > summary::-webkit-details-marker { display: none; }
+
+  /* The base theme rotates a `.chev` span inside the summary, but most of this
+     portal's <summary> elements are plain text with no such span — so they
+     rendered as a bold line with nothing to suggest they open. Generate the
+     chevron for exactly those, leaving authored ones alone. */
+  .collapse > summary:not(:has(.chev))::after {
+    content: "";
+    flex: 0 0 auto;
+    width: 8px;
+    height: 8px;
+    margin-left: auto;
+    border-right: 2px solid var(--text-muted);
+    border-bottom: 2px solid var(--text-muted);
+    border-radius: 1px;
+    transform: rotate(45deg) translateY(-2px);
+    transition: transform var(--ml-dur) var(--ml-ease-out);
+  }
+  .collapse[open] > summary:not(:has(.chev))::after {
+    transform: rotate(225deg) translateY(-2px);
+  }
+
+  .collapse .collapse-body {
+    padding: 0 15px 14px;
+    font-size: 13.5px;
+    animation: ml-collapse-open var(--ml-dur) var(--ml-ease-out) both;
+  }
+  @keyframes ml-collapse-open {
+    from { opacity: 0; transform: translateY(-5px); }
+    to   { opacity: 1; transform: none; }
+  }
+  .prep-source-grid { grid-template-columns: 1fr !important; gap: 9px; }
+  .prep-source-grid > div { font-size: 13px; }
+
+  /* --- Quizzes & page nav ---------------------------------------------- */
+  .quiz { padding: 15px !important; border-radius: 13px !important; }
+  .quiz .q { font-size: 14.5px; line-height: 1.4; }
+  .quiz .opt {
+    min-height: 46px;
+    display: flex;
+    align-items: center;
+    padding: 10px 13px;
+    font-size: 13.5px;
+    line-height: 1.42;
+    border-radius: 10px;
+  }
+  .quiz .explain { font-size: 13px; line-height: 1.55; }
+
+  .page-nav {
+    display: grid !important;
+    grid-template-columns: 1fr !important;
+    gap: 9px;
+    margin-top: 30px;
+  }
+  .page-nav a {
+    padding: 13px 15px;
+    border-radius: 13px;
+    text-align: left !important;
+  }
+  .page-nav .dir { font-size: 11px; }
+  .page-nav .ttl { font-size: 14px; line-height: 1.3; }
+  /* An empty spacer <span> in the grid would otherwise reserve a row. */
+  .page-nav > span:empty { display: none; }
+
+  /* --- Scroll-to-top --------------------------------------------------- */
+  /* Sat on top of body text at the right gutter. Lifted clear of the home
+     indicator and softened so it reads as chrome, not content. */
+  .scroll-top {
+    right: max(12px, env(safe-area-inset-right)) !important;
+    bottom: calc(14px + env(safe-area-inset-bottom)) !important;
+    width: 42px !important;
+    height: 42px !important;
+    border-radius: 50% !important;
+    box-shadow: 0 6px 20px -6px rgba(15, 23, 42, .3);
+  }
+}
+
+
+/* =========================================================================
+   5 · Overflow containment
+   -------------------------------------------------------------------------
+   Nothing may widen the document. Wide content scrolls inside its own box.
+   ========================================================================= */
+@media (max-width: 980px) {
+  /* `clip`, NOT `hidden`. `overflow-x: hidden` makes the element a scroll
+     container, and a sticky descendant then sticks to *that* box instead of
+     the viewport — which silently detached the whole header stack and let it
+     scroll away with the page. `clip` contains stray overflow the same way
+     without establishing a scrollport, so the chrome stays pinned. */
+  html, body { max-width: 100%; overflow-x: clip; }
+
+  /* Tables and code are the two things that legitimately exceed the gutter;
+     they get their own scroll container and a hint that they can move. */
+  .table-wrap {
+    margin-inline: 0 !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    border-radius: 12px;
+  }
+  .table-wrap table { min-width: 460px; font-size: 13px; }
+  .table-wrap th,
+  .table-wrap td { padding: 9px 11px; line-height: 1.45; }
+
+  .code-block { border-radius: 12px !important; margin: 14px 0; }
+  .code-block pre,
+  pre {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior-x: contain;
+    padding: 13px !important;
+    font-size: 12.5px !important;
+    line-height: 1.55;
+    tab-size: 2;
+  }
+  .code-head { padding: 7px 11px; font-size: 11.5px; }
+  .code-head .copy-btn { min-height: 30px; padding: 0 10px; font-size: 11.5px; }
+
+  /* Diagrams scale to the gutter instead of forcing a horizontal scroll. */
+  .diagram {
+    padding: 12px !important;
+    border-radius: 12px !important;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .diagram svg { max-width: 100%; height: auto; }
+  .diagram-caption { font-size: 12px; line-height: 1.45; }
+
+  /* Long unbroken strings (URLs, identifiers) must not push the layout. */
+  .content p,
+  .content li,
+  .content h1,
+  .content h2,
+  .content h3,
+  .content td { overflow-wrap: break-word; }
+
+  /* Grid and flex children default to `min-width: auto`, which means they
+     refuse to shrink below their content's minimum width. Put a scrollable
+     table (min-width 460px) inside one and the CHILD grows past the viewport,
+     even though the table itself is correctly scrollable — the overflow just
+     moves up one level. Explicitly allowing these containers to shrink is what
+     lets the inner scroll container do its job. */
+  .gu-ladder,
+  .gu-step,
+  .gu-jargon,
+  .gu-jargon > div,
+  .grid > *,
+  .prep-topic-grid > *,
+  .callout,
+  .callout .c-body,
+  .mlviz { min-width: 0; }
+
+  img, svg, video, iframe { max-width: 100%; }
+}
+
+
+/* =========================================================================
+   6 · Touch targets, safe areas, input affordances
+   ========================================================================= */
+@media (max-width: 980px) {
+  /* The topbar controls were 28px tall — well under the 44px minimum, and the
+     hardest thing on the page to hit accurately. */
+  .icon-btn,
+  .topbar .icon-btn,
+  .menu-btn,
+  .focus-btn,
+  .reader-btn,
+  [data-theme-toggle] {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px;
+    min-height: 40px;
+    border-radius: 11px !important;
+    display: grid !important;
+    place-items: center;
+    flex: 0 0 auto;
+    transition:
+      background var(--ml-dur-fast) ease,
+      border-color var(--ml-dur-fast) ease,
+      transform var(--ml-dur-fast) var(--ml-ease);
+  }
+  .icon-btn:active,
+  .menu-btn:active,
+  [data-theme-toggle]:active { transform: scale(.92); }
+
+  /* The label-less variants keep their icon centred once the text is hidden. */
+  .focus-btn .focus-lbl,
+  .reader-btn .reader-lbl,
+  .home-btn .home-lbl { display: none !important; }
+
+  /* Kill the grey flash on tap; the :active states below are the feedback. */
+  a, button, summary, .card, .prep-topic-card, .opt {
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* 16px minimum on inputs, or iOS Safari zooms the viewport on focus and
+     never zooms back out. */
+  input, select, textarea {
+    font-size: 16px !important;
+    min-height: 44px;
+  }
+  .search-box input { font-size: 16px !important; }
+
+  /* Respect notches and home indicators. */
+  .content { padding-bottom: calc(56px + env(safe-area-inset-bottom)) !important; }
+  .site-footer {
+    margin-top: 32px;
+    padding-bottom: calc(10px + env(safe-area-inset-bottom));
+    font-size: 12px;
+    text-align: center;
+  }
+}
+
+
+/* =========================================================================
+   7 · The navigation drawer
+   ========================================================================= */
+@media (max-width: 980px) {
+  .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    width: min(86vw, 330px);
+    z-index: 100;
+    padding: 10px 10px calc(14px + env(safe-area-inset-bottom));
+    padding-left: max(10px, env(safe-area-inset-left));
+    transform: translateX(-102%);
+    /* Opening uses the decelerating curve so it arrives softly; closing is
+       quicker, because a dismissal should feel immediate. */
+    transition: transform var(--ml-dur-slow) var(--ml-ease-out);
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    -webkit-overflow-scrolling: touch;
+    will-change: transform;
+    box-shadow: none;
+  }
+  .app.nav-open .sidebar {
+    transform: translateX(0);
+    box-shadow: 24px 0 60px -30px rgba(15, 23, 42, .45);
+  }
+  .app:not(.nav-open) .sidebar {
+    transition: transform var(--ml-dur) var(--ml-ease);
+  }
+
+  .backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 90;
+    display: block;
+    opacity: 0;
+    pointer-events: none;
+    background: rgba(15, 23, 42, .4);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    transition: opacity var(--ml-dur) ease;
+  }
+  .app.nav-open .backdrop { opacity: 1; pointer-events: auto; }
+
+  /* Drawer contents stagger in behind the panel, which makes the open feel
+     authored rather than mechanical. Six steps is enough to read as motion
+     without delaying the last group noticeably. */
+  .app.nav-open .nav > .navgroup {
+    animation: ml-drawer-item var(--ml-dur) var(--ml-ease-out) both;
+  }
+  .app.nav-open .nav > .navgroup:nth-child(1) { animation-delay: .07s; }
+  .app.nav-open .nav > .navgroup:nth-child(2) { animation-delay: .10s; }
+  .app.nav-open .nav > .navgroup:nth-child(3) { animation-delay: .13s; }
+  .app.nav-open .nav > .navgroup:nth-child(4) { animation-delay: .16s; }
+  .app.nav-open .nav > .navgroup:nth-child(5) { animation-delay: .19s; }
+  .app.nav-open .nav > .navgroup:nth-child(n+6) { animation-delay: .22s; }
+  @keyframes ml-drawer-item {
+    from { opacity: 0; transform: translateX(-9px); }
+    to   { opacity: 1; transform: none; }
+  }
+
+  /* Drawer rows are navigation targets: give them a real hit area. */
+  .nav a,
+  .navgroup-head {
+    min-height: 42px;
+    display: flex;
+    align-items: center;
+    font-size: 13.5px;
+  }
+  .nav a { padding: 7px 9px; line-height: 1.32; }
+  .navgroup-body { padding-bottom: 5px; }
+  .nav-track {
+    padding: 9px 9px 4px;
+    font-size: 10.5px;
+    letter-spacing: .08em;
+  }
+  .navgroup .ng-chev { transition: transform var(--ml-dur) var(--ml-ease-out); }
+  .navgroup.open > .navgroup-head .ng-chev { transform: rotate(90deg); }
+
+  .mobile-nav-close {
+    display: grid !important;
+    place-items: center;
+    width: 38px; height: 38px;
+    margin-left: auto;
+    border-radius: 11px;
+  }
+  .search-wrap { padding: 6px 2px 8px; }
+
+  body.nav-drawer-open { overflow: hidden; touch-action: none; }
+  body.nav-drawer-open .sidebar { touch-action: pan-y; }
+}
+
+
+/* =========================================================================
+   8 · Motion
+   -------------------------------------------------------------------------
+   Three kinds, deliberately limited:
+     entrance   content rises into place as it scrolls in (scroll-driven where
+                the browser supports it, a one-shot load animation otherwise)
+     press      every tappable surface acknowledges the touch — mobile has no
+                hover, so without this the UI feels dead
+     page       a short cross-fade between pages
+   All transform/opacity only, so they stay on the compositor.
+   ========================================================================= */
+@media (max-width: 980px) {
+
+  /* --- Press feedback --------------------------------------------------- */
+  .prep-topic-card,
+  .card.hover,
+  a.card,
+  .page-nav a,
+  .rm-link {
+    transition:
+      transform var(--ml-dur-fast) var(--ml-ease),
+      box-shadow var(--ml-dur) ease,
+      border-color var(--ml-dur) ease,
+      background var(--ml-dur) ease;
+  }
+  .prep-topic-card:active,
+  .card.hover:active,
+  a.card:active,
+  .page-nav a:active,
+  .rm-link:active {
+    transform: scale(.985);
+    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
+    background: color-mix(in srgb, var(--accent-soft) 30%, var(--surface));
+  }
+  .prep-topic-card:active > .prep-card-arrow {
+    transform: translateX(3px);
+    opacity: .85;
+  }
+  .nav a:active,
+  .toc-rail .toc-list a:active,
+  .office-ribbon a:active { background: var(--accent-soft); }
+
+  /* Hover effects are meaningless on touch and can stick after a tap. */
+  @media (hover: none) {
+    .prep-topic-card:hover,
+    .card.hover:hover,
+    a.card:hover { transform: none; }
+  }
+
+  /* --- Scroll-driven entrance ------------------------------------------ */
+  /* Preferred path: ties the animation to scroll position, so it runs for
+     every card at any scroll depth with no JS and no observer. */
+  @supports (animation-timeline: view()) {
+    .prep-topic-card,
+    .content > .grid > .card,
+    .content > .callout,
+    .prep-hero,
+    .content > .table-wrap,
+    .content > .code-block,
+    .content > .quiz,
+    .content > .diagram {
+      animation: ml-rise linear both;
+      animation-timeline: view();
+      animation-range: entry 2% cover 20%;
+    }
+    @keyframes ml-rise {
+      from { opacity: 0; transform: translateY(14px) scale(.995); }
+      to   { opacity: 1; transform: none; }
+    }
+  }
+
+  /* Fallback: a single staggered entrance for the first screenful. Applied
+     only where scroll-driven animation is unavailable, so the two never
+     double up. */
+  @supports not (animation-timeline: view()) {
+    .content > .eyebrow,
+    .content > h1,
+    .content > .lead,
+    .prep-hero,
+    .content > .callout:nth-of-type(1),
+    .content > .callout:nth-of-type(2) {
+      animation: ml-rise-once var(--ml-dur-slow) var(--ml-ease-out) both;
+    }
+    .content > .eyebrow            { animation-delay: .02s; }
+    .content > h1                  { animation-delay: .06s; }
+    .content > .lead               { animation-delay: .11s; }
+    .prep-hero                     { animation-delay: .16s; }
+    .content > .callout:nth-of-type(1) { animation-delay: .21s; }
+    .content > .callout:nth-of-type(2) { animation-delay: .26s; }
+    @keyframes ml-rise-once {
+      from { opacity: 0; transform: translateY(12px); }
+      to   { opacity: 1; transform: none; }
+    }
+  }
+
+  /* The existing observer-driven reveal keeps working; just make its curve
+     match everything else here. */
+  .soft-reveal,
+  [data-reveal] {
+    transition:
+      opacity var(--ml-dur-slow) ease,
+      transform var(--ml-dur-slow) var(--ml-ease-out);
+  }
+
+  /* --- Page transition -------------------------------------------------- */
+  @supports not (view-transition-name: none) {
+    .main { animation: ml-page-in var(--ml-dur-slow) var(--ml-ease-out) both; }
+    @keyframes ml-page-in {
+      from { opacity: 0; transform: translateY(6px); }
+      to   { opacity: 1; transform: none; }
+    }
+    html.is-leaving .main {
+      opacity: 0;
+      transform: translateY(-4px);
+      transition: opacity var(--ml-dur-fast) ease, transform var(--ml-dur-fast) ease;
+    }
+  }
+
+  /* Momentum scrolling without rubber-banding the whole document. */
+  body { overscroll-behavior-y: none; }
+}
+
+
+/* =========================================================================
+   9 · Reduced motion & print
+   ========================================================================= */
+@media (max-width: 980px) and (prefers-reduced-motion: reduce) {
+  /* Keep the layout work, drop the movement. Elements must still be visible:
+     an animation with `both` fill and 0 duration would otherwise freeze them
+     at opacity 0. */
+  .prep-topic-card,
+  .content > .grid > .card,
+  .content > .callout,
+  .prep-hero,
+  .content > .table-wrap,
+  .content > .code-block,
+  .content > .quiz,
+  .content > .diagram,
+  .content > .eyebrow,
+  .content > h1,
+  .content > .lead,
+  .main,
+  .app.nav-open .nav > .navgroup {
+    animation: none !important;
+    opacity: 1 !important;
+    transform: none !important;
+  }
+  .sidebar,
+  .backdrop,
+  .toc-rail,
+  .toc-rail .toc-list,
+  .toc-toggle .toc-toggle-caret,
+  .office-ribbon a::after { transition-duration: .01ms !important; }
+  .prep-topic-card:active,
+  .card.hover:active,
+  a.card:active,
+  .page-nav a:active { transform: none; }
+  .prep-hero::before,
+  .prep-hero::after { animation: none !important; }
+  .collapse .collapse-body { animation: none !important; }
+  .collapse > summary:not(:has(.chev))::after { transition: none !important; }
+}
+
+@media print {
+  .topbar, .office-ribbon, .toc-rail, .sidebar, .backdrop, .scroll-top { display: none !important; }
+  .content { padding: 0 !important; }
+}
+
+/* =========================================================================
+   TYPE: this section reads at the same size as the rest of the portal
+   =========================================================================
+   These 26 pages used to load a private copy of styles.css and
+   office-theme.css that had drifted about a thousand lines behind the shared
+   ones — it predated the reading-scale system entirely, so nothing here
+   responded to the Display panel's text-size control and the whole section
+   rendered a step or two smaller than every other page. The pages now link
+   ../assets/, so the shared type ladder applies and most of the sizes below
+   are settled by it on specificity alone.
+
+   What is left is the handful of rules in this file that still out-specify the
+   shared theme — either because they tie with it and this file loads last, or
+   because they carry `!important`. They are restated here on the shared ladder
+   rather than deleted in place, so this file keeps owning the phone *layout*
+   (the grids, the padding, the card geometry) and owns none of the type.
+
+   `--reader-font-size` is body copy at the reader's chosen size; the 16.5px
+   step is a title; 14.2px is dense, scanned copy; 12.5px is a meta line. See
+   CARDS 1a–1d in assets/office-theme.css for why those four steps and no
+   others. The breakpoint matches this file's own 980px, not the shared 860px,
+   so the restatement covers exactly the rules it replaces. */
+@media (max-width: 980px) {
+  .content > p,
+  .content > ul,
+  .content > ol,
+  .prep-hero p,
+  .prep-source-grid > div,
+  .collapse .collapse-body,
+  /* Ties with the shared `.content .callout p` on specificity (two classes and
+     a type, both ways) and this file loads last, so the tie has to be settled
+     here rather than left to load order. */
+  .callout .c-body p { font-size: var(--reader-font-size); }
+
+  /* `!important` here answers the `!important` above it in this file — among
+     important declarations specificity still decides, and these tie. */
+  .prep-topic-card h3 { font-size: calc(16.5px * var(--reading-scale, 1)) !important; }
+  .prep-topic-card p { font-size: var(--reader-font-size) !important; }
+  .prep-topic-card .prep-topic-meta { font-size: calc(12.5px * var(--reading-scale, 1)); }
+
+  /* The table keeps this file's 460px min-width — an ML page's tables are wide
+     by nature and scroll on purpose — but not its own text size. */
+  .table-wrap table { font-size: calc(14.2px * var(--reading-scale, 1)); }
+}

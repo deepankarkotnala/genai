@@ -36,11 +36,26 @@
 <link href="assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
 <!-- /Machine Learning brand metadata -->
 <meta content="The regularized objective and second-order expansion, optimal leaf weight derived, learned missing-value directions, GOSS and EFB, ordered boosting, and a working tuning order." name="description"/>
-<link href="assets/styles.css?v=20260727c" rel="stylesheet"/>
-<link href="assets/office-theme.css?v=20260727e" rel="stylesheet"/>
+<!-- Theme before first paint. Without this the document paints with the light
+     tokens and only flips when app.js runs at the end of <body>, which is a
+     white flash on every navigation in dark mode. Mirrors app.js's getTheme()
+     exactly — same key, same "light" default — so the pre-paint value can never
+     disagree with what the scripts apply a moment later. Inline and blocking on
+     purpose: an external file would cost a round trip before first paint. -->
+<script>(function(){try{var t=localStorage.getItem("gp.theme")||"light";document.documentElement.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Page transitions — see the same block in the other page families. `PageRevealEvent` is the only honest test for a CROSS-document view transition, and it has to run pre-paint or the arrival animation starts and is then cancelled. */var d=document.documentElement;if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260801d" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
 <link href="assets/ml-visuals.css?v=20260728a" rel="stylesheet"/>
+<link href="assets/ml-mobile.css?v=20260801a" rel="stylesheet"/>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="../assets/curriculum.js?v=20260804c"></script>
+<script defer src="../assets/page-nav.js?v=20260804c"></script>
 </head>
-<body data-page="ml-18-xgboost-lightgbm-catboost" data-prep-section="ml">
+<body data-curriculum-id="ml-18" data-page="ml-18-xgboost-lightgbm-catboost" data-prep-section="ml">
 <div class="app">
 <aside class="sidebar">
 <div class="brand">
@@ -56,7 +71,7 @@
 <div class="main">
 <header class="topbar">
 <button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
-<div class="crumbs">Machine Learning / Part D / Module 18</div>
+<div class="crumbs">Machine Learning / Part D / <b>Module 18</b></div>
 <button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
 </header>
 <div class="content-wrap">
@@ -66,14 +81,137 @@
 <p class="lead">The default production model for tabular data — so expect deep questions. The second-order expansion is the distinguishing feature most candidates cannot state.</p>
 <div class="meta-row"><span class="pill purple">Prerequisites · Module 17</span><span class="pill">Study time · 10 h</span><span class="pill blue">6 interview questions</span><span class="pill">Production default</span></div>
 <div class="callout key"><div class="c-ico">🎯</div><div class="c-body"><div class="c-title">Your interview goal</div><p>Derive the optimal leaf weight, read the gain formula to explain what lambda and gamma actually do, name what makes LightGBM fast and what CatBoost's ordered boosting fixes, and give a defensible tuning order.</p></div></div>
-<h2 id="what-to-learn">1 · What to learn</h2>
+<h2 id="ground-up">1 · From the ground up</h2>
+<div class="callout plain"><div class="c-ico">🧩</div><div class="c-body"><div class="c-title">In plain words</div><p>All three of these libraries run the boosting loop from the last module. None of them invented a new kind of model. Each one fixed a different practical problem with the textbook version: <strong>XGBoost</strong> built the "keep the tree simple" rule into the maths itself, <strong>LightGBM</strong> made finding a split much faster so it scales to huge data, and <strong>CatBoost</strong> fixed a subtle cheat that spoils the usual way of handling text categories. Knowing which problem each one solves is the whole module.</p></div></div>
+<div class="callout tip">
+<div class="c-ico">🎯</div>
+<div class="c-body"><div class="c-title">How far you need to go for a GenAI interview</div>
+<p>You need to be able to say <strong>what each library fixed</strong> and <strong>why gradient boosting still beats neural networks on tabular data</strong>. That second one is the question you will genuinely be asked. You do <em>not</em> need the objective function, the second-order expansion, or the internals of GOSS and EFB — that is specialist territory and the later sections have it if you ever want it.</p></div>
+</div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>Start with the problem, not the formula</h4><p>Plain gradient boosting works, and it has three annoying gaps that show up the moment you use it on real data.</p><ul>
+<li>Nothing in the maths mentions <strong>how big or complicated the tree is</strong>. You control that from outside with settings, rather than the model weighing it up as part of the job.</li>
+<li>To find the best split it sorts every column and tries every possible cutoff. On millions of rows, that search is where all the time goes.</li>
+<li><strong>Text categories</strong> have to be converted to numbers by hand, and the most effective way of doing that quietly leaks the answer into the features.</li>
+</ul><div class="gu-so"><strong>So what:</strong> those three gaps map one-to-one onto the three libraries. <b>If you can name the gap, you can explain why the library exists</b> — which is much better than reciting a feature list.</div></div>
+<div class="gu-step"><h4>XGBoost: make the model care about staying simple</h4><p>XGBoost writes down what it is really trying to do, and includes complexity in it. Two settings do the work: one charges <strong>rent for every leaf</strong>, so a split has to earn its keep or it is rejected, and one <strong>stops any single leaf predicting an extreme value</strong>.</p><div class="gu-so"><strong>So what:</strong> pruning stopped being an afterthought and became part of what the model optimises. That is the real difference between XGBoost and the older gradient boosting it replaced — <b>"regularised boosting" is a description, not marketing</b>.</div></div>
+<div class="gu-step"><h4>What that regularisation actually does to a leaf</h4><p>Every leaf has to settle on one output number. Left alone it picks whatever fits its rows best. Turn up the penalty and the leaf is pulled <strong>toward zero</strong> — it still leans the same way, just less confidently — and the split that created it looks less impressive, so weak splits stop being worth making.</p><p>The chart below shows exactly that. Same leaf, same data, one setting changed.</p><div class="gu-so"><strong>So what:</strong> regularisation here does two things at once: <b>leaves predict smaller values, and splits have to work harder to justify themselves.</b> That is all you need to say about it.</div></div>
+</div>
+<div class="mlviz">
+<div class="mlviz-title">Turn the penalty up and the leaf picks a smaller number</div>
+<div class="mlviz-scroll">
+<svg viewbox="0 0 660 300" role="img" aria-label="Two parabolas showing a single leaf's objective as a function of its output weight. With lambda zero the minimum sits at w equals 1.5 with objective minus 4.5. With lambda equal to four the minimum moves to w equals 0.75 with objective minus 2.25, a smaller leaf value and a smaller gain.">
+<g class="mv-gridline"><path d="M90 240.9 H620"></path><path d="M90 200 H620"></path><path d="M90 159.1 H620"></path><path d="M90 100 H620"></path></g>
+<path class="mv-axis" d="M172.3 50 V262"></path>
+<path class="mv-axis" d="M90 159.1 H620"></path>
+<text class="mv-lbl-sm" x="628" y="163" text-anchor="end">the leaf's output →</text>
+<text class="mv-lbl-xs" x="166" y="152" text-anchor="end">0</text>
+<text class="mv-lbl-sm" x="40" y="120" text-anchor="middle" transform="rotate(-90 40 120)">how bad the leaf's choice is</text>
+
+<!-- lambda = 0 -->
+<path class="mv-str-5" stroke-width="2.8" fill="none" stroke-linecap="round" d="M90 95.4 Q 131 130, 172.3 159.1 Q 213.4 184, 254.5 204.5 Q 295.7 221, 336.8 231.8 Q 377.9 239, 419 240.9 Q 460.1 239, 501.2 231.8 Q 542.3 221, 583.4 204.5"></path>
+<circle class="mv-fill-5 mv-pulse" cx="419" cy="240.9" r="5.5"></circle>
+<path class="mv-str-5 mv-dash" stroke-width="1.4" d="M419 240.9 V159.1"></path>
+<text class="mv-lbl mv-fill-5" x="430" y="256">no penalty</text>
+
+<!-- lambda = 4 -->
+<path class="mv-str-1" stroke-width="2.8" fill="none" stroke-linecap="round" d="M90 86.4 Q 131 122, 172.3 159.1 Q 192.8 172, 213.4 181.8 Q 234 190, 254.5 195.5 Q 275 199, 295.7 200 Q 316 199, 336.8 195.5 Q 377.9 181, 419 159.1 Q 460.1 128, 501.2 86.4"></path>
+<circle class="mv-fill-1 mv-pulse" cx="295.7" cy="200" r="5.5"></circle>
+<path class="mv-str-1 mv-dash" stroke-width="1.4" d="M295.7 200 V159.1"></path>
+<text class="mv-lbl mv-fill-1" x="296" y="184" text-anchor="middle">penalty on</text>
+
+<text class="mv-lbl-sm" x="204" y="68">the leaf must pick one output number</text>
+<text class="mv-lbl-xs" x="204" y="84">the lowest point of the curve is the number it picks</text>
+<text class="mv-mono-sm mv-fill-5" x="188" y="250">no penalty   → the leaf picks 1.50</text>
+<text class="mv-mono-sm mv-fill-1" x="188" y="266">penalty on  → the leaf picks 0.75, and gains less</text>
+</svg>
+</div>
+<div class="mv-keys"><span><i class="mv-k5"></i>no penalty</span><span><i class="mv-k1"></i>penalty turned up</span></div>
+<p class="mlviz-cap">Turning the penalty up makes the curve steeper, which pulls its lowest point closer to zero and makes the best it can manage less impressive. Those are the two effects of regularisation, and they are all you need: <b>leaves predict smaller values, and splits have to work harder to justify themselves.</b> A leaf resting on very few rows gets shrunk automatically for the same reason.</p>
+</div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>LightGBM: stop checking every value, and grow where it pays</h4><p>LightGBM leaves the maths alone and attacks the <em>cost of finding a split</em>. Two ideas matter, two are refinements.</p><ul>
+<li><strong>Bucket the numbers.</strong> Instead of trying every distinct value of a column, sort them into around 255 buckets once, up front, and only try those. Same answer, far fewer checks — and the buckets get reused at every node.</li>
+<li><strong>Grow where the gain is.</strong> Rather than filling in each level of the tree before going deeper, always split whichever leaf anywhere in the tree promises the biggest improvement. Same number of leaves, lower error — and much deeper, lopsided trees.</li>
+<li>Two refinements you can mention by name: it <em>samples away rows the model already handles well</em>, and it <em>bundles columns that are never non-zero at the same time</em>. Both are speed tricks.</li>
+</ul><div class="gu-so"><strong>So what:</strong> the growth style is the trade to remember. It reaches a lower error for the same number of leaves, and it <strong>overfits small datasets much more easily</strong>. That is why <code>num_leaves</code> is LightGBM's critical setting, and why capping depth alone will not save you. <b>On a few thousand rows, prefer XGBoost.</b></div></div>
+</div>
+<div class="mlviz">
+<div class="mlviz-title">Level-wise fills each depth; leaf-wise chases the best gain</div>
+<div class="mlviz-scroll">
+<svg viewbox="0 0 660 264" role="img" aria-label="Left: a level-wise grown tree, balanced and symmetric with all leaves at the same depth. Right: a leaf-wise grown tree with the same number of leaves but one deep unbalanced branch.">
+<!-- LEFT: level-wise -->
+<g class="mv-in" style="--d:.05s">
+  <rect class="mv-box" x="16" y="20" width="304" height="196" rx="14"></rect>
+  <text class="mv-lbl mv-fill-2" x="30" y="42">level-wise — XGBoost's default</text>
+  <text class="mv-lbl-xs" x="30" y="57">finish depth d before starting depth d+1</text>
+  <g class="mv-str-2" stroke-width="1.5">
+    <path d="M168 88 L118 122"></path><path d="M168 88 L218 122"></path>
+    <path d="M118 146 L88 180"></path><path d="M118 146 L148 180"></path>
+    <path d="M218 146 L188 180"></path><path d="M218 146 L248 180"></path>
+  </g>
+  <g class="mv-fill-2"><circle cx="168" cy="80" r="11"></circle><circle cx="118" cy="134" r="11"></circle><circle cx="218" cy="134" r="11"></circle></g>
+  <g class="mv-box-2"><rect x="74" y="180" width="28" height="20" rx="5"></rect><rect x="134" y="180" width="28" height="20" rx="5"></rect><rect x="174" y="180" width="28" height="20" rx="5"></rect><rect x="234" y="180" width="28" height="20" rx="5"></rect></g>
+  <text class="mv-lbl-xs" x="272" y="86">depth 1</text>
+  <text class="mv-lbl-xs" x="272" y="140">depth 2</text>
+  <text class="mv-lbl-xs" x="272" y="194">depth 3</text>
+  <text class="mv-lbl-xs mv-fill-2" x="30" y="210">balanced · 4 leaves · every leaf at depth 3</text>
+</g>
+<!-- RIGHT: leaf-wise -->
+<g class="mv-in" style="--d:.30s">
+  <rect class="mv-box" x="340" y="20" width="304" height="196" rx="14"></rect>
+  <text class="mv-lbl mv-fill-1" x="354" y="42">leaf-wise — LightGBM's default</text>
+  <text class="mv-lbl-xs" x="354" y="57">always split the highest-gain leaf, anywhere</text>
+  <g class="mv-str-1" stroke-width="1.5">
+    <path d="M470 88 L420 122"></path><path d="M470 88 L536 122"></path>
+    <path d="M420 146 L396 180"></path><path d="M420 146 L452 180"></path>
+    <path d="M452 188 L432 216"></path><path d="M452 188 L478 216"></path>
+  </g>
+  <g class="mv-fill-1"><circle cx="470" cy="80" r="11"></circle><circle cx="420" cy="134" r="11"></circle><circle cx="452" cy="180" r="9"></circle></g>
+  <g class="mv-box-1"><rect x="382" y="180" width="28" height="20" rx="5"></rect><rect x="418" y="216" width="28" height="20" rx="5"></rect><rect x="464" y="216" width="28" height="20" rx="5"></rect><rect x="522" y="122" width="28" height="20" rx="5"></rect></g>
+  <text class="mv-lbl-xs mv-fill-1" x="556" y="136">split early,</text>
+  <text class="mv-lbl-xs mv-fill-1" x="556" y="149">never revisited</text>
+  <text class="mv-lbl-xs mv-fill-1" x="354" y="254">same 4 leaves · depth 1 to 4 · lower loss, easier to overfit</text>
+</g>
+</svg>
+</div>
+<p class="mlviz-cap">Both trees have four leaves, so both cost the same to store and evaluate — but the right-hand one spent its budget where the loss was largest instead of spreading it evenly. <b>That is strictly better on large data and strictly more dangerous on small data</b>, which is the entire practical difference between the two libraries' defaults.</p>
+</div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>CatBoost: the cheat nobody notices</h4><p>The most effective way to turn a category into a number is to replace it with the average outcome for that category. It works well and it <em>cheats</em>: the average for "London" includes the very row you are about to predict, so the feature already contains a piece of that row's answer. Training scores look wonderful and validation does not follow.</p><p>CatBoost's fix is simple to state. Shuffle the rows into a random order, and when encoding any row, <strong>only use the rows that came before it</strong>. No row can ever see its own answer. It then applies the same reasoning to boosting itself, so a row's error is always measured by a model that never saw that row.</p><div class="gu-so"><strong>So what:</strong> CatBoost's headline is "handles categories natively", but the substance is that it handles them <strong>without cheating</strong>. If you are asked why target encoding needs care, this leak and this fix is the answer — not "just use one-hot instead".</div></div>
+<div class="gu-step"><h4>Choosing between them, honestly</h4><p>On tabular data with sensible settings, all three land close enough together that the choice is usually practical rather than about accuracy:</p><ul>
+<li><strong>Lots of text categories with many distinct values</strong> → CatBoost, for the encoding alone. Strong defaults, so it often wins with little tuning.</li>
+<li><strong>Large data, training time matters</strong> → LightGBM, and spend your attention on <code>num_leaves</code>.</li>
+<li><strong>Small or medium data, want predictable behaviour</strong> → XGBoost, which is harder to blow up.</li>
+</ul><div class="gu-so"><strong>So what:</strong> the answer that scores is <em>"they are the same algorithm with different engineering, so I choose on the shape of the data and how much tuning time I have"</em>. <b>Claiming one is simply the most accurate is the trap.</b></div></div>
+<div class="gu-step"><h4>And the question you will actually be asked</h4><p>"Why not just use a neural network on tabular data?" Three reasons, and they are the same three every time:</p><ul>
+<li><strong>Your columns are already meaningful features.</strong> Someone designed that database. There is little left to learn, and learning features is what neural networks are for.</li>
+<li><strong>Columns have no structure to exploit.</strong> Neural networks win where neighbouring pixels or nearby words are related. Column 3 sitting next to column 4 in a table means nothing.</li>
+<li><strong>The data is small.</strong> Tables hold thousands or millions of rows, not billions of tokens.</li>
+</ul><div class="gu-so"><strong>So what:</strong> the wrong answer is "neural networks are more advanced". <b>The right answer names the conditions a neural network needs and points out that tabular problems usually meet none of them</b> — which is why gradient boosting is still the default in 2026. Module 23 follows this thread properly.</div></div>
+</div>
+<div class="gu-analogy"><b>Analogy</b> — three builders working from the same blueprint. The first writes the cost of materials into the plan itself, so the design cannot sprawl without the budget objecting. The second stops measuring every millimetre and works to a coarser ruler, then puts effort wherever the building is least finished instead of completing each floor in turn. The third notices the surveyor has been reading tomorrow's measurements to decide today's, and insists every measurement use only what was known at the time. <b>None of them changed the blueprint.</b></div>
+<div class="gu-jargon">
+<div><strong>regularised objective</strong><span>building "keep the tree simple" into what the model optimises. XGBoost's core contribution.</span></div>
+<div><strong>gamma / min_split_loss</strong><span>the minimum improvement a split must deliver. Rent charged per leaf.</span></div>
+<div><strong>lambda</strong><span>the penalty on how extreme a leaf's output may be. Pulls leaf values toward zero.</span></div>
+<div><strong>min_child_weight</strong><span>a floor on how much evidence a leaf must rest on before it is allowed to exist.</span></div>
+<div><strong>histogram binning</strong><span>bucketing each column into ~255 groups so split search checks 255 options, not thousands.</span></div>
+<div><strong>level-wise</strong><span>fill each depth before going deeper. Balanced trees. XGBoost's default.</span></div>
+<div><strong>leaf-wise</strong><span>always split the most promising leaf anywhere. Deeper, lopsided, lower error, overfits more easily. LightGBM's default.</span></div>
+<div><strong>num_leaves</strong><span>LightGBM's real capacity control. Because growth is leaf-wise, capping depth alone does not bound the tree.</span></div>
+<div><strong>target encoding</strong><span>replacing a category with its average outcome. Effective, and leaky if computed over all rows.</span></div>
+<div><strong>ordered encoding</strong><span>CatBoost's fix — encode each row using only rows earlier in a random shuffle, so nothing sees its own answer.</span></div>
+<div><strong>oblivious trees</strong><span>CatBoost's symmetric trees, using the same test across a whole level. Weaker individually, very fast to run.</span></div>
+</div>
+<h2 id="what-to-learn">2 · What to learn</h2>
 <h3>XGBoost</h3>
 <ol><li>The <strong>regularized objective</strong>: loss + <code>γT + ½λΣw_j²</code> — regularization built into the objective, not bolted on.</li><li>The <strong>second-order Taylor expansion</strong> using gradient <code>gᵢ</code> and Hessian <code>hᵢ</code>.</li><li>The derived <strong>optimal leaf weight</strong> <code>w_j* = −G_j/(H_j + λ)</code> and the gain / similarity score.</li><li>The split-gain formula, and how <code>γ</code> acts as a minimum-gain threshold — pre-pruning inside the split criterion.</li><li><strong>Sparsity-aware split finding</strong>: the learned default direction for missing values.</li><li>The <strong>weighted quantile sketch</strong> for approximate split finding on large data.</li><li>The histogram-based method (<code>tree_method='hist'</code>) and why it is now the default.</li><li>Systems engineering: column block structure, cache-aware access, out-of-core computation — the “why is it fast” answer.</li><li>Key hyperparameters and what each controls, plus early stopping and monotonic constraints.</li></ol>
 <h3>LightGBM</h3>
 <ol><li><strong>Leaf-wise</strong> (best-first) growth versus XGBoost’s level-wise growth, and the accuracy / overfitting implication.</li><li><code>num_leaves</code> as the primary capacity control, and why <code>max_depth</code> is secondary.</li><li><strong>GOSS</strong> (Gradient-based One-Side Sampling) — keep large-gradient samples, subsample small-gradient ones.</li><li><strong>EFB</strong> (Exclusive Feature Bundling) — bundle mutually-exclusive sparse features.</li><li>Native categorical support, and where it overfits more easily.</li></ol>
 <h3>CatBoost</h3>
 <ol><li><strong>Ordered boosting</strong> — how it addresses the prediction-shift / target-leakage problem in standard boosting.</li><li><strong>Ordered target statistics</strong> for categorical encoding without leakage.</li><li><strong>Oblivious (symmetric) trees</strong> and their speed and regularization consequences.</li><li>Why it is often the best default on categorical-heavy data with minimal tuning.</li></ol>
-<h2 id="intuitions">2 · Core intuitions</h2>
+<h2 id="intuitions">3 · Core intuitions</h2>
 <h3>XGBoost’s central idea: regularization belongs in the objective</h3>
 <p>Standard gradient boosting fits a tree to the pseudo-residuals and then, separately, applies heuristics like depth limits. XGBoost writes down a single objective including tree complexity, where <code>T</code> is the number of leaves and <code>w_j</code> the leaf weights, then solves for the optimal tree <em>under that objective</em>. So leaf count and leaf magnitude are penalized by construction, and split decisions already account for complexity cost.</p>
 <h3>The second-order expansion is what makes it work</h3>
@@ -94,7 +232,7 @@
 <h3>Where all three still lose, in 2026</h3>
 <p>They cannot extrapolate beyond the training range, so trending targets need detrending or explicit trend features. They handle genuinely multimodal data (text + image + tabular) only if you convert the other modalities into features first. They need enough data — on a few hundred rows a regularized linear model often wins. And they are not naturally calibrated, so add Platt or isotonic calibration if you need honest probabilities.</p>
 <p>On what is new: <strong>tabular foundation models</strong> — in-context learners such as the TabPFN line — emerged as a credible approach for small tabular datasets and are worth knowing about, but gradient-boosted trees remain the default baseline to beat on medium-to-large tabular problems. The defensible interview position is to name the newer approaches while treating GBDTs as the benchmark.</p>
-<h2 id="formulas">3 · Whiteboard formulas</h2>
+<h2 id="formulas">4 · Whiteboard formulas</h2>
 <div class="code-block" data-reveal="">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>xgboost_objective.txt</span><button class="copy-btn">Copy</button></div>
 <pre><code>=== XGBoost objective ===
@@ -116,15 +254,15 @@ For MSE:       g_i = yhat_i - y_i  ,  h_i = 1     (-> reduces to plain gradient 
 
 min_child_weight thresholds SUM(h) in a leaf - NOT the sample count</code></pre>
 </div>
-<h2 id="hyperparams">4 · Hyperparameter reference and tuning order</h2>
+<h2 id="hyperparams">5 · Hyperparameter reference and tuning order</h2>
 <div class="table-wrap"><table><thead><tr><th>Parameter</th><th>Controls</th><th>Typical range</th><th>Direction</th></tr></thead><tbody><tr><td><code>learning_rate</code></td><td>Step size</td><td>0.01–0.3</td><td>↓ = better generalization, more trees needed</td></tr><tr><td><code>n_estimators</code></td><td>Number of trees</td><td>100–5000</td><td>Set high + <strong>early stopping</strong></td></tr><tr><td><code>max_depth</code></td><td>Tree depth (XGB)</td><td>3–10</td><td>↑ = more variance</td></tr><tr><td><code>num_leaves</code></td><td>Capacity (LGBM)</td><td>15–255</td><td>↑ = more variance; keep &lt; 2^max_depth</td></tr><tr><td><code>min_child_weight</code></td><td>Min Σhessian per leaf</td><td>1–20</td><td>↑ = more regularization</td></tr><tr><td><code>min_child_samples</code></td><td>Min rows per leaf (LGBM)</td><td>5–100</td><td>↑ = more regularization</td></tr><tr><td><code>subsample</code></td><td>Row sampling per tree</td><td>0.6–1.0</td><td>&lt; 1 regularizes</td></tr><tr><td><code>colsample_bytree</code></td><td>Feature sampling per tree</td><td>0.5–1.0</td><td>&lt; 1 regularizes + decorrelates</td></tr><tr><td><code>gamma</code></td><td>Min gain to split</td><td>0–5</td><td>↑ = more pruning</td></tr><tr><td><code>reg_lambda</code></td><td>L2 on leaf weights</td><td>0–10</td><td>↑ = smaller leaf values</td></tr><tr><td><code>reg_alpha</code></td><td>L1 on leaf weights</td><td>0–10</td><td>↑ = sparser leaves</td></tr><tr><td><code>scale_pos_weight</code></td><td>Class imbalance</td><td><code>n_neg/n_pos</code></td><td>For imbalanced binary</td></tr></tbody></table></div>
 <div class="callout"><div class="c-ico">🧭</div><div class="c-body"><div class="c-title">A tuning order that works</div><p>Fix a moderate <code>learning_rate</code> (0.1) with early stopping → tune capacity (<code>max_depth</code>/<code>num_leaves</code>, <code>min_child_weight</code>) → tune sampling (<code>subsample</code>, <code>colsample_bytree</code>) → tune regularization (<code>reg_lambda</code>, <code>gamma</code>) → finally lower the learning rate and raise <code>n_estimators</code> for the production model.</p></div></div>
-<h2 id="comparison">5 · Library comparison</h2>
+<h2 id="comparison">6 · Library comparison</h2>
 <div class="table-wrap"><table><thead><tr><th></th><th>XGBoost</th><th>LightGBM</th><th>CatBoost</th></tr></thead><tbody><tr><td>Tree growth</td><td>Level-wise (<code>hist</code> default now)</td><td><strong>Leaf-wise</strong> (best-first)</td><td><strong>Oblivious / symmetric</strong></td></tr><tr><td>Speed on large data</td><td>Fast</td><td><strong>Fastest</strong></td><td>Fast</td></tr><tr><td>Small-data overfitting</td><td>Moderate</td><td><strong>Higher</strong> (leaf-wise)</td><td><strong>Lowest</strong> (symmetric trees)</td></tr><tr><td>Categorical support</td><td>Limited (needs encoding)</td><td>Native</td><td><strong>Best</strong> (ordered target stats)</td></tr><tr><td>Missing values</td><td>Learned default direction</td><td>Native</td><td>Native</td></tr><tr><td>Key capacity knob</td><td><code>max_depth</code></td><td><code>num_leaves</code></td><td><code>depth</code></td></tr><tr><td>Signature techniques</td><td>2nd-order + regularized objective, sparsity-aware splits, quantile sketch</td><td>GOSS, EFB, leaf-wise</td><td>Ordered boosting, ordered target statistics</td></tr><tr><td>Tuning effort</td><td>Moderate</td><td>Higher</td><td><strong>Lowest</strong></td></tr><tr><td>Inference speed</td><td>Fast</td><td>Fast</td><td><strong>Fastest</strong> (oblivious trees)</td></tr><tr><td>Pick it when</td><td>Default, mature, best-documented</td><td>Large data, need speed</td><td>Many categoricals, minimal tuning</td></tr></tbody></table></div>
-<h2 id="drill">6 · Hands-on drill</h2>
+<h2 id="drill">7 · Hands-on drill</h2>
 <ol><li><strong>Compute the XGBoost gain formula by hand</strong> for a small toy split with <code>λ = 1</code> and <code>γ = 0</code>. Then set <code>γ = 2</code> and confirm the split is rejected. This exercise makes <code>γ</code> and <code>λ</code> concrete.</li><li>Train XGBoost, LightGBM and CatBoost on the same tabular dataset with defaults, then after tuning. Record accuracy and wall-clock training time for all six runs.</li><li>Insert missing values deliberately and confirm all three train without imputation. Compare their scores against an explicitly-imputed pipeline.</li><li>Take a dataset with several high-cardinality categoricals. Compare one-hot + XGBoost, out-of-fold target encoding + XGBoost, LightGBM native categorical, and CatBoost defaults. <strong>CatBoost usually wins with the least effort</strong> — get that result in your own notebook.</li><li>Demonstrate LightGBM’s leaf-wise overfitting: train with <code>num_leaves = 255</code> on a small dataset and watch the validation gap open. Then constrain <code>num_leaves</code> and <code>min_child_samples</code>.</li><li>Fit with <code>eval_set</code> and early stopping; plot the validation curve and note the selected iteration.</li><li>Plot a calibration curve for tuned XGBoost, then apply isotonic regression on a held-out set and re-plot.</li></ol>
 <div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">Gotchas that fail candidates</div><ul><li><strong>Not knowing XGBoost uses the second derivative.</strong> This is <em>the</em> distinguishing feature.</li><li><strong>Saying <code>min_child_weight</code> is a row count.</strong> It is the sum of Hessians.</li><li><strong>Setting <code>num_leaves</code> above <code>2^max_depth</code></strong> in LightGBM, so the depth limit does nothing.</li><li><strong>Not knowing what makes LightGBM fast</strong> — GOSS, EFB, histogram binning, leaf-wise growth.</li><li><strong>Not knowing what CatBoost’s ordered boosting solves</strong> — prediction shift / target leakage.</li><li><strong>Grid-searching <code>n_estimators</code></strong> rather than using early stopping.</li><li><strong>Both setting <code>scale_pos_weight</code> and oversampling.</strong></li><li><strong>Assuming boosted probabilities are calibrated.</strong></li><li><strong>Reaching for a neural net on tabular data</strong> without first establishing a GBDT baseline.</li></ul></div></div>
-<h2 id="questions">7 · Interview questions</h2>
+<h2 id="questions">8 · Interview questions</h2>
 <div class="prep-toolbar" data-sticky-prep=""><label class="prep-filter"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><input data-question-filter="" placeholder="Filter these questions…"/></label><button class="btn ghost" data-expand-answers="" type="button">Open all</button><span class="prep-count" data-question-count="">6 questions</span></div>
 <section aria-label="XGBoost, LightGBM and CatBoost interview questions" class="prep-question-list">
 <details class="prep-question" data-question="what does xgboost add over standard gradient boosting" data-tags="XGBoost second order regularized objective">
@@ -146,15 +284,16 @@ min_child_weight thresholds SUM(h) in a leaf - NOT the sample count</code></pre>
 <summary><span class="prep-q-no">06</span><span class="prep-q-title">Would you use a neural network instead of XGBoost on tabular data in 2026?<span class="prep-tags"><span>applied</span><span>judgment</span><span>tabular</span><span>trap</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>Usually not, and I would want a specific reason to. On medium-to-large tabular data, gradient-boosted trees remain the strongest default: axis-aligned splits match how tabular features actually behave, they handle mixed types and missing values natively, they need no scaling, they train in minutes, and they typically match or beat neural approaches while requiring far less tuning — a finding that has held up across repeated benchmark studies.</p><p>I would consider a neural approach when: the problem is genuinely <strong>multimodal</strong> (tabular plus text or images), where a network can learn a joint representation end to end; there are <strong>very high-cardinality categoricals</strong> where learned embeddings capture structure that encoding schemes lose; I want <strong>transfer learning</strong> from a pretrained model; the target is <strong>highly structured</strong> (sequences, graphs); or I need a single end-to-end differentiable system for a downstream task.</p><p>It is also worth naming what is new: <strong>tabular foundation models</strong> — in-context learners of the TabPFN family — became a credible option for small tabular datasets, and using <strong>LLM-derived embeddings of free-text columns as features inside a GBDT</strong> is now a standard and very effective hybrid.</p><p>My practical position is that GBDTs are the baseline any alternative must beat, and I would require a measured win on a properly designed validation split before choosing anything more complex.</p><div class="prep-say"><strong>30-second version</strong><p>Usually not — GBDTs match tabular structure, need no scaling, and win with less tuning. Go neural for multimodal inputs, very high-cardinality categoricals needing embeddings, or transfer learning. And the strongest hybrid is text embeddings as features inside a GBDT.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Judgment plus currency. The archetypal 2026 question: they want to see that you know the newer options <em>and</em> that you will not abandon a strong baseline for novelty. The embeddings-as-features hybrid shows you have actually thought about it.</p></div></div></details>
 </section>
-<div class="page-nav"><a href="17-boosting-gradient-boosting.html"><div class="dir">← Previous</div><div class="ttl">Boosting I: AdaBoost &amp; GBM</div></a><a class="next" href="19-clustering-dimensionality-reduction.html"><div class="dir">Next →</div><div class="ttl">Clustering &amp; Dimensionality Reduction</div></a></div>
+<div class="page-nav" data-page-nav><a href="17-boosting-gradient-boosting.html"><div class="dir">← Previous</div><div class="ttl">Boosting I: AdaBoost &amp; GBM</div></a><a class="next" href="19-clustering-dimensionality-reduction.html"><div class="dir">Next →</div><div class="ttl">Clustering &amp; Dimensionality Reduction</div></a></div>
 </main>
 <div class="toc-rail"><nav class="toc"></nav></div>
 </div>
 </div>
 </div>
-<script src="assets/app.js?v=20260727c"></script>
-<script src="assets/ml-sitenav.js?v=20260727c"></script>
-<script src="assets/enhance.js?v=20260727c"></script>
+<script src="assets/app.js?v=20260731b"></script>
+<script src="assets/ml-sitenav.js?v=20260801b"></script>
+<script src="assets/enhance.js?v=20260801a"></script>
 <script src="assets/interview-prep.js?v=20260727c"></script>
+<script src="assets/ml-mobile.js?v=20260728c"></script>
 </body>
 </html>

@@ -36,11 +36,26 @@
 <link href="assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
 <!-- /Machine Learning brand metadata -->
 <meta content="The minimum maths that unlocks all of ML: dot products, gradients, convexity, Bayes, and maximum likelihood as the loss factory that generates MSE and log-loss." name="description"/>
-<link href="assets/styles.css?v=20260727c" rel="stylesheet"/>
-<link href="assets/office-theme.css?v=20260727e" rel="stylesheet"/>
+<!-- Theme before first paint. Without this the document paints with the light
+     tokens and only flips when app.js runs at the end of <body>, which is a
+     white flash on every navigation in dark mode. Mirrors app.js's getTheme()
+     exactly — same key, same "light" default — so the pre-paint value can never
+     disagree with what the scripts apply a moment later. Inline and blocking on
+     purpose: an external file would cost a round trip before first paint. -->
+<script>(function(){try{var t=localStorage.getItem("gp.theme")||"light";document.documentElement.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Page transitions — see the same block in the other page families. `PageRevealEvent` is the only honest test for a CROSS-document view transition, and it has to run pre-paint or the arrival animation starts and is then cancelled. */var d=document.documentElement;if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260801d" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
 <link href="assets/ml-visuals.css?v=20260728a" rel="stylesheet"/>
+<link href="assets/ml-mobile.css?v=20260801a" rel="stylesheet"/>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="../assets/curriculum.js?v=20260804c"></script>
+<script defer src="../assets/page-nav.js?v=20260804c"></script>
 </head>
-<body data-page="ml-01-math-statistics" data-prep-section="ml">
+<body data-curriculum-id="ml-01" data-page="ml-01-math-statistics" data-prep-section="ml">
 <div class="app">
 <aside class="sidebar">
 <div class="brand">
@@ -56,7 +71,7 @@
 <div class="main">
 <header class="topbar">
 <button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
-<div class="crumbs">Machine Learning / Part A / Module 01</div>
+<div class="crumbs">Machine Learning / Part A / <b>Module 01</b></div>
 <button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
 </header>
 <div class="content-wrap">
@@ -233,15 +248,16 @@ Standard error       SE = σ/√n
 <summary><span class="prep-q-no">09</span><span class="prep-q-title">Your A/B test on the new model gives p = 0.03. What does that entitle you to say — and what does it not?<span class="prep-tags"><span>2026</span><span>experimentation</span><span>trap</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>It entitles me to say: <em>if the new model were truly no different, data at least this extreme would occur about 3% of the time.</em> That is all. It is <strong>not</strong> a 3% probability that the null hypothesis is true, and it is <strong>not</strong> a 97% probability that the new model is better — those are the two misstatements that get flagged.</p><p>What I would actually report is the <strong>effect size with a confidence interval</strong>, because that is the decision-relevant object. “+0.4% conversion, 95% CI [+0.05%, +0.75%]” tells you both that it is positive and that it might be small; a bare p-value tells you neither. Then the distinction that matters commercially: <strong>statistical significance is not practical significance</strong>. A tiny lift can be significant at large <code>n</code> and still not cover the inference cost and on-call burden of the new model, so the decision threshold should be a minimum detectable effect agreed <em>before</em> the test.</p><p>I would also raise the things that make a p-value untrustworthy in practice: peeking at results daily inflates the false-positive rate badly unless you use a sequential test; testing many metrics or many segments needs a multiple-comparisons correction or you will find a winner by luck; and the randomisation unit must match the interference structure — per-user, not per-request, when a user's own history affects their later experience.</p><div class="prep-say"><strong>30-second version</strong><p>Only that data this extreme would be unlikely if there were no true difference. It is not the probability the null is true. I would report the effect size and its confidence interval, check the lift against a pre-agreed minimum detectable effect, and confirm nobody peeked daily or tested twenty metrics without correction.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Statistical literacy plus experiment hygiene. Model launches go through A/B tests, so this now appears in ML rounds and not only in analytics ones. Naming peeking and multiple comparisons unprompted is the differentiator.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> “The overall result is flat but it wins strongly for mobile users. Do you ship it for mobile?” — treat that as a hypothesis, not a finding. Post-hoc segment discovery on a flat overall result is the classic multiple-comparisons trap. Pre-register the mobile hypothesis and run a confirmatory test on fresh traffic; if the mechanism is plausible and the segment was defined in advance, that is a much stronger case.</div></div></details>
 </section>
-<div class="page-nav"><a href="00-interview-landscape.html"><div class="dir">← Previous</div><div class="ttl">Interview Landscape &amp; Setup</div></a><a class="next" href="02-algorithm-taxonomy.html"><div class="dir">Next →</div><div class="ttl">Algorithm Taxonomy</div></a></div>
+<div class="page-nav" data-page-nav><a href="00-interview-landscape.html"><div class="dir">← Previous</div><div class="ttl">Interview Landscape &amp; Setup</div></a><a class="next" href="02-algorithm-taxonomy.html"><div class="dir">Next →</div><div class="ttl">Algorithm Taxonomy</div></a></div>
 </main>
 <div class="toc-rail"><nav class="toc"></nav></div>
 </div>
 </div>
 </div>
-<script src="assets/app.js?v=20260727c"></script>
-<script src="assets/ml-sitenav.js?v=20260727c"></script>
-<script src="assets/enhance.js?v=20260727c"></script>
+<script src="assets/app.js?v=20260731b"></script>
+<script src="assets/ml-sitenav.js?v=20260801b"></script>
+<script src="assets/enhance.js?v=20260801a"></script>
 <script src="assets/interview-prep.js?v=20260727c"></script>
+<script src="assets/ml-mobile.js?v=20260728c"></script>
 </body>
 </html>

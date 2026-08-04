@@ -36,11 +36,26 @@
 <link href="assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
 <!-- /Machine Learning brand metadata -->
 <meta content="Logistic regression is a one-layer network, LLM pretraining is maximum likelihood, benchmark contamination is data leakage — and the hybrid architecture that wins in practice." name="description"/>
-<link href="assets/styles.css?v=20260727c" rel="stylesheet"/>
-<link href="assets/office-theme.css?v=20260727e" rel="stylesheet"/>
+<!-- Theme before first paint. Without this the document paints with the light
+     tokens and only flips when app.js runs at the end of <body>, which is a
+     white flash on every navigation in dark mode. Mirrors app.js's getTheme()
+     exactly — same key, same "light" default — so the pre-paint value can never
+     disagree with what the scripts apply a moment later. Inline and blocking on
+     purpose: an external file would cost a round trip before first paint. -->
+<script>(function(){try{var t=localStorage.getItem("gp.theme")||"light";document.documentElement.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Page transitions — see the same block in the other page families. `PageRevealEvent` is the only honest test for a CROSS-document view transition, and it has to run pre-paint or the arrival animation starts and is then cancelled. */var d=document.documentElement;if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260801d" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
 <link href="assets/ml-visuals.css?v=20260728a" rel="stylesheet"/>
+<link href="assets/ml-mobile.css?v=20260801a" rel="stylesheet"/>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="../assets/curriculum.js?v=20260804c"></script>
+<script defer src="../assets/page-nav.js?v=20260804c"></script>
 </head>
-<body data-page="ml-23-bridge-neural-networks-genai" data-prep-section="ml">
+<body data-curriculum-id="ml-23" data-page="ml-23-bridge-neural-networks-genai" data-prep-section="ml">
 <div class="app">
 <aside class="sidebar">
 <div class="brand">
@@ -56,7 +71,7 @@
 <div class="main">
 <header class="topbar">
 <button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
-<div class="crumbs">Machine Learning / Part F / Module 23</div>
+<div class="crumbs">Machine Learning / Part F / <b>Module 23</b></div>
 <button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
 </header>
 <div class="content-wrap">
@@ -66,10 +81,94 @@
 <p class="lead">Deliberately short. Its job is to make the transitions explicit — so your classical ML knowledge reads as directly relevant in an AI or GenAI interview, not as a separate silo.</p>
 <div class="meta-row"><span class="pill purple">Prerequisites · Modules 06–09, 18</span><span class="pill">Study time · 4 h</span><span class="pill blue">3 interview questions</span><span class="pill">AI/GenAI loops</span></div>
 <div class="callout key"><div class="c-ico">🎯</div><div class="c-body"><div class="c-title">Your interview goal</div><p>Frame deep learning as “the same output layer plus learned features”, state that LLM pretraining is MLE with cross-entropy, and describe the hybrid architecture that combines both.</p></div></div>
-<h2 id="carries-over">1 · The concepts that carry over unchanged</h2>
+<h2 id="ground-up">1 · From the ground up</h2>
+<div class="callout plain"><div class="c-ico">🧩</div><div class="c-body"><div class="c-title">In plain words</div><p>It is easy to feel that neural networks and large language models are a separate subject, and that everything in this course was the warm-up. They are not, and it was not. A neural network is logistic regression stacked and repeated. Training a language model is maximum likelihood — the same loss factory from Module 01. Benchmark contamination is data leakage wearing a new name. <strong>The vocabulary changes; almost none of the ideas do.</strong></p></div></div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>Logistic regression is already a neuron</h4><p>Logistic regression takes your features, multiplies each by a weight, adds them up with a bias term, and squashes the result through a sigmoid. That is <code>σ(w·x + b)</code>.</p><p>Now open any description of a single unit in a neural network. It takes its inputs, multiplies each by a weight, adds them up with a bias, and passes the result through an activation function. It is the same sentence.</p><div class="gu-so"><strong>So what:</strong> <b>you learned the building block of deep learning in Module 07 and nobody called it that.</b> A neural network is these units arranged in layers, with a non-linear function between them so that stacking actually buys something. Without the non-linearity, stacked linear layers collapse back into one linear layer — which is precisely why the activation function exists.</div></div>
+<div class="gu-step"><h4>The loss comes from the same place it always did</h4><p>Module 01 made the point that you do not invent a loss function — you derive it. Write down what you assume about the noise, apply maximum likelihood, and the loss falls out. Gaussian noise gives you squared error. A yes/no outcome gives you log-loss.</p><p>Extend that to a choice among many options and you get <strong>cross-entropy</strong>. Now ask what an LLM does during pretraining: given the text so far, pick the next token from a vocabulary of perhaps a hundred thousand. That is a many-way choice, so the loss is cross-entropy, so the training objective is <em>maximum likelihood</em>.</p><div class="gu-so"><strong>So what:</strong> "an LLM is trained to predict the next token" and "an LLM is trained by maximum likelihood" are <b>the same statement</b>. The scale is unrecognisable; the principle is the one you already have.</div></div>
+<div class="gu-step"><h4>And the optimiser is literally the same code</h4><p>Module 09 covered gradient descent, mini-batches, momentum, and Adam with its decoupled weight decay. Nothing there was a warm-up for something else — <strong>AdamW is what trains the frontier models</strong>. Same update rule, same learning-rate schedules, same problems with saddle points and bad initialisation.</p><div class="gu-so"><strong>So what:</strong> when a discussion turns to warmup steps, cosine schedules or gradient clipping, you are on ground you have already covered. <b>The difference is the number of parameters, not the mathematics.</b></div></div>
+<div class="gu-step"><h4>What genuinely changes: who builds the features</h4><p>There is one real dividing line, and it is worth being precise about. In classical machine learning <em>you</em> build the features — you decide that "transactions in the last 30 days divided by account age" is the useful signal. The model then weights the features you handed it.</p><p>In deep learning the network builds its own. Give it raw pixels or raw tokens and the early layers learn edges or word fragments, later layers learn shapes or phrases, and nobody specified any of it. The name for this is <strong>representation learning</strong>, and it is the actual innovation.</p><div class="gu-so"><strong>So what:</strong> this single difference explains the whole landscape. Deep learning dominates images, audio and text <em>because hand-building features for a pixel grid is hopeless</em>. It does not dominate tabular data, because there your columns already <em>are</em> meaningful features — someone designed that database — and there is rarely enough data to learn better ones.</div></div>
+</div>
+<div class="mlviz">
+<div class="mlviz-title">What carries over unchanged, and the one thing that does not</div>
+<div class="mlviz-scroll">
+<svg viewbox="0 0 660 340" role="img" aria-label="A mapping between classical machine learning concepts and their deep learning or generative AI equivalents. Logistic regression maps to one neuron, maximum likelihood to the pretraining objective, log-loss to cross-entropy, gradient descent to AdamW, regularisation to dropout and weight decay, overfitting to memorisation, and data leakage to benchmark contamination. Feature engineering is highlighted as the one concept that is replaced rather than renamed, becoming learned representations.">
+<text class="mv-lbl mv-fill-2" x="30" y="26">what you learned here</text>
+<text class="mv-lbl mv-fill-1" x="400" y="26">what it is called there</text>
+
+<g class="mv-lbl-sm" text-anchor="start">
+  <text x="30" y="62">logistic regression</text>
+  <text x="30" y="98">maximum likelihood</text>
+  <text x="30" y="134">log-loss</text>
+  <text x="30" y="170">gradient descent · Adam</text>
+  <text x="30" y="206">L2 regularisation</text>
+  <text x="30" y="242">overfitting</text>
+  <text x="30" y="278">data leakage</text>
+</g>
+<g class="mv-str-2" stroke-width="1.6" opacity=".75">
+  <path d="M250 57 H386"></path><path d="M250 93 H386"></path><path d="M250 129 H386"></path>
+  <path d="M250 165 H386"></path><path d="M250 201 H386"></path><path d="M250 237 H386"></path><path d="M250 273 H386"></path>
+</g>
+<g class="mv-fill-2">
+  <polygon points="396,57 382,51 382,63"></polygon><polygon points="396,93 382,87 382,99"></polygon>
+  <polygon points="396,129 382,123 382,135"></polygon><polygon points="396,165 382,159 382,171"></polygon>
+  <polygon points="396,201 382,195 382,207"></polygon><polygon points="396,237 382,231 382,243"></polygon>
+  <polygon points="396,273 382,267 382,279"></polygon>
+</g>
+<g class="mv-lbl-sm mv-fill-1" text-anchor="start">
+  <text x="404" y="62">one neuron</text>
+  <text x="404" y="98">the pretraining objective</text>
+  <text x="404" y="134">cross-entropy</text>
+  <text x="404" y="170">AdamW — the same code</text>
+  <text x="404" y="206">weight decay · dropout</text>
+  <text x="404" y="242">memorisation</text>
+  <text x="404" y="278">benchmark contamination</text>
+</g>
+
+<!-- the one that is replaced, not renamed -->
+<rect class="mv-box-3" x="20" y="296" width="620" height="36" rx="10"></rect>
+<text class="mv-lbl-sm mv-fill-3" x="34" y="319">feature engineering</text>
+<path class="mv-str-3" stroke-width="1.8" d="M250 315 H386"></path>
+<polygon class="mv-fill-3" points="396,315 382,309 382,321"></polygon>
+<text class="mv-lbl-sm mv-fill-3" x="404" y="319">learned representations</text>
+<text class="mv-lbl-xs mv-fill-3" x="560" y="292" text-anchor="end">the only row that is a real change, not a new name</text>
+</svg>
+</div>
+<div class="mv-keys"><span><i class="mv-k2"></i>renamed, otherwise identical</span><span><i class="mv-k3"></i>genuinely replaced</span></div>
+<p class="mlviz-cap">Seven of these eight rows are translations. <b>Only the last is a change of substance</b> — and even there, what you gain is a model that builds its own features and what you lose is the ability to say what they are. That is the same interpretability trade from Module 21, arriving at a much larger scale.</p>
+</div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>Why gradient boosting still wins on tables</h4><p>It is 2026 and the honest answer to "which model for this spreadsheet?" is still a gradient-boosted tree. Three reasons, all following from the point above.</p><ul>
+<li><strong>The columns are already features.</strong> Somebody designed that schema. There is little representation left to learn.</li>
+<li><strong>The columns are unrelated to each other.</strong> Deep learning exploits structure — neighbouring pixels, nearby words. Column 3 next to column 4 in a table means nothing, so there is no structure to exploit.</li>
+<li><strong>The data is small.</strong> Tabular datasets run to thousands or millions of rows, not billions of tokens. Learning representations needs data that most tabular problems do not have.</li>
+</ul><div class="gu-so"><strong>So what:</strong> this is a genuinely common interview question, and the wrong answer is <em>"neural networks are more advanced"</em>. <b>The right answer names the conditions</b> — dense homogeneous input, exploitable structure, enough data — and observes that tabular problems usually meet none of them.</div></div>
+<div class="gu-step"><h4>Your leakage instincts are the most transferable thing you own</h4><p>Modules 04 and 05 trained you to ask one question compulsively: <em>could this information have reached the model in a way it will not have in production?</em> That question transfers to modern systems completely intact, and most people asking it about LLMs have never framed it that way.</p><ul>
+<li>A benchmark that appeared in the pretraining corpus is <strong>the test set in the training data</strong>. It is exactly the leak from Module 04, at web scale, and it is why an impressive benchmark score can mean nothing.</li>
+<li>Picking few-shot examples by checking which ones score best on your evaluation set is <strong>tuning on the test set</strong> — the winner's curse from Module 20.</li>
+<li>Evaluating a retrieval system on questions whose source document sits in the index, when real questions will not, is <strong>the same leak again</strong>.</li>
+</ul><div class="gu-so"><strong>So what:</strong> the technology moved on and the failure modes did not. <b>Being the person in the room who asks "how do we know that benchmark was not in the training data?" is worth more than knowing any particular architecture</b>, because that question stays useful when the architecture is replaced.</div></div>
+<div class="gu-step"><h4>The system that actually ships is a hybrid</h4><p>The common production pattern in 2026 is not "an LLM does everything". It is a division of labour along the line this module has been drawing.</p><p>The LLM handles the part where features are hopeless to build by hand — read the free-text complaint, pull out the entities, classify the sentiment, summarise the call. Its output becomes <em>a few clean structured columns</em>. Then a gradient-boosted tree takes those columns alongside your existing numeric features and makes the actual decision.</p><div class="gu-so"><strong>So what:</strong> the classical model keeps the decision because it is cheap, fast, calibrated, auditable, and can be <b>monotonically constrained</b> so risk can never fall as debt rises (Module 21). None of those are things an LLM gives you. <b>Use the LLM where features are hard and the classical model where accountability is required</b> — that sentence is a very strong close to a system design answer.</div></div>
+</div>
+<div class="gu-analogy"><b>Analogy</b> — you learned to cook by following recipes: someone else decided that this dish needs paprika, and you got good at judging how much. Deep learning is developing your own palate — nobody tells you which spices matter, you work it out from thousands of meals. That is a real and large difference, and it is the <em>only</em> one. <b>Heat, timing, seasoning and knowing when something is done are identical in both worlds.</b> And the cook who can taste anything still uses a recipe for the dish that must come out the same every single time — which is exactly why the boring, auditable model keeps the final decision.</div>
+<div class="gu-jargon">
+<div><strong>neuron / unit</strong><span>weights times inputs, plus a bias, through an activation. A logistic regression by another name.</span></div>
+<div><strong>activation function</strong><span>the non-linearity between layers. Without it, stacked layers collapse into a single linear one.</span></div>
+<div><strong>backpropagation</strong><span>the chain rule applied efficiently, to get a gradient for every weight. Not a new kind of maths.</span></div>
+<div><strong>cross-entropy</strong><span>log-loss extended to many classes. The pretraining objective of every language model.</span></div>
+<div><strong>representation learning</strong><span>the network building its own features from raw input. The one genuine break from classical ML.</span></div>
+<div><strong>pretraining</strong><span>predicting the next token over a huge corpus. Maximum likelihood, at scale.</span></div>
+<div><strong>fine-tuning</strong><span>continuing training on a smaller, task-specific set. Transfer learning, which classical ML rarely had.</span></div>
+<div><strong>benchmark contamination</strong><span>the evaluation data was in the training corpus. Data leakage, renamed.</span></div>
+<div><strong>few-shot prompting</strong><span>examples in the prompt instead of gradient updates. Selecting them on your eval set is tuning on the test set.</span></div>
+<div><strong>embedding</strong><span>a learned dense vector for a token or item. The same idea as a learned feature, produced automatically.</span></div>
+<div><strong>hybrid architecture</strong><span>LLM for the unstructured part, classical model for the decision. The common production shape.</span></div>
+<div><strong>monotonic constraint</strong><span>forcing a feature's effect in one direction. A guarantee a classical model can give and an LLM cannot.</span></div>
+</div>
+<h2 id="carries-over">2 · The concepts that carry over unchanged</h2>
 <p>State these explicitly in interviews — they demonstrate that you see one field, not two.</p>
 <div class="table-wrap"><table><thead><tr><th>Classical ML concept</th><th>Its form in deep learning / GenAI</th></tr></thead><tbody><tr><td>Logistic regression</td><td><strong>A single-layer neural network with a sigmoid output.</strong> Literally the same model.</td></tr><tr><td>Softmax regression</td><td>The final classification layer of essentially every classifier network</td></tr><tr><td>Log-loss / cross-entropy</td><td>The training objective of essentially every classifier, including next-token prediction</td></tr><tr><td>Maximum likelihood</td><td>Why cross-entropy is the loss; LLM pretraining is MLE over token sequences</td></tr><tr><td>Gradient descent</td><td>Still the optimizer; now with Adam/AdamW and backprop computing the gradients</td></tr><tr><td>Chain rule</td><td><strong>Is</strong> backpropagation</td></tr><tr><td>Regularization</td><td>Weight decay, dropout, early stopping, data augmentation, label smoothing</td></tr><tr><td>Bias–variance</td><td>Still governs capacity choices; complicated by double descent when over-parameterized</td></tr><tr><td>Feature scaling</td><td>Input normalization, plus batch and layer normalization inside the network</td></tr><tr><td>Train/val/test discipline</td><td>Identical, and <em>more</em> important — benchmark contamination is now a first-order concern</td></tr><tr><td>Calibration</td><td>LLMs are notoriously overconfident; the same reliability diagrams and fixes apply</td></tr><tr><td>Dot product / cosine similarity</td><td>Attention scores; embedding retrieval in RAG</td></tr><tr><td>KNN</td><td>Vector search (HNSW, IVF-PQ) — the retrieval half of RAG</td></tr><tr><td>Curse of dimensionality</td><td>Why embedding quality and approximate-NN indexing matter</td></tr><tr><td>Precision / recall</td><td>Retrieval evaluation: recall@k, precision@k, NDCG</td></tr><tr><td>Class imbalance</td><td>Rare-intent classification, and skewed evaluation sets for LLM judges</td></tr><tr><td>Bagging</td><td>Self-consistency — majority voting over multiple sampled LLM outputs</td></tr><tr><td>Data leakage</td><td><strong>Benchmark contamination</strong> — the same failure, at internet scale</td></tr><tr><td>Drift monitoring</td><td>Prompt and model-version drift; provider updates changing behaviour under you</td></tr></tbody></table></div>
-<h2 id="intuitions">2 · Core intuitions</h2>
+<h2 id="intuitions">3 · Core intuitions</h2>
 <h3>Logistic regression <em>is</em> a one-layer neural network</h3>
 <p>Same linear combination, same sigmoid, same cross-entropy loss, same gradient <code>Xᵀ(p−y)</code>. A neural network adds hidden layers with non-linear activations, which lets it <em>learn</em> the feature representation rather than requiring you to engineer it. That is the whole conceptual leap: <strong>deep learning is representation learning</strong>. Saying this in an interview frames everything else you know as directly relevant.</p>
 <h3>LLM pretraining is maximum likelihood estimation</h3>
@@ -79,11 +178,11 @@
 <h3>Classical ML has not been replaced — and the boundary is worth being crisp about</h3>
 <p>For tabular supervised learning with plentiful labels, gradient-boosted trees remain the strongest default. LLMs win where the input is unstructured language, where labelled data is scarce but the task is describable in words, where you need flexible zero-shot generalization, or where the output is itself text.</p>
 <p>The most valuable practical pattern in 2026 is the <strong>hybrid</strong>: use an LLM or embedding model to convert unstructured columns into features, then feed those into a gradient-boosted tree that provides the calibrated, cheap, auditable decision. Being able to describe that architecture concretely is one of the most useful things this whole curriculum prepares you to say.</p>
-<h2 id="onward">3 · Where to go next</h2>
+<h2 id="onward">4 · Where to go next</h2>
 <div class="callout"><div class="c-ico">🧭</div><div class="c-body"><div class="c-title">This is a standalone portal</div><p>The GenAI material referenced below lives in the separate GenAI learning portal, not in this one — so these are topic pointers rather than links. Work them in roughly this order once you have finished Module 24.</p></div></div>
 <ol><li><strong>Neural network fundamentals</strong> — neurons, forward pass, loss, backpropagation, optimizers, and practical training debugging. Your Modules 07 and 09 cover most of the mathematics already.</li><li><strong>Transformers</strong> — attention as scaled dot products, multi-head attention, positional encoding, residual connections and normalization.</li><li><strong>LLM foundations and prompting</strong> — tokens, context windows, decoding and temperature, hallucination, structured output.</li><li><strong>Embeddings and RAG</strong> — this is where Modules 10 and 13 pay off directly: retrieval is nearest-neighbour search evaluated with recall@k and NDCG.</li><li><strong>Agents and tool use</strong> — planning, tool calling, memory, multi-agent patterns.</li><li><strong>Evaluation and LLMOps</strong> — golden datasets, LLM-as-judge, tracing, drift and release gates. Module 22’s monitoring discipline transfers almost unchanged.</li></ol>
 <div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">Gotchas that fail candidates</div><ul><li><strong>Treating classical ML and GenAI as unrelated fields.</strong> The loss, the optimizer, the evaluation discipline and the calibration concerns are shared.</li><li><strong>Not knowing that logistic regression is a one-layer network.</strong></li><li><strong>Being unable to say how an LLM is trained</strong> in one sentence.</li><li><strong>Recommending an LLM for a tabular problem</strong> without a cost, latency and calibration comparison.</li><li><strong>Not recognizing benchmark contamination as leakage.</strong></li></ul></div></div>
-<h2 id="questions">4 · Interview questions</h2>
+<h2 id="questions">5 · Interview questions</h2>
 <div class="prep-toolbar" data-sticky-prep=""><label class="prep-filter"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><input data-question-filter="" placeholder="Filter these questions…"/></label><button class="btn ghost" data-expand-answers="" type="button">Open all</button><span class="prep-count" data-question-count="">3 questions</span></div>
 <section aria-label="Classical ML to GenAI bridge interview questions" class="prep-question-list">
 <details class="prep-question" data-question="how is logistic regression related to a neural network" data-tags="bridge representation learning">
@@ -96,15 +195,16 @@
 <summary><span class="prep-q-no">03</span><span class="prep-q-title">What classical ML concepts still matter most for GenAI work?<span class="prep-tags"><span>bridge</span><span>evaluation</span><span>contamination</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>More than people expect, and I would group them.</p><p><strong>Evaluation discipline</strong> is the biggest: train/val/test separation, the fact that repeatedly looking at your test set invalidates it, and metric-to-objective alignment all apply directly — and <strong>benchmark contamination is just data leakage at internet scale</strong>, the exact failure mode from Module 04.</p><p><strong>Retrieval is classical ML</strong>: RAG’s retriever is nearest-neighbour search over embeddings, evaluated with recall@k, precision@k and NDCG, and subject to the curse of dimensionality — so everything from Module 13 applies.</p><p><strong>Calibration</strong> matters acutely, since LLMs are systematically overconfident and their stated confidence is unreliable; the same reliability diagrams and post-hoc corrections apply to any classifier built on their outputs.</p><p><strong>Cross-entropy and MLE</strong> are how these models are trained, so the Module 01 and 07 derivations explain the objective. <strong>Class imbalance</strong> shows up in rare-intent classification and skewed evaluation sets for LLM-as-judge setups. <strong>Ensembling</strong> reappears as self-consistency and majority voting over samples. And <strong>drift monitoring</strong> applies to prompts and provider model versions, which change underneath you without notice — a form of concept drift you do not control.</p><p>The summary I would give: <strong>GenAI changed the model class, not the discipline of measuring whether something works.</strong></p><div class="prep-say"><strong>30-second version</strong><p>Evaluation discipline above all — and benchmark contamination is data leakage at internet scale. Plus retrieval as nearest-neighbour search, calibration for overconfident models, cross-entropy and MLE as the training objective, and drift monitoring for prompt and provider changes.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Whether you see the field as continuous. Increasingly used to filter candidates whose GenAI knowledge is prompt-level from those with real ML foundations.</p></div></div></details>
 </section>
-<div class="page-nav"><a href="22-ml-system-design.html"><div class="dir">← Previous</div><div class="ttl">ML System Design &amp; Monitoring</div></a><a class="next" href="24-mocks-revision.html"><div class="dir">Next →</div><div class="ttl">Mocks &amp; Revision</div></a></div>
+<div class="page-nav" data-page-nav><a href="22-ml-system-design.html"><div class="dir">← Previous</div><div class="ttl">ML System Design &amp; Monitoring</div></a><a class="next" href="24-mocks-revision.html"><div class="dir">Next →</div><div class="ttl">Mocks &amp; Revision</div></a></div>
 </main>
 <div class="toc-rail"><nav class="toc"></nav></div>
 </div>
 </div>
 </div>
-<script src="assets/app.js?v=20260727c"></script>
-<script src="assets/ml-sitenav.js?v=20260727c"></script>
-<script src="assets/enhance.js?v=20260727c"></script>
+<script src="assets/app.js?v=20260731b"></script>
+<script src="assets/ml-sitenav.js?v=20260801b"></script>
+<script src="assets/enhance.js?v=20260801a"></script>
 <script src="assets/interview-prep.js?v=20260727c"></script>
+<script src="assets/ml-mobile.js?v=20260728c"></script>
 </body>
 </html>

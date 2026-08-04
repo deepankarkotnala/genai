@@ -36,11 +36,26 @@
 <link href="assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
 <!-- /Machine Learning brand metadata -->
 <meta content="What each tree actually fits — the negative gradient, not the residuals — AdaBoost's alpha and exponential loss, shrinkage, and why boosting chases label noise." name="description"/>
-<link href="assets/styles.css?v=20260727c" rel="stylesheet"/>
-<link href="assets/office-theme.css?v=20260727e" rel="stylesheet"/>
+<!-- Theme before first paint. Without this the document paints with the light
+     tokens and only flips when app.js runs at the end of <body>, which is a
+     white flash on every navigation in dark mode. Mirrors app.js's getTheme()
+     exactly — same key, same "light" default — so the pre-paint value can never
+     disagree with what the scripts apply a moment later. Inline and blocking on
+     purpose: an external file would cost a round trip before first paint. -->
+<script>(function(){try{var t=localStorage.getItem("gp.theme")||"light";document.documentElement.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Page transitions — see the same block in the other page families. `PageRevealEvent` is the only honest test for a CROSS-document view transition, and it has to run pre-paint or the arrival animation starts and is then cancelled. */var d=document.documentElement;if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260801d" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
 <link href="assets/ml-visuals.css?v=20260728a" rel="stylesheet"/>
+<link href="assets/ml-mobile.css?v=20260801a" rel="stylesheet"/>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="../assets/curriculum.js?v=20260804c"></script>
+<script defer src="../assets/page-nav.js?v=20260804c"></script>
 </head>
-<body data-page="ml-17-boosting-gradient-boosting" data-prep-section="ml">
+<body data-curriculum-id="ml-17" data-page="ml-17-boosting-gradient-boosting" data-prep-section="ml">
 <div class="app">
 <aside class="sidebar">
 <div class="brand">
@@ -56,7 +71,7 @@
 <div class="main">
 <header class="topbar">
 <button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
-<div class="crumbs">Machine Learning / Part D / Module 17</div>
+<div class="crumbs">Machine Learning / Part D / <b>Module 17</b></div>
 <button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
 </header>
 <div class="content-wrap">
@@ -66,9 +81,135 @@
 <p class="lead">One sentence in this module decides the interview: each gradient-boosting tree is fitted to the <em>negative gradient of the loss with respect to the current predictions</em> — not “the residuals”.</p>
 <div class="meta-row"><span class="pill purple">Prerequisites · Modules 09, 15, 16</span><span class="pill">Study time · 8 h</span><span class="pill blue">6 interview questions</span><span class="pill purple">Highest priority</span></div>
 <div class="callout key"><div class="c-ico">🎯</div><div class="c-body"><div class="c-title">Your interview goal</div><p>Say precisely what each tree fits and why “residuals” is only true for squared error, explain AdaBoost's alpha, and know why boosting is uniquely vulnerable to label noise.</p></div></div>
-<h2 id="what-to-learn">1 · What to learn</h2>
+<h2 id="ground-up">1 · From the ground up</h2>
+<div class="callout plain"><div class="c-ico">🧩</div><div class="c-body"><div class="c-title">In plain words</div><p>A random forest builds hundreds of trees independently and averages them. Boosting does the opposite: it builds trees <em>one at a time, in order</em>, and each new tree's only job is to fix what the trees so far still get wrong. The prediction is a running <strong>total</strong>, not an average. Almost all of this module is one question — what exactly does "still gets wrong" mean — because the popular answer is not quite right.</p></div></div>
+<div class="callout tip">
+<div class="c-ico">🎯</div>
+<div class="c-body"><div class="c-title">How far you need to go for a GenAI interview</div>
+<p>Three things carry all the value: <strong>boosting is sequential and additive</strong>, <strong>each tree fits the negative gradient rather than "the residuals"</strong>, and <strong>more trees can overfit boosting but not a forest</strong>. This section covers all three. There is a bonus — <em>boosting is gradient descent on functions</em> — which connects directly to how LLMs are trained, and that connection is worth more to you than any boosting internals.</p></div>
+</div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>Start with the problem, not the formula</h4><p>Bagging attacked instability. It took a model that was already roughly right and steadied it. But averaging cannot fix a model that is <em>systematically</em> off — if every tree leans the same wrong way, so does their average.</p><p>So flip the strategy. Start with something deliberately far too simple — one number for every row — which is very wrong but perfectly stable. Then repeatedly <em>add</em> a small correction, closing the gap step by step, keeping each correction small so instability creeps in slowly.</p><div class="gu-so"><strong>So what:</strong> this reverses every design choice. Random Forest wants <em>deep, independent</em> trees. Boosting wants <em>shallow, dependent</em> ones — depth 3 to 6, because each tree is a nudge rather than a model. And boosting <b>cannot be spread across cores by tree</b>, because tree 10 needs tree 9's answer first.</div></div>
+<div class="gu-step"><h4>The recipe</h4><p>Start with one constant for everybody — the average. Then repeat: look at what the total is still getting wrong, fit a small tree to that, shrink it down, and add it on. Stop after a set number of rounds, or when a validation score stops improving.</p><p>The shrinking factor is the <strong>learning rate</strong>, usually 0.01 to 0.1.</p><div class="gu-so"><strong>So what:</strong> that shrinking is not a detail, it is <em>the main thing stopping it overfitting</em>. Many small steps in roughly the right direction generalise far better than a few big ones. This is also why <b><code>learning_rate</code> and the number of trees must be tuned together</b> — halve one and you roughly double the other.</div></div>
+<div class="gu-step"><h4>What each tree actually fits — the part people get wrong</h4><p>The usual phrasing is "each tree fits the residuals of the last one". For plain regression that happens to be true, which is why the phrase survives. In general it is <strong>wrong</strong>.</p><p>What a tree really fits is the <strong>negative gradient of the loss</strong> — the direction that would most reduce the error for each row. Work out what that becomes for each kind of problem and the picture is clear:</p><ul>
+<li><strong>Squared error</strong> → the plain residual, <code>actual − predicted</code>. Hence the myth.</li>
+<li><strong>Classification</strong> → <code>actual − predicted probability</code>, which is not a residual in the original units at all.</li>
+<li><strong>Absolute error</strong> → just <code>+1</code> or <code>−1</code>, throwing away the size completely — which is exactly why that version shrugs off outliers.</li>
+</ul><div class="gu-so"><strong>So what:</strong> say <em>"each tree fits the negative gradient of the loss, which happens to equal the residual only for squared error"</em>. <b>That single sentence is the highest-value correction in this module</b>, and it is what makes the next step make sense.</div></div>
+<div class="gu-step"><h4>Watch three trees close the gap</h4><p>Below: a smooth target and four snapshots. The first is one flat constant. Each panel after it adds one small shrunken tree fitted to what is still wrong. The orange sticks are those errors, and the running total under each panel is their sum — real arithmetic, so you can check it.</p></div>
+</div>
+<div class="mlviz">
+<div class="mlviz-title">Each tree is fitted to what the sum so far still gets wrong</div>
+<div class="mlviz-scroll">
+<svg viewbox="0 0 660 348" role="img" aria-label="Four small panels showing a stagewise fit. The first panel is a single flat constant with large orange error sticks. Each subsequent panel adds one shallow tree, the step function tracks the target curve more closely, and the total absolute error falls from 2.20 to 1.375 to 0.805 to 0.569.">
+<!-- panel 1 -->
+<g transform="translate(10 0)">
+  <text class="mv-lbl" x="0" y="12">F₀ — one constant</text>
+  <rect class="mv-box" x="0" y="20" width="310" height="114" rx="10"></rect>
+  <g class="mv-str-3" stroke-width="2.4" stroke-linecap="round" opacity=".9">
+    <path d="M24 122 V86"></path><path d="M62 118 V86"></path><path d="M100 106 V86"></path>
+    <path d="M176 74 V86"></path><path d="M214 66 V86"></path><path d="M252 59.6 V86"></path><path d="M290 56.4 V86"></path>
+  </g>
+  <path class="mv-str-2 mv-dash" stroke-width="1.8" fill="none" d="M24 122 L62 118 L100 106 L138 86 L176 74 L214 66 L252 59.6 L290 56.4"></path>
+  <path class="mv-str-1" stroke-width="3" fill="none" stroke-linecap="round" d="M24 86 H290"></path>
+  <g class="mv-fill-2"><circle cx="24" cy="122" r="3.4"></circle><circle cx="62" cy="118" r="3.4"></circle><circle cx="100" cy="106" r="3.4"></circle><circle cx="138" cy="86" r="3.4"></circle><circle cx="176" cy="74" r="3.4"></circle><circle cx="214" cy="66" r="3.4"></circle><circle cx="252" cy="59.6" r="3.4"></circle><circle cx="290" cy="56.4" r="3.4"></circle></g>
+  <text class="mv-mono-sm mv-fill-3" x="0" y="152">Σ|error| = 2.200</text>
+</g>
+<!-- panel 2 -->
+<g transform="translate(340 0)">
+  <text class="mv-lbl" x="0" y="12">+ tree 1 → F₁</text>
+  <rect class="mv-box" x="0" y="20" width="310" height="114" rx="10"></rect>
+  <g class="mv-str-3" stroke-width="2.4" stroke-linecap="round" opacity=".9">
+    <path d="M24 122 V97"></path><path d="M62 118 V97"></path><path d="M100 106 V97"></path><path d="M138 86 V97"></path>
+    <path d="M176 74 V75"></path><path d="M214 66 V75"></path><path d="M252 59.6 V75"></path><path d="M290 56.4 V75"></path>
+  </g>
+  <path class="mv-str-2 mv-dash" stroke-width="1.8" fill="none" d="M24 122 L62 118 L100 106 L138 86 L176 74 L214 66 L252 59.6 L290 56.4"></path>
+  <path class="mv-str-1" stroke-width="3" fill="none" stroke-linecap="round" d="M24 97 H157 V75 H290"></path>
+  <g class="mv-fill-2"><circle cx="24" cy="122" r="3.4"></circle><circle cx="62" cy="118" r="3.4"></circle><circle cx="100" cy="106" r="3.4"></circle><circle cx="138" cy="86" r="3.4"></circle><circle cx="176" cy="74" r="3.4"></circle><circle cx="214" cy="66" r="3.4"></circle><circle cx="252" cy="59.6" r="3.4"></circle><circle cx="290" cy="56.4" r="3.4"></circle></g>
+  <text class="mv-mono-sm mv-fill-3" x="0" y="152">Σ|error| = 1.375</text>
+</g>
+<!-- panel 3 -->
+<g transform="translate(10 178)">
+  <text class="mv-lbl" x="0" y="12">+ tree 2 → F₂</text>
+  <rect class="mv-box" x="0" y="20" width="310" height="114" rx="10"></rect>
+  <g class="mv-str-3" stroke-width="2.4" stroke-linecap="round" opacity=".9">
+    <path d="M24 122 V106.2"></path><path d="M62 118 V106.2"></path><path d="M100 106 V106.2"></path><path d="M138 86 V91.5"></path>
+    <path d="M176 74 V69.5"></path><path d="M214 66 V69.5"></path><path d="M252 59.6 V69.5"></path><path d="M290 56.4 V69.5"></path>
+  </g>
+  <path class="mv-str-2 mv-dash" stroke-width="1.8" fill="none" d="M24 122 L62 118 L100 106 L138 86 L176 74 L214 66 L252 59.6 L290 56.4"></path>
+  <path class="mv-str-1" stroke-width="3" fill="none" stroke-linecap="round" d="M24 106.2 H119 V91.5 H157 V69.5 H290"></path>
+  <g class="mv-fill-2"><circle cx="24" cy="122" r="3.4"></circle><circle cx="62" cy="118" r="3.4"></circle><circle cx="100" cy="106" r="3.4"></circle><circle cx="138" cy="86" r="3.4"></circle><circle cx="176" cy="74" r="3.4"></circle><circle cx="214" cy="66" r="3.4"></circle><circle cx="252" cy="59.6" r="3.4"></circle><circle cx="290" cy="56.4" r="3.4"></circle></g>
+  <text class="mv-mono-sm mv-fill-3" x="0" y="152">Σ|error| = 0.805</text>
+</g>
+<!-- panel 4 -->
+<g transform="translate(340 178)">
+  <text class="mv-lbl" x="0" y="12">+ tree 3 → F₃</text>
+  <rect class="mv-box" x="0" y="20" width="310" height="114" rx="10"></rect>
+  <g class="mv-str-3" stroke-width="2.4" stroke-linecap="round" opacity=".9">
+    <path d="M24 122 V113.1"></path><path d="M62 118 V113.1"></path><path d="M100 106 V103.9"></path><path d="M138 86 V89.2"></path>
+    <path d="M176 74 V67.2"></path><path d="M214 66 V67.2"></path><path d="M252 59.6 V67.2"></path><path d="M290 56.4 V67.2"></path>
+  </g>
+  <path class="mv-str-2 mv-dash" stroke-width="1.8" fill="none" d="M24 122 L62 118 L100 106 L138 86 L176 74 L214 66 L252 59.6 L290 56.4"></path>
+  <path class="mv-str-1" stroke-width="3" fill="none" stroke-linecap="round" d="M24 113.1 H81 V103.9 H119 V89.2 H157 V67.2 H290"></path>
+  <g class="mv-fill-2"><circle cx="24" cy="122" r="3.4"></circle><circle cx="62" cy="118" r="3.4"></circle><circle cx="100" cy="106" r="3.4"></circle><circle cx="138" cy="86" r="3.4"></circle><circle cx="176" cy="74" r="3.4"></circle><circle cx="214" cy="66" r="3.4"></circle><circle cx="252" cy="59.6" r="3.4"></circle><circle cx="290" cy="56.4" r="3.4"></circle></g>
+  <text class="mv-mono-sm mv-fill-3" x="0" y="152">Σ|error| = 0.569</text>
+</g>
+</svg>
+</div>
+<div class="mv-keys"><span><i class="mv-k2"></i>the target</span><span><i class="mv-k1"></i>the running sum F<sub>m</sub></span><span><i class="mv-k3"></i>what is still wrong</span></div>
+<p class="mlviz-cap">Each panel's green line is not a new model — it is the <em>sum of everything built so far</em>, which is why it gains a step each round. Note the errors shrink quickly at first and then slowly: <b>later trees have less left to explain</b>, which is the shape of every boosting learning curve you will ever plot.</p>
+</div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>Why this counts as gradient descent</h4><p>In ordinary gradient descent you hold a list of numbers, work out which direction reduces the error, and step that way. Boosting does the same thing — except the thing being adjusted is <strong>the whole function</strong>, not a list of numbers.</p><p>The ideal step would nudge each training row's prediction by its own gradient. But that only tells you what to do at rows you have seen, and nothing about a new one. So you fit a small tree to those gradient values: the tree is a <em>reusable approximation of the right direction</em>. The learning rate is the step size, in the ordinary sense.</p><div class="gu-so"><strong>So what:</strong> <em>"gradient boosting is gradient descent in function space, where each weak learner approximates the step"</em> ties the module together. It also explains why <b>swapping the loss function is all you change</b> to move between regression, classification and ranking — and it is the same maximum-likelihood-plus-gradient-descent idea that trains an LLM (Module 23).</div></div>
+<div class="gu-step"><h4>AdaBoost is the same idea in older clothes</h4><p>AdaBoost came first and is usually taught with weights instead of gradients. Every row starts equally important; you fit a stump; you then <em>increase</em> the weight on the rows it got wrong, so the next stump is pushed to pay attention to the hard cases. Each stump then votes with a strength based on how accurate it was.</p><div class="gu-so"><strong>So what:</strong> AdaBoost turns out to be <strong>gradient boosting with one particular loss function</strong>. Knowing that unifies them instead of leaving two unrelated algorithms in your head — and it immediately explains why AdaBoost is so easily upset by mislabelled data, since that loss punishes a confident mistake extremely harshly.</div></div>
+<div class="gu-step"><h4>Boosting can overfit — and this is the real contrast with a forest</h4><p>Adding trees to a random forest settles toward a fixed answer and cannot overfit. Boosting has no such protection. Each tree is fitted to whatever is still wrong, and once the genuine signal is used up, what is left is noise — which the next tree will faithfully fit. Training error keeps falling; validation error bottoms out and then climbs.</p><div class="gu-so"><strong>So what:</strong> the number of trees is a genuine bias–variance knob here, not a "more is better" setting. That is why every boosting library ships early stopping, and why <b>"more trees always helps" is true for Random Forest and false for boosting</b> — a favourite trap, and the cleanest way to show you understand both.</div></div>
+</div>
+<div class="mlviz">
+<div class="mlviz-title">Training loss keeps falling; validation loss turns around</div>
+<div class="mlviz-scroll">
+<svg viewbox="0 0 660 300" role="img" aria-label="Loss plotted against boosting rounds. Training loss decreases monotonically towards zero. Validation loss falls, reaches a minimum at around 250 rounds, then rises again. A dashed marker shows where early stopping would halt training.">
+<g class="mv-gridline"><path d="M80 250 H620"></path><path d="M80 202 H620"></path><path d="M80 155 H620"></path><path d="M80 107 H620"></path><path d="M80 60 H620"></path></g>
+<path class="mv-axis" d="M80 50 V250 H620"></path>
+<text class="mv-lbl-sm" x="34" y="150" text-anchor="middle" transform="rotate(-90 34 150)">loss</text>
+<text class="mv-lbl-sm" x="350" y="288" text-anchor="middle">boosting rounds →</text>
+<g class="mv-lbl-xs" text-anchor="middle"><text x="80" y="268">0</text><text x="184" y="268">100</text><text x="288" y="268">200</text><text x="392" y="268">300</text><text x="496" y="268">400</text><text x="600" y="268">500</text></g>
+
+<!-- early stopping marker -->
+<path class="mv-str-3 mv-dash" stroke-width="1.6" d="M340 56 V250"></path>
+<circle class="mv-fill-3 mv-pulse" cx="340" cy="167.4" r="5.5"></circle>
+<text class="mv-lbl-xs mv-fill-3" x="348" y="92">early stopping halts here</text>
+<text class="mv-lbl-xs" x="348" y="106">best validation loss · keep this many trees</text>
+
+<!-- validation -->
+<path class="mv-str-5" stroke-width="2.8" fill="none" stroke-linecap="round" d="M80 60 L132 117 L184 143.6 L236 158.8 L288 166.4 L340 167.4 L392 164.5 L444 158.8 L496 151.2 L548 141.7 L600 132.2"></path>
+<text class="mv-lbl mv-fill-5" x="470" y="128">validation</text>
+<text class="mv-lbl-xs mv-fill-5" x="470" y="142">rising = fitting noise</text>
+
+<!-- training -->
+<path class="mv-str-1" stroke-width="2.8" fill="none" stroke-linecap="round" d="M80 60 L132 120.8 L184 151.2 L236 170.2 L288 183.5 L340 193 L392 200.6 L444 208.2 L496 214.9 L548 219.6 L600 223.4"></path>
+<text class="mv-lbl mv-fill-1" x="470" y="216">training</text>
+<text class="mv-lbl-xs mv-fill-1" x="470" y="230">always falls · tells you nothing</text>
+</svg>
+</div>
+<div class="mv-keys"><span><i class="mv-k1"></i>training loss</span><span><i class="mv-k5"></i>validation loss</span><span><i class="mv-k3"></i>the stopping point</span></div>
+<p class="mlviz-cap">The gap between the two curves on the right is memorised noise. <b>Plot this curve for a random forest and the validation line would flatten, never turn up</b> — that single visual difference is the cleanest way to explain why the two ensembles need completely different tuning philosophies.</p>
+</div>
+<div class="gu-analogy"><b>Analogy</b> — a sculptor roughing out a figure. The first pass is a crude block, wrong everywhere but wrong <em>evenly</em>. Each pass after that looks only at where the block still differs from the intended shape and takes a little off there; nobody re-carves the parts that are already right. That is boosting — every tree addresses only the leftover difference, and the statue is the sum of all the passes. <b>The failure mode is in the analogy too:</b> keep chasing ever-finer differences and you start carving the grain of the marble instead of the figure. Knowing when to put the chisel down is early stopping.</div>
+<div class="gu-jargon">
+<div><strong>boosting</strong><span>building models one after another, each fixing the accumulated errors so far. The prediction is a total.</span></div>
+<div><strong>weak learner</strong><span>a model only slightly better than guessing. In practice a shallow tree, depth 3–6.</span></div>
+<div><strong>additive model</strong><span>the prediction is a sum of all the trees. Trees are added and never revised.</span></div>
+<div><strong>pseudo-residual</strong><span>the negative gradient of the loss. What each tree is actually fitted to.</span></div>
+<div><strong>residual</strong><span>actual minus predicted. Equal to the pseudo-residual <em>only</em> for squared error — the source of the usual confusion.</span></div>
+<div><strong>learning_rate</strong><span>how much each new tree is shrunk before being added. The main regulariser; trades off against tree count.</span></div>
+<div><strong>function space</strong><span>what boosting descends in. Each step adds a whole function rather than tweaking a number.</span></div>
+<div><strong>AdaBoost</strong><span>the original — reweight the rows you got wrong. Turns out to be boosting with one specific loss.</span></div>
+<div><strong>early stopping</strong><span>halt when validation stops improving. Necessary for boosting, meaningless for a forest.</span></div>
+<div><strong>subsample</strong><span>fitting each tree on a random fraction of rows. Adds regularisation and speed.</span></div>
+</div>
+<h2 id="what-to-learn">2 · What to learn</h2>
 <ol><li>The boosting principle: combine many weak learners sequentially into a strong learner.</li><li>What “weak learner” formally means — better than random — and boosting’s PAC-learning origin.</li><li><strong>AdaBoost</strong>: reweighting misclassified samples, computing learner weights <code>α</code>, and the exponential loss it implicitly minimizes.</li><li><strong>Gradient boosting</strong>: fit each new learner to the <strong>negative gradient of the loss with respect to the current predictions</strong> — the pseudo-residuals.</li><li>Why “fit the residuals” is only literally true for squared error, and what it becomes for log-loss.</li><li>Gradient boosting as <strong>gradient descent in function space</strong> (the Module 09 connection).</li><li>The algorithm step by step: initialize with a constant, then iterate — compute pseudo-residuals, fit a tree, find leaf values, update with shrinkage.</li><li><strong>Shrinkage / learning rate</strong> and its trade against <code>n_estimators</code>.</li><li><strong>Stochastic gradient boosting</strong>: <code>subsample</code> and its regularizing effect.</li><li>Tree depth in boosting: why shallow (3–8), and depth as an interaction-order control.</li><li><strong>Early stopping</strong> on a validation set as the primary complexity control.</li><li>Loss functions for boosting: squared error, absolute error, Huber, log-loss, multi-class cross-entropy, Poisson, quantile.</li><li>Why boosting is sensitive to noisy labels and outliers.</li><li>AdaBoost versus gradient boosting: how they relate, and AdaBoost as a special case.</li></ol>
-<h2 id="intuitions">2 · Core intuitions</h2>
+<h2 id="intuitions">3 · Core intuitions</h2>
 <h3>Boosting builds a committee where each member specializes in the previous committee’s mistakes</h3>
 <p>Start with a weak model. Look at what it gets wrong. Train the next model to focus on exactly that. Add it to the ensemble with a small weight. Repeat. Each individual model is barely better than guessing, but the sum becomes highly accurate — the surprising theoretical result that started the field.</p>
 <h3>AdaBoost reweights the data; gradient boosting reweights the target</h3>
@@ -83,7 +224,7 @@
 <p>Boosting wants weak learners, so depths of 3–8 (or <code>num_leaves</code> around 31 in LightGBM) are typical, versus fully grown trees in a Random Forest. There is an elegant interpretation: a depth-<code>d</code> tree can represent interactions of order at most <code>d</code>, so <strong><code>max_depth</code> directly controls the interaction order</strong> your model can capture. Depth 1 (stumps) gives a purely additive model with no interactions; depth 2 allows pairwise interactions. Deeper trees in boosting overfit quickly because each is already fitting a residual signal that is mostly noise by later iterations.</p>
 <h3>Boosting chases noise, and this is its main structural weakness</h3>
 <p>Because each iteration focuses on what the ensemble currently gets wrong, and mislabeled points are permanently “wrong”, boosting keeps allocating capacity to them. AdaBoost is especially vulnerable, since exponential loss grows exponentially in the margin violation, so a single badly mislabeled outlier can dominate the weight distribution. Gradient boosting with log-loss is gentler, and Huber or absolute-error losses for regression make it more robust still. This is the crisp reason to prefer a Random Forest on known-noisy labels.</p>
-<h2 id="formulas">3 · Whiteboard formulas</h2>
+<h2 id="formulas">4 · Whiteboard formulas</h2>
 <div class="code-block" data-reveal="">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>boosting.txt</span><button class="copy-btn">Copy</button></div>
 <pre><code>=== AdaBoost (binary, y in {-1,+1}) ===
@@ -113,10 +254,10 @@ Negative gradient by loss:
 
 Function-space view:  F <- F - eta * grad_F J     with h_m approximating -grad_F J</code></pre>
 </div>
-<h2 id="drill">4 · Hands-on drill</h2>
+<h2 id="drill">5 · Hands-on drill</h2>
 <ol><li>Implement gradient boosting for regression from scratch on top of your Module 15 tree: initialize with the mean, loop computing residuals, fit a shallow tree, update with a learning rate. Confirm you match <code>GradientBoostingRegressor</code> closely.</li><li><strong>Extend it to log-loss and verify the pseudo-residual is <code>y − p</code>, not <code>y − F</code>.</strong> Doing this once permanently fixes the most-failed question in this module.</li><li>Plot training and validation loss against <code>n_estimators</code>. Watch training loss fall monotonically while validation loss bottoms out and then rises — the overfitting signature bagging does not have.</li><li>Grid the learning rate over {0.3, 0.1, 0.03, 0.01} and record the optimal <code>n_estimators</code> for each. Confirm the inverse relationship.</li><li>Corrupt 5% of labels and compare gradient boosting against Random Forest. <strong>Quantify boosting’s larger degradation</strong> — that number is your evidence for the noise-sensitivity question.</li><li>Implement AdaBoost with stumps and print the <code>α</code> sequence to see how learner weights evolve.</li></ol>
 <div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">Gotchas that fail candidates</div><ul><li><strong>Saying “each tree fits the residuals”</strong> without qualifying that this holds only for squared error.</li><li><strong>Not knowing what AdaBoost’s <code>α</code> means</strong>, or that <code>ε = 0.5</code> gives <code>α = 0</code>.</li><li><strong>Saying boosting reduces variance.</strong> It primarily reduces <strong>bias</strong>.</li><li><strong>Using deep trees in boosting.</strong></li><li><strong>Not using early stopping</strong>, or tuning <code>n_estimators</code> by grid search when early stopping is cheaper and better.</li><li><strong>Claiming boosting is parallelizable across trees.</strong> It is sequential by construction; parallelism happens <em>within</em> split finding.</li><li><strong>Not knowing boosting is sensitive to label noise.</strong></li></ul></div></div>
-<h2 id="questions">5 · Interview questions</h2>
+<h2 id="questions">6 · Interview questions</h2>
 <div class="prep-toolbar" data-sticky-prep=""><label class="prep-filter"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><input data-question-filter="" placeholder="Filter these questions…"/></label><button class="btn ghost" data-expand-answers="" type="button">Open all</button><span class="prep-count" data-question-count="">6 questions</span></div>
 <section aria-label="Boosting and gradient boosting interview questions" class="prep-question-list">
 <details class="prep-question" data-question="in gradient boosting what exactly does each new tree fit" data-tags="negative gradient pseudo-residuals trap">
@@ -138,15 +279,16 @@ Function-space view:  F <- F - eta * grad_F J     with h_m approximating -grad_F
 <summary><span class="prep-q-no">06</span><span class="prep-q-title">How is gradient boosting related to gradient descent?<span class="prep-tags"><span>function space</span><span>unifying</span><span>Newton</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>It <em>is</em> gradient descent, performed in <strong>function space</strong> rather than parameter space. Ordinary gradient descent parameterizes the model and steps <code>w ← w − η∇_w J</code>. Gradient boosting treats the prediction function <code>F</code> itself as the optimization variable and steps <code>F ← F − η∇_F J</code>.</p><p>The complication is that you cannot add a gradient to a function directly, so at each stage you compute the negative gradient at each training point — the pseudo-residuals — and fit a weak learner to approximate that vector, giving <code>F_m = F_{m−1} + η·h_m</code>. So the new tree plays the role of the descent direction, and boosting’s learning rate (shrinkage) is exactly the step size η.</p><p>The framing makes every hyperparameter interpretable: <code>n_estimators</code> is the number of descent steps, <code>learning_rate</code> is the step size, and early stopping is convergence monitoring. <strong>XGBoost extends the analogy to second order</strong>, using a Taylor expansion with both the gradient and the Hessian to choose leaf values, which makes it the function-space analogue of Newton’s method rather than plain gradient descent.</p><div class="prep-say"><strong>30-second version</strong><p>It is gradient descent in function space: the tree approximates the negative functional gradient and shrinkage is the step size. XGBoost extends it to second order, making it function-space Newton.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>The unifying insight of Modules 09 and 17. Landing the Newton’s-method extension sets you up perfectly for Module 18.</p></div></div></details>
 </section>
-<div class="page-nav"><a href="16-bagging-random-forest.html"><div class="dir">← Previous</div><div class="ttl">Bagging &amp; Random Forest</div></a><a class="next" href="18-xgboost-lightgbm-catboost.html"><div class="dir">Next →</div><div class="ttl">Boosting II: XGBoost &amp; LightGBM</div></a></div>
+<div class="page-nav" data-page-nav><a href="16-bagging-random-forest.html"><div class="dir">← Previous</div><div class="ttl">Bagging &amp; Random Forest</div></a><a class="next" href="18-xgboost-lightgbm-catboost.html"><div class="dir">Next →</div><div class="ttl">Boosting II: XGBoost &amp; LightGBM</div></a></div>
 </main>
 <div class="toc-rail"><nav class="toc"></nav></div>
 </div>
 </div>
 </div>
-<script src="assets/app.js?v=20260727c"></script>
-<script src="assets/ml-sitenav.js?v=20260727c"></script>
-<script src="assets/enhance.js?v=20260727c"></script>
+<script src="assets/app.js?v=20260731b"></script>
+<script src="assets/ml-sitenav.js?v=20260801b"></script>
+<script src="assets/enhance.js?v=20260801a"></script>
 <script src="assets/interview-prep.js?v=20260727c"></script>
+<script src="assets/ml-mobile.js?v=20260728c"></script>
 </body>
 </html>

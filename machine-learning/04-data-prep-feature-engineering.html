@@ -36,11 +36,26 @@
 <link href="assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
 <!-- /Machine Learning brand metadata -->
 <meta content="The five faces of data leakage, missingness mechanisms, high-cardinality encoding without leakage, and why the fitted pipeline is the real deliverable." name="description"/>
-<link href="assets/styles.css?v=20260727c" rel="stylesheet"/>
-<link href="assets/office-theme.css?v=20260727e" rel="stylesheet"/>
+<!-- Theme before first paint. Without this the document paints with the light
+     tokens and only flips when app.js runs at the end of <body>, which is a
+     white flash on every navigation in dark mode. Mirrors app.js's getTheme()
+     exactly — same key, same "light" default — so the pre-paint value can never
+     disagree with what the scripts apply a moment later. Inline and blocking on
+     purpose: an external file would cost a round trip before first paint. -->
+<script>(function(){try{var t=localStorage.getItem("gp.theme")||"light";document.documentElement.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Page transitions — see the same block in the other page families. `PageRevealEvent` is the only honest test for a CROSS-document view transition, and it has to run pre-paint or the arrival animation starts and is then cancelled. */var d=document.documentElement;if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260801d" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
 <link href="assets/ml-visuals.css?v=20260728a" rel="stylesheet"/>
+<link href="assets/ml-mobile.css?v=20260801a" rel="stylesheet"/>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="../assets/curriculum.js?v=20260804c"></script>
+<script defer src="../assets/page-nav.js?v=20260804c"></script>
 </head>
-<body data-page="ml-04-data-prep-feature-engineering" data-prep-section="ml">
+<body data-curriculum-id="ml-04" data-page="ml-04-data-prep-feature-engineering" data-prep-section="ml">
 <div class="app">
 <aside class="sidebar">
 <div class="brand">
@@ -56,7 +71,7 @@
 <div class="main">
 <header class="topbar">
 <button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
-<div class="crumbs">Machine Learning / Part A / Module 04</div>
+<div class="crumbs">Machine Learning / Part A / <b>Module 04</b></div>
 <button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
 </header>
 <div class="content-wrap">
@@ -213,15 +228,16 @@
 <summary><span class="prep-q-no">09</span><span class="prep-q-title">Walk me through the features you would build for card fraud detection from a raw transaction log.<span class="prep-tags"><span>2026</span><span>feature engineering</span><span>domain</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>The key insight, and I would lead with it: <strong>a single transaction is almost never diagnostic — fraud lives in the deviation from that cardholder's own normal.</strong> ₹40,000 is unremarkable for one customer and a screaming anomaly for another. So the raw columns matter far less than features that compare this transaction to a history.</p><p>The families I would build:</p><ul><li><strong>Relative amount</strong> — this amount divided by the cardholder's 30-day mean, and its z-score against their own history. Turns an absolute number into a personalised one.</li><li><strong>Velocity</strong> — count and total value of transactions in the last 1 minute, 1 hour, 24 hours and 7 days. Card testing shows up here before it shows up anywhere else.</li><li><strong>Novelty flags</strong> — first time at this merchant, this merchant category, this country, this device; time since the last transaction at this merchant. Fraud is disproportionately first-time-anything.</li><li><strong>Geo-velocity</strong> — implied travel speed between consecutive transactions. Two purchases 2,000 km apart 10 minutes apart is a physically impossible feature and one of the strongest signals available.</li><li><strong>Cyclical time</strong> — hour of day and day of week encoded as sine and cosine so 23:00 sits next to 00:00, plus deviation from that cardholder's usual hours rather than from a global usual.</li><li><strong>Entity-level aggregates</strong> — the merchant's own recent fraud rate and chargeback rate, computed strictly out-of-fold and with a lag, because this is the highest-yield family and also the easiest to leak with.</li></ul><p>Then the discipline that makes it real, which is most of the score. Every window must be computed <strong>as of the transaction's own timestamp</strong> and must never reach forward — that is the whole ballgame, and a naive <code>groupby.mean()</code> over the full table leaks the future into every row. Any merchant-level or cardholder-level target statistic must be out-of-fold and lagged. Validation must be time-forward with an embargo, because labels arrive days or weeks later via chargebacks, so the model must be evaluated on the label maturity it will actually have. And every feature must be computable within the authorisation latency budget, which rules out anything requiring a slow join — the usual answer being streaming aggregates maintained in a low-latency store rather than computed at request time.</p><div class="prep-say"><strong>30-second version</strong><p>Fraud is deviation from that cardholder's own normal, so the features are relative: amount versus their 30-day average, velocity counts over 1 minute to 7 days, first-time-merchant and first-time-country flags, implied geo travel speed, cyclical time versus their usual hours, and lagged out-of-fold merchant fraud rates. Every window computed as of the transaction's timestamp, never reaching forward, validated time-forward with an embargo for chargeback lag, and computable inside the authorisation latency budget.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Domain reasoning plus leakage discipline in the same answer. Feature engineering is where interviewers look for evidence you have worked on a real problem, and the “as of this timestamp, never reaching forward” constraint is the line that separates practitioners from tutorial readers.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> “Fraud is 0.1% of transactions. How does that change the plan?” — it changes evaluation and thresholding, not the features. PR-AUC and precision@k rather than accuracy or ROC-AUC; the threshold from the cost of a blocked legitimate transaction versus a missed fraud, which are wildly asymmetric and include a customer-experience cost that is not in the loss function. Any resampling stays inside the fold, and if I resample I must recalibrate afterwards. I would also expect concept drift to be fast here, because adversaries adapt — so a short retraining cadence and monitoring on the fraud <em>pattern</em> mix, not just the rate.</div></div></details>
 </section>
-<div class="page-nav"><a href="03-classification-vs-regression.html"><div class="dir">← Previous</div><div class="ttl">Classification vs Regression</div></a><a class="next" href="05-bias-variance-cross-validation.html"><div class="dir">Next →</div><div class="ttl">Bias–Variance &amp; Cross-Validation</div></a></div>
+<div class="page-nav" data-page-nav><a href="03-classification-vs-regression.html"><div class="dir">← Previous</div><div class="ttl">Classification vs Regression</div></a><a class="next" href="05-bias-variance-cross-validation.html"><div class="dir">Next →</div><div class="ttl">Bias–Variance &amp; Cross-Validation</div></a></div>
 </main>
 <div class="toc-rail"><nav class="toc"></nav></div>
 </div>
 </div>
 </div>
-<script src="assets/app.js?v=20260727c"></script>
-<script src="assets/ml-sitenav.js?v=20260727c"></script>
-<script src="assets/enhance.js?v=20260727c"></script>
+<script src="assets/app.js?v=20260731b"></script>
+<script src="assets/ml-sitenav.js?v=20260801b"></script>
+<script src="assets/enhance.js?v=20260801a"></script>
 <script src="assets/interview-prep.js?v=20260727c"></script>
+<script src="assets/ml-mobile.js?v=20260728c"></script>
 </body>
 </html>

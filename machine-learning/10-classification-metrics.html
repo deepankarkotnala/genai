@@ -36,11 +36,26 @@
 <link href="assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
 <!-- /Machine Learning brand metadata -->
 <meta content="Precision and recall without hesitation, why ROC-AUC misleads on rare positives, calibration, MCC, and the closed-form threshold derived from a cost matrix." name="description"/>
-<link href="assets/styles.css?v=20260727c" rel="stylesheet"/>
-<link href="assets/office-theme.css?v=20260727e" rel="stylesheet"/>
+<!-- Theme before first paint. Without this the document paints with the light
+     tokens and only flips when app.js runs at the end of <body>, which is a
+     white flash on every navigation in dark mode. Mirrors app.js's getTheme()
+     exactly — same key, same "light" default — so the pre-paint value can never
+     disagree with what the scripts apply a moment later. Inline and blocking on
+     purpose: an external file would cost a round trip before first paint. -->
+<script>(function(){try{var t=localStorage.getItem("gp.theme")||"light";document.documentElement.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Page transitions — see the same block in the other page families. `PageRevealEvent` is the only honest test for a CROSS-document view transition, and it has to run pre-paint or the arrival animation starts and is then cancelled. */var d=document.documentElement;if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260801d" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
 <link href="assets/ml-visuals.css?v=20260728a" rel="stylesheet"/>
+<link href="assets/ml-mobile.css?v=20260801a" rel="stylesheet"/>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="../assets/curriculum.js?v=20260804c"></script>
+<script defer src="../assets/page-nav.js?v=20260804c"></script>
 </head>
-<body data-page="ml-10-classification-metrics" data-prep-section="ml">
+<body data-curriculum-id="ml-10" data-page="ml-10-classification-metrics" data-prep-section="ml">
 <div class="app">
 <aside class="sidebar">
 <div class="brand">
@@ -56,7 +71,7 @@
 <div class="main">
 <header class="topbar">
 <button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
-<div class="crumbs">Machine Learning / Part C / Module 10</div>
+<div class="crumbs">Machine Learning / Part C / <b>Module 10</b></div>
 <button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
 </header>
 <div class="content-wrap">
@@ -66,9 +81,147 @@
 <p class="lead">If you master one module beyond logistic regression, make it this one. Interviewers use metric questions to test business judgment, and a wrong metric invalidates an otherwise good project.</p>
 <div class="meta-row"><span class="pill purple">Prerequisites · Modules 03, 05, 07</span><span class="pill">Study time · 10 h</span><span class="pill blue">9 interview questions</span><span class="pill purple">Highest priority</span></div>
 <div class="callout key"><div class="c-ico">🎯</div><div class="c-body"><div class="c-title">Your interview goal</div><p>Draw the confusion matrix from memory, never confuse precision with recall, know exactly when ROC-AUC lies, and derive the optimal threshold from a stated cost matrix.</p></div></div>
-<h2 id="what-to-learn">1 · What to learn</h2>
+<h2 id="ground-up">1 · From the ground up</h2>
+<div class="callout plain"><div class="c-ico">🧩</div><div class="c-body"><div class="c-title">In plain words</div><p>A classifier can be right in two ways and wrong in two ways. Those four counts are the whole story. Every metric you have heard of is just two of those counts in a fraction. Which fraction you should care about depends on which mistake hurts your business more. And the model does not really output a class — it outputs a score. The cutoff that turns that score into a yes or no is a dial you control.</p></div></div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>Start with the problem, not the formula</h4><p>You have 1,000 emails. Sixty of them are spam. Now build the laziest possible classifier: say "not spam" every time. It looks at nothing. It scores <strong>94% accuracy</strong>.</p><p>Now build a real model. It catches 40 of the 60 spam emails, and wrongly flags 10 good ones. Accuracy: <strong>97%</strong>. Only three points better than the model that does nothing.</p><div class="gu-so"><strong>So what:</strong> accuracy counts every row equally, so the bigger class decides the score. When one class is rare — which is true for almost anything worth detecting — accuracy stops telling you anything useful.</div></div>
+<div class="gu-step"><h4>The four numbers everything is built from</h4><p>Sort your predictions by two things: what you said, and whether you were right. That gives four counts. The names look confusing but follow a simple rule — the <em>second</em> word is what you predicted, the <em>first</em> word says whether that was correct.</p><ul>
+<li><strong>True Positive</strong> — you said positive, and it was. A catch.</li>
+<li><strong>False Positive</strong> — you said positive, but it was not. A false alarm.</li>
+<li><strong>False Negative</strong> — you said negative, but it was positive. A miss.</li>
+<li><strong>True Negative</strong> — you said negative, and it was.</li>
+</ul><div class="gu-so"><strong>So what:</strong> draw this 2×2 grid before you answer any metric question. Every formula below is two of these cells in a fraction. People who rebuild the formula from the grid never mix up precision and recall. People who memorised the formulas often do.</div></div>
+<div class="gu-step"><h4>Precision and recall differ only in what you divide by</h4><p>Both have <code>TP</code> on top. The only difference is the bottom of the fraction — and that is what makes them answer different questions.</p><p><strong>Precision</strong> = <code>TP / (TP + FP)</code>. You divide by everything <em>you flagged</em>. So it asks: <em>when I raise an alarm, how often am I right?</em></p><p><strong>Recall</strong> = <code>TP / (TP + FN)</code>. You divide by everything that <em>was actually positive</em>. So it asks: <em>of all the real cases out there, how many did I find?</em></p><div class="gu-so"><strong>So what:</strong> remember it as "<b>precision divides by what I predicted, recall divides by what was true</b>". Once you can say that, you cannot swap them. It also shows why neither one is better — they answer different questions.</div></div>
+</div>
+<div class="mlviz">
+<div class="mlviz-title">Same four cells — precision reads a column, recall reads a row</div>
+<div class="mlviz-scroll">
+<svg viewbox="0 0 660 300" role="img" aria-label="A two by two confusion matrix with 40 true positives, 20 false negatives, 10 false positives and 930 true negatives. The view alternates between highlighting the predicted-positive column, which is precision's denominator of 50, and the actual-positive row, which is recall's denominator of 60.">
+<text class="mv-lbl-sm" x="230" y="58" text-anchor="middle">predicted +</text>
+<text class="mv-lbl-sm" x="390" y="58" text-anchor="middle">predicted −</text>
+<text class="mv-lbl-sm" x="142" y="116" text-anchor="end">actual +</text>
+<text class="mv-lbl-sm" x="142" y="196" text-anchor="end">actual −</text>
+<rect class="mv-box-1" x="150" y="70" width="160" height="80" rx="8"></rect>
+<text class="mv-lbl mv-fill-1" x="230" y="106" text-anchor="middle">TP = 40</text>
+<text class="mv-lbl-xs" x="230" y="124" text-anchor="middle">caught</text>
+<rect class="mv-box-3" x="310" y="70" width="160" height="80" rx="8"></rect>
+<text class="mv-lbl mv-fill-3" x="390" y="106" text-anchor="middle">FN = 20</text>
+<text class="mv-lbl-xs" x="390" y="124" text-anchor="middle">missed</text>
+<rect class="mv-box-5" x="150" y="150" width="160" height="80" rx="8"></rect>
+<text class="mv-lbl mv-fill-5" x="230" y="186" text-anchor="middle">FP = 10</text>
+<text class="mv-lbl-xs" x="230" y="204" text-anchor="middle">false alarms</text>
+<rect class="mv-box" x="310" y="150" width="160" height="80" rx="8"></rect>
+<text class="mv-lbl" x="390" y="186" text-anchor="middle">TN = 930</text>
+<text class="mv-lbl-xs" x="390" y="204" text-anchor="middle">correctly ignored</text>
+<g class="mv-cyc2" style="--i:0">
+  <rect x="145" y="65" width="170" height="170" rx="12" fill="none" class="mv-str-1" stroke-width="3"></rect>
+  <text class="mv-lbl mv-fill-1" x="486" y="98">precision</text>
+  <text class="mv-mono-sm" x="486" y="116">TP / (TP + FP)</text>
+  <text class="mv-mono-sm mv-fill-1" x="486" y="132">= 40 / 50 = 0.80</text>
+  <text class="mv-lbl-xs" x="486" y="152">divide by what</text>
+  <text class="mv-lbl-xs" x="486" y="165">I predicted —</text>
+  <text class="mv-lbl-xs" x="486" y="178">a column</text>
+</g>
+<g class="mv-cyc2" style="--i:1">
+  <rect x="145" y="65" width="330" height="90" rx="12" fill="none" class="mv-str-3" stroke-width="3"></rect>
+  <text class="mv-lbl mv-fill-3" x="486" y="98">recall</text>
+  <text class="mv-mono-sm" x="486" y="116">TP / (TP + FN)</text>
+  <text class="mv-mono-sm mv-fill-3" x="486" y="132">= 40 / 60 = 0.67</text>
+  <text class="mv-lbl-xs" x="486" y="152">divide by what</text>
+  <text class="mv-lbl-xs" x="486" y="165">was true —</text>
+  <text class="mv-lbl-xs" x="486" y="178">a row</text>
+</g>
+<text class="mv-lbl-xs" x="150" y="256">accuracy = (40 + 930) / 1000 = 0.970</text>
+<text class="mv-lbl-xs mv-fill-5" x="150" y="272">always saying "negative" = 0.940 — so the model buys 3 points, and catches 2 of every 3 spam</text>
+<text class="mv-lbl-xs" x="150" y="288">F1 = 0.727 · the harmonic mean of 0.80 and 0.67</text>
+</svg>
+</div>
+<p class="mlviz-cap">Look at the two rings and the confusion goes away for good: <b>precision's ring stands up, recall's ring lies flat.</b> Also watch what accuracy does. It moves from 0.940 to 0.970 — a change too small to notice on a dashboard — while the thing you actually wanted went from zero to two-thirds.</p>
+</div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>The cutoff is yours, not the model's</h4><p>A classifier does not hand you a class. It hands you a score, ideally a probability. Something then compares that score to a cutoff and calls it yes or no. That cutoff of <strong>0.5 is just a habit</strong>. It is rarely the right business choice.</p><p>Lower the cutoff and you catch more real cases, but you also raise more false alarms: recall goes up, precision goes down. Raise it and the opposite happens. The model never changes. You are only choosing how much proof you want before you act.</p><div class="gu-so"><strong>So what:</strong> precision and recall do not belong to a model. They belong to <em>a model plus a cutoff</em>. Quoting them without saying the cutoff is half an answer. And "my precision is too low" is often a cutoff problem, not a model problem.</div></div>
+</div>
+<div class="mlviz">
+<div class="mlviz-title">One model, three cutoffs, three very different scores</div>
+<div class="mlviz-scroll">
+<svg viewbox="0 0 660 320" role="img" aria-label="Two score distributions drawn back to back: 940 negatives below the centre line clustered at low scores, 60 positives above it clustered at high scores. Three threshold positions are shown in turn. At 0.3 precision is 0.29 and recall 0.95; at 0.5 precision is 0.62 and recall 0.82; at 0.7 precision is 0.89 and recall 0.52.">
+<path class="mv-axis" d="M90 170 H600"></path>
+<g class="mv-lbl-xs" text-anchor="middle"><text x="90" y="290">0.0</text><text x="243" y="290">0.3</text><text x="345" y="290">0.5</text><text x="447" y="290">0.7</text><text x="596" y="290">1.0</text></g>
+<text class="mv-lbl-sm" x="343" y="308" text-anchor="middle">model score →</text>
+<text class="mv-lbl-xs mv-fill-1" x="96" y="86">60 positives (own scale)</text>
+<text class="mv-lbl-xs mv-fill-2" x="330" y="246">940 negatives (own scale)</text>
+<g class="mv-fill-1" opacity=".8">
+  <rect x="141" y="162.5" width="47" height="7.5" rx="2"></rect>
+  <rect x="192" y="155" width="47" height="15" rx="2"></rect>
+  <rect x="243" y="147.5" width="47" height="22.5" rx="2"></rect>
+  <rect x="294" y="132.5" width="47" height="37.5" rx="2"></rect>
+  <rect x="345" y="110" width="47" height="60" rx="2"></rect>
+  <rect x="396" y="95" width="47" height="75" rx="2"></rect>
+  <rect x="447" y="80" width="47" height="90" rx="2"></rect>
+  <rect x="498" y="80" width="47" height="90" rx="2"></rect>
+  <rect x="549" y="117.5" width="47" height="52.5" rx="2"></rect>
+</g>
+<g class="mv-fill-2" opacity=".8">
+  <rect x="90" y="170" width="47" height="80" rx="2"></rect>
+  <rect x="141" y="170" width="47" height="50" rx="2"></rect>
+  <rect x="192" y="170" width="47" height="30" rx="2"></rect>
+  <rect x="243" y="170" width="47" height="14" rx="2"></rect>
+  <rect x="294" y="170" width="47" height="8" rx="2"></rect>
+  <rect x="345" y="170" width="47" height="4" rx="2"></rect>
+  <rect x="396" y="170" width="47" height="1.2" rx="1"></rect>
+  <rect x="447" y="170" width="47" height="0.6" rx="1"></rect>
+</g>
+<g class="mv-cyc3" style="--i:0">
+  <rect class="mv-fill-3" x="345" y="72" width="251" height="182" opacity=".1"></rect>
+  <path class="mv-str-3" stroke-width="3" d="M345 68 V258"></path>
+  <text class="mv-mono-sm mv-fill-3" x="352" y="64">cutoff = 0.50 (the habit)</text>
+  <text class="mv-lbl-xs" x="96" y="30">TP 49 · FP 30 · FN 11</text>
+  <text class="mv-lbl mv-fill-3" x="96" y="50">precision 0.62 · recall 0.82</text>
+</g>
+<g class="mv-cyc3" style="--i:1">
+  <rect class="mv-fill-3" x="243" y="72" width="353" height="182" opacity=".1"></rect>
+  <path class="mv-str-3" stroke-width="3" d="M243 68 V258"></path>
+  <text class="mv-mono-sm mv-fill-3" x="250" y="64">cutoff = 0.30 — catch nearly everything</text>
+  <text class="mv-lbl-xs" x="96" y="30">TP 57 · FP 140 · FN 3</text>
+  <text class="mv-lbl mv-fill-3" x="96" y="50">precision 0.29 · recall 0.95</text>
+</g>
+<g class="mv-cyc3" style="--i:2">
+  <rect class="mv-fill-3" x="447" y="72" width="149" height="182" opacity=".1"></rect>
+  <path class="mv-str-3" stroke-width="3" d="M447 68 V258"></path>
+  <text class="mv-mono-sm mv-fill-3" x="336" y="64">cutoff = 0.70 — only act when sure</text>
+  <text class="mv-lbl-xs" x="96" y="30">TP 31 · FP 4 · FN 29</text>
+  <text class="mv-lbl mv-fill-3" x="96" y="50">precision 0.89 · recall 0.52</text>
+</g>
+<text class="mv-lbl-xs" x="472" y="274">shaded = predicted positive</text>
+</svg>
+</div>
+<div class="mv-keys"><span><i class="mv-k1"></i>positives</span><span><i class="mv-k2"></i>negatives</span><span><i class="mv-k3"></i>the cutoff you chose</span></div>
+<p class="mlviz-cap">Precision swings from 0.29 to 0.89. Recall swings from 0.95 to 0.52. <b>And the model never changed.</b> The two classes are drawn on separate scales because there are 940 of one and 60 of the other — and that gap is exactly why the false alarms pile up so fast at a low cutoff.</p>
+</div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>F1 is a choice, and its default is an assumption</h4><p>F1 combines precision and recall into one number: <code>2PR / (P + R)</code>. It uses a harmonic mean, not a plain average, so a lopsided pair cannot hide. Precision 1.0 with recall 0.02 gives a plain average of 0.51 — but an F1 of 0.039. It demands that both be decent.</p><p>But look at what F1 quietly assumes: that precision and recall matter <strong>equally</strong>. That is a claim about your business, and it is usually wrong. <code>Fβ</code> exists for this. Use <code>β &gt; 1</code> when a miss is worse, <code>β &lt; 1</code> when a false alarm is worse.</p><div class="gu-so"><strong>So what:</strong> grabbing F1 by default is the same mistake as grabbing accuracy by default — just harder to spot. If you cannot say why a false alarm and a miss cost the same here, F1 is not a measurement. It is a guess wearing a formula.</div></div>
+<div class="gu-step"><h4>Why ROC-AUC looks great when positives are rare</h4><p>ROC plots recall against the <strong>false positive rate</strong>, <code>FP / (FP + TN)</code>. Look at what is on the bottom: <em>every negative in your data</em>. When negatives hugely outnumber positives, that number is enormous — so even a flood of false alarms barely moves it.</p><p>Here is a concrete case. Ten positives, 9,990 negatives. Your model finds all ten and raises 100 false alarms. FPR is <code>100 / 9990 ≈ 1%</code>, which draws a beautiful ROC curve. But precision is <code>10 / 110 ≈ 9%</code>. <strong>Ninety-one out of every hundred alerts are wrong.</strong> The team handling those alerts will stop trusting the system within a week.</p><div class="gu-so"><strong>So what:</strong> the precision–recall curve uses precision, and precision divides by what <em>you</em> flagged — not by the whole haystack. So a big negative class cannot water it down. <b>Rare positives → report PR-AUC.</b> This is the most useful metric decision in the module.</div></div>
+<div class="gu-step"><h4>Sorting well is not the same as being right about probabilities</h4><p>ROC-AUC, PR-AUC and precision-at-k only care about <em>order</em>. A model that gives 0.9 to every positive and 0.8 to every negative sorts perfectly and scores an AUC of 1.0 — while every probability it reports is wrong.</p><p>Calibration is the separate question: does a score of 0.7 really mean 70% of those cases turn out positive? Check it with a reliability curve. Fix it with Platt scaling or isotonic regression, always fitted on data the model has not seen.</p><div class="gu-so"><strong>So what:</strong> if the score just sorts a work queue, good ordering is enough. If the number gets multiplied by something — an expected loss, a price, a dose — <strong>you need calibration, and AUC will not tell you whether you have it</strong>.</div></div>
+<div class="gu-step"><h4>Where the cutoff should actually come from</h4><p>Stop guessing it. Say a miss costs <code>C_FN</code> and a false alarm costs <code>C_FP</code>. Acting on a case with predicted probability <code>p</code> is worth it when acting costs less than not acting:</p><p><code>(1 − p) · C_FP &lt; p · C_FN</code>&nbsp;&nbsp;→&nbsp;&nbsp;<code>p &gt; C_FP / (C_FP + C_FN)</code></p><p>So the best cutoff is <code>C_FP / (C_FP + C_FN)</code>. Notice it depends only on the <em>ratio</em> of the two costs. If a miss is nine times worse than a false alarm, the cutoff is <code>1/10 = 0.10</code> — nowhere near 0.5.</p><div class="gu-so"><strong>So what:</strong> this is the strongest answer to "how would you pick the threshold?". It also needs calibrated probabilities to work, which is why the last step matters. And it sums up the whole module: <b>both the metric and the cutoff come from the cost of being wrong, not from the model.</b></div></div>
+</div>
+<div class="gu-analogy"><b>Analogy</b> — airport security. Turn the scanner up and you catch every real threat, but you also stop hundreds of people carrying nothing but keys. Recall is near perfect, precision is awful, and the queue reaches the car park. Turn it down and the queue disappears, along with your ability to find anything. <b>Nobody sets that dial by looking at accuracy</b> — almost everyone is harmless, so a scanner that is switched off scores nearly 100%. You set it by deciding what a miss costs compared to a pointless search. That is the cost ratio above, and it is why the decision belongs to people, not to the machine.</div>
+<div class="gu-jargon">
+<div><strong>confusion matrix</strong><span>the 2×2 grid of TP, FP, FN, TN. Every metric here is two of its cells in a fraction.</span></div>
+<div><strong>precision</strong><span>TP/(TP+FP). Of what I flagged, how much was right. Divides by my predictions.</span></div>
+<div><strong>recall / sensitivity / TPR</strong><span>TP/(TP+FN). Of what was really there, how much I found. Divides by reality.</span></div>
+<div><strong>specificity</strong><span>TN/(TN+FP). The same idea as recall, but for the negative class.</span></div>
+<div><strong>FPR</strong><span>FP/(FP+TN) = 1 − specificity. Its huge bottom number on rare-positive data is why ROC misleads.</span></div>
+<div><strong>F1 / Fβ</strong><span>precision and recall combined. F1 says they matter equally; Fβ lets you say they do not.</span></div>
+<div><strong>ROC-AUC</strong><span>the chance a random positive scores above a random negative. Ignores class balance — handy for comparing, misleading for rare positives.</span></div>
+<div><strong>PR-AUC</strong><span>area under the precision–recall curve. The right summary when positives are rare.</span></div>
+<div><strong>MCC</strong><span>a single balanced score that uses all four cells. The best choice if you truly need one number.</span></div>
+<div><strong>calibration</strong><span>a score of 0.7 really means 70%. Separate from sorting quality, and required if the number feeds a calculation.</span></div>
+<div><strong>threshold / cutoff</strong><span>the line that turns a score into a decision. Yours to set — ideally at C_FP/(C_FP+C_FN).</span></div>
+<div><strong>precision@k</strong><span>precision inside the top k scores. The honest metric when your capacity is fixed, like reviewer hours.</span></div>
+</div>
+<h2 id="what-to-learn">2 · What to learn</h2>
 <ol><li>The confusion matrix: TP, FP, TN, FN — and being able to draw it correctly, labelled, from memory.</li><li>Accuracy, and the <strong>accuracy paradox</strong> on imbalanced data.</li><li><strong>Precision</strong> = TP/(TP+FP): of the ones I flagged, how many were right?</li><li><strong>Recall</strong> / sensitivity / TPR = TP/(TP+FN): of the real positives, how many did I catch?</li><li>Specificity / TNR = TN/(TN+FP); FPR = 1 − specificity.</li><li><strong>F1</strong> as the harmonic mean, and <strong>F-beta</strong> for asymmetric weighting.</li><li>The precision–recall trade-off, and why it is driven entirely by the threshold.</li><li><strong>ROC curve</strong> and ROC-AUC — including AUC’s probabilistic interpretation.</li><li><strong>Precision–Recall curve</strong> and PR-AUC / average precision — and when to prefer it.</li><li>Why ROC-AUC is misleadingly optimistic under severe imbalance.</li><li><strong>Log-loss</strong> and <strong>Brier score</strong> — probability-quality metrics, not label metrics.</li><li><strong>Calibration</strong>: reliability diagrams, expected calibration error, Platt scaling, isotonic regression.</li><li><strong>MCC</strong>, Cohen’s kappa, balanced accuracy — and when each is the right answer.</li><li>Threshold selection from an explicit <strong>cost matrix</strong>; expected-cost minimization.</li><li>Multi-class: per-class metrics, and <strong>macro versus micro versus weighted</strong> averaging.</li><li>Multi-label metrics: Hamming loss, subset accuracy, mAP.</li><li>Ranking metrics you should recognize: precision@k, recall@k, MAP, NDCG.</li></ol>
-<h2 id="confusion-matrix">2 · Draw the matrix, always</h2>
+<h2 id="confusion-matrix">3 · Draw the matrix, always</h2>
 <p>In any metric question, draw it first. It anchors the discussion and prevents the precision/recall mix-up that ends interviews.</p>
 <div class="code-block" data-reveal="">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>confusion_matrix.txt</span><button class="copy-btn">Copy</button></div>
@@ -86,7 +239,7 @@
               "of my flags, how many were real?" </code></pre>
 </div>
 <div class="callout"><div class="c-ico">🧭</div><div class="c-body"><div class="c-title">The mnemonic that survives interview pressure</div><p><strong>Precision is a column</strong> — it divides by what you <em>predicted</em> positive. <strong>Recall is a row</strong> — it divides by what <em>actually is</em> positive.</p></div></div>
-<h2 id="intuitions">3 · Core intuitions</h2>
+<h2 id="intuitions">4 · Core intuitions</h2>
 <h3>Precision protects the user from false alarms; recall protects the business from misses</h3>
 <p>Every metric question reduces to: which error is more expensive here? Missing a cancer diagnosis (FN) is catastrophic; a false cancer alert (FP) costs an unnecessary biopsy — so recall dominates. Wrongly blocking a legitimate customer’s card (FP) causes churn; missing a small fraudulent charge (FN) costs the transaction value — so the balance depends on relative amounts, and the right answer is an expected-cost calculation, not a metric name.</p>
 <h3>The threshold, not the model, moves you along the trade-off</h3>
@@ -103,7 +256,7 @@
 <p>A model outputting <code>p/1000</code> for every case has identical ranking to one outputting <code>p</code> — the same AUC — but is uselessly miscalibrated. If a human or a rule consumes the <em>number</em>, you need calibration; if only the <em>order</em> matters, you need discrimination. Say which one the application needs.</p>
 <h3>MCC is the most honest single number for a binary confusion matrix</h3>
 <p>It uses all four cells, returns −1 to +1 with 0 as random, and unlike F1 it cannot be inflated by a degenerate predict-everything-positive strategy on imbalanced data. It is underused, and naming it scores well.</p>
-<h2 id="formulas">4 · Whiteboard formulas</h2>
+<h2 id="formulas">5 · Whiteboard formulas</h2>
 <div class="code-block" data-reveal="">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>classification_metrics.txt</span><button class="copy-btn">Copy</button></div>
 <pre><code>Accuracy          = (TP+TN) / (TP+TN+FP+FN)
@@ -132,12 +285,12 @@ Optimal threshold for a CALIBRATED model:
    t* = C_FP / (C_FP + C_FN)</code></pre>
 </div>
 <div class="callout"><div class="c-ico">🧭</div><div class="c-body"><div class="c-title">Memorize that last line</div><p>If a false positive costs £10 and a false negative costs £190, then <code>t* = 10/200 = 0.05</code> — flag anything above a 5% predicted probability. Producing that formula in an applied round is a standout moment.</p></div></div>
-<h2 id="selection">5 · Metric selection guide</h2>
+<h2 id="selection">6 · Metric selection guide</h2>
 <div class="table-wrap"><table><thead><tr><th>Situation</th><th>Primary metric</th><th>Why</th></tr></thead><tbody><tr><td>Balanced classes, symmetric costs</td><td>Accuracy, F1</td><td>Simple and meaningful</td></tr><tr><td>Rare positives (fraud, disease, defects)</td><td><strong>PR-AUC / average precision</strong></td><td>ROC-AUC hides FP growth</td></tr><tr><td>Missing a positive is catastrophic</td><td><strong>Recall</strong> (with a precision floor)</td><td>FN cost dominates</td></tr><tr><td>False alarms are expensive or annoying</td><td><strong>Precision</strong> (with a recall floor)</td><td>FP cost dominates</td></tr><tr><td>Costs are quantifiable</td><td><strong>Expected cost</strong> at a tuned threshold</td><td>Directly optimizes the objective</td></tr><tr><td>Score feeds a downstream calculation</td><td><strong>Log-loss / Brier</strong> + calibration</td><td>Need honest probabilities</td></tr><tr><td>Comparing models’ ranking ability</td><td>ROC-AUC (balanced) or PR-AUC (imbalanced)</td><td>Threshold-free</td></tr><tr><td>Multi-class, all classes equally important</td><td><strong>Macro-F1</strong></td><td>Rare classes weighted equally</td></tr><tr><td>Multi-class, overall correctness matters</td><td>Micro-F1 / accuracy</td><td>Weighted by frequency</td></tr><tr><td>Single honest summary on imbalanced data</td><td><strong>MCC</strong></td><td>Uses all four cells</td></tr><tr><td>Top-k results shown to a user</td><td>precision@k, NDCG</td><td>Matches what users see</td></tr></tbody></table></div>
-<h2 id="drill">6 · Hands-on drill</h2>
+<h2 id="drill">7 · Hands-on drill</h2>
 <ol><li>Compute every metric above from a raw confusion matrix <strong>by hand, on paper</strong>, for TP=40, FP=60, FN=10, TN=9890. Then reproduce them with <code>sklearn</code> and check yourself.</li><li>On an imbalanced dataset, plot the ROC curve and the PR curve side by side for the same model. Then add 10× more negatives and re-plot both. <strong>The ROC curve will barely move; the PR curve will collapse.</strong> This single experiment is the best possible preparation for the ROC-versus-PR question.</li><li>Sweep the threshold from 0 to 1 and plot precision, recall and F1 against it. Locate the F1-maximal threshold and note how far it is from 0.5.</li><li>Define a cost matrix (<code>C_FP = 10</code>, <code>C_FN = 190</code>), compute expected cost across thresholds, find the minimizing threshold empirically, and confirm it lands near the <code>C_FP/(C_FP+C_FN)</code> prediction for a calibrated model.</li><li>Plot reliability diagrams for logistic regression, an SVM decision function, and untuned XGBoost. Then apply Platt scaling and isotonic regression to the latter two and re-plot.</li></ol>
 <div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">Gotchas that fail candidates</div><ul><li><strong>Reporting accuracy on an imbalanced problem</strong> without flagging it. An instant negative signal.</li><li><strong>Mixing up precision and recall</strong> under pressure. Use the row/column mnemonic.</li><li><strong>Defaulting to ROC-AUC</strong> for a 0.1%-positive problem.</li><li><strong>Reporting F1 without saying which class it is for</strong>, or macro/micro without saying which.</li><li><strong>Not knowing that AUC is threshold-free</strong> and therefore says nothing about your operating point.</li><li><strong>Tuning the threshold on the test set.</strong> Tune it on validation.</li><li><strong>Confusing calibration with accuracy.</strong></li><li><strong>Forgetting the PR baseline is not 0.5.</strong> A PR-AUC of 0.3 on a 1%-positive problem is 30× baseline.</li></ul></div></div>
-<h2 id="questions">7 · Interview questions</h2>
+<h2 id="questions">8 · Interview questions</h2>
 <div class="prep-toolbar" data-sticky-prep=""><label class="prep-filter"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><input data-question-filter="" placeholder="Filter these questions…"/></label><button class="btn ghost" data-expand-answers="" type="button">Open all</button><span class="prep-count" data-question-count="">9 questions</span></div>
 <section aria-label="Classification metrics interview questions" class="prep-question-list">
 <details class="prep-question" data-question="draw the confusion matrix and define precision and recall" data-tags="fundamentals confusion matrix">
@@ -168,15 +321,16 @@ Optimal threshold for a CALIBRATED model:
 <summary><span class="prep-q-no">09</span><span class="prep-q-title">What is MCC and why might you prefer it?<span class="prep-tags"><span>MCC</span><span>imbalance</span><span>breadth</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>The Matthews correlation coefficient is essentially the Pearson correlation between predicted and actual binary labels: <code>(TP·TN − FP·FN)/√((TP+FP)(TP+FN)(TN+FP)(TN+FN))</code>, ranging from −1 (perfectly wrong) through 0 (random) to +1 (perfect).</p><p>Its advantage is that it uses <strong>all four cells</strong> of the confusion matrix, so unlike F1 — which ignores TN — it cannot be inflated by a degenerate strategy on imbalanced data. A model predicting all-positive on a 1%-positive dataset gets a non-trivial F1 but an MCC of approximately 0.</p><p>It is therefore the most trustworthy single-number summary for imbalanced binary problems, and it is symmetric under swapping which class you call positive — which F1 is not.</p><div class="prep-say"><strong>30-second version</strong><p>The correlation between predicted and actual labels, from −1 to +1. It uses all four confusion-matrix cells, so unlike F1 it cannot be inflated by predicting everything positive on imbalanced data.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Breadth beyond the standard four metrics. Naming MCC unprompted, with the “uses all four cells” justification, is a clear positive signal.</p></div></div></details>
 </section>
-<div class="page-nav"><a href="09-gradient-descent-optimization.html"><div class="dir">← Previous</div><div class="ttl">Gradient Descent &amp; Optimization</div></a><a class="next" href="11-regression-metrics.html"><div class="dir">Next →</div><div class="ttl">Regression Metrics</div></a></div>
+<div class="page-nav" data-page-nav><a href="09-gradient-descent-optimization.html"><div class="dir">← Previous</div><div class="ttl">Gradient Descent &amp; Optimization</div></a><a class="next" href="11-regression-metrics.html"><div class="dir">Next →</div><div class="ttl">Regression Metrics</div></a></div>
 </main>
 <div class="toc-rail"><nav class="toc"></nav></div>
 </div>
 </div>
 </div>
-<script src="assets/app.js?v=20260727c"></script>
-<script src="assets/ml-sitenav.js?v=20260727c"></script>
-<script src="assets/enhance.js?v=20260727c"></script>
+<script src="assets/app.js?v=20260731b"></script>
+<script src="assets/ml-sitenav.js?v=20260801b"></script>
+<script src="assets/enhance.js?v=20260801a"></script>
 <script src="assets/interview-prep.js?v=20260727c"></script>
+<script src="assets/ml-mobile.js?v=20260728c"></script>
 </body>
 </html>

@@ -36,11 +36,26 @@
 <link href="assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
 <!-- /Machine Learning brand metadata -->
 <meta content="The curse of dimensionality and distance concentration, why Naive Bayes works despite a false assumption, Laplace smoothing as a Dirichlet prior, and LDA versus PCA." name="description"/>
-<link href="assets/styles.css?v=20260727c" rel="stylesheet"/>
-<link href="assets/office-theme.css?v=20260727e" rel="stylesheet"/>
+<!-- Theme before first paint. Without this the document paints with the light
+     tokens and only flips when app.js runs at the end of <body>, which is a
+     white flash on every navigation in dark mode. Mirrors app.js's getTheme()
+     exactly — same key, same "light" default — so the pre-paint value can never
+     disagree with what the scripts apply a moment later. Inline and blocking on
+     purpose: an external file would cost a round trip before first paint. -->
+<script>(function(){try{var t=localStorage.getItem("gp.theme")||"light";document.documentElement.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Page transitions — see the same block in the other page families. `PageRevealEvent` is the only honest test for a CROSS-document view transition, and it has to run pre-paint or the arrival animation starts and is then cancelled. */var d=document.documentElement;if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260801d" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
 <link href="assets/ml-visuals.css?v=20260728a" rel="stylesheet"/>
+<link href="assets/ml-mobile.css?v=20260801a" rel="stylesheet"/>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="../assets/curriculum.js?v=20260804c"></script>
+<script defer src="../assets/page-nav.js?v=20260804c"></script>
 </head>
-<body data-page="ml-13-knn-naive-bayes" data-prep-section="ml">
+<body data-curriculum-id="ml-13" data-page="ml-13-knn-naive-bayes" data-prep-section="ml">
 <div class="app">
 <aside class="sidebar">
 <div class="brand">
@@ -56,7 +71,7 @@
 <div class="main">
 <header class="topbar">
 <button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
-<div class="crumbs">Machine Learning / Part C / Module 13</div>
+<div class="crumbs">Machine Learning / Part C / <b>Module 13</b></div>
 <button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
 </header>
 <div class="content-wrap">
@@ -66,14 +81,113 @@
 <p class="lead">Rarely your production model, but these three carry concepts you will be tested on: lazy learning, the curse of dimensionality, and generative classification.</p>
 <div class="meta-row"><span class="pill purple">Prerequisites · Modules 01, 02, 04</span><span class="pill">Study time · 6 h</span><span class="pill blue">6 interview questions</span><span class="pill">THEORY · MATH</span></div>
 <div class="callout key"><div class="c-ico">🎯</div><div class="c-body"><div class="c-title">Your interview goal</div><p>Explain distance concentration geometrically, say why Naive Bayes classifies well while estimating probabilities badly, and hold LDA, PCA and logistic regression cleanly apart.</p></div></div>
-<h2 id="what-to-learn">1 · What to learn</h2>
+<h2 id="ground-up">1 · From the ground up</h2>
+<div class="callout plain"><div class="c-ico">🧩</div><div class="c-body"><div class="c-title">In plain words</div><p>These are two of the simplest algorithms in machine learning, and neither is here because you will ship it. Each one teaches a lesson bigger than itself. <strong>KNN</strong> does no learning at all — it stores the data and looks up the closest rows — which makes it the cleanest possible place to see how distance stops working in high dimensions. <strong>Naive Bayes</strong> is built on an assumption everyone knows is false, and it works anyway, which teaches you that a wrong assumption is not automatically a fatal one.</p></div></div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>KNN: the model with no training step</h4><p>Training a KNN is just storing your data. That is the entire fit. To predict a new row you measure its distance to every stored row, take the <code>k</code> closest, and let them vote.</p><p>So there is no equation, no weights, nothing learned. This is why it is called a <strong>lazy learner</strong> — it postpones all the work until you ask it a question.</p><div class="gu-so"><strong>So what:</strong> the cost is upside-down compared with every other model. Training is instant; <em>prediction</em> is slow and grows with your dataset, because every prediction scans everything you stored. That alone rules it out for most production serving.</div></div>
+<div class="gu-step"><h4>k is the same bias–variance dial as everywhere else</h4><p>Set <code>k = 1</code> and every training point is its own neighbour, so training accuracy is a perfect 100% and the boundary is a jagged shape that traces every last piece of noise. Classic high variance.</p><p>Set <code>k</code> to the size of the dataset and every prediction is just the majority class, everywhere. Classic high bias.</p><div class="gu-so"><strong>So what:</strong> <b>small k = wiggly and overfit, large k = smooth and underfit.</b> It is the same dial as tree depth or SVM's C, wearing different clothes — and seeing that it is the same dial is more valuable than remembering the algorithm.</div></div>
+<div class="gu-step"><h4>Scaling is not optional here — it decides the answer</h4><p>Distance adds up the difference on every feature. Now put salary and age in the same table. Two people differ by 40 years of age and by 1,000 rupees of salary. The distance between them is <code>√(40² + 1000²) ≈ 1000.8</code>.</p><p>Age contributed 0.8 of that. In effect, the model ignored age completely.</p><div class="gu-so"><strong>So what:</strong> <b>unscaled KNN is KNN on whichever feature happens to have the biggest numbers.</b> Always standardise first. This is also the sharpest way to remember which models need scaling — anything that measures distance does; trees, which only compare one feature to a threshold, do not.</div></div>
+<div class="gu-step"><h4>The real lesson: in high dimensions nothing is nearby</h4><p>KNN rests on one assumption: that the closest rows are genuinely similar. In two or three dimensions that is obviously true. Add features and it quietly stops being true.</p><p>Here is a way to see it exactly. Imagine your data spread evenly through a cube with sides of length 1. You want a small box around your query point holding <strong>10% of the data</strong>. How long must that box's sides be? The answer is <code>0.1^(1/d)</code>, where <code>d</code> is the number of features — and the numbers are startling.</p><div class="gu-so"><strong>So what:</strong> in 100 dimensions your "local neighbourhood" has to stretch across 98% of every single axis. <b>It is not a neighbourhood at all — it is nearly the whole dataset.</b> The word "nearest" has quietly lost its meaning.</div></div>
+</div>
+<div class="mlviz">
+<div class="mlviz-title">How much of each axis you must cover to reach just 10% of the data</div>
+<div class="mlviz-scroll">
+<svg viewbox="0 0 660 290" role="img" aria-label="A bar chart of the edge length needed to enclose ten percent of uniformly spread data, as the number of features grows. With 1 feature you need 10 percent of the axis, with 2 features 32 percent, with 10 features 79 percent, and with 100 features 98 percent.">
+<g class="mv-gridline"><path d="M90 60 H620"></path><path d="M90 105 H620"></path><path d="M90 150 H620"></path><path d="M90 195 H620"></path><path d="M90 240 H620"></path></g>
+<path class="mv-axis" d="M90 50 V240 H620"></path>
+<g class="mv-lbl-xs" text-anchor="end"><text x="82" y="244">0%</text><text x="82" y="154">50%</text><text x="82" y="64">100%</text></g>
+<text class="mv-lbl-sm" x="34" y="150" text-anchor="middle" transform="rotate(-90 34 150)">side length needed</text>
+
+<rect class="mv-fill-1" x="112" y="222" width="86" height="18" rx="4" opacity=".85"></rect>
+<text class="mv-lbl mv-fill-1" x="155" y="214" text-anchor="middle">10%</text>
+<text class="mv-lbl-sm" x="155" y="262" text-anchor="middle">1 feature</text>
+
+<rect class="mv-fill-1" x="242" y="183" width="86" height="57" rx="4" opacity=".85"></rect>
+<text class="mv-lbl mv-fill-1" x="285" y="175" text-anchor="middle">32%</text>
+<text class="mv-lbl-sm" x="285" y="262" text-anchor="middle">2 features</text>
+
+<rect class="mv-fill-3" x="372" y="97" width="86" height="143" rx="4" opacity=".85"></rect>
+<text class="mv-lbl mv-fill-3" x="415" y="89" text-anchor="middle">79%</text>
+<text class="mv-lbl-sm" x="415" y="262" text-anchor="middle">10 features</text>
+
+<rect class="mv-fill-5" x="502" y="64" width="86" height="176" rx="4" opacity=".85"></rect>
+<text class="mv-lbl mv-fill-5" x="545" y="56" text-anchor="middle">98%</text>
+<text class="mv-lbl-sm" x="545" y="262" text-anchor="middle">100 features</text>
+
+<text class="mv-mono-sm" x="98" y="42">side = 0.1 ^ (1 / number of features)</text>
+<text class="mv-lbl-xs" x="98" y="282">Ten features already forces you to span four-fifths of every axis. At that point "nearest neighbour" means very little.</text>
+</svg>
+</div>
+<p class="mlviz-cap">This is the <b>curse of dimensionality</b>, and it is not a vague warning — it is arithmetic. As features pile up, every point drifts roughly the same distance from every other point, so the gap between the nearest and the furthest neighbour shrinks toward nothing. <b>Any method that relies on distance degrades</b>: KNN, k-means, DBSCAN, RBF kernels. The usual fix is to cut the dimensions first with PCA or feature selection.</p>
+</div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>Naive Bayes: making an impossible sum possible</h4><p>You want <code>P(spam | the words in this email)</code>. Bayes' rule flips it into something you can count: <code>P(words | spam) · P(spam)</code>.</p><p>Except you still cannot count it. <code>P(words | spam)</code> means the probability of that <em>exact whole combination</em> of words. With a vocabulary of ten thousand words, the number of possible combinations is larger than any dataset will ever be. You would need to have seen this precise email before.</p><p>So Naive Bayes makes one sweeping assumption: <strong>given the class, the features are independent of each other</strong>. Then the joint probability becomes a simple product — <code>P(w₁|spam) × P(w₂|spam) × …</code> — and each of those is just counting one word at a time.</p><div class="gu-so"><strong>So what:</strong> the "naive" assumption is not a modelling nicety, it is <b>the thing that turns an impossible count into an easy one</b>. That is why it survives despite being false.</div></div>
+<div class="gu-step"><h4>Why being wrong does not stop it working</h4><p>The assumption is plainly false. "Free" and "money" turn up together far more often than chance. So the probabilities Naive Bayes reports are wrong, and often wildly wrong — it counts the same evidence several times over and drives its outputs to 0.999 or 0.001.</p><p>But look at what a classifier actually has to do: pick <em>which class scores highest</em>. It never has to get the number right. Correlated features exaggerate the score for both classes at once, so the <strong>ranking usually survives even when the magnitude does not</strong>.</p><div class="gu-so"><strong>So what:</strong> say it as <em>"Naive Bayes is a good classifier and a bad probability estimator"</em>. Use its predictions; do not use its <code>predict_proba</code> as a real probability, and never feed it into an expected-cost calculation without calibrating first.</div></div>
+</div>
+<div class="mlviz">
+<div class="mlviz-title">Badly wrong probabilities, entirely correct decisions</div>
+<div class="mlviz-scroll">
+<svg viewbox="0 0 660 300" role="img" aria-label="Five emails compared. The true probability of spam ranges from 0.95 down to 0.05 in gentle steps, while Naive Bayes reports values pinned near 1.0 or near 0.0. Both cross the 0.5 line at the same place, so all five decisions match.">
+<path class="mv-axis" d="M120 50 V218 H620"></path>
+<path class="mv-str-3 mv-dash" stroke-width="1.6" d="M370 44 V226"></path>
+<g class="mv-lbl-xs" text-anchor="middle"><text x="120" y="238">0.0</text><text x="370" y="238">0.5</text><text x="620" y="238">1.0</text></g>
+<text class="mv-lbl-sm" x="370" y="258" text-anchor="middle">probability of spam →</text>
+
+<!-- rows: y, label, true p, nb p -->
+<g class="mv-lbl-xs" text-anchor="end">
+  <text x="112" y="72">email A</text><text x="112" y="104">email B</text><text x="112" y="136">email C</text><text x="112" y="168">email D</text><text x="112" y="200">email E</text>
+</g>
+<!-- true probabilities -->
+<g class="mv-fill-2">
+  <circle cx="595" cy="68" r="6"></circle><circle cx="530" cy="100" r="6"></circle><circle cx="395" cy="132" r="6"></circle>
+  <circle cx="220" cy="164" r="6"></circle><circle cx="145" cy="196" r="6"></circle>
+</g>
+<!-- naive bayes -->
+<g class="mv-fill-5">
+  <rect x="614" y="62" width="11" height="11" rx="2"></rect><rect x="613" y="94" width="11" height="11" rx="2"></rect>
+  <rect x="591" y="126" width="11" height="11" rx="2"></rect><rect x="120" y="158" width="11" height="11" rx="2"></rect>
+  <rect x="119" y="190" width="11" height="11" rx="2"></rect>
+</g>
+<!-- connecting the pairs -->
+<g class="mv-str-3" stroke-width="1.2" opacity=".5">
+  <path d="M601 68 H614"></path><path d="M536 100 H613"></path><path d="M401 132 H591"></path>
+  <path d="M214 164 H131"></path><path d="M139 196 H130"></path>
+</g>
+<text class="mv-mono-sm" x="120" y="288">both call A, B and C spam · both clear D and E</text>
+<text class="mv-lbl mv-fill-2" x="140" y="44">true probability</text>
+<text class="mv-lbl mv-fill-5" x="290" y="44">Naive Bayes output</text>
+</svg>
+</div>
+<div class="mv-keys"><span><i class="mv-k2"></i>the honest probability</span><span><i class="mv-k5"></i>what Naive Bayes reports</span><span><i class="mv-k3"></i>the 0.5 cutoff</span></div>
+<p class="mlviz-cap">Every Naive Bayes value has been shoved to an extreme — email C's honest 0.55 is reported as 0.91. <b>Yet every one of the five decisions is identical</b>, because all that matters is which side of the line a point lands on. That gap between "the decision is right" and "the number is right" is the whole point of the algorithm.</p>
+</div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>One zero would destroy the whole product</h4><p>Naive Bayes multiplies probabilities together. So if a single word never appeared in any spam email during training, <code>P(word | spam) = 0</code>, and the entire product collapses to zero — no matter how obviously spam-like the other twenty words are.</p><p>The fix is <strong>Laplace smoothing</strong>: add 1 to every count before dividing. Nothing is ever exactly zero, so no single unseen word can veto the whole decision.</p><div class="gu-so"><strong>So what:</strong> this is not a patch, it is a <b>prior</b> — you are saying "I have not seen this word in spam, but I refuse to claim it is impossible." Two other practical notes: use <em>log</em> probabilities and add them instead of multiplying, or long documents underflow to zero; and pick the right variant — Multinomial for word counts, Bernoulli for present/absent, Gaussian for continuous features.</div></div>
+<div class="gu-step"><h4>LDA and PCA look similar and answer different questions</h4><p>Both find new directions to project your data onto, and both are often used to reduce dimensions. The difference is what they optimise.</p><p><strong>PCA</strong> looks for the directions with the most spread, and never looks at the labels. <strong>LDA</strong> looks for the directions that best <em>separate the classes</em>, and needs the labels to do it.</p><div class="gu-so"><strong>So what:</strong> <b>PCA is unsupervised, LDA is supervised</b> — that one line answers the question. The consequence: PCA can happily discard the very direction that separates your classes, if that direction happens to have low variance. LDA cannot, because separation is the only thing it is looking for.</div></div>
+</div>
+<div class="gu-analogy"><b>Analogy</b> — <em>KNN</em> is asking your five nearest neighbours how they voted, and assuming you will vote the same way. Reasonable on a real street. Now imagine a street defined by a hundred different characteristics — age, income, job, diet, commute, and so on. Once you demand "similar on all hundred", your five nearest neighbours are not close on anything in particular; they are just the least-far people in a very empty place. <b>That is the curse of dimensionality.</b> <em>Naive Bayes</em> is a detective who treats every clue as unrelated to every other. Fingerprints and a matching shoe size are counted as two independent shocks, when really they point at the same person. The detective is far too confident, and still names the right suspect — because they only have to rank the suspects, not state the true odds.</div>
+<div class="gu-jargon">
+<div><strong>lazy learner</strong><span>a model that stores the data and does the work at prediction time. KNN is the standard example.</span></div>
+<div><strong>k</strong><span>how many neighbours vote. Small k overfits, large k underfits. Odd values avoid ties in binary problems.</span></div>
+<div><strong>curse of dimensionality</strong><span>as features grow, everything becomes roughly equally far apart and "nearest" loses meaning.</span></div>
+<div><strong>distance concentration</strong><span>the precise version of that: the gap between the nearest and furthest point shrinks toward zero.</span></div>
+<div><strong>standardisation</strong><span>rescaling features to a common range. Mandatory for anything distance-based; irrelevant for trees.</span></div>
+<div><strong>Bayes' rule</strong><span>flips P(class | data) into P(data | class) · P(class), which is the direction you can actually count.</span></div>
+<div><strong>the naive assumption</strong><span>features are independent given the class. False almost always, and the reason the maths is tractable.</span></div>
+<div><strong>Laplace smoothing</strong><span>adding 1 to every count so that no unseen value can zero out the whole product.</span></div>
+<div><strong>log probabilities</strong><span>adding logs instead of multiplying probabilities, to stop long documents underflowing to zero.</span></div>
+<div><strong>Multinomial / Bernoulli / Gaussian NB</strong><span>the variants for word counts, present-absent flags, and continuous features.</span></div>
+<div><strong>generative vs discriminative</strong><span>Naive Bayes models how the data was produced; logistic regression models the boundary directly.</span></div>
+<div><strong>LDA</strong><span>finds directions that separate classes, using the labels. PCA finds directions of greatest spread, ignoring them.</span></div>
+</div>
+<h2 id="what-to-learn">2 · What to learn</h2>
 <h3>KNN</h3>
 <ol><li>The algorithm: store everything, then at prediction time find the <code>k</code> nearest training points and vote (classification) or average (regression).</li><li>Lazy learning: no training cost, expensive inference — the opposite profile from everything else in this curriculum.</li><li>Distance metrics: Euclidean, Manhattan, Minkowski, cosine, Hamming, Gower for mixed types.</li><li>Choosing <code>k</code> and its bias–variance meaning; why odd <code>k</code> for binary problems.</li><li>Distance weighting, and why scaling is <strong>mandatory</strong>.</li><li>The <strong>curse of dimensionality</strong> — the central concept here.</li><li>Efficient search: KD-trees, ball trees, and why they fail in high dimensions; approximate nearest neighbours (HNSW, IVF-PQ) — the direct bridge to vector databases.</li></ol>
 <h3>Naive Bayes</h3>
 <ol><li>Bayes’ theorem applied to classification, and the “naive” conditional-independence assumption.</li><li>Variants: Gaussian, Multinomial, Bernoulli, Complement — and which data each suits.</li><li>Laplace / additive smoothing and the zero-frequency problem.</li><li>Why it works well on text despite an obviously false assumption.</li><li>Why its probability estimates are poorly calibrated even when its classification is good.</li></ol>
 <h3>Discriminant analysis</h3>
 <ol><li>LDA: shared covariance, linear boundary, and its dual life as a supervised dimensionality reducer.</li><li>QDA: per-class covariance, quadratic boundary, more parameters.</li><li>LDA versus PCA (supervised versus unsupervised), and LDA versus logistic regression (generative versus discriminative).</li></ol>
-<h2 id="intuitions">2 · Core intuitions</h2>
+<h2 id="intuitions">3 · Core intuitions</h2>
 <h3>KNN is the purest form of “similar inputs have similar outputs”</h3>
 <p>It makes no global assumption about the function’s form — it just trusts locality. That makes it a genuinely non-parametric learner with zero bias in the limit, and also the model most exposed to bad distance geometry.</p>
 <h3>The curse of dimensionality is why KNN fails on wide data</h3>
@@ -87,7 +201,7 @@
 <h3>LDA is logistic regression’s generative twin</h3>
 <p>Both produce a linear boundary. LDA gets there by assuming Gaussian class-conditionals with a shared covariance and estimating means, the pooled covariance and the priors; logistic regression gets there by directly fitting the log-odds with no distributional assumption. When the Gaussian assumption holds, LDA is more statistically efficient — it needs less data. When it does not, logistic regression is more robust.</p>
 <p>LDA also doubles as a <strong>supervised</strong> dimensionality reducer, projecting to at most <code>K−1</code> dimensions — the key contrast with PCA. PCA maximizes total variance ignoring labels; LDA maximizes between-class separation relative to within-class scatter, using them.</p>
-<h2 id="formulas">3 · Whiteboard formulas</h2>
+<h2 id="formulas">4 · Whiteboard formulas</h2>
 <div class="code-block" data-reveal="">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>knn_nb_lda.txt</span><button class="copy-btn">Copy</button></div>
 <pre><code>=== KNN ===
@@ -110,10 +224,10 @@ LDA                assume x|y=k ~ N(mu_k, Sigma)  with SHARED Sigma
                    -> LINEAR in x
 QDA                per-class Sigma_k -> QUADRATIC in x</code></pre>
 </div>
-<h2 id="drill">4 · Hands-on drill</h2>
+<h2 id="drill">5 · Hands-on drill</h2>
 <ol><li>Implement KNN from scratch. Plot test accuracy against <code>k</code> from 1 to 50 and identify the U-curve.</li><li><strong>Demonstrate the curse of dimensionality directly:</strong> for <code>d</code> from 2 to 1,000, sample random points and plot the ratio of mean farthest-neighbour distance to mean nearest-neighbour distance. Watch it approach 1. This plot is the best possible answer to the curse-of-dimensionality question — describe it in interviews.</li><li>Run KNN with and without scaling on a dataset with mixed units and record the accuracy gap.</li><li>Implement Multinomial Naive Bayes for text with Laplace smoothing and compare against logistic regression on TF-IDF features. Then compare their <em>calibration</em> curves — NB will be far worse calibrated while remaining competitive on accuracy.</li><li>Fit LDA and PCA on the same labelled dataset, project to 2D, and plot both. The visual difference between “maximum variance” and “maximum class separation” makes the contrast permanent.</li></ol>
 <div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">Gotchas that fail candidates</div><ul><li><strong>Not scaling before KNN.</strong> A feature in dollars will dominate one in years entirely.</li><li><strong>Getting the <code>k</code> bias–variance direction backwards.</strong></li><li><strong>Saying Naive Bayes fails because features are correlated.</strong> It often classifies well anyway — explain <em>why</em>.</li><li><strong>Not knowing about Laplace smoothing.</strong> One unseen word gives a zero product and destroys the posterior.</li><li><strong>Confusing LDA (Linear Discriminant Analysis) with LDA (Latent Dirichlet Allocation).</strong> Clarify which is meant if the context is ambiguous — a nice moment to show precision.</li><li><strong>Saying PCA and LDA are interchangeable.</strong> One uses labels, the other does not.</li></ul></div></div>
-<h2 id="questions">5 · Interview questions</h2>
+<h2 id="questions">6 · Interview questions</h2>
 <div class="prep-toolbar" data-sticky-prep=""><label class="prep-filter"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><input data-question-filter="" placeholder="Filter these questions…"/></label><button class="btn ghost" data-expand-answers="" type="button">Open all</button><span class="prep-count" data-question-count="">6 questions</span></div>
 <section aria-label="KNN, Naive Bayes and discriminant analysis interview questions" class="prep-question-list">
 <details class="prep-question" data-question="explain the curse of dimensionality and its practical consequences" data-tags="dimensionality geometry embeddings">
@@ -135,15 +249,16 @@ QDA                per-class Sigma_k -> QUADRATIC in x</code></pre>
 <summary><span class="prep-q-no">06</span><span class="prep-q-title">KNN has no training phase. Is that an advantage?<span class="prep-tags"><span>lazy learning</span><span>cost</span><span>vector search</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>It is a trade, and mostly a disadvantage in production. The advantages are real: adding new data needs no retraining, which suits rapidly-changing data; there is no model to fit, so no optimization to tune; and the decision boundary can be arbitrarily complex with no assumption about its form.</p><p>The costs are severe: prediction is <code>O(nd)</code> per query with brute-force search, so latency grows with your dataset; the entire training set must be held in memory at serving time; it is highly sensitive to scaling, irrelevant features and the curse of dimensionality; and there is no learned compact representation to inspect.</p><p>This “lazy” profile is exactly inverted from every other model in this curriculum, which pays a large one-off training cost for cheap inference — and cheap inference is what production usually needs. What makes it viable are spatial indexes (KD-trees, ball trees) in low dimensions and approximate nearest-neighbour indexes (HNSW, IVF-PQ) in high dimensions, which is precisely the technology behind vector databases in modern retrieval systems.</p><div class="prep-say"><strong>30-second version</strong><p>A trade, usually unfavourable: no retraining cost, but O(nd) inference, the whole training set in memory, and acute scaling sensitivity. It is the inverse of every other model — and cheap inference is what production needs.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Cost awareness across the train/serve boundary, and whether you can connect KNN to contemporary vector search — a common 2026 bridge question.</p></div></div></details>
 </section>
-<div class="page-nav"><a href="12-imbalanced-data.html"><div class="dir">← Previous</div><div class="ttl">Imbalanced Data</div></a><a class="next" href="14-svm-kernels.html"><div class="dir">Next →</div><div class="ttl">SVM &amp; Kernels</div></a></div>
+<div class="page-nav" data-page-nav><a href="12-imbalanced-data.html"><div class="dir">← Previous</div><div class="ttl">Imbalanced Data</div></a><a class="next" href="14-svm-kernels.html"><div class="dir">Next →</div><div class="ttl">SVM &amp; Kernels</div></a></div>
 </main>
 <div class="toc-rail"><nav class="toc"></nav></div>
 </div>
 </div>
 </div>
-<script src="assets/app.js?v=20260727c"></script>
-<script src="assets/ml-sitenav.js?v=20260727c"></script>
-<script src="assets/enhance.js?v=20260727c"></script>
+<script src="assets/app.js?v=20260731b"></script>
+<script src="assets/ml-sitenav.js?v=20260801b"></script>
+<script src="assets/enhance.js?v=20260801a"></script>
 <script src="assets/interview-prep.js?v=20260727c"></script>
+<script src="assets/ml-mobile.js?v=20260728c"></script>
 </body>
 </html>

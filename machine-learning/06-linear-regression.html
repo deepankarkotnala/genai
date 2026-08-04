@@ -36,11 +36,26 @@
 <link href="assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
 <!-- /Machine Learning brand metadata -->
 <meta content="The normal equation derived, Gauss-Markov and which assumption violations you can safely ignore, multicollinearity, negative R-squared, and why linear regression fails for classification." name="description"/>
-<link href="assets/styles.css?v=20260727c" rel="stylesheet"/>
-<link href="assets/office-theme.css?v=20260727e" rel="stylesheet"/>
+<!-- Theme before first paint. Without this the document paints with the light
+     tokens and only flips when app.js runs at the end of <body>, which is a
+     white flash on every navigation in dark mode. Mirrors app.js's getTheme()
+     exactly — same key, same "light" default — so the pre-paint value can never
+     disagree with what the scripts apply a moment later. Inline and blocking on
+     purpose: an external file would cost a round trip before first paint. -->
+<script>(function(){try{var t=localStorage.getItem("gp.theme")||"light";document.documentElement.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Page transitions — see the same block in the other page families. `PageRevealEvent` is the only honest test for a CROSS-document view transition, and it has to run pre-paint or the arrival animation starts and is then cancelled. */var d=document.documentElement;if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260801d" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
 <link href="assets/ml-visuals.css?v=20260728a" rel="stylesheet"/>
+<link href="assets/ml-mobile.css?v=20260801a" rel="stylesheet"/>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="../assets/curriculum.js?v=20260804c"></script>
+<script defer src="../assets/page-nav.js?v=20260804c"></script>
 </head>
-<body data-page="ml-06-linear-regression" data-prep-section="ml">
+<body data-curriculum-id="ml-06" data-page="ml-06-linear-regression" data-prep-section="ml">
 <div class="app">
 <aside class="sidebar">
 <div class="brand">
@@ -56,7 +71,7 @@
 <div class="main">
 <header class="topbar">
 <button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
-<div class="crumbs">Machine Learning / Part B / Module 06</div>
+<div class="crumbs">Machine Learning / Part B / <b>Module 06</b></div>
 <button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
 </header>
 <div class="content-wrap">
@@ -263,15 +278,16 @@ OLS is the Best Linear Unbiased Estimator. Normality NOT required.</code></pre>
 <summary><span class="prep-q-no">11</span><span class="prep-q-title">Offline R² is 0.82, but three months after launch the predictions are visibly worse. Debug it.<span class="prep-tags"><span>2026</span><span>MLOps</span><span>debugging</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>I would work from cheapest-and-most-likely to most expensive, and I would not touch the model until I know which layer failed.</p><ol><li><strong>Is it real?</strong> Confirm the degradation on the same metric, the same slice definition and the same aggregation as the offline number. A surprising share of these turn out to be a dashboard comparing different populations.</li><li><strong>Was the offline number ever honest?</strong> Look for leakage and for a random split on time-ordered data — an inflated 0.82 that never existed out of sample is the single most common cause. Re-score with a time-forward split.</li><li><strong>Training/serving skew.</strong> Compare the actual feature vectors served in production against training rows for the same entities. Different imputation defaults, a unit change, a stale join, a category the encoder never saw, a feature that is null at request time but was populated in the training table — this layer produces more incidents than genuine drift does.</li><li><strong>Which drift?</strong> Separate <em>covariate</em> drift (inputs moved: compare distributions, PSI or KS per feature, ranked by that feature's coefficient × its shift, since a big move in a near-zero-weight feature does not matter) from <em>concept</em> drift (the input–output relationship moved: same inputs, different target, which shows up as residuals developing a trend or a bias). For a linear model, refit on recent data and compare coefficients — a sign flip is concept drift stated bluntly.</li><li><strong>Feedback loop.</strong> Ask whether the model's own outputs changed the world it now sees. If low predicted demand caused less stocking, the next training set is contaminated by the previous model's decisions, and this is the failure mode that a naive retrain makes worse rather than better.</li></ol><p>Fixes follow the diagnosis: skew is a data-contract and pipeline bug, covariate drift often only needs a refresh, concept drift needs a shorter retraining cadence or recency weighting, and a feedback loop needs logged randomised exploration so the training data still contains counterfactuals.</p><div class="prep-say"><strong>30-second version</strong><p>Confirm it is real, then check whether the offline number was ever honest — leakage or a random split on time-series data. Then training/serving skew, which causes more incidents than drift. Then separate covariate from concept drift; for a linear model, refit on recent data and look for coefficient sign flips. Finally check for a feedback loop, because retraining makes that one worse.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Production debugging under failure is now a standard round, and the signal is ordering — cheap checks first, model changes last. Candidates who open with “retrain it” lose the point immediately.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> “What would you have monitored so this alerted in week one instead of month three?” — prediction distribution and per-feature input distributions daily; null and cardinality rates per feature as data contracts; residual mean and spread once labels land, sliced by segment; interval coverage if you emit intervals; and a permanently shadowed baseline model so you can tell “the world changed” from “our model broke”.</div></div></details>
 </section>
-<div class="page-nav"><a href="05-bias-variance-cross-validation.html"><div class="dir">← Previous</div><div class="ttl">Bias–Variance &amp; Cross-Validation</div></a><a class="next" href="07-logistic-regression-log-odds.html"><div class="dir">Next →</div><div class="ttl">Logistic Regression &amp; Log Odds</div></a></div>
+<div class="page-nav" data-page-nav><a href="05-bias-variance-cross-validation.html"><div class="dir">← Previous</div><div class="ttl">Bias–Variance &amp; Cross-Validation</div></a><a class="next" href="07-logistic-regression-log-odds.html"><div class="dir">Next →</div><div class="ttl">Logistic Regression &amp; Log Odds</div></a></div>
 </main>
 <div class="toc-rail"><nav class="toc"></nav></div>
 </div>
 </div>
 </div>
-<script src="assets/app.js?v=20260727c"></script>
-<script src="assets/ml-sitenav.js?v=20260727c"></script>
-<script src="assets/enhance.js?v=20260727c"></script>
+<script src="assets/app.js?v=20260731b"></script>
+<script src="assets/ml-sitenav.js?v=20260801b"></script>
+<script src="assets/enhance.js?v=20260801a"></script>
 <script src="assets/interview-prep.js?v=20260727c"></script>
+<script src="assets/ml-mobile.js?v=20260728c"></script>
 </body>
 </html>

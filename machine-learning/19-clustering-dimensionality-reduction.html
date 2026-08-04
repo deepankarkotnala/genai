@@ -36,11 +36,26 @@
 <link href="assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
 <!-- /Machine Learning brand metadata -->
 <meta content="K-Means assumptions and failure modes, DBSCAN versus GMM, why PCA components are orthogonal, why variance is not importance, and what a t-SNE plot cannot tell you." name="description"/>
-<link href="assets/styles.css?v=20260727c" rel="stylesheet"/>
-<link href="assets/office-theme.css?v=20260727e" rel="stylesheet"/>
+<!-- Theme before first paint. Without this the document paints with the light
+     tokens and only flips when app.js runs at the end of <body>, which is a
+     white flash on every navigation in dark mode. Mirrors app.js's getTheme()
+     exactly — same key, same "light" default — so the pre-paint value can never
+     disagree with what the scripts apply a moment later. Inline and blocking on
+     purpose: an external file would cost a round trip before first paint. -->
+<script>(function(){try{var t=localStorage.getItem("gp.theme")||"light";document.documentElement.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Page transitions — see the same block in the other page families. `PageRevealEvent` is the only honest test for a CROSS-document view transition, and it has to run pre-paint or the arrival animation starts and is then cancelled. */var d=document.documentElement;if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260801d" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
 <link href="assets/ml-visuals.css?v=20260728a" rel="stylesheet"/>
+<link href="assets/ml-mobile.css?v=20260801a" rel="stylesheet"/>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="../assets/curriculum.js?v=20260804c"></script>
+<script defer src="../assets/page-nav.js?v=20260804c"></script>
 </head>
-<body data-page="ml-19-clustering-dimensionality-reduction" data-prep-section="ml">
+<body data-curriculum-id="ml-19" data-page="ml-19-clustering-dimensionality-reduction" data-prep-section="ml">
 <div class="app">
 <aside class="sidebar">
 <div class="brand">
@@ -56,7 +71,7 @@
 <div class="main">
 <header class="topbar">
 <button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
-<div class="crumbs">Machine Learning / Part E / Module 19</div>
+<div class="crumbs">Machine Learning / Part E / <b>Module 19</b></div>
 <button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
 </header>
 <div class="content-wrap">
@@ -66,12 +81,129 @@
 <p class="lead">What to do when there are no labels — and why unsupervised results should be treated as hypotheses to validate rather than answers to ship.</p>
 <div class="meta-row"><span class="pill purple">Prerequisites · Modules 01, 04, 13</span><span class="pill">Study time · 8 h</span><span class="pill blue">6 interview questions</span><span class="pill">THEORY · MATH · APPLIED</span></div>
 <div class="callout key"><div class="c-ico">🎯</div><div class="c-body"><div class="c-title">Your interview goal</div><p>Enumerate K-Means's assumptions and attach each to a failure mode, cite the spectral theorem for PCA orthogonality, explain why variance is not importance, and refuse to over-read a t-SNE plot.</p></div></div>
-<h2 id="what-to-learn">1 · What to learn</h2>
+<h2 id="ground-up">1 · From the ground up</h2>
+<div class="callout plain"><div class="c-ico">🧩</div><div class="c-body"><div class="c-title">In plain words</div><p>Everything so far had labels to learn from. Here there are none. Two different jobs live in this module: <strong>clustering</strong> groups the <em>rows</em> — which customers belong together — and <strong>dimensionality reduction</strong> shrinks the <em>columns</em> — turning fifty features into five. What makes both awkward is the same thing: with no labels there is no right answer to check against, so you cannot score them the way you score a classifier. That single fact changes how you use them and how you talk about them.</p></div></div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>Start with the problem, not the formula</h4><p>You have a table of customers and no labels at all. Someone asks for "our customer segments". Run any clustering algorithm and it will happily hand you five groups. Run a different one and you get five different groups. Both are valid outputs.</p><p>Nobody can tell you which is correct, because there is no correct answer sitting in the data waiting to be found. The groups are something you <em>impose</em>, not something you <em>discover</em>.</p><div class="gu-so"><strong>So what:</strong> a clustering result is a <em>hypothesis</em>, not a finding. The right test is not "is it right?" — that question has no answer — but <b>"is it stable, and is it useful?"</b> Do you get roughly the same groups on a different sample, and can the business actually do something different for each group? Saying this is what separates someone who has shipped a segmentation from someone who has only run one.</div></div>
+<div class="gu-step"><h4>K-Means is four lines, and every quirk follows from them</h4><p>The algorithm is small enough to state completely: pick <code>k</code> starting centres. Assign every point to its nearest centre. Move each centre to the average of the points assigned to it. Repeat until nothing moves.</p><p>That is all of it. And what it is quietly minimising is the <strong>total squared distance from each point to its centre</strong>.</p><div class="gu-so"><strong>So what:</strong> because it is squared distance to a single centre point, K-Means can only ever draw <b>round clusters of roughly equal size</b>. Every limitation below is that one sentence showing up in a different disguise. Squared distance also means it is dragged by outliers, and distance means <em>you must scale your features first</em> — same rule as KNN.</div></div>
+<div class="gu-step"><h4>See it succeed, then see it fail</h4><p>The panels below show the same algorithm on two datasets. On round blobs it does exactly what you hoped. On two curved shapes it produces a confident, tidy, completely wrong answer — because a curve is not round, and no amount of tuning <code>k</code> will fix a shape assumption.</p></div>
+</div>
+<div class="mlviz">
+<div class="mlviz-title">K-Means draws round clusters — even when the data is not round</div>
+<div class="mlviz-scroll">
+<svg viewbox="0 0 660 270" role="img" aria-label="Three panels. K-Means on three round blobs separates them correctly. K-Means on two crescent shapes cuts straight down the middle and mixes both crescents into each cluster. DBSCAN on the same crescents recovers the two curves correctly.">
+<!-- Panel A: blobs, works -->
+<g class="mv-in" style="--d:.05s">
+  <rect class="mv-box" x="10" y="26" width="200" height="180" rx="12"></rect>
+  <text class="mv-lbl mv-fill-1" x="18" y="20">K-Means · round blobs</text>
+  <g class="mv-fill-1"><circle cx="60" cy="82" r="4.5"></circle><circle cx="74" cy="72" r="4.5"></circle><circle cx="50" cy="96" r="4.5"></circle><circle cx="68" cy="98" r="4.5"></circle><circle cx="82" cy="88" r="4.5"></circle><circle cx="56" cy="70" r="4.5"></circle></g>
+  <g class="mv-fill-2"><circle cx="150" cy="76" r="4.5"></circle><circle cx="164" cy="88" r="4.5"></circle><circle cx="140" cy="92" r="4.5"></circle><circle cx="158" cy="64" r="4.5"></circle><circle cx="172" cy="76" r="4.5"></circle><circle cx="146" cy="62" r="4.5"></circle></g>
+  <g class="mv-fill-4"><circle cx="100" cy="150" r="4.5"></circle><circle cx="114" cy="162" r="4.5"></circle><circle cx="90" cy="164" r="4.5"></circle><circle cx="106" cy="138" r="4.5"></circle><circle cx="122" cy="148" r="4.5"></circle><circle cx="88" cy="146" r="4.5"></circle></g>
+  <text class="mv-lbl-xs mv-fill-1" x="18" y="226">✓ round, similar sizes — exactly its assumptions</text>
+</g>
+<!-- Panel B: crescents, fails -->
+<g class="mv-in" style="--d:.28s">
+  <rect class="mv-box" x="230" y="26" width="200" height="180" rx="12"></rect>
+  <text class="mv-lbl mv-fill-5" x="238" y="20">K-Means · two curves</text>
+  <path class="mv-str-5 mv-dash" stroke-width="1.8" d="M325 36 V196"></path>
+  <text class="mv-lbl-xs mv-fill-5" x="329" y="46">its boundary</text>
+  <!-- crescent A: left of the cut = cluster 1, right = cluster 2 -->
+  <g class="mv-fill-1"><circle cx="260" cy="130" r="4.5"></circle><circle cx="268" cy="114" r="4.5"></circle><circle cx="280" cy="101" r="4.5"></circle><circle cx="296" cy="92" r="4.5"></circle><circle cx="314" cy="88" r="4.5"></circle></g>
+  <g class="mv-fill-2"><circle cx="332" cy="90" r="4.5"></circle><circle cx="348" cy="97" r="4.5"></circle></g>
+  <g class="mv-fill-1"><circle cx="302" cy="138" r="4.5"></circle><circle cx="318" cy="132" r="4.5"></circle></g>
+  <g class="mv-fill-2"><circle cx="336" cy="129" r="4.5"></circle><circle cx="354" cy="130" r="4.5"></circle><circle cx="370" cy="136" r="4.5"></circle><circle cx="382" cy="148" r="4.5"></circle><circle cx="390" cy="162" r="4.5"></circle></g>
+  <text class="mv-lbl-xs mv-fill-5" x="238" y="226">✗ each cluster holds half of both curves</text>
+</g>
+<!-- Panel C: DBSCAN, works -->
+<g class="mv-in" style="--d:.50s">
+  <rect class="mv-box" x="450" y="26" width="200" height="180" rx="12"></rect>
+  <text class="mv-lbl mv-fill-1" x="458" y="20">DBSCAN · same curves</text>
+  <g class="mv-fill-1"><circle cx="480" cy="130" r="4.5"></circle><circle cx="488" cy="114" r="4.5"></circle><circle cx="500" cy="101" r="4.5"></circle><circle cx="516" cy="92" r="4.5"></circle><circle cx="534" cy="88" r="4.5"></circle><circle cx="552" cy="90" r="4.5"></circle><circle cx="568" cy="97" r="4.5"></circle></g>
+  <g class="mv-fill-2"><circle cx="522" cy="138" r="4.5"></circle><circle cx="538" cy="132" r="4.5"></circle><circle cx="556" cy="129" r="4.5"></circle><circle cx="574" cy="130" r="4.5"></circle><circle cx="590" cy="136" r="4.5"></circle><circle cx="602" cy="148" r="4.5"></circle><circle cx="610" cy="162" r="4.5"></circle></g>
+  <circle class="mv-fill-3" cx="474" cy="172" r="4.5"></circle>
+  <text class="mv-lbl-xs mv-fill-3" x="484" y="176">noise</text>
+  <text class="mv-lbl-xs mv-fill-1" x="458" y="226">✓ follows density, so shape does not matter</text>
+</g>
+<text class="mv-lbl-xs" x="10" y="244">Same data in panels B and C. The difference is not tuning:</text>
+<text class="mv-lbl-xs" x="10" y="258">one measures distance to a centre, the other measures whether neighbours are crowded.</text>
+</svg>
+</div>
+<div class="mv-keys"><span><i class="mv-k1"></i>cluster 1</span><span><i class="mv-k2"></i>cluster 2</span><span><i class="mv-k4"></i>cluster 3</span><span><i class="mv-k3"></i>flagged as noise</span></div>
+<p class="mlviz-cap">Panel B is the important one, because <b>nothing about the output looks broken</b>. K-Means returns two clean clusters with a sensible-looking boundary and a perfectly good inertia score. You only know it is wrong because you can see the shape — which you cannot do in fifty dimensions. That is the real argument for plotting your data before trusting a clustering.</p>
+</div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>Choosing k, honestly</h4><p>Two standard tools. The <strong>elbow method</strong> plots the within-cluster sum of squares against <code>k</code>: it always falls as <code>k</code> rises, so you look for the bend where extra clusters stop paying. The <strong>silhouette score</strong> asks, for each point, how much closer it is to its own cluster than to the next nearest — it ranges from −1 to 1 and you take the <code>k</code> with the highest average.</p><p>Both are useful. Neither is proof. Elbows are often ambiguous, and silhouette quietly prefers round clusters — the same bias K-Means already has.</p><div class="gu-so"><strong>So what:</strong> if the marketing team has budget for exactly four campaigns, <b><code>k = 4</code> is a better-justified answer than anything the elbow tells you.</b> With no ground truth, "the number the business can act on" is a legitimate criterion, and often the strongest one.</div></div>
+<div class="gu-step"><h4>The two alternatives worth knowing</h4><p><strong>DBSCAN</strong> groups by <em>density</em> rather than distance-to-a-centre. It grows a cluster wherever points are packed closely enough, so it handles any shape, does not need you to pick <code>k</code>, and labels genuinely isolated points as <strong>noise</strong> instead of forcing them into a group. The price: you must choose <code>eps</code> (how close counts as close) and <code>min_samples</code>, and it struggles when one cluster is dense and another is sparse, because a single <code>eps</code> cannot suit both.</p><p><strong>Gaussian Mixture Models</strong> keep the centre idea but allow each cluster to be a stretched ellipse rather than a circle, and give every point a <em>probability</em> of belonging to each cluster rather than a hard assignment.</p><div class="gu-so"><strong>So what:</strong> a neat way to hold all three together — <b>K-Means is a Gaussian Mixture where every cluster is forced to be a circle of the same size and every point must pick one</b>. Relax the shape and you get GMM; abandon centres entirely and go by crowding and you get DBSCAN.</div></div>
+<div class="gu-step"><h4>PCA is the other job: fewer columns, not fewer rows</h4><p>Now the second half of the module. You have fifty features, many of them saying overlapping things. PCA finds a new set of axes: first the single direction along which the data is most spread out, then the direction of most remaining spread that is <em>at right angles</em> to the first, and so on.</p><p>Why insist on right angles? Because a new axis that partly repeated the old one would be telling you something you already knew. Perpendicular guarantees each component carries <strong>fresh</strong> information.</p><div class="gu-so"><strong>So what:</strong> the components come out ordered by how much of the spread they capture, so you keep the first few and drop the rest. And because PCA chases <em>variance</em>, <b>you must scale first</b> — otherwise a feature measured in rupees will dominate component 1 purely because its numbers are large.</div></div>
+</div>
+<div class="mlviz">
+<div class="mlviz-title">PCA finds the direction of most spread, then turns 90° for the next</div>
+<div class="mlviz-scroll">
+<svg viewbox="0 0 660 250" role="img" aria-label="On the left, a scatter of points stretched along a diagonal, with a long arrow along the diagonal labelled PC1 and a short perpendicular arrow labelled PC2. On the right, a bar chart of variance explained: PC1 78 percent, PC2 15 percent, PC3 5 percent, PC4 2 percent, with the first two summing to 93 percent.">
+<!-- left: the directions -->
+<g class="mv-in" style="--d:.05s">
+  <text class="mv-lbl" x="16" y="24">the data, and the two directions PCA picks</text>
+  <path class="mv-axis" d="M40 60 V210 H300"></path>
+  <g class="mv-fill-2">
+    <circle cx="85" cy="187" r="4.5"></circle><circle cx="95" cy="165" r="4.5"></circle><circle cx="118" cy="164" r="4.5"></circle>
+    <circle cx="129" cy="143" r="4.5"></circle><circle cx="153" cy="145" r="4.5"></circle><circle cx="165" cy="126" r="4.5"></circle>
+    <circle cx="188" cy="126" r="4.5"></circle><circle cx="200" cy="107" r="4.5"></circle><circle cx="222" cy="104" r="4.5"></circle>
+  </g>
+  <path class="mv-str-1" stroke-width="2.6" d="M72 185 L222 98"></path>
+  <polygon class="mv-fill-1" points="234,91 219,92 224,104"></polygon>
+  <text class="mv-lbl mv-fill-1" x="228" y="132">PC1</text>
+  <text class="mv-lbl-xs mv-fill-1" x="228" y="146">most spread</text>
+  <path class="mv-str-3" stroke-width="2.6" d="M133 110 L162 161"></path>
+  <polygon class="mv-fill-3" points="168,172 156,161 167,155"></polygon>
+  <text class="mv-lbl mv-fill-3" x="82" y="106">PC2</text>
+  <text class="mv-lbl-xs mv-fill-3" x="60" y="120">at 90° — new information</text>
+  <text class="mv-lbl-xs" x="16" y="232">scale your features first, or the biggest units win</text>
+</g>
+<!-- right: variance explained -->
+<g class="mv-in" style="--d:.30s">
+  <text class="mv-lbl" x="340" y="24">how much spread each one captures</text>
+  <path class="mv-axis" d="M368 60 V200 H640"></path>
+  <g class="mv-lbl-xs" text-anchor="end"><text x="360" y="204">0%</text><text x="360" y="134">50%</text><text x="360" y="64">100%</text></g>
+  <rect class="mv-fill-1" x="386" y="91" width="46" height="109" rx="4" opacity=".85"></rect>
+  <text class="mv-lbl mv-fill-1" x="409" y="84" text-anchor="middle">78%</text>
+  <rect class="mv-fill-1" x="452" y="179" width="46" height="21" rx="4" opacity=".85"></rect>
+  <text class="mv-lbl-xs mv-fill-1" x="475" y="172" text-anchor="middle">15%</text>
+  <rect class="mv-fill-2" x="518" y="193" width="46" height="7" rx="3" opacity=".7"></rect>
+  <text class="mv-lbl-xs" x="541" y="186" text-anchor="middle">5%</text>
+  <rect class="mv-fill-2" x="584" y="197" width="46" height="3" rx="2" opacity=".7"></rect>
+  <text class="mv-lbl-xs" x="607" y="190" text-anchor="middle">2%</text>
+  <g class="mv-lbl-sm" text-anchor="middle"><text x="409" y="218">PC1</text><text x="475" y="218">PC2</text><text x="541" y="218">PC3</text><text x="607" y="218">PC4</text></g>
+  <text class="mv-lbl-xs mv-fill-1" x="340" y="240">keep PC1 and PC2 and you keep 93% of the spread — four columns become two</text>
+</g>
+</svg>
+</div>
+<p class="mlviz-cap">The bars always fall, and they always sum to 100%. <b>The usual rule is to keep enough components to reach 90–95%</b>, though if you are reducing purely to plot something, you keep two whatever they add up to — and you say so, because two components covering 40% is a very different picture from two covering 95%.</p>
+</div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>What PCA takes away from you</h4><p>Every component is a blend of <em>all</em> your original features. Component 1 is not "income" — it is 0.4 × income plus 0.3 × age minus 0.2 × tenure and forty more terms. So the moment you use PCA, you have traded away the ability to say "this prediction happened because of income".</p><p>There is a second, sharper cost. PCA never looks at your labels. It chases spread, and <strong>spread is not the same as usefulness</strong>. If the direction that separates your two classes happens to be a narrow one, PCA will rank it low and you may discard the only thing that mattered.</p><div class="gu-so"><strong>So what:</strong> use PCA to fight the curse of dimensionality, collinearity, or plotting — not as a routine step. When separating known classes is the goal, <b>LDA looks at the labels and PCA does not</b> (Module 13), and that is the whole difference.</div></div>
+<div class="gu-step"><h4>t-SNE and UMAP are for looking, not for measuring</h4><p>These make beautiful two-dimensional pictures of high-dimensional data, and they are widely misread. They work by preserving which points are <em>near each other locally</em>, and they deliberately sacrifice everything else to do it.</p><p>So in a t-SNE plot: the size of a blob means nothing, the distance between two blobs means nothing, and empty space means nothing. Change the perplexity setting and the picture rearranges itself.</p><div class="gu-so"><strong>So what:</strong> never measure anything off a t-SNE plot, never cluster on t-SNE coordinates, and never feed them to a model — <b>the axes have no units and the geometry is not real</b>. Use it to notice that groups exist, then go back to the original features to describe them.</div></div>
+</div>
+<div class="gu-analogy"><b>Analogy</b> — <em>clustering</em> is being handed a room of strangers and told to arrange them into groups, with nobody to tell you afterwards whether you got it right. Sort by age and you get one sensible answer; sort by profession and you get a completely different, equally sensible answer. <b>The question "which grouping is correct?" has no answer — only "which grouping helps me do my job?"</b> And <em>PCA</em> is photographing a chair. A chair is three-dimensional, but one well-chosen angle tells you almost everything about it, and a second angle at right angles fills in most of the rest. You have lost real information, and you kept the part that mattered — which is exactly the trade PCA makes.</div>
+<div class="gu-jargon">
+<div><strong>unsupervised</strong><span>learning with no labels. Nothing to score against, so results are judged on stability and usefulness.</span></div>
+<div><strong>K-Means</strong><span>assign to nearest centre, move centre to the average, repeat. Only draws round, similar-sized clusters.</span></div>
+<div><strong>inertia</strong><span>total squared distance from points to their centres. What K-Means minimises. Always falls as k rises.</span></div>
+<div><strong>elbow method</strong><span>plot inertia against k and look for the bend. A heuristic, and often ambiguous.</span></div>
+<div><strong>silhouette</strong><span>how much closer a point is to its own cluster than the next nearest. −1 to 1; quietly prefers round clusters.</span></div>
+<div><strong>k-means++</strong><span>a smarter way to pick starting centres, so you are less likely to land in a bad local optimum.</span></div>
+<div><strong>DBSCAN</strong><span>groups by density. Any shape, no k needed, labels outliers as noise. Needs eps and min_samples.</span></div>
+<div><strong>GMM</strong><span>clusters as stretched ellipses, with a probability of membership rather than a hard assignment.</span></div>
+<div><strong>PCA</strong><span>new axes ordered by how much spread they capture, each at right angles to the last. Unsupervised. Scale first.</span></div>
+<div><strong>explained variance</strong><span>the share of total spread a component captures. Keep enough to reach roughly 90–95%.</span></div>
+<div><strong>scree plot</strong><span>the bar chart of explained variance per component. Where you decide how many to keep.</span></div>
+<div><strong>t-SNE / UMAP</strong><span>preserve local neighbourhoods for plotting. Blob sizes and between-blob distances are meaningless.</span></div>
+</div>
+<h2 id="what-to-learn">2 · What to learn</h2>
 <h3>Clustering</h3>
 <ol><li><strong>K-Means</strong>: the algorithm (assign, update, repeat), the objective (within-cluster sum of squares), and its convergence guarantee.</li><li>Why K-Means is non-convex and initialization-sensitive; <strong>K-Means++</strong>; <code>n_init</code>.</li><li>Choosing <code>k</code>: the <strong>elbow method</strong>, <strong>silhouette score</strong>, gap statistic, Davies–Bouldin — and the business answer.</li><li>K-Means assumptions: spherical, similarly-sized, similarly-dense clusters — and each failure mode.</li><li><strong>Hierarchical clustering</strong>: agglomerative versus divisive, linkage criteria (single, complete, average, Ward), dendrograms.</li><li><strong>DBSCAN</strong>: density-based clustering, <code>eps</code> and <code>min_samples</code>, core/border/noise points, arbitrary shapes. HDBSCAN as the modern improvement.</li><li><strong>Gaussian Mixture Models</strong> and the <strong>EM algorithm</strong>; soft versus hard assignment; K-Means as a limiting case of GMM.</li><li>Evaluating clustering with and without labels: silhouette, Calinski–Harabasz, adjusted Rand index, normalized mutual information.</li></ol>
 <h3>Dimensionality reduction</h3>
 <ol><li><strong>PCA</strong>: the objective (maximum variance / minimum reconstruction error), the covariance eigendecomposition, and the SVD route.</li><li>Explained variance ratio and choosing the number of components.</li><li>Why PCA requires standardization, and why components are orthogonal.</li><li>PCA’s limits: linear only, <strong>variance ≠ importance</strong>, components hard to interpret.</li><li><strong>t-SNE</strong> and <strong>UMAP</strong> — visualization tools, their non-determinism, and the crucial caveat that distances <em>between</em> clusters in the plot are not meaningful.</li><li>Autoencoders as non-linear dimensionality reduction; matrix factorization (NMF, SVD) for recommendation.</li><li><strong>Anomaly detection</strong>: Isolation Forest, One-Class SVM, LOF, reconstruction error.</li><li>When unsupervised results should be treated as hypotheses rather than answers.</li></ol>
-<h2 id="intuitions">2 · Core intuitions</h2>
+<h2 id="intuitions">3 · Core intuitions</h2>
 <h3>K-Means minimizes within-cluster sum of squares by alternating two steps</h3>
 <p>Assign each point to its nearest centroid; move each centroid to the mean of its assigned points; repeat. Each step monotonically decreases the objective, so it always converges — but to a <strong>local</strong> optimum, since the objective is non-convex over assignments. That is why you run it multiple times from different initializations (<code>n_init</code>) and keep the best, and why K-Means++ exists: it seeds centroids far apart probabilistically, which reliably improves both the final objective and convergence speed.</p>
 <h3>K-Means bakes in strong geometric assumptions</h3>
@@ -86,7 +218,7 @@
 <p>PCA is unsupervised, so it has no idea what you are predicting. The direction of greatest variance can be one along which your classes are <em>completely mixed</em>, while a low-variance direction carries all the discriminative signal. So PCA before a supervised model can discard exactly the information you needed. Use it for decorrelation, visualization, noise reduction and compression — and if you want a <em>supervised</em> projection, use LDA or partial least squares instead.</p>
 <h3>t-SNE and UMAP plots must be read carefully</h3>
 <p>They preserve local neighbourhood structure, so tight groups in the plot really are similar points. But global geometry is not preserved: <strong>the distances <em>between</em> clusters are not meaningful</strong>, cluster sizes in the plot do not reflect real cluster sizes, and both methods are stochastic so different runs give different-looking pictures. They are also strongly hyperparameter-dependent (t-SNE’s <code>perplexity</code>, UMAP’s <code>n_neighbors</code>) and can manufacture apparent clusters in random data at some settings. Use them for exploration and communication, never as evidence, and never as a preprocessing step feeding a supervised model — UMAP is at least deterministic with a fixed seed and has a <code>transform</code> for new data, which t-SNE fundamentally lacks.</p>
-<h2 id="formulas">3 · Whiteboard formulas</h2>
+<h2 id="formulas">4 · Whiteboard formulas</h2>
 <div class="code-block" data-reveal="">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>clustering_pca.txt</span><button class="copy-btn">Copy</button></div>
 <pre><code>=== K-Means ===
@@ -120,10 +252,10 @@ core point: >= min_samples points within eps
 cluster: maximal set of density-connected points
 noise: not reachable from any core point -> labelled -1</code></pre>
 </div>
-<h2 id="drill">4 · Hands-on drill</h2>
+<h2 id="drill">5 · Hands-on drill</h2>
 <ol><li>Implement K-Means from scratch including K-Means++ initialization. Run it 20 times on the same data from random inits and record the spread in final WCSS — that spread is your evidence for the local-optimum answer.</li><li>Generate three datasets: spherical blobs, two crescents, and clusters of very different densities. Run K-Means, DBSCAN and GMM on all three and plot the nine results. <strong>This 3×3 grid is the single best preparation for “when does K-Means fail?”</strong></li><li>Produce elbow and silhouette plots for <code>k</code> from 2 to 15 on real data and note whether they agree.</li><li>Implement PCA from scratch via both eigendecomposition and SVD; verify they match <code>sklearn</code>.</li><li>Construct a labelled dataset where the top principal component is <em>not</em> the discriminative direction, then compare a classifier on PCA features versus LDA features. <strong>That is your evidence for the variance-is-not-importance answer.</strong></li><li>Run t-SNE on the same data with <code>perplexity</code> 5, 30 and 100 and with different seeds. The visual instability is what you should describe when asked about it.</li></ol>
 <div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">Gotchas that fail candidates</div><ul><li><strong>Not scaling before K-Means or PCA.</strong></li><li><strong>Saying K-Means always converges to the global optimum.</strong> Local only — use <code>n_init</code> and K-Means++.</li><li><strong>Presenting the elbow method as definitive.</strong></li><li><strong>Claiming PCA components are interpretable features.</strong> They are linear combinations of everything.</li><li><strong>Saying PCA is feature <em>selection</em>.</strong> It is feature <em>extraction</em> — it builds new features from all the old ones, so you cannot drop the original columns from your pipeline.</li><li><strong>Reading cluster distances off a t-SNE plot.</strong></li><li><strong>Using t-SNE as a preprocessing step</strong> for a supervised model.</li><li><strong>Presenting cluster labels as ground truth</strong> rather than as hypotheses to validate.</li></ul></div></div>
-<h2 id="questions">5 · Interview questions</h2>
+<h2 id="questions">6 · Interview questions</h2>
 <div class="prep-toolbar" data-sticky-prep=""><label class="prep-filter"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><input data-question-filter="" placeholder="Filter these questions…"/></label><button class="btn ghost" data-expand-answers="" type="button">Open all</button><span class="prep-count" data-question-count="">6 questions</span></div>
 <section aria-label="Clustering and dimensionality reduction interview questions" class="prep-question-list">
 <details class="prep-question" data-question="explain k means and its assumptions" data-tags="K-Means assumptions Voronoi">
@@ -145,15 +277,16 @@ noise: not reachable from any core point -> labelled -1</code></pre>
 <summary><span class="prep-q-no">06</span><span class="prep-q-title">Your t-SNE plot shows two clusters far apart. What can you conclude?<span class="prep-tags"><span>t-SNE</span><span>visualization</span><span>trap</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>Very little from the distance. t-SNE optimizes preservation of <strong>local</strong> neighbourhood structure and explicitly does not preserve global geometry, so the distance <em>between</em> clusters is not meaningful — two clusters appearing far apart may be adjacent in the original space, and vice versa. Nor are the apparent cluster sizes meaningful, since t-SNE expands dense regions and contracts sparse ones.</p><p>Additional caveats: it is stochastic, so different seeds give visibly different plots; it is very sensitive to <code>perplexity</code>, and at some settings it will manufacture apparent clusters in pure random data; and it has no <code>transform</code> method for new points, since it optimizes an embedding of the specific input set rather than learning a mapping.</p><p>What I <em>can</em> conclude is that points within each apparent group have similar local neighbourhoods — a hypothesis worth testing. To validate it I would check whether the groups differ on interpretable features, run a proper clustering algorithm in the original space, and confirm stability across seeds and hyperparameters. If I needed a projection preserving more global structure and able to transform new data, I would use <strong>UMAP</strong> — though it shares the “do not over-read the geometry” caveat.</p><div class="prep-say"><strong>30-second version</strong><p>Almost nothing from the distance — t-SNE preserves local neighbourhoods, not global geometry, so between-cluster distances and apparent sizes are meaningless. Treat the grouping as a hypothesis and validate it in the original space.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Whether you over-interpret visualizations. A deliberate trap, and one of the most common misuses in real data-science work.</p></div></div></details>
 </section>
-<div class="page-nav"><a href="18-xgboost-lightgbm-catboost.html"><div class="dir">← Previous</div><div class="ttl">Boosting II: XGBoost &amp; LightGBM</div></a><a class="next" href="20-hyperparameter-tuning.html"><div class="dir">Next →</div><div class="ttl">Hyperparameter Tuning</div></a></div>
+<div class="page-nav" data-page-nav><a href="18-xgboost-lightgbm-catboost.html"><div class="dir">← Previous</div><div class="ttl">Boosting II: XGBoost &amp; LightGBM</div></a><a class="next" href="20-hyperparameter-tuning.html"><div class="dir">Next →</div><div class="ttl">Hyperparameter Tuning</div></a></div>
 </main>
 <div class="toc-rail"><nav class="toc"></nav></div>
 </div>
 </div>
 </div>
-<script src="assets/app.js?v=20260727c"></script>
-<script src="assets/ml-sitenav.js?v=20260727c"></script>
-<script src="assets/enhance.js?v=20260727c"></script>
+<script src="assets/app.js?v=20260731b"></script>
+<script src="assets/ml-sitenav.js?v=20260801b"></script>
+<script src="assets/enhance.js?v=20260801a"></script>
 <script src="assets/interview-prep.js?v=20260727c"></script>
+<script src="assets/ml-mobile.js?v=20260728c"></script>
 </body>
 </html>

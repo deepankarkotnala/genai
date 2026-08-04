@@ -36,11 +36,26 @@
 <link href="assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
 <!-- /Machine Learning brand metadata -->
 <meta content="Batch versus stochastic versus mini-batch, why scaling fixes an ill-conditioned loss surface, momentum through AdamW and what it decouples, saddle points, and gradient boosting as descent in function space." name="description"/>
-<link href="assets/styles.css?v=20260727c" rel="stylesheet"/>
-<link href="assets/office-theme.css?v=20260727e" rel="stylesheet"/>
+<!-- Theme before first paint. Without this the document paints with the light
+     tokens and only flips when app.js runs at the end of <body>, which is a
+     white flash on every navigation in dark mode. Mirrors app.js's getTheme()
+     exactly — same key, same "light" default — so the pre-paint value can never
+     disagree with what the scripts apply a moment later. Inline and blocking on
+     purpose: an external file would cost a round trip before first paint. -->
+<script>(function(){try{var t=localStorage.getItem("gp.theme")||"light";document.documentElement.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Page transitions — see the same block in the other page families. `PageRevealEvent` is the only honest test for a CROSS-document view transition, and it has to run pre-paint or the arrival animation starts and is then cancelled. */var d=document.documentElement;if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260801d" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
 <link href="assets/ml-visuals.css?v=20260728a" rel="stylesheet"/>
+<link href="assets/ml-mobile.css?v=20260801a" rel="stylesheet"/>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="../assets/curriculum.js?v=20260804c"></script>
+<script defer src="../assets/page-nav.js?v=20260804c"></script>
 </head>
-<body data-page="ml-09-gradient-descent-optimization" data-prep-section="ml">
+<body data-curriculum-id="ml-09" data-page="ml-09-gradient-descent-optimization" data-prep-section="ml">
 <div class="app">
 <aside class="sidebar">
 <div class="brand">
@@ -56,7 +71,7 @@
 <div class="main">
 <header class="topbar">
 <button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
-<div class="crumbs">Machine Learning / Part B / Module 09</div>
+<div class="crumbs">Machine Learning / Part B / <b>Module 09</b></div>
 <button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
 </header>
 <div class="content-wrap">
@@ -232,15 +247,16 @@ Logistic gradient    ∇J = Xᵀ(σ(Xw) - y)          ← identical form</code><
 <summary><span class="prep-q-no">09</span><span class="prep-q-title">Explain gradient boosting as gradient descent. Where is the gradient, and where is the learning rate?<span class="prep-tags"><span>2026</span><span>boosting</span><span>connection</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>The move is to change what you are taking the derivative with respect to. In ordinary gradient descent you differentiate the loss with respect to the <em>parameters</em>. In boosting you differentiate it with respect to the <strong>predictions themselves</strong> — treating the vector of current predictions <code>F(xᵢ)</code> as the thing being optimised, one coordinate per training row.</p><p>So: at each round, compute <code>gᵢ = ∂L/∂F(xᵢ)</code> for every row. The direction that would most reduce the loss is <code>−g</code>. But you cannot simply add <code>−g</code> to your predictions, because <code>−g</code> is defined only at your training points and you need a function that generalises to new inputs. <strong>So you fit a small tree to approximate <code>−g</code></strong>, and add that tree's output instead. That is one step of gradient descent, taken in the space of functions rather than the space of parameters, with the tree acting as your best available approximation to the ideal step direction.</p><p>The correspondences are then exact: <strong>the negative gradient is the step direction</strong>, <strong>the tree is a constrained approximation of it</strong>, and <strong>the learning rate is the shrinkage parameter</strong> — usually called <code>learning_rate</code> or <code>eta</code>, and it does exactly what η does above, scaling each step down so no single tree can dominate.</p><p>Two payoffs from this framing, and they are why the question is asked. First, it explains why <strong>“each tree fits the residuals” is only true for squared error</strong>: with squared loss the negative gradient happens to equal <code>y − F(x)</code>, the residual, which is where the folklore comes from. With log-loss it is <code>y − p</code>, and with absolute error it is just the <em>sign</em> of the residual — so a candidate who says “residuals” is repeating a special case. Second, it explains why boosting can optimise <strong>any differentiable loss</strong>: swap the loss and the only thing that changes is the formula for <code>g</code>. That is precisely how Poisson, Tweedie, quantile and ranking objectives are supported without touching the algorithm.</p><div class="prep-say"><strong>30-second version</strong><p>Differentiate the loss with respect to the predictions instead of the parameters. The negative gradient at each training point is the ideal step, but it only exists at those points, so you fit a tree to approximate it and add that. The learning rate is the shrinkage parameter. This is why “trees fit the residuals” is only true for squared error — for log-loss it is y − p — and why any differentiable loss can be plugged in.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Whether you understand boosting mechanically or by slogan. The residual-versus-negative-gradient distinction is one of the highest-signal details in the whole curriculum, and it is exactly what connects Modules 09, 17 and 18.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> “Where does XGBoost differ from that description?” — it uses a second-order expansion rather than a first-order one, so each round uses both the gradient and the Hessian per row. That yields a closed-form optimal leaf weight, <code>−G/(H+λ)</code>, and a split-gain formula derived from the objective itself rather than from a generic impurity measure — which is both faster to converge and where the L1, L2 and per-leaf penalties enter naturally.</div></div></details>
 </section>
-<div class="page-nav"><a href="08-regularization.html"><div class="dir">← Previous</div><div class="ttl">Regularization</div></a><a class="next" href="10-classification-metrics.html"><div class="dir">Next →</div><div class="ttl">Classification Metrics</div></a></div>
+<div class="page-nav" data-page-nav><a href="08-regularization.html"><div class="dir">← Previous</div><div class="ttl">Regularization</div></a><a class="next" href="10-classification-metrics.html"><div class="dir">Next →</div><div class="ttl">Classification Metrics</div></a></div>
 </main>
 <div class="toc-rail"><nav class="toc"></nav></div>
 </div>
 </div>
 </div>
-<script src="assets/app.js?v=20260727c"></script>
-<script src="assets/ml-sitenav.js?v=20260727c"></script>
-<script src="assets/enhance.js?v=20260727c"></script>
+<script src="assets/app.js?v=20260731b"></script>
+<script src="assets/ml-sitenav.js?v=20260801b"></script>
+<script src="assets/enhance.js?v=20260801a"></script>
 <script src="assets/interview-prep.js?v=20260727c"></script>
+<script src="assets/ml-mobile.js?v=20260728c"></script>
 </body>
 </html>

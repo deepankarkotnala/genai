@@ -36,11 +36,26 @@
 <link href="assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
 <!-- /Machine Learning brand metadata -->
 <meta content="Why random search beats grid search, Bayesian optimization and when not to use it, successive halving, and how tuning itself overfits the validation set." name="description"/>
-<link href="assets/styles.css?v=20260727c" rel="stylesheet"/>
-<link href="assets/office-theme.css?v=20260727e" rel="stylesheet"/>
+<!-- Theme before first paint. Without this the document paints with the light
+     tokens and only flips when app.js runs at the end of <body>, which is a
+     white flash on every navigation in dark mode. Mirrors app.js's getTheme()
+     exactly — same key, same "light" default — so the pre-paint value can never
+     disagree with what the scripts apply a moment later. Inline and blocking on
+     purpose: an external file would cost a round trip before first paint. -->
+<script>(function(){try{var t=localStorage.getItem("gp.theme")||"light";document.documentElement.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Page transitions — see the same block in the other page families. `PageRevealEvent` is the only honest test for a CROSS-document view transition, and it has to run pre-paint or the arrival animation starts and is then cancelled. */var d=document.documentElement;if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260801d" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
 <link href="assets/ml-visuals.css?v=20260728a" rel="stylesheet"/>
+<link href="assets/ml-mobile.css?v=20260801a" rel="stylesheet"/>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="../assets/curriculum.js?v=20260804c"></script>
+<script defer src="../assets/page-nav.js?v=20260804c"></script>
 </head>
-<body data-page="ml-20-hyperparameter-tuning" data-prep-section="ml">
+<body data-curriculum-id="ml-20" data-page="ml-20-hyperparameter-tuning" data-prep-section="ml">
 <div class="app">
 <aside class="sidebar">
 <div class="brand">
@@ -56,7 +71,7 @@
 <div class="main">
 <header class="topbar">
 <button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
-<div class="crumbs">Machine Learning / Part E / Module 20</div>
+<div class="crumbs">Machine Learning / Part E / <b>Module 20</b></div>
 <button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
 </header>
 <div class="content-wrap">
@@ -66,9 +81,140 @@
 <p class="lead">How to search without fooling yourself. The insight interviewers reward most here is that model <em>selection</em> is itself a fitting procedure that can overfit.</p>
 <div class="meta-row"><span class="pill purple">Prerequisites · Modules 05, 18</span><span class="pill">Study time · 6 h</span><span class="pill blue">4 interview questions</span><span class="pill">APPLIED · CODE</span></div>
 <div class="callout key"><div class="c-ico">🎯</div><div class="c-body"><div class="c-title">Your interview goal</div><p>Explain the random-versus-grid result with its mechanism, know when Bayesian optimization is not worth it, and articulate why a tuned CV score is optimistically biased.</p></div></div>
-<h2 id="what-to-learn">1 · What to learn</h2>
+<h2 id="ground-up">1 · From the ground up</h2>
+<div class="callout plain"><div class="c-ico">🧩</div><div class="c-body"><div class="c-title">In plain words</div><p>Parameters are the numbers a model learns from data. <strong>Hyperparameters</strong> are the settings you choose before training starts — tree depth, learning rate, how much regularisation. Nothing learns them, so you have to go looking. This module is about two things: searching without wasting your budget, and — the part people skip — <em>not fooling yourself</em> while you search, because the act of trying many options quietly inflates the score you end up reporting.</p></div></div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>Start with the problem, not the formula</h4><p>Say you have six hyperparameters and you want to try five values of each. That is 5⁶ = <strong>15,625 combinations</strong>. Give each one a five-fold cross-validation at two minutes a fold and you are looking at roughly <strong>three weeks</strong> of compute for one model.</p><p>So trying everything was never an option. It was off the table before you started.</p><div class="gu-so"><strong>So what:</strong> tuning is not a search for the perfect setting — it is a <b>budget-allocation problem</b>. Every technique below is a different answer to "where should I spend my next hundred runs?"</div></div>
+<div class="gu-step"><h4>Random search beats grid search, and the reason is worth knowing</h4><p>This sounds wrong the first time you hear it. Grid search is systematic; random search sounds lazy. But look at what each one actually spends its budget on.</p><p>Run a 5×5 grid and you perform 25 experiments — while only ever testing <strong>five distinct values</strong> of each hyperparameter. Run 25 random draws and you test <strong>25 distinct values</strong> of each.</p><p>Now add the fact that makes it matter: in practice, only one or two hyperparameters really move the score, and the rest barely register. Grid search spends most of its 25 runs re-testing the unimportant parameter at the same five levels. Random search gives you 25 different shots at whichever one turns out to matter.</p><div class="gu-so"><strong>So what:</strong> say it as <em>"most hyperparameters do not matter, and grid search does not know which ones, so it spends the same effort on all of them"</em>. Random search does not know either — but it gets far more resolution on every axis for the same cost.</div></div>
+</div>
+<div class="mlviz">
+<div class="mlviz-title">Same 25 runs — grid tries 5 values of each, random tries 25</div>
+<div class="mlviz-scroll">
+<svg viewbox="0 0 660 300" role="img" aria-label="Left: a five by five grid of 25 trial points, whose projection onto the horizontal axis lands on only five distinct values. Right: 25 randomly placed trial points, whose projection lands on 25 distinct values. If only the horizontal parameter matters, random search has tested five times as many settings of it.">
+<!-- LEFT: grid -->
+<g class="mv-in" style="--d:.05s">
+  <text class="mv-lbl mv-fill-5" x="20" y="24">grid search · 25 runs</text>
+  <rect class="mv-box" x="40" y="40" width="240" height="160" rx="10"></rect>
+  <g class="mv-fill-5">
+    <circle cx="76" cy="68" r="5"></circle><circle cx="124" cy="68" r="5"></circle><circle cx="160" cy="68" r="5"></circle><circle cx="196" cy="68" r="5"></circle><circle cx="244" cy="68" r="5"></circle>
+    <circle cx="76" cy="100" r="5"></circle><circle cx="124" cy="100" r="5"></circle><circle cx="160" cy="100" r="5"></circle><circle cx="196" cy="100" r="5"></circle><circle cx="244" cy="100" r="5"></circle>
+    <circle cx="76" cy="128" r="5"></circle><circle cx="124" cy="128" r="5"></circle><circle cx="160" cy="128" r="5"></circle><circle cx="196" cy="128" r="5"></circle><circle cx="244" cy="128" r="5"></circle>
+    <circle cx="76" cy="156" r="5"></circle><circle cx="124" cy="156" r="5"></circle><circle cx="160" cy="156" r="5"></circle><circle cx="196" cy="156" r="5"></circle><circle cx="244" cy="156" r="5"></circle>
+    <circle cx="76" cy="180" r="5"></circle><circle cx="124" cy="180" r="5"></circle><circle cx="160" cy="180" r="5"></circle><circle cx="196" cy="180" r="5"></circle><circle cx="244" cy="180" r="5"></circle>
+  </g>
+  <text class="mv-lbl-xs" x="14" y="124" text-anchor="middle" transform="rotate(-90 14 124)">the one that does not matter</text>
+  <!-- projection strip -->
+  <path class="mv-str-5 mv-dash" stroke-width="1" opacity=".5" d="M76 200 V226 M124 200 V226 M160 200 V226 M196 200 V226 M244 200 V226"></path>
+  <rect class="mv-box" x="40" y="226" width="240" height="22" rx="6"></rect>
+  <g class="mv-fill-5"><rect x="73" y="230" width="6" height="14" rx="2"></rect><rect x="121" y="230" width="6" height="14" rx="2"></rect><rect x="157" y="230" width="6" height="14" rx="2"></rect><rect x="193" y="230" width="6" height="14" rx="2"></rect><rect x="241" y="230" width="6" height="14" rx="2"></rect></g>
+  <text class="mv-lbl mv-fill-5" x="40" y="268">only 5 distinct values tried</text>
+  <text class="mv-lbl-xs" x="40" y="284">of the parameter that actually matters</text>
+</g>
+<!-- RIGHT: random -->
+<g class="mv-in" style="--d:.30s">
+  <text class="mv-lbl mv-fill-1" x="380" y="24">random search · 25 runs</text>
+  <rect class="mv-box" x="400" y="40" width="240" height="160" rx="10"></rect>
+  <g class="mv-fill-1">
+    <circle cx="418" cy="74" r="5"></circle><circle cx="612" cy="61" r="5"></circle><circle cx="503" cy="188" r="5"></circle><circle cx="561" cy="112" r="5"></circle><circle cx="443" cy="145" r="5"></circle>
+    <circle cx="628" cy="131" r="5"></circle><circle cx="470" cy="59" r="5"></circle><circle cx="537" cy="170" r="5"></circle><circle cx="591" cy="88" r="5"></circle><circle cx="410" cy="118" r="5"></circle>
+    <circle cx="516" cy="66" r="5"></circle><circle cx="457" cy="191" r="5"></circle><circle cx="604" cy="157" r="5"></circle><circle cx="484" cy="129" r="5"></circle><circle cx="573" cy="49" r="5"></circle>
+    <circle cx="431" cy="163" r="5"></circle><circle cx="549" cy="140" r="5"></circle><circle cx="622" cy="96" r="5"></circle><circle cx="493" cy="103" r="5"></circle><circle cx="583" cy="180" r="5"></circle>
+    <circle cx="527" cy="83" r="5"></circle><circle cx="464" cy="112" r="5"></circle><circle cx="636" cy="176" r="5"></circle><circle cx="405" cy="93" r="5"></circle><circle cx="545" cy="55" r="5"></circle>
+  </g>
+  <!-- projection strip -->
+  <rect class="mv-box" x="400" y="226" width="240" height="22" rx="6"></rect>
+  <g class="mv-fill-1">
+    <rect x="415" y="230" width="4" height="14" rx="1"></rect><rect x="609" y="230" width="4" height="14" rx="1"></rect><rect x="500" y="230" width="4" height="14" rx="1"></rect><rect x="558" y="230" width="4" height="14" rx="1"></rect><rect x="440" y="230" width="4" height="14" rx="1"></rect>
+    <rect x="625" y="230" width="4" height="14" rx="1"></rect><rect x="467" y="230" width="4" height="14" rx="1"></rect><rect x="534" y="230" width="4" height="14" rx="1"></rect><rect x="588" y="230" width="4" height="14" rx="1"></rect><rect x="407" y="230" width="4" height="14" rx="1"></rect>
+    <rect x="513" y="230" width="4" height="14" rx="1"></rect><rect x="454" y="230" width="4" height="14" rx="1"></rect><rect x="601" y="230" width="4" height="14" rx="1"></rect><rect x="481" y="230" width="4" height="14" rx="1"></rect><rect x="570" y="230" width="4" height="14" rx="1"></rect>
+    <rect x="428" y="230" width="4" height="14" rx="1"></rect><rect x="546" y="230" width="4" height="14" rx="1"></rect><rect x="619" y="230" width="4" height="14" rx="1"></rect><rect x="490" y="230" width="4" height="14" rx="1"></rect><rect x="580" y="230" width="4" height="14" rx="1"></rect>
+    <rect x="524" y="230" width="4" height="14" rx="1"></rect><rect x="461" y="230" width="4" height="14" rx="1"></rect><rect x="633" y="230" width="4" height="14" rx="1"></rect><rect x="402" y="230" width="4" height="14" rx="1"></rect><rect x="542" y="230" width="4" height="14" rx="1"></rect>
+  </g>
+  <text class="mv-lbl mv-fill-1" x="400" y="268">25 distinct values tried</text>
+  <text class="mv-lbl-xs" x="400" y="284">five times the resolution, same compute</text>
+</g>
+<text class="mv-lbl-sm" x="330" y="216" text-anchor="middle">the parameter that matters →</text>
+</svg>
+</div>
+<p class="mlviz-cap">Look only at the strips at the bottom — that is the whole argument. Both searches cost exactly 25 model fits. <b>The grid spent them on five settings of the parameter that matters; the random search spent them on twenty-five.</b> And neither one knew in advance which parameter that would be.</p>
+</div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>Sample on the right scale, or half your draws are wasted</h4><p>You want to search learning rates between 0.0001 and 0.1. Draw uniformly from that range and roughly <strong>90% of your samples land above 0.01</strong> — you have spent nine tenths of the budget on the top tenth of the range, and barely looked at the small values where the good answer usually lives.</p><p>Sample <strong>log-uniformly</strong> instead and you get about as many draws in 0.0001–0.001 as in 0.01–0.1, which is what you meant all along.</p><div class="gu-so"><strong>So what:</strong> the distribution you sample from is <em>part of the search space definition</em>, not a technicality. Log scale for learning rates, regularisation strengths and anything spanning orders of magnitude. Plain uniform for depths and counts.</div></div>
+<div class="gu-step"><h4>Bayesian search: use what you already learned</h4><p>Random search has no memory. Run 200 trials and the 200th is picked with exactly as much knowledge as the first — which is to say none.</p><p>Bayesian optimisation fixes that. It builds a cheap model of "settings → score" from the trials so far, then picks the next point where that model expects a good result, or where it is most uncertain. Fewer trials to reach the same score.</p><div class="gu-so"><strong>So what:</strong> it earns its keep when each trial is <em>expensive</em> — a long training run on a big dataset. When trials are cheap, <b>the bookkeeping and the fact that trials must run one after another can cost more than the trials it saves</b>, and plain random search on many cores wins. Knowing when <em>not</em> to reach for it is the better answer.</div></div>
+<div class="gu-step"><h4>Successive halving: stop wasting time on obvious losers</h4><p>Most bad configurations look bad quickly. So do not give every candidate a full training run. Start a large batch with a tiny budget — a few epochs, or a fraction of the data — throw away the worst half, double the budget for the survivors, and repeat.</p><p>You end up spending almost all your compute on the handful of configurations that were still in contention. ASHA is the version that does this asynchronously so no worker sits idle.</p><div class="gu-so"><strong>So what:</strong> it rests on one assumption — <b>that early performance predicts final performance</b> — and that assumption can be wrong. A configuration with a warmup period, or a low learning rate that needs longer to get going, gets killed before it shows what it can do. If your model is like that, halve less aggressively.</div></div>
+<div class="gu-step"><h4>The part everyone skips: searching inflates your score</h4><p>Here is the honesty problem. Every validation score has some noise in it. Try 1,000 configurations and pick the highest, and you have not just selected the best configuration — you have <strong>also selected the luckiest noise</strong>. The winner is partly good and partly fortunate, and you cannot tell how much of each.</p><p>So the best validation score is <em>biased upward</em>, and the bias gets worse the harder you search. The model will not reproduce that number in production, and the gap is your own doing.</p><div class="gu-so"><strong>So what:</strong> <b>never report the best validation score as your result.</b> Keep a test set that tuning never touched, or use nested cross-validation — inner loop tunes, outer loop scores. The number you quote must come from data that took no part in choosing the winner.</div></div>
+</div>
+<div class="mlviz">
+<div class="mlviz-title">The winner's score is part skill, part luck — and only one of those survives</div>
+<div class="mlviz-scroll">
+<svg viewbox="0 0 660 280" role="img" aria-label="A histogram of validation scores across forty tried configurations, most between 0.79 and 0.85. The single highest bar at 0.89 is highlighted as the chosen winner. An arrow shows that the same configuration scores 0.84 on a held-out test set, illustrating the upward bias from selecting the maximum.">
+<path class="mv-axis" d="M80 200 H620"></path>
+<g class="mv-lbl-xs" text-anchor="middle"><text x="110" y="220">0.76</text><text x="245" y="220">0.80</text><text x="380" y="220">0.84</text><text x="515" y="220">0.88</text></g>
+<text class="mv-lbl-sm" x="350" y="242" text-anchor="middle">validation score of each configuration tried →</text>
+
+<!-- histogram of tried configs -->
+<g class="mv-fill-2" opacity=".75">
+  <rect x="96" y="188" width="26" height="12" rx="3"></rect>
+  <rect x="130" y="176" width="26" height="24" rx="3"></rect>
+  <rect x="164" y="152" width="26" height="48" rx="3"></rect>
+  <rect x="198" y="128" width="26" height="72" rx="3"></rect>
+  <rect x="232" y="116" width="26" height="84" rx="3"></rect>
+  <rect x="266" y="128" width="26" height="72" rx="3"></rect>
+  <rect x="300" y="146" width="26" height="54" rx="3"></rect>
+  <rect x="334" y="164" width="26" height="36" rx="3"></rect>
+  <rect x="368" y="176" width="26" height="24" rx="3"></rect>
+  <rect x="402" y="182" width="26" height="18" rx="3"></rect>
+  <rect x="436" y="188" width="26" height="12" rx="3"></rect>
+  <rect x="470" y="194" width="26" height="6" rx="3"></rect>
+</g>
+<!-- the winner -->
+<rect class="mv-fill-3" x="538" y="188" width="26" height="12" rx="3"></rect>
+<circle class="mv-fill-3 mv-pulse" cx="551" cy="178" r="6"></circle>
+<text class="mv-lbl mv-fill-3" x="470" y="66">you pick this one</text>
+<text class="mv-mono-sm mv-fill-3" x="470" y="82">validation 0.89</text>
+<path class="mv-str-3" stroke-width="1.6" d="M551 92 V166"></path>
+
+<!-- the honest number -->
+<path class="mv-str-5 mv-dash" stroke-width="1.8" d="M380 100 H540"></path>
+<polygon class="mv-fill-5" points="368,100 382,94 382,106"></polygon>
+<text class="mv-lbl mv-fill-5" x="196" y="98">on the untouched test set: 0.84</text>
+<text class="mv-lbl-xs mv-fill-5" x="196" y="114">the 0.05 gap is the luck you selected for</text>
+
+<text class="mv-lbl-xs" x="80" y="264">The harder you search, the further right the winner sits — and the bigger the drop when you finally measure it honestly.</text>
+</svg>
+</div>
+<div class="mv-keys"><span><i class="mv-k2"></i>the configurations you tried</span><span><i class="mv-k3"></i>the one you picked</span><span><i class="mv-k5"></i>what it is really worth</span></div>
+<p class="mlviz-cap">Nothing has gone wrong here — this is what selecting a maximum does. <b>The fix is not to search less, it is to measure elsewhere.</b> It is also why a leaderboard position and a production result so often disagree: thousands of teams selecting the maximum on one public split is this same effect at scale.</p>
+</div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>What to tune, in what order</h4><p>Most hyperparameters are not worth your budget. A rough order that works for the models in this curriculum:</p><div class="table-wrap"><table>
+<thead><tr><th>Model</th><th>Tune first</th><th>Then</th><th>Rarely worth it</th></tr></thead>
+<tbody>
+<tr><td>Gradient boosting</td><td><code>learning_rate</code> + <code>n_estimators</code> <em>together</em></td><td><code>max_depth</code> / <code>num_leaves</code>, then <code>subsample</code> and the regularisation terms</td><td><code>gamma</code>, <code>colsample_bylevel</code></td></tr>
+<tr><td>Random Forest</td><td><code>max_features</code></td><td><code>min_samples_leaf</code></td><td><code>n_estimators</code> — set it high and forget it</td></tr>
+<tr><td>SVM (RBF)</td><td><code>C</code> and <code>gamma</code>, as a 2-D grid</td><td>kernel choice</td><td>everything else</td></tr>
+<tr><td>Linear / logistic</td><td>the regularisation strength, on a log scale</td><td>L1 vs L2</td><td>the solver, usually</td></tr>
+</tbody>
+</table></div><div class="gu-so"><strong>So what:</strong> two of these are worth saying out loud. <b><code>learning_rate</code> and <code>n_estimators</code> must move together</b> — halve one and you roughly double the other, so tuning them separately searches the wrong space. And <b><code>n_estimators</code> is a real tuning knob for boosting but not for a forest</b>, because more trees can overfit one and cannot overfit the other (Modules 16 and 17).</div></div>
+</div>
+<div class="gu-analogy"><b>Analogy</b> — you are tasting a soup with six possible seasonings, and you can only taste it twenty-five times. <em>Grid search</em> is trying five fixed levels of every seasoning in every combination — thorough, and you learn about the parsley in exhaustive detail even though the dish only ever depended on the salt. <em>Random search</em> tries twenty-five scattered mixes, so you happen to sample twenty-five different salt levels. <b>And the winner's curse is the last part:</b> if you taste twenty-five bowls and pick the one that tasted best, some of what you liked was the bowl and some was you being hungry at that moment. The only honest test is to serve it to somebody else tomorrow.</div>
+<div class="gu-jargon">
+<div><strong>hyperparameter</strong><span>a setting you choose before training. Nothing learns it from the data.</span></div>
+<div><strong>grid search</strong><span>every combination of fixed values. Systematic, and wastes budget on parameters that do not matter.</span></div>
+<div><strong>random search</strong><span>random draws from each range. More distinct values per parameter for the same number of runs.</span></div>
+<div><strong>log-uniform</strong><span>sampling evenly across orders of magnitude. Correct for learning rates and regularisation strengths.</span></div>
+<div><strong>Bayesian optimisation</strong><span>models score-vs-settings and picks the next trial deliberately. Best when each trial is expensive.</span></div>
+<div><strong>acquisition function</strong><span>the rule that balances "try what looks good" against "try where I am unsure".</span></div>
+<div><strong>successive halving</strong><span>start many candidates cheaply, repeatedly discard the worst half and give the rest more budget.</span></div>
+<div><strong>ASHA / Hyperband</strong><span>the practical asynchronous versions, so no worker waits for a round to finish.</span></div>
+<div><strong>winner's curse</strong><span>the best validation score is inflated, because you selected on noise as well as on quality.</span></div>
+<div><strong>nested CV</strong><span>inner loop tunes, outer loop scores. Gives a tuning-free estimate at the cost of many more fits.</span></div>
+<div><strong>search space</strong><span>the ranges <em>and</em> the sampling distributions. Both are design decisions.</span></div>
+<div><strong>early stopping</strong><span>halting a run once it stops improving. Tuning-adjacent, and the cheapest budget saver there is.</span></div>
+</div>
+<h2 id="what-to-learn">2 · What to learn</h2>
 <ol><li>Parameters versus hyperparameters — the distinction, precisely.</li><li><strong>Grid search</strong>: exhaustive, exponential in dimensions, wasteful.</li><li><strong>Random search</strong>: why it beats grid search in high dimensions (the Bergstra–Bengio result).</li><li><strong>Bayesian optimization</strong>: surrogate models, acquisition functions (expected improvement), TPE; Optuna and Hyperopt.</li><li><strong>Successive halving</strong> and <strong>Hyperband</strong> — bandit-based early elimination of bad configurations.</li><li><strong>Early stopping</strong> as tuning, especially for <code>n_estimators</code>.</li><li>Search spaces: log-uniform for scale parameters, and why that matters.</li><li><strong>Nested CV</strong> and the optimism of a tuned-CV score.</li><li><strong>Multiple-comparisons overfitting</strong> in model selection.</li><li>Compute budgeting: tuning the parameters that matter, in the right order.</li><li>Model selection beyond hyperparameters: comparing families, ensembling, stacking, blending.</li><li>Reproducibility: seeds, logged trials, experiment tracking (MLflow, Weights &amp; Biases).</li><li>What <em>not</em> to tune, and why feature engineering usually beats tuning.</li></ol>
-<h2 id="intuitions">2 · Core intuitions</h2>
+<h2 id="intuitions">3 · Core intuitions</h2>
 <h3>Random search beats grid search because most hyperparameters do not matter</h3>
 <p>With <code>d</code> hyperparameters and <code>m</code> values each, a grid needs <code>m^d</code> fits, and it spends its budget evaluating every value of the irrelevant parameters. Random search with the same budget samples <code>N</code> distinct values for <em>every</em> parameter, so it explores the few important dimensions far more finely. Bergstra and Bengio’s result is the standard citation, and the gap widens with dimensionality. There is also a neat probabilistic framing: <strong>to land in the top 5% of the search space with 95% confidence you need about 60 random draws — independent of dimension.</strong></p>
 <h3>Bayesian optimization uses the results so far to decide where to look next</h3>
@@ -81,12 +227,12 @@
 <p>Learning rates, regularization strengths and <code>C</code> span orders of magnitude, and the interesting variation is multiplicative. Sampling <code>learning_rate</code> uniformly in [0.001, 0.3] puts almost all draws above 0.05; sampling log-uniformly gives even coverage across each decade. Same for <code>alpha</code>, <code>C</code>, <code>gamma</code>, <code>reg_lambda</code>.</p>
 <h3>Feature engineering usually beats tuning</h3>
 <p>Going from default to optimally-tuned XGBoost typically buys a few percent. One well-constructed feature encoding real domain structure can buy far more. If you have limited time, spend it on the data. The corollary: when asked “your model is not good enough, what do you do?”, tuning should <strong>not</strong> be your first answer.</p>
-<h2 id="comparison">3 · Method comparison</h2>
+<h2 id="comparison">4 · Method comparison</h2>
 <div class="table-wrap"><table><thead><tr><th>Method</th><th>Best for</th><th>Cost</th><th>Parallel?</th><th>Notes</th></tr></thead><tbody><tr><td>Grid search</td><td>≤ 2–3 params, small discrete sets</td><td><code>m^d</code> fits</td><td>Yes</td><td>Wasteful beyond 3 params</td></tr><tr><td>Random search</td><td><strong>The general default</strong></td><td><code>N</code> fits</td><td>Yes</td><td>Beats grid at equal budget</td></tr><tr><td>Bayesian (Optuna/TPE)</td><td>Expensive fits, many params</td><td><code>N</code> fits, smarter</td><td>Partly</td><td>Most sample-efficient</td></tr><tr><td>Successive halving</td><td>Many configs, cheap early signal</td><td>Much less</td><td>Yes</td><td>Great with random search</td></tr><tr><td>Hyperband</td><td>As above, hedged</td><td>Much less</td><td>Yes</td><td>Robust to slow starters</td></tr><tr><td>Early stopping</td><td><code>n_estimators</code>, epochs</td><td>~free</td><td>—</td><td>Always use for boosting and NNs</td></tr></tbody></table></div>
-<h2 id="drill">4 · Hands-on drill</h2>
+<h2 id="drill">5 · Hands-on drill</h2>
 <ol><li>On the same dataset and equal compute budget, run grid search, random search and Optuna over five XGBoost hyperparameters. Compare best score and wall-clock. Record the result.</li><li>Run <code>HalvingRandomSearchCV</code> and compare its cost against plain random search at comparable quality.</li><li><strong>Deliberately over-tune:</strong> evaluate 500 configurations on a small dataset, note the best CV score, then measure on a held-out test set. <strong>Quantify the optimism gap</strong> — that number is your evidence for the tuning-overfits question.</li><li>Implement nested CV and compare its estimate against the tuned-CV estimate.</li><li>Take your best tuned model, then add two well-considered engineered features to the <em>untuned</em> model. Compare the gains from tuning versus from features.</li></ol>
 <div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">Gotchas that fail candidates</div><ul><li><strong>Grid-searching six hyperparameters.</strong> Combinatorially hopeless.</li><li><strong>Sampling learning rates uniformly</strong> instead of log-uniformly.</li><li><strong>Reporting the tuned CV score as the final unbiased estimate.</strong></li><li><strong>Tuning on the test set.</strong></li><li><strong>Not using early stopping for <code>n_estimators</code>.</strong></li><li><strong>Tuning before fixing the validation strategy.</strong> Tuning against a leaky split optimizes for the leak.</li><li><strong>Answering “tune hyperparameters” to “how do you improve the model?”</strong> without mentioning data, features or the target definition.</li></ul></div></div>
-<h2 id="questions">5 · Interview questions</h2>
+<h2 id="questions">6 · Interview questions</h2>
 <div class="prep-toolbar" data-sticky-prep=""><label class="prep-filter"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><input data-question-filter="" placeholder="Filter these questions…"/></label><button class="btn ghost" data-expand-answers="" type="button">Open all</button><span class="prep-count" data-question-count="">4 questions</span></div>
 <section aria-label="Hyperparameter tuning interview questions" class="prep-question-list">
 <details class="prep-question" data-question="why is random search usually better than grid search" data-tags="random search Bergstra trap">
@@ -102,15 +248,16 @@
 <summary><span class="prep-q-no">04</span><span class="prep-q-title">You have 4 hours of compute. How do you spend it to improve a model?<span class="prep-tags"><span>prioritization</span><span>applied</span><span>trap</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>Mostly <em>not</em> on hyperparameter tuning, and I would say so explicitly.</p><ol><li><strong>First 30 minutes verifying the evaluation</strong> — is the split leaking, is it time- or group-aware, is the metric right? Everything downstream is worthless if this is wrong, and a leak found here is worth more than any tuning.</li><li><strong>Next 2 hours on data and features</strong> — investigate the largest errors to see what the model is systematically missing, add features encoding real domain structure, fix data-quality problems, reconsider the target definition. By far the highest expected return.</li><li><strong>Then 1 hour on model and tuning</strong> — try two or three model families with defaults, then a random or Optuna search with successive halving over the parameters that matter most, with early stopping handling <code>n_estimators</code> for free.</li><li><strong>Final 30 minutes on the decision layer</strong> — threshold selection from business cost, and calibration. Often the single cheapest large improvement in realized business value, and frequently ignored entirely.</li></ol><p>If the model is still short after that, the honest conclusion is usually that I need better data or a different target definition, not more compute.</p><div class="prep-say"><strong>30-second version</strong><p>30 minutes verifying the evaluation, 2 hours on data and features, 1 hour on model choice and tuning, 30 minutes on threshold and calibration. Tuning is the smallest slice for a reason.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Prioritization. Candidates who spend the whole budget on <code>GridSearchCV</code> fail this. Leading with evaluation and ending with the threshold layer are both strong signals.</p></div></div></details>
 </section>
-<div class="page-nav"><a href="19-clustering-dimensionality-reduction.html"><div class="dir">← Previous</div><div class="ttl">Clustering &amp; Dimensionality Reduction</div></a><a class="next" href="21-interpretability-explainability.html"><div class="dir">Next →</div><div class="ttl">Interpretability &amp; Explainability</div></a></div>
+<div class="page-nav" data-page-nav><a href="19-clustering-dimensionality-reduction.html"><div class="dir">← Previous</div><div class="ttl">Clustering &amp; Dimensionality Reduction</div></a><a class="next" href="21-interpretability-explainability.html"><div class="dir">Next →</div><div class="ttl">Interpretability &amp; Explainability</div></a></div>
 </main>
 <div class="toc-rail"><nav class="toc"></nav></div>
 </div>
 </div>
 </div>
-<script src="assets/app.js?v=20260727c"></script>
-<script src="assets/ml-sitenav.js?v=20260727c"></script>
-<script src="assets/enhance.js?v=20260727c"></script>
+<script src="assets/app.js?v=20260731b"></script>
+<script src="assets/ml-sitenav.js?v=20260801b"></script>
+<script src="assets/enhance.js?v=20260801a"></script>
 <script src="assets/interview-prep.js?v=20260727c"></script>
+<script src="assets/ml-mobile.js?v=20260728c"></script>
 </body>
 </html>

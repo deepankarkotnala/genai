@@ -36,11 +36,26 @@
 <link href="assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
 <!-- /Machine Learning brand metadata -->
 <meta content="Why L1 produces exact zeros via both the geometric and subgradient arguments, the SVD view of ridge, regularization as a Bayesian prior, and the five families beyond an L1/L2 penalty." name="description"/>
-<link href="assets/styles.css?v=20260727c" rel="stylesheet"/>
-<link href="assets/office-theme.css?v=20260727e" rel="stylesheet"/>
+<!-- Theme before first paint. Without this the document paints with the light
+     tokens and only flips when app.js runs at the end of <body>, which is a
+     white flash on every navigation in dark mode. Mirrors app.js's getTheme()
+     exactly — same key, same "light" default — so the pre-paint value can never
+     disagree with what the scripts apply a moment later. Inline and blocking on
+     purpose: an external file would cost a round trip before first paint. -->
+<script>(function(){try{var t=localStorage.getItem("gp.theme")||"light";document.documentElement.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Page transitions — see the same block in the other page families. `PageRevealEvent` is the only honest test for a CROSS-document view transition, and it has to run pre-paint or the arrival animation starts and is then cancelled. */var d=document.documentElement;if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260801d" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
 <link href="assets/ml-visuals.css?v=20260728a" rel="stylesheet"/>
+<link href="assets/ml-mobile.css?v=20260801a" rel="stylesheet"/>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="../assets/curriculum.js?v=20260804c"></script>
+<script defer src="../assets/page-nav.js?v=20260804c"></script>
 </head>
-<body data-page="ml-08-regularization" data-prep-section="ml">
+<body data-curriculum-id="ml-08" data-page="ml-08-regularization" data-prep-section="ml">
 <div class="app">
 <aside class="sidebar">
 <div class="brand">
@@ -56,7 +71,7 @@
 <div class="main">
 <header class="topbar">
 <button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
-<div class="crumbs">Machine Learning / Part B / Module 08</div>
+<div class="crumbs">Machine Learning / Part B / <b>Module 08</b></div>
 <button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
 </header>
 <div class="content-wrap">
@@ -218,15 +233,16 @@ sklearn note      Ridge/Lasso use `alpha` = λ  (bigger = MORE regularization)
 <summary><span class="prep-q-no">08</span><span class="prep-q-title">How do you choose λ — and what if the cross-validation curve is almost flat across two orders of magnitude?<span class="prep-tags"><span>tuning</span><span>cross-validation</span><span>judgment</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>By cross-validation over a <strong>logarithmic</strong> grid, because λ acts multiplicatively — the meaningful steps are 0.001, 0.01, 0.1, 1, 10, not evenly spaced values. And with features standardised inside the fold, since the penalty compares raw weight magnitudes and an unscaled feature is effectively unpenalised.</p><p>A flat curve is not a problem, it is information: it says <strong>performance is insensitive to λ across that range, so I get to choose on other grounds.</strong> The principled choice is the <strong>one-standard-error rule</strong> — take the largest λ whose mean CV score is still within one standard error of the best. That deliberately picks a simpler model than the outright optimum, on the reasoning that the outright optimum is the maximum of many noisy estimates and is therefore partly an artefact of fold noise. With lasso that simpler model is also more sparse, cheaper to serve and easier to explain, so the flat region is a gift.</p><p>Two further things I would check before accepting the result. <strong>Look at the shape of the curve, not just its argmax</strong>: a sharp spike is a warning that the estimate is unstable and probably fold-specific, whereas a broad basin is trustworthy. And <strong>confirm the grid's edges are not the winner</strong> — if the best λ sits at the smallest or largest value I tried, the optimum is outside my grid and I should extend it rather than report a boundary value.</p><div class="prep-say"><strong>30-second version</strong><p>Cross-validation on a log grid, with scaling done inside the fold. A flat curve means λ does not matter much, so I use the one-standard-error rule: the largest λ still within one standard error of the best, which gives a simpler, sparser, cheaper model and guards against picking the maximum of noisy estimates. I would also check that the winner is not at the edge of my grid.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Whether you know that the argmax of a noisy curve is itself a noisy quantity. The one-standard-error rule is the specific answer being listened for, and “log grid” plus “scale inside the fold” are the hygiene markers.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> “Your best λ is essentially zero. What does that tell you?” — that the data is not asking for regularisation: you probably have far more rows than features, low collinearity and little noise, so the unregularised fit is already low-variance. I would sanity-check for leakage, since a suspiciously easy problem is often a contaminated one, and I would keep a small non-zero λ anyway for numerical stability and to guard against the separation pathology if it is a logistic model.</div></div></details>
 </section>
-<div class="page-nav"><a href="07-logistic-regression-log-odds.html"><div class="dir">← Previous</div><div class="ttl">Logistic Regression &amp; Log Odds</div></a><a class="next" href="09-gradient-descent-optimization.html"><div class="dir">Next →</div><div class="ttl">Gradient Descent &amp; Optimization</div></a></div>
+<div class="page-nav" data-page-nav><a href="07-logistic-regression-log-odds.html"><div class="dir">← Previous</div><div class="ttl">Logistic Regression &amp; Log Odds</div></a><a class="next" href="09-gradient-descent-optimization.html"><div class="dir">Next →</div><div class="ttl">Gradient Descent &amp; Optimization</div></a></div>
 </main>
 <div class="toc-rail"><nav class="toc"></nav></div>
 </div>
 </div>
 </div>
-<script src="assets/app.js?v=20260727c"></script>
-<script src="assets/ml-sitenav.js?v=20260727c"></script>
-<script src="assets/enhance.js?v=20260727c"></script>
+<script src="assets/app.js?v=20260731b"></script>
+<script src="assets/ml-sitenav.js?v=20260801b"></script>
+<script src="assets/enhance.js?v=20260801a"></script>
 <script src="assets/interview-prep.js?v=20260727c"></script>
+<script src="assets/ml-mobile.js?v=20260728c"></script>
 </body>
 </html>

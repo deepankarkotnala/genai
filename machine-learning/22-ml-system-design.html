@@ -36,11 +36,26 @@
 <link href="assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
 <!-- /Machine Learning brand metadata -->
 <meta content="A reusable ten-step design framework, training/serving skew, the three kinds of drift, delayed labels, feedback loops, and safe progressive deployment." name="description"/>
-<link href="assets/styles.css?v=20260727c" rel="stylesheet"/>
-<link href="assets/office-theme.css?v=20260727e" rel="stylesheet"/>
+<!-- Theme before first paint. Without this the document paints with the light
+     tokens and only flips when app.js runs at the end of <body>, which is a
+     white flash on every navigation in dark mode. Mirrors app.js's getTheme()
+     exactly — same key, same "light" default — so the pre-paint value can never
+     disagree with what the scripts apply a moment later. Inline and blocking on
+     purpose: an external file would cost a round trip before first paint. -->
+<script>(function(){try{var t=localStorage.getItem("gp.theme")||"light";document.documentElement.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Page transitions — see the same block in the other page families. `PageRevealEvent` is the only honest test for a CROSS-document view transition, and it has to run pre-paint or the arrival animation starts and is then cancelled. */var d=document.documentElement;if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260801d" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
 <link href="assets/ml-visuals.css?v=20260728a" rel="stylesheet"/>
+<link href="assets/ml-mobile.css?v=20260801a" rel="stylesheet"/>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="../assets/curriculum.js?v=20260804c"></script>
+<script defer src="../assets/page-nav.js?v=20260804c"></script>
 </head>
-<body data-page="ml-22-ml-system-design" data-prep-section="ml">
+<body data-curriculum-id="ml-22" data-page="ml-22-ml-system-design" data-prep-section="ml">
 <div class="app">
 <aside class="sidebar">
 <div class="brand">
@@ -56,7 +71,7 @@
 <div class="main">
 <header class="topbar">
 <button aria-label="Menu" class="icon-btn menu-btn"><svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg></button>
-<div class="crumbs">Machine Learning / Part F / Module 22</div>
+<div class="crumbs">Machine Learning / Part F / <b>Module 22</b></div>
 <button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
 </header>
 <div class="content-wrap">
@@ -66,14 +81,168 @@
 <p class="lead">A dedicated round for ML Engineer roles, and assumed knowledge for every other. The most common real failure is not model quality — it is training/serving skew.</p>
 <div class="meta-row"><span class="pill purple">Prerequisites · Modules 04, 05, 10, 18</span><span class="pill">Study time · 10 h</span><span class="pill blue">6 interview questions</span><span class="pill">DESIGN · DEBUG</span></div>
 <div class="callout key"><div class="c-ico">🎯</div><div class="c-body"><div class="c-title">Your interview goal</div><p>Run a design round end to end using a stated framework, ask about latency and label delay before modelling, distinguish the three drifts by detectability, and always have a rollback plan.</p></div></div>
-<h2 id="what-to-learn">1 · What to learn</h2>
+<h2 id="ground-up">1 · From the ground up</h2>
+<div class="callout plain"><div class="c-ico">🧩</div><div class="c-body"><div class="c-title">In plain words</div><p>Everything up to now treated the model as the point. In a real system the model is a small part of it. What decides whether an ML system works is mostly everything around the model: how the data arrives, whether the features at serving time match the features at training time, when the labels turn up, and what you do when the world quietly changes underneath you. A design interview is checking whether you know that.</p></div></div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>Start with the problem, not the model</h4><p>"Design a fraud detection system." Most people start naming models within thirty seconds. The model choice is perhaps a twentieth of a good answer, and it is the part that is easiest to change later.</p><p>Start with questions instead. What decision does this drive? How many events per second? How long may a prediction take? When do we find out whether we were right? Who acts on the output, and what can they handle?</p><div class="gu-so"><strong>So what:</strong> the questions are not stalling — <b>the answers change the architecture</b>. Ten events a day is a spreadsheet. Ten thousand a second with a 50 ms budget rules out most of what you were about to suggest. Labels arriving in sixty days rules out anything that retrains nightly on fresh outcomes.</div></div>
+<div class="gu-step"><h4>A prediction is worthless until something acts on it</h4><p>"Predict churn" is not a specification. Nobody can build it and nobody can tell whether it worked.</p><p>"Flag accounts for a retention call, and the team can make 200 calls a week" <em>is</em> a specification. And notice what it hands you for free: the metric is <strong>precision in the top 200</strong>, and the cutoff is wherever the 200th-ranked account sits. Both fell straight out of the operational constraint.</p><div class="gu-so"><strong>So what:</strong> pin down the action first and the metric and the threshold follow from it, exactly as in <a href="10-classification-metrics.html">Module 10</a>. <b>If you cannot name the action, you cannot name the metric</b> — and a model built without either is a model nobody will use.</div></div>
+<div class="gu-step"><h4>The failure that ruins more launches than any other</h4><p>Your model scored beautifully offline. In production it is noticeably worse, and nothing looks broken. The usual culprit is <strong>training/serving skew</strong>: a feature is computed one way when you train and a slightly different way when you serve.</p><p>It happens because the two paths are almost always different code. Training runs a batch job over a warehouse table. Serving runs a small service against a live store. Both compute "average transaction amount over the last 30 days" — and they disagree, because one counts from midnight and the other from right now, or one includes pending transactions and the other does not.</p><div class="gu-so"><strong>So what:</strong> the model is now receiving inputs it never saw in training, and it has no way to tell you. <b>This is the number one reason a good offline model disappoints online</b>, and naming it unprompted is one of the strongest signals you can give in a design round.</div></div>
+</div>
+<div class="mlviz">
+<div class="mlviz-title">Same feature name, two code paths, two different numbers</div>
+<div class="mlviz-scroll">
+<svg viewbox="0 0 660 290" role="img" aria-label="Two pipelines computing the same feature. The training path reads a warehouse table with a nightly batch job and produces 142.50. The serving path reads a live store in real time, excluding pending transactions, and produces 118.30. The model was trained on one number and receives the other.">
+<!-- training path -->
+<g class="mv-in" style="--d:.05s">
+  <text class="mv-lbl mv-fill-2" x="16" y="24">training path · runs nightly</text>
+  <rect class="mv-box-2" x="16" y="36" width="130" height="52" rx="10"></rect>
+  <text class="mv-lbl-xs" x="81" y="58" text-anchor="middle">warehouse table</text>
+  <text class="mv-lbl-xs" x="81" y="74" text-anchor="middle">full history</text>
+  <path class="mv-str-2" stroke-width="1.8" d="M146 62 H176"></path>
+  <polygon class="mv-fill-2" points="188,62 174,56 174,68"></polygon>
+  <rect class="mv-box-2" x="192" y="36" width="150" height="52" rx="10"></rect>
+  <text class="mv-lbl-xs" x="267" y="54" text-anchor="middle">batch job · pandas</text>
+  <text class="mv-lbl-xs" x="267" y="69" text-anchor="middle">30 days back from</text>
+  <text class="mv-lbl-xs" x="267" y="82" text-anchor="middle">midnight, all rows</text>
+  <path class="mv-str-2" stroke-width="1.8" d="M342 62 H372"></path>
+  <polygon class="mv-fill-2" points="384,62 370,56 370,68"></polygon>
+  <rect class="mv-box-2" x="388" y="36" width="120" height="52" rx="10"></rect>
+  <text class="mv-mono-sm mv-fill-2" x="448" y="60" text-anchor="middle">142.50</text>
+  <text class="mv-lbl-xs" x="448" y="76" text-anchor="middle">what the model learned on</text>
+</g>
+<!-- serving path -->
+<g class="mv-in" style="--d:.30s">
+  <text class="mv-lbl mv-fill-5" x="16" y="212">serving path · runs per request</text>
+  <rect class="mv-box-5" x="16" y="224" width="130" height="52" rx="10"></rect>
+  <text class="mv-lbl-xs" x="81" y="246" text-anchor="middle">live event store</text>
+  <text class="mv-lbl-xs" x="81" y="262" text-anchor="middle">recent only</text>
+  <path class="mv-str-5" stroke-width="1.8" d="M146 250 H176"></path>
+  <polygon class="mv-fill-5" points="188,250 174,244 174,256"></polygon>
+  <rect class="mv-box-5" x="192" y="224" width="150" height="52" rx="10"></rect>
+  <text class="mv-lbl-xs" x="267" y="242" text-anchor="middle">feature service · Java</text>
+  <text class="mv-lbl-xs" x="267" y="257" text-anchor="middle">30 days back from now,</text>
+  <text class="mv-lbl-xs" x="267" y="270" text-anchor="middle">pending excluded</text>
+  <path class="mv-str-5" stroke-width="1.8" d="M342 250 H372"></path>
+  <polygon class="mv-fill-5" points="384,250 370,244 370,256"></polygon>
+  <rect class="mv-box-5" x="388" y="224" width="120" height="52" rx="10"></rect>
+  <text class="mv-mono-sm mv-fill-5" x="448" y="248" text-anchor="middle">118.30</text>
+  <text class="mv-lbl-xs" x="448" y="264" text-anchor="middle">what the model receives</text>
+</g>
+<!-- the mismatch -->
+<g class="mv-in" style="--d:.55s">
+  <path class="mv-str-3 mv-dash" stroke-width="2" d="M448 92 V220"></path>
+  <rect class="mv-box-3" x="520" y="118" width="126" height="76" rx="12"></rect>
+  <text class="mv-lbl mv-fill-3" x="583" y="142" text-anchor="middle">same name</text>
+  <text class="mv-lbl mv-fill-3" x="583" y="160" text-anchor="middle">different value</text>
+  <text class="mv-lbl-xs" x="583" y="180" text-anchor="middle">nothing errors · nothing</text>
+  <text class="mv-lbl-xs" x="583" y="192" text-anchor="middle">alerts · scores just drop</text>
+  <text class="mv-mono-sm mv-fill-3" x="330" y="160" text-anchor="middle">avg_txn_amount_30d</text>
+  <text class="mv-lbl-xs" x="330" y="176" text-anchor="middle">one feature, two implementations, written by two teams</text>
+</g>
+</svg>
+</div>
+<p class="mlviz-cap">The fix is structural, not vigilance. <b>Compute the feature once, in one place, and let both paths call it</b> — that is what a feature store is for. Where you cannot, log the features actually used at serving time and compare their distributions against training weekly. A silent 17% gap on one input is very hard to find by reading code and very easy to spot in a histogram.</p>
+</div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>Labels turn up late, and some never turn up at all</h4><p>A fraudulent card transaction may not be disputed for sixty days. So the model you deploy today cannot be properly evaluated until two months from now, and today's monitoring dashboard is showing you a model from two months ago.</p><p>Worse, "no chargeback" does not mean "not fraud". It may mean the customer never noticed. Your negative labels are not clean negatives; they are <em>the absence of a complaint</em>.</p><div class="gu-so"><strong>So what:</strong> label delay sets the pace of everything — how often you can retrain, how fast you can detect a problem, how long a bad model runs before you know. <b>Say the delay out loud early in a design answer</b>, because it constrains the architecture more than the model choice does.</div></div>
+<div class="gu-step"><h4>The system slowly poisons its own training data</h4><p>Here is the failure that only appears months in. Your model flags a transaction, so you block it. Because you blocked it, nothing happens — no chargeback, no confirmation, <em>no label</em>.</p><p>Next quarter you retrain on the data you collected. But that data only contains transactions your current model <strong>allowed</strong>. Everything it blocks is missing. So the new model never learns about the fraud the old one was catching, and its blind spot grows with every generation.</p><div class="gu-so"><strong>So what:</strong> let a small random slice — one in a hundred — bypass the model entirely and go through unblocked. You will lose money on it, deliberately, and it is the only way to keep collecting labels on the region your model refuses to enter. <b>Being willing to name that cost is what makes the answer credible.</b></div></div>
+</div>
+<div class="mlviz">
+<div class="mlviz-title">Block it, never learn from it — and the blind spot grows</div>
+<div class="mlviz-scroll">
+<svg viewbox="0 0 660 280" role="img" aria-label="A cycle showing model scores leading to blocked transactions, which never receive labels, so the next training set contains only allowed transactions and the model's blind spot grows. A small bypass branch keeps a random one percent unblocked so labels keep arriving for the whole space.">
+<!-- the loop -->
+<g class="mv-in" style="--d:.05s">
+  <rect class="mv-box-5" x="40" y="40" width="140" height="46" rx="10"></rect>
+  <text class="mv-lbl-xs" x="110" y="60" text-anchor="middle">model flags it</text>
+  <text class="mv-lbl-xs" x="110" y="75" text-anchor="middle">as likely fraud</text>
+
+  <rect class="mv-box-5" x="250" y="40" width="140" height="46" rx="10"></rect>
+  <text class="mv-lbl-xs" x="320" y="60" text-anchor="middle">you block it</text>
+  <text class="mv-lbl-xs" x="320" y="75" text-anchor="middle">before it settles</text>
+
+  <rect class="mv-box-5" x="460" y="40" width="150" height="46" rx="10"></rect>
+  <text class="mv-lbl-xs" x="535" y="60" text-anchor="middle">no outcome, so</text>
+  <text class="mv-lbl-xs" x="535" y="75" text-anchor="middle">no label ever arrives</text>
+
+  <rect class="mv-box-5" x="460" y="150" width="150" height="46" rx="10"></rect>
+  <text class="mv-lbl-xs" x="535" y="170" text-anchor="middle">next training set holds</text>
+  <text class="mv-lbl-xs" x="535" y="185" text-anchor="middle">only what you allowed</text>
+
+  <rect class="mv-box-5" x="250" y="150" width="140" height="46" rx="10"></rect>
+  <text class="mv-lbl-xs" x="320" y="170" text-anchor="middle">new model never</text>
+  <text class="mv-lbl-xs" x="320" y="185" text-anchor="middle">sees that fraud</text>
+
+  <rect class="mv-box-5" x="40" y="150" width="140" height="46" rx="10"></rect>
+  <text class="mv-lbl mv-fill-5" x="110" y="172" text-anchor="middle">blind spot</text>
+  <text class="mv-lbl-xs" x="110" y="187" text-anchor="middle">grows each cycle</text>
+
+  <g class="mv-str-5" stroke-width="1.8">
+    <path d="M180 63 H238"></path><path d="M390 63 H448"></path>
+    <path d="M535 86 V138"></path><path d="M460 173 H402"></path><path d="M250 173 H192"></path>
+    <path d="M110 150 V102"></path>
+  </g>
+  <g class="mv-fill-5">
+    <polygon points="250,63 236,57 236,69"></polygon><polygon points="460,63 446,57 446,69"></polygon>
+    <polygon points="535,150 529,136 541,136"></polygon><polygon points="390,173 404,167 404,179"></polygon>
+    <polygon points="180,173 194,167 194,179"></polygon><polygon points="110,90 104,104 116,104"></polygon>
+  </g>
+</g>
+<!-- the bypass -->
+<g class="mv-in" style="--d:.40s">
+  <path class="mv-str-1 mv-dash" stroke-width="2" d="M320 86 V120 H600 V150"></path>
+  <polygon class="mv-fill-1" points="600,162 594,148 606,148"></polygon>
+  <rect class="mv-box-1" x="112" y="222" width="440" height="42" rx="10"></rect>
+  <text class="mv-lbl mv-fill-1" x="132" y="240">the fix: let 1% through at random, unblocked</text>
+  <text class="mv-lbl-xs" x="132" y="255">you lose money on that slice on purpose — it is the only source of labels for what you block</text>
+  <text class="mv-lbl-xs mv-fill-1" x="330" y="104" text-anchor="middle">1% bypass · labels keep arriving</text>
+</g>
+</svg>
+</div>
+<p class="mlviz-cap">Nothing in this loop is a bug. Every step is a sensible engineering decision, and together they slowly starve the model of exactly the data it most needs. <b>Any system that acts on its own predictions has this problem</b> — recommenders, credit limits, content moderation — and the cure is always some form of deliberate, paid-for exploration.</p>
+</div>
+<div class="gu-ladder">
+<div class="gu-step"><h4>Three ways the world moves, and only one is visible immediately</h4><ul>
+<li><strong>Input drift.</strong> The features change shape — a marketing push brings in younger users. The relationship between features and target may be untouched.</li>
+<li><strong>Concept drift.</strong> The relationship itself changes — fraudsters adapt to whatever you started blocking. The same input now means something different.</li>
+<li><strong>Label drift.</strong> The base rate moves — fraud goes from 0.2% to 0.6%. Your thresholds and calibration are now wrong even if nothing else changed.</li>
+</ul><p>The practical difference is when you can see them. Input drift needs <em>no labels</em> — compare this week's feature distributions with training. Concept drift cannot be measured until the labels arrive, which brings you back to the sixty-day delay.</p><div class="gu-so"><strong>So what:</strong> <b>watch the distribution of your model's output scores.</b> It needs no labels, it updates instantly, and it shifts when either the inputs or the population change. It is the cheapest early warning you have, and often the first thing that moves.</div></div>
+<div class="gu-step"><h4>What to actually put on the dashboard</h4><div class="table-wrap"><table>
+<thead><tr><th>Layer</th><th>Watch</th><th>Why it earns its place</th></tr></thead>
+<tbody>
+<tr><td>Data</td><td>schema changes, null rates, value ranges, unseen categories</td><td>Catches upstream breakage — a renamed column, a unit change — before it reaches the model.</td></tr>
+<tr><td>Features</td><td>serving-time distributions versus training</td><td>The only reliable way to catch training/serving skew.</td></tr>
+<tr><td>Predictions</td><td>the score distribution, and the flag rate</td><td>No labels needed, so it is your fastest signal that something moved.</td></tr>
+<tr><td>Performance</td><td>precision, recall, calibration — once labels land</td><td>The real answer, arriving late. Always plotted against the label delay.</td></tr>
+<tr><td>Operational</td><td>latency, error rate, timeouts, fallback usage</td><td>A model that times out and silently falls back has an accuracy of zero, and nobody notices.</td></tr>
+<tr><td>Business</td><td>fraud losses, retention, revenue per user</td><td>The only number anyone outside the team cares about. Always the last to move.</td></tr>
+</tbody>
+</table></div><div class="gu-so"><strong>So what:</strong> the layers are ordered by <b>how fast they tell you something and how much they matter</b> — and those run in opposite directions. Data checks fire in minutes and mean little on their own; the business number matters most and moves last. A good answer mentions both ends and says why you need both.</div></div>
+<div class="gu-step"><h4>Ship it in a way you can undo</h4><p>The last piece is the rollout. Never swap a model in wholesale. <strong>Shadow mode</strong> runs the new model alongside the old one on real traffic while nothing acts on its output — it catches skew and latency problems with zero risk. Then a <strong>canary</strong> on a small slice of traffic. Then a proper <strong>A/B test</strong> measured on the business metric, not on offline accuracy.</p><div class="gu-so"><strong>So what:</strong> and keep the previous model loaded, so rolling back is a config change rather than a deployment. <b>"How do I turn this off at 2 a.m.?" is a design question</b>, and answering it unprompted marks the difference between someone who has trained models and someone who has run them.</div></div>
+</div>
+<div class="gu-analogy"><b>Analogy</b> — hiring. The interview process is the model; the hard parts are everywhere else. You only learn whether a hire was good after a year, which is your <em>label delay</em>. You never find out about the people you rejected, which is the <em>feedback loop</em> — so your process quietly optimises for the kind of person it already lets through. The job market shifts underneath you, which is <em>drift</em>. And if the interview tests something the job never requires, that is <em>training/serving skew</em>: you measured one thing and deployed into another. <b>Nobody fixes a broken hiring process by inventing a cleverer interview question.</b></div>
+<div class="gu-jargon">
+<div><strong>training/serving skew</strong><span>a feature computed differently when training and when serving. The most common cause of a good model failing live.</span></div>
+<div><strong>feature store</strong><span>one shared definition of each feature, used by both paths. The structural fix for skew.</span></div>
+<div><strong>label delay</strong><span>the lag between a prediction and finding out whether it was right. Sets your retraining and monitoring pace.</span></div>
+<div><strong>feedback loop</strong><span>the model's own actions shaping the data it will next be trained on. Fixed only by deliberate exploration.</span></div>
+<div><strong>input / covariate drift</strong><span>the features change shape. Detectable with no labels at all.</span></div>
+<div><strong>concept drift</strong><span>the relationship between features and target changes. Only visible once labels arrive.</span></div>
+<div><strong>label drift</strong><span>the base rate moves, which breaks thresholds and calibration even if nothing else changed.</span></div>
+<div><strong>shadow mode</strong><span>running the new model on live traffic while nothing acts on it. Catches skew and latency for free.</span></div>
+<div><strong>canary</strong><span>a small slice of real traffic on the new model, with a fast route back.</span></div>
+<div><strong>online vs offline metric</strong><span>the offline score you optimised versus the business number you are judged on. They diverge more than anyone expects.</span></div>
+<div><strong>precision@k</strong><span>the natural metric when the acting capacity is fixed — 200 calls a week, ten reviewers, one ad slot.</span></div>
+<div><strong>fallback</strong><span>what serves a prediction when the model times out. Silent, and worth monitoring precisely because it is silent.</span></div>
+</div>
+<h2 id="what-to-learn">2 · What to learn</h2>
 <h3>Framing</h3>
 <ol><li>The ML system design interview format, and a reusable answer framework.</li><li>Translating a business goal into an ML problem: target definition, unit of prediction, and the decision the output drives.</li><li>Online versus batch inference, and the latency / cost / freshness triangle.</li><li>Baselines, and the “do we need ML at all?” question.</li></ol>
 <h3>Data and training</h3>
 <ol><li>Training data pipelines; label collection, label delay, feedback loops.</li><li><strong>Feature stores</strong> and the training/serving consistency problem.</li><li><strong>Training/serving skew</strong> — its causes and how to detect it.</li><li>Retraining cadence: scheduled, drift-triggered, or continuous.</li><li>Reproducibility: data versioning, model registry, experiment tracking, lineage.</li></ol>
 <h3>Serving and operations</h3>
 <ol><li>Deployment patterns: batch scoring, real-time REST/gRPC, streaming, edge.</li><li>Latency budgets, throughput, caching, batching, quantization, distillation.</li><li><strong>Shadow deployment</strong>, canary release, blue/green, and A/B testing the model.</li><li>Rollback plans and the kill switch.</li><li><strong>Data drift</strong> (covariate shift), <strong>concept drift</strong>, <strong>label shift</strong> — and how to detect each (PSI, KS test, KL divergence).</li><li>What to monitor: input distributions, prediction distributions, latency and errors, business KPIs, and delayed ground truth.</li><li>Model degradation and the feedback-loop pathology, where the model’s own decisions change the data.</li><li>Cost management: training cost, inference cost, cost per prediction.</li></ol>
-<h2 id="framework">2 · A reusable framework for any design question</h2>
+<h2 id="framework">3 · A reusable framework for any design question</h2>
 <p>Say the framework out loud at the start; it buys you structure and signals experience.</p>
 <div class="code-block" data-reveal="">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>design_framework.txt</span><button class="copy-btn">Copy</button></div>
@@ -88,7 +257,7 @@
 9.  MONITOR      drift, performance, business KPI; alerting; retraining trigger
 10. ITERATE      A/B test, rollback plan, what you would do next</code></pre>
 </div>
-<h2 id="intuitions">3 · Core intuitions</h2>
+<h2 id="intuitions">4 · Core intuitions</h2>
 <h3>The most common real failure is training/serving skew, not model quality</h3>
 <p>Skew arises when the features computed at training time differ from those computed at serving time — different code paths, different default values, different units, different timezone handling, a category vocabulary that has since grown, or an aggregation computed over a different window. The model is not wrong; it is being fed different data than it was trained on.</p>
 <p>This is precisely the problem a <strong>feature store</strong> exists to solve: define each feature once, compute it through one code path, and serve it to both training and inference. Absent a feature store, the discipline is to serialize preprocessing inside the model pipeline and to log serving-time feature values so you can compare their distributions against training.</p>
@@ -102,12 +271,12 @@
 <p>Mitigations: hold out a small random control group that bypasses the model, use exploration (epsilon-greedy or bandit approaches) to collect counterfactual data, and explicitly model the selection — “trained on approved loans, scored on all applicants” is a classic instance and a great thing to raise.</p>
 <h3>Start with a baseline, and be willing to say “no ML”</h3>
 <p>A well-tuned rule can capture much of the value, is trivially explainable and deployable, and gives you the number your model must beat. In a design round, proposing the non-ML baseline first is a strong signal — it shows you optimize for business outcome rather than for using ML.</p>
-<h2 id="monitoring">4 · What to monitor</h2>
+<h2 id="monitoring">5 · What to monitor</h2>
 <div class="table-wrap"><table><thead><tr><th>Layer</th><th>Signal</th><th>Detects</th><th>Latency</th></tr></thead><tbody><tr><td>Infrastructure</td><td>Latency p50/p95/p99, error rate, throughput, cost</td><td>Serving failures</td><td>Seconds</td></tr><tr><td>Input data</td><td>Null rate, unseen-category rate, range violations, schema changes</td><td>Pipeline breakage</td><td>Minutes</td></tr><tr><td>Input distribution</td><td>PSI, KS test, KL divergence per feature</td><td><strong>Covariate drift</strong></td><td>Hours–days</td></tr><tr><td>Prediction distribution</td><td>Mean score, score histogram, positive rate at threshold</td><td>Drift, upstream bugs</td><td>Hours</td></tr><tr><td>Human interaction</td><td>Override rate, review agreement, appeal rate</td><td>Concept drift proxy</td><td>Days</td></tr><tr><td>Business KPI</td><td>Conversion, loss rate, revenue, queue volume</td><td>Real impact</td><td>Days–weeks</td></tr><tr><td>Ground truth</td><td>Actual precision/recall/AUC by segment</td><td><strong>Concept drift</strong></td><td>Label delay</td></tr></tbody></table></div>
-<h2 id="drill">5 · Hands-on drill</h2>
+<h2 id="drill">6 · Hands-on drill</h2>
 <ol><li>Write a full design document for one system — fraud detection, churn prediction, or demand forecasting — using the ten-step framework. Two pages. Include the latency budget, the label delay, the monitoring table and the rollback plan.</li><li>Build a <code>Pipeline</code> that serializes all preprocessing with the model, save it, load it in a <strong>separate process</strong>, and score a single row. Confirm identical output — that exercise is the concrete version of the skew answer.</li><li>Implement population stability index (PSI) from scratch and compute it between two time slices of a dataset. Establish for yourself what PSI value corresponds to a drift worth alerting on.</li><li><strong>Simulate concept drift:</strong> train on the first half of a time-ordered dataset, then evaluate on rolling windows of the second half and plot performance decay. That decay curve is what a retraining cadence is derived from.</li><li>Wrap a model in a minimal FastAPI service, measure p50/p95 latency under load, then add batching or caching and measure again.</li></ol>
 <div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">Gotchas that fail candidates</div><ul><li><strong>Not asking clarifying questions</strong> before designing.</li><li><strong>Jumping straight to the model</strong> and skipping data, labels and serving.</li><li><strong>Not mentioning any baseline.</strong></li><li><strong>Not knowing what training/serving skew is.</strong></li><li><strong>Conflating data drift and concept drift.</strong></li><li><strong>Claiming you will monitor accuracy in real time</strong> when labels are delayed.</li><li><strong>No rollback plan.</strong> Always mention shadow or canary deployment and a kill switch.</li><li><strong>Ignoring cost.</strong> Cost per prediction is a real constraint, and asking about it is a strong signal.</li></ul></div></div>
-<h2 id="questions">6 · Interview questions</h2>
+<h2 id="questions">7 · Interview questions</h2>
 <div class="prep-toolbar" data-sticky-prep=""><label class="prep-filter"><svg aria-hidden="true" viewbox="0 0 24 24"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg><input data-question-filter="" placeholder="Filter these questions…"/></label><button class="btn ghost" data-expand-answers="" type="button">Open all</button><span class="prep-count" data-question-count="">6 questions</span></div>
 <section aria-label="ML system design and monitoring interview questions" class="prep-question-list">
 <details class="prep-question" data-question="design a fraud detection system for a payments company" data-tags="design fraud feature store latency">
@@ -129,15 +298,16 @@
 <summary><span class="prep-q-no">06</span><span class="prep-q-title">How do you safely deploy a new model version?<span class="prep-tags"><span>deployment</span><span>shadow</span><span>canary</span><span>A/B test</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Strong answer</div><p>Progressively, with a rollback plan at every stage.</p><p><strong>Offline gates first:</strong> the new model must beat the incumbent on the primary offline metric using a time-based holdout the incumbent’s tuning never touched, with segment-level checks so an aggregate win does not hide a regression on an important subgroup, plus calibration and fairness checks if applicable.</p><p><strong>Shadow mode:</strong> run the new model on live traffic in parallel <em>without acting on its outputs</em>, comparing its predictions against the incumbent’s and against production feature distributions. This catches training/serving skew and latency problems with zero user risk — and it is the step people skip.</p><p><strong>Canary:</strong> route a small slice of real traffic (1–5%) to the new model, monitoring latency, error rates, prediction distribution and any immediately available business signal.</p><p><strong>A/B test:</strong> scale to a proper randomized split and measure the <strong>business</strong> metric, not the model metric — offline gains often fail to translate, and the experiment is the only way to know. Run it long enough for the relevant labels to materialize.</p><p><strong>Progressive rollout</strong> with automated guardrails that halt or revert on threshold breach. Throughout: keep the previous version deployable and warm so rollback is a config change rather than a redeploy; version the model artifact together with the exact preprocessing and feature definitions; and log which version scored each prediction so you can attribute any incident. I would also <strong>define the rollback criteria before the rollout starts</strong>, since deciding under pressure is how bad calls get made.</p><div class="prep-say"><strong>30-second version</strong><p>Offline gates with segment checks, then shadow mode on live traffic without acting, then a 1–5% canary, then a randomized A/B test on the business metric, then progressive rollout with automated guardrails — and rollback criteria defined in advance.</p></div><div class="prep-say"><strong>What’s being tested</strong><p>Deployment discipline. Shadow mode, business-metric A/B testing, and pre-defined rollback criteria are the three things that mark real experience.</p></div></div></details>
 </section>
-<div class="page-nav"><a href="21-interpretability-explainability.html"><div class="dir">← Previous</div><div class="ttl">Interpretability &amp; Explainability</div></a><a class="next" href="23-bridge-neural-networks-genai.html"><div class="dir">Next →</div><div class="ttl">Bridge to Neural Nets &amp; GenAI</div></a></div>
+<div class="page-nav" data-page-nav><a href="21-interpretability-explainability.html"><div class="dir">← Previous</div><div class="ttl">Interpretability &amp; Explainability</div></a><a class="next" href="23-bridge-neural-networks-genai.html"><div class="dir">Next →</div><div class="ttl">Bridge to Neural Nets &amp; GenAI</div></a></div>
 </main>
 <div class="toc-rail"><nav class="toc"></nav></div>
 </div>
 </div>
 </div>
-<script src="assets/app.js?v=20260727c"></script>
-<script src="assets/ml-sitenav.js?v=20260727c"></script>
-<script src="assets/enhance.js?v=20260727c"></script>
+<script src="assets/app.js?v=20260731b"></script>
+<script src="assets/ml-sitenav.js?v=20260801b"></script>
+<script src="assets/enhance.js?v=20260801a"></script>
 <script src="assets/interview-prep.js?v=20260727c"></script>
+<script src="assets/ml-mobile.js?v=20260728c"></script>
 </body>
 </html>
