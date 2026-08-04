@@ -37,8 +37,15 @@
 <link href="../assets/styles.css?v=20260801d" rel="stylesheet"/>
 <link href="../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260801a" rel="stylesheet"/>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="../assets/curriculum.js?v=20260804c"></script>
+<script defer src="../assets/page-nav.js?v=20260804c"></script>
 </head>
-<body data-page="pyint-memory-performance" data-prep-section="interview">
+<body data-curriculum-id="py-p8" data-page="pyint-memory-performance" data-prep-section="interview">
 <div class="app">
 <aside class="sidebar">
 <div class="brand">
@@ -88,7 +95,7 @@ del a, b            # counts stay at 1 — the cycle collector handles it</code>
 
 tracemalloc.start()
 snap1 = tracemalloc.take_snapshot()
-... run the workload ...
+# ... run the workload here ...
 snap2 = tracemalloc.take_snapshot()
 for stat in snap2.compare_to(snap1, &quot;lineno&quot;)[:10]:
     print(stat)</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Confirm growth under steady load, diff two tracemalloc snapshots to find the allocating lines, then look for an unbounded cache or a growing global.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What is the most common cause you have personally seen?</div></div></details>
@@ -132,7 +139,7 @@ blocked = set(blocklist)
 <summary><span class="prep-q-no">15</span><span class="prep-q-title">How would you process a file that is larger than available memory?<span class="prep-tags"><span>memory</span><span>generators</span><span>practical</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Stream it. Iterating a file object yields one line at a time, so memory stays flat regardless of file size. For structured data, read in chunks — <code>pandas.read_csv(chunksize=...)</code> or a columnar format like Parquet that lets you read only the columns you need. Never call <code>.read()</code> or <code>readlines()</code> on a file you did not size first.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Stream it line by line or in chunks, and use a columnar format to read only the columns you need. Never read the whole file at once.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How would you do a group-by aggregation over a file that does not fit in memory?</div></div></details>
 </section>
-<div class="page-nav"><a href="07-exceptions-packaging.html"><div class="dir">← Previous</div><div class="ttl">Exceptions, Modules &amp; Packaging</div></a><a class="next" href="09-concurrency.html"><div class="dir">Next →</div><div class="ttl">Threads, Processes &amp; Asyncio</div></a></div>
+<div class="page-nav" data-page-nav><a href="07-exceptions-packaging.html"><div class="dir">← Previous</div><div class="ttl">Exceptions, Modules &amp; Packaging</div></a><a class="next" href="09-concurrency.html"><div class="dir">Next →</div><div class="ttl">Threads, Processes &amp; Asyncio</div></a></div>
 </main>
 <div class="toc-rail"><nav class="toc"></nav></div>
 </div>
