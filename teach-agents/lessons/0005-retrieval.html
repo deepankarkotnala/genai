@@ -21,8 +21,15 @@
 <link href="../../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
 <link href="../../assets/genai-motion.css?v=20260801a" rel="stylesheet"/>
 <link href="../../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="../../assets/curriculum.js?v=20260804c"></script>
+<script defer src="../../assets/page-nav.js?v=20260804c"></script>
 </head>
-<body data-page="ta-l05">
+<body data-curriculum-id="ta-l05" data-page="ta-l05">
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
@@ -155,7 +162,7 @@ score += idf * norm
           <div class="c-ico">⚠️</div>
           <div class="c-body"><div class="c-title">Where are the embeddings?</div>
           <p>Not here, deliberately. Dense vectors are the right answer at scale and the wrong place to start, because an API call that returns a list of floats hides every mechanic in this lesson.</p>
-          <p>What embeddings add: matching on <em>meaning</em>, so "slow checkout" can surface "payment timeout" with no shared words. What they lose: exact identifiers. Ask a vector index for <code>pg_latency_p99</code> and it may return something semantically adjacent instead of the exact match. That is why production systems run <strong>hybrid</strong> — BM25 for exact terms, vectors for meaning — and merge. <a href="../../modules/06_rag_basics.html">Module 06</a> and <a href="../../rag-deep-dive.html">RAG, End-to-End</a> cover the dense side; you now understand what it is being hybridised <em>with</em>.</p></div>
+          <p>What embeddings add: matching on <em>meaning</em>, so "slow checkout" can surface "payment timeout" with no shared words. What they lose: exact identifiers. Ask a vector index for <code>pg_latency_p99</code> and it may return something semantically adjacent instead of the exact match. That is why production systems run <strong>hybrid</strong> — BM25 for exact terms, vectors for meaning — and merge. <a href="../../rag-deep-dive.html">RAG, End-to-End</a> covers the dense side; you now understand what it is being hybridised <em>with</em>.</p></div>
         </div>
 
         <h2 id="rerank">5 · Rerank the shortlist</h2>
@@ -163,6 +170,7 @@ score += idf * norm
         <p>A second, sharper pass over the top handful only:</p>
 
 <pre><code>def rerank(query, hits, top_n=8):   # top_n only -- this is the whole argument
+    ...                             # signature only; the body is built below
 </code></pre>
 
         <p>Stage one is fast and mediocre over everything. Stage two is slower and sharper over a shortlist of eight. Reranking everything would cost what stage one exists to avoid.</p>
@@ -304,11 +312,10 @@ python steps/l05_retrieval.py --retrieval
 
         <h2 id="deeper">12 · Optional deep dives</h2>
         <ul>
-          <li><a href="../../modules/06_rag_basics.html">Module 06 · RAG, end to end</a> — the dense-vector side, chunking strategies and evaluation.</li>
-          <li><a href="../../rag-deep-dive.html">RAG, End-to-End</a> — hybrid retrieval, metadata pre-filtering and access control in depth.</li>
+          <li><a href="../../rag-deep-dive.html">RAG, End-to-End</a> — the dense-vector side, chunking strategies and evaluation, plus hybrid retrieval, metadata pre-filtering and access control in depth.</li>
         </ul>
 
-        <div class="page-nav">
+        <div class="page-nav" data-page-nav>
           <a href="0004-reasoning-patterns.html"><div class="dir">← Previous</div><div class="ttl">Lesson 4 · Reasoning patterns</div></a>
           <a class="next" href="0006-context-memory.html"><div class="dir">Next up →</div><div class="ttl">Lesson 6 · Context &amp; memory</div></a>
         </div>
