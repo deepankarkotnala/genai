@@ -241,11 +241,70 @@
         // also hide the section label if a whole section empties? keep simple.
         if (ok) shown++;
       });
-      if (status) status.textContent = shown + " of " + rows.length + " chapters shown";
+      if (status) status.textContent = shown + " of " + rows.length + " sections shown";
     }
     [role, track].forEach(function (el) { if (el) el.addEventListener("change", apply); });
     if (text) text.addEventListener("input", apply);
     apply();
+  }
+
+  /* ---------- Deep links to a single problem ----------
+     The Top 50 and high-frequency lists link straight at a problem, e.g.
+     `02-arrays.html#lc-217`. Each problem is a <details> that is closed by
+     default, so the browser's native anchor jump lands on a collapsed element
+     and the reader sees a summary line with no write-up. This opens the match
+     first, then scrolls — and it runs on `hashchange` as well as at load so the
+     browser's Back and Forward buttons behave the same as a fresh visit.
+
+     `scrollIntoView` (not `location.hash =`) because the hash is already set by
+     the time we run, and reassigning it would push a duplicate history entry
+     that Back would then have to step through twice. The header offset comes
+     from `html { scroll-padding-top }` in styles.css, which scrollIntoView
+     honours, so there is no offset arithmetic to keep in sync here. */
+  function openHashProblem() {
+    var raw = window.location.hash;
+    if (!raw || raw.length < 2) return;
+
+    // A hash is author-controlled text, not a selector. Look the problem up by
+    // attribute rather than interpolating into querySelector, so a malformed or
+    // hostile fragment can only ever miss.
+    var id = raw.slice(1);
+    // A hand-typed or truncated escape sequence ("#lc-%A") makes
+    // decodeURIComponent throw; the raw fragment is still worth matching.
+    try { id = decodeURIComponent(id); } catch (e) {}
+    var probs = document.querySelectorAll(".dsa-prob[data-pid]");
+    var target = null;
+    for (var i = 0; i < probs.length; i += 1) {
+      if (probs[i].getAttribute("data-pid") === id) { target = probs[i]; break; }
+    }
+    // Not a problem id — a section anchor, a stale link, or nothing at all.
+    // Leave the browser's own handling alone rather than guessing.
+    if (!target) return;
+
+    // A problem can sit inside a collapsed ancestor (a hint block, or a future
+    // grouping); opening only the problem would still leave it hidden.
+    var node = target;
+    while (node && node !== document.body) {
+      if (node.tagName === "DETAILS") node.open = true;
+      node = node.parentElement;
+    }
+
+    // Opening the <details> reflows everything below it, so scroll on the next
+    // frame — measuring before the reflow scrolls to where the element *was*.
+    window.requestAnimationFrame(function () {
+      target.scrollIntoView({ block: "start", behavior: "auto" });
+    });
+  }
+
+  function setupDeepLinks() {
+    if (!document.querySelector(".dsa-prob[data-pid]")) return;
+    openHashProblem();
+    // Covers Back/Forward between two problems on the same page, and any
+    // in-page link to a problem.
+    window.addEventListener("hashchange", openHashProblem);
+    // Back/Forward that restores this page from the browser's cache re-runs
+    // neither DOMContentLoaded nor hashchange, so the hash has to be re-read.
+    window.addEventListener("pageshow", function (e) { if (e.persisted) openHashProblem(); });
   }
 
   /* ---------- Init ---------- */
@@ -257,6 +316,9 @@
     setupChecklist();
     setupFilters();
     refreshContents();
+    // Last: the problem controls and ★ markers are already mounted, so opening
+    // and scrolling to a deep-linked problem lands on its final layout.
+    setupDeepLinks();
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);
   else init();

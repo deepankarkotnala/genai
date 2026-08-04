@@ -44,8 +44,15 @@
 <link href="assets/office-theme.css?v=20260801a" rel="stylesheet"/>
 <link href="assets/genai-motion.css?v=20260801a" rel="stylesheet"/>
 <link href="assets/glossary.css?v=20260802b" rel="stylesheet"/>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="assets/curriculum.js?v=20260804c"></script>
+<script defer src="assets/page-nav.js?v=20260804c"></script>
 </head>
-<body data-page="langgraph-asyncio">
+<body data-curriculum-id="langgraph-asyncio" data-page="langgraph-asyncio">
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
@@ -144,9 +151,12 @@ asyncio.run(retrieve_all())</code></pre>
 <p><strong>Google-style follow-up:</strong> Why prefer structured concurrency? Because child tasks have an explicit parent scope, errors are not silently orphaned, and cleanup/cancellation becomes predictable.</p>
 
 <h2 id="langgraph">4 · Async nodes and async graph execution</h2>
+<p><strong>Runnable once <code>model</code> is defined.</strong> The node awaits an async model client that this snippet does not create.</p>
 <div class="code-block">
   <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> async_langgraph.py</span><button class="copy-btn">Copy</button></div>
-  <pre><code>from typing_extensions import TypedDict
+  <pre><code>import asyncio
+
+from typing_extensions import TypedDict
 from langgraph.graph import StateGraph, START, END
 
 class State(TypedDict):
@@ -164,13 +174,19 @@ builder.add_edge(START, &quot;answer&quot;)
 builder.add_edge(&quot;answer&quot;, END)
 graph = builder.compile()
 
-result = await graph.ainvoke({&quot;question&quot;: &quot;Explain idempotency&quot;})
+async def main() -&gt; None:
+    result = await graph.ainvoke({&quot;question&quot;: &quot;Explain idempotency&quot;})
+    print(result)
 
-async for event in graph.astream(
-    {&quot;question&quot;: &quot;Explain backpressure&quot;},
-    stream_mode=&quot;updates&quot;,
-):
-    print(event)</code></pre>
+    async for event in graph.astream(
+        {&quot;question&quot;: &quot;Explain backpressure&quot;},
+        stream_mode=&quot;updates&quot;,
+    ):
+        print(event)
+
+
+if __name__ == &quot;__main__&quot;:
+    asyncio.run(main())</code></pre>
 </div>
 <div class="callout tip"><div class="c-ico">✅</div><div class="c-body"><div class="c-title">Design boundary</div><p>Use LangGraph edges for <strong>workflow-level parallel branches</strong>. Use AsyncIO inside a node when that node itself must perform several independent I/O calls. Do not create an extra concurrency layer without a reason; it complicates limits, retries, tracing, and cancellation.</p></div></div>
 
@@ -274,7 +290,7 @@ async def preferred(client, url: str) -&gt; str:
 <h2 id="references">12 · Official references</h2>
 <ul><li><a href="https://docs.python.org/3/library/asyncio.html">Python AsyncIO documentation</a></li><li><a href="https://docs.python.org/3/library/asyncio-task.html">Python coroutines, tasks, TaskGroup, cancellation and timeouts</a></li><li><a href="https://docs.langchain.com/oss/python/langgraph/use-graph-api#async">LangGraph Graph API — async execution</a></li><li><a href="https://docs.langchain.com/oss/python/langgraph/streaming">LangGraph streaming</a></li></ul>
 
-        <div class="page-nav">
+        <div class="page-nav" data-page-nav>
           <a href="modules/12_langgraph.html"><div class="dir">← Core module</div><div class="ttl">12 · LangGraph</div></a>
           <a class="next" href="langgraph-pydantic.html"><div class="dir">Companion lab →</div><div class="ttl">Pydantic for LangGraph</div></a>
         </div>

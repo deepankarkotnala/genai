@@ -47,8 +47,15 @@
 <link href="../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260801a" rel="stylesheet"/>
 <link href="../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="../assets/curriculum.js?v=20260804c"></script>
+<script defer src="../assets/page-nav.js?v=20260804c"></script>
 </head>
-<body data-page="02">
+<body data-curriculum-id="transformers" data-page="02">
 <div class="app">
 <aside class="sidebar">
 <div class="brand">
@@ -433,7 +440,7 @@ ollama show llama3.2 <span class="tok-com"># prints params, context length, quan
 <details class="collapse"><summary><span class="pill blue">Intermediate</span>  Why do residual connections matter for deep transformers? <span class="chev">›</span></summary>
 <div class="collapse-body"><p>Each sub-layer computes <code>x + f(x)</code>. The identity path lets gradients flow directly to earlier layers (avoiding vanishing gradients) and lets each block learn a <em>refinement</em> rather than a full transformation, making 100+ layer stacks trainable.</p></div></details>
 <details class="collapse"><summary><span class="pill amber">Senior</span>  Your model degrades when prompts exceed ~8k tokens. Why, and what are your options? <span class="chev">›</span></summary>
-<div class="collapse-body"><p>Likely exceeding the trained context length — positional encodings are extrapolating to unseen positions, and attention quality drops (lost-in-the-middle). Options: switch to a longer-context model; apply RoPE scaling/interpolation; reduce input via better retrieval/chunking (Modules 6–7); summarize or compress context; or use sliding-window/long-context architectures. Measure with a needle-in-haystack eval before/after.</p></div></details>
+<div class="collapse-body"><p>Likely exceeding the trained context length — positional encodings are extrapolating to unseen positions, and attention quality drops (lost-in-the-middle). Options: switch to a longer-context model; apply RoPE scaling/interpolation; reduce input via better retrieval/chunking (<a href="../rag-deep-dive.html">RAG, End-to-End</a>); summarize or compress context; or use sliding-window/long-context architectures. Measure with a needle-in-haystack eval before/after.</p></div></details>
 <details class="collapse"><summary><span class="pill amber">Senior</span>  Explain the KV cache in terms of the causal mask. <span class="chev">›</span></summary>
 <div class="collapse-body"><p>Because of the causal mask, token <em>i</em>'s keys/values never depend on future tokens and never change once computed. So during autoregressive generation we cache each token's K and V; generating token <em>t+1</em> only requires computing its own Q and attending over the cached K/V — turning per-step cost from O(t²) recompute into O(t). The cache size grows linearly with context, which is the dominant inference memory cost (mitigated by GQA/paged attention).</p></div></details>
 <details class="collapse"><summary><span class="pill purple">Staff · design</span>  Design an inference-serving layer to maximize throughput for a 70B model. <span class="chev">›</span></summary>
@@ -513,7 +520,7 @@ ollama show llama3.2 <span class="tok-com"># prints params, context length, quan
 </tbody>
 </table></div>
 
-<div class="page-nav">
+<div class="page-nav" data-page-nav>
 <a href="01_foundations.html"><div class="dir">← Previous</div><div class="ttl">01 · Foundations of LLMs</div></a>
 <a class="next" href="03_local_llms.html"><div class="dir">Next →</div><div class="ttl">03 · Local LLMs &amp; Ollama</div></a>
 </div>

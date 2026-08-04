@@ -27,8 +27,16 @@
 <link rel="stylesheet" href="assets/styles.css?v=20260801d">
 <link href="assets/office-theme.css?v=20260801a" rel="stylesheet"/>
 <link href="assets/genai-motion.css?v=20260801a" rel="stylesheet"/>
+<!-- Release 2 Stage 2c pilot: the manifest loads first, the renderer second.
+     Classic deferred scripts execute in document order after parsing, so the
+     nav slot exists and the manifest is defined before the renderer runs. The
+     authored links inside [data-page-nav] remain in the source and are replaced
+     only after page, route and fragment have all resolved. -->
+<script defer src="assets/curriculum.js?v=20260804c"></script>
+<script defer src="assets/page-nav.js?v=20260804c"></script>
+<script defer src="assets/metric-checks.js?v=20260804c"></script>
 </head>
-<body data-page="study-plan" data-no-concept-lab>
+<body data-curriculum-id="study-plan" data-page="study-plan" data-no-concept-lab>
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
@@ -69,6 +77,29 @@
 
         <h2 id="how">How to use this plan</h2>
         <p>This is a <strong>sequential, page-by-page route</strong>. Every page in the learning hub that belongs on the AI Engineer path has a step number, and the steps are ordered so that nothing asks you to know something you have not studied yet. Open step 01, finish it, open step 02. There are no judgement calls left for you to make about ordering.</p>
+        <h3 id="route-entry">Choose your route</h3>
+        <p>Pick the path that matches your goal. You can switch routes later.</p>
+        <div class="grid grid-3">
+          <div class="card">
+            <h4>Interview Sprint</h4>
+            <p>Focused preparation when interviews are close.</p>
+            <p><span class="pill" data-metric-count="plan-route-size-interview-sprint">28 steps</span></p>
+            <p><a class="btn primary" data-route-entry="interview-sprint" href="modules/00_basics.html?route=interview-sprint">Start Interview Sprint</a></p>
+          </div>
+          <div class="card">
+            <h4>Job-Ready Core</h4>
+            <p>Build the practical foundation for projects, interviews and production work.</p>
+            <p><span class="pill" data-metric-count="plan-route-size-job-ready">27 steps</span></p>
+            <p><a class="btn primary" data-route-entry="job-ready" href="modules/00_basics.html?route=job-ready">Start Job-Ready Core</a></p>
+          </div>
+          <div class="card">
+            <h4>Full-Depth Curriculum</h4>
+            <p>Follow the complete curriculum from foundations through advanced practice.</p>
+            <p><span class="pill" data-metric-count="plan-route-size-full">69 steps</span></p>
+            <p><a class="btn primary" data-route-entry="full" href="modules/01_foundations.html?route=full">Start Full-Depth Curriculum</a></p>
+          </div>
+        </div>
+        <p class="rm-sub">Following the Full-Depth Curriculum and new to GenAI? <a href="modules/00_basics.html?route=full">Read the Basics preflight first</a> — <span data-metric-minutes="basics-preflight-minutes">about 30–45 minutes</span>, optional, and not a numbered step. On the Sprint and Job-Ready routes it is step 01 instead.</p>
         <div class="grid grid-3">
           <div class="card"><span class="ico">①</span><h4>One spine, 69 steps</h4><p>Phases 1–9 below are the main track. The step numbers run continuously from 01 to 69 across all nine phases.</p></div>
           <div class="card"><span class="ico">⇉</span><h4>One parallel rail</h4><p>The 16-page Python bank runs <em>alongside</em> the spine at 30–60 minutes a day. It is numbered P01–P16 so it never competes with the main sequence.</p></div>
@@ -81,11 +112,11 @@
           <table class="rowlink">
             <thead><tr><th>Section</th><th>Approx. time</th><th>Where it appears in the route</th></tr></thead>
             <tbody>
-              <tr><td><a class="row-link" href="modules/01_foundations.html"><strong>GenAI Mastery</strong></a></td><td><strong>201–330 h</strong></td><td>The backbone. Its 14 pages are distributed across phases 1, 2, 3, 5, 6 and 8.</td></tr>
+              <tr><td><a class="row-link" href="modules/01_foundations.html"><strong>GenAI Mastery</strong></a></td><td><strong data-metric-hours="genai-mastery-hours">201–330 h</strong></td><td>The backbone. Its 14 pages are distributed across phases 1, 2, 3, 5, 6 and 8.</td></tr>
               <tr><td><a class="row-link" href="teach-agents/index.html"><strong>Understanding AI Agents</strong></a></td><td><strong>46–52 h</strong></td><td><strong>Phase 4 in full</strong> — steps 14–29. One support-ticket triage agent across 15 lessons plus a runnable Python lab.</td></tr>
-              <tr><td><a class="row-link" href="agent-protocols.html"><strong>Deep Dives</strong></a></td><td><strong>67–107 h</strong></td><td>All 11 deep dives are placed next to the module they extend, in phases 1, 5 and 6.</td></tr>
-              <tr><td><a class="row-link" href="interview-prep/index.html"><strong>Interview Questions</strong></a></td><td><strong>130–199 h</strong></td><td>GenAI bank (71–110 h) is spread through every phase; Python bank (36–54 h) is the parallel rail; drills (23–35 h) sit in phases 2, 5 and 7.</td></tr>
-              <tr><td><a class="row-link" href="scenario-practice/index.html"><strong>Scenario Design Studio</strong></a></td><td><strong>18–27 h</strong></td><td><strong>Phase 9</strong> — steps 57–65, timed architecture drills.</td></tr>
+              <tr><td><a class="row-link" href="agent-protocols.html"><strong>Deep Dives</strong></a></td><td><strong data-metric-hours="deep-dives-hours">67–107 h</strong></td><td>All 11 deep dives are placed next to the module they extend, in phases 1, 5 and 6.</td></tr>
+              <tr><td><a class="row-link" href="interview-prep/index.html"><strong>Interview Questions</strong></a></td><td><strong data-metric-hours="interview-questions-hours">130–199 h</strong></td><td>GenAI bank (<span data-metric-hours="genai-bank-hours">71–110 h</span>) is spread through every phase; Python bank (<span data-metric-hours="python-rail-hours">36–54 h</span>) is the parallel rail; drills (<span data-metric-hours="tech-drills-hours">23–35 h</span>) sit in phases 2, 5 and 7.</td></tr>
+              <tr><td><a class="row-link" href="scenario-practice/index.html"><strong>Scenario Design Studio</strong></a></td><td><strong data-metric-hours="scenarios-hours">18–27 h</strong></td><td><strong>Phase 9</strong> — steps 57–65, timed architecture drills.</td></tr>
               <tr><td><a class="row-link" href="job-search/index.html"><strong>Job Search &amp; Remote Work</strong></a></td><td><strong>2–3 h</strong></td><td>Step 69, the last step.</td></tr>
               <tr><td><a class="row-link" href="dsa-prep/index.html"><strong>DSA Interview Preparation</strong></a></td><td><strong>90–140 h</strong></td><td><em>Optional, outside the route.</em> Separate coding-round track. Only needed if your target role includes a DSA screen.</td></tr>
             </tbody>
@@ -93,7 +124,7 @@
         </div>
         <div class="callout warn">
           <div class="c-ico">≈</div>
-          <div class="c-body"><div class="c-title">The honest total</div><p>The nine-phase spine is <strong>428–664 hours</strong>. Add the Python rail (36–54 h) and the whole route is <strong>464–718 hours</strong>. Add DSA only if you need it. Every topic has exactly one home in this portal, so these rows can be added up: nothing below is a second telling of something above.</p></div>
+          <div class="c-body"><div class="c-title">The honest total</div><p>The nine-phase spine is <strong data-metric-hours="full-spine-hours">428–664 hours</strong>. Add the Python rail (<span data-metric-hours="python-rail-hours">36–54 h</span>) and the whole route is <strong data-metric-hours="full-program-hours">464–718 hours</strong>. Add DSA only if you need it. Every topic has exactly one home in this portal, so these rows can be added up: nothing below is a second telling of something above.</p></div>
         </div>
 
         <h2 id="phase-1">Phase 1 — Neural and LLM foundations</h2>
@@ -101,8 +132,8 @@
         <div class="readmap">
           <div class="rm-head"><span class="ico">🧠</span><strong>Phase 1 reading order</strong></div>
           <ol style="counter-reset: roadmap 0">
-            <li><a class="rm-link" href="interview-prep/00-neural-networks.html"><span class="rm-ttl">Neural Networks for AI Engineers <span class="tag">12–18 h</span></span><span class="rm-why">Neuron intuition, forward pass, loss, backpropagation, optimization and PyTorch. No prerequisites beyond basic Python.</span></a></li>
             <li><a class="rm-link" href="modules/01_foundations.html"><span class="rm-ttl">Foundations of LLMs <span class="tag">8–12 h</span></span><span class="rm-why">Tokenization, next-token prediction, decoding, context windows and prompting. Needs the gradient intuition from step 01.</span></a></li>
+            <li><a class="rm-link" href="interview-prep/00-neural-networks.html"><span class="rm-ttl">Neural Networks for AI Engineers <span class="tag">12–18 h</span></span><span class="rm-why">Neuron intuition, forward pass, loss, backpropagation, optimization and PyTorch. No prerequisites beyond basic Python.</span></a></li>
             <li><a class="rm-link" href="modules/02_transformers.html"><span class="rm-ttl">Transformers Deep Dive <span class="tag">14–22 h</span></span><span class="rm-why">Q/K/V, attention math, masking, positional encoding and residuals. The hardest page in phase 1 — budget a second pass.</span></a></li>
             <li><a class="rm-link" href="modules/03_local_llms.html"><span class="rm-ttl">Local LLMs &amp; Ollama <span class="tag">8–12 h</span></span><span class="rm-why">Quantization, memory estimates and local serving. Install Ollama here — phase 4's lab depends on it.</span></a></li>
             <li><a class="rm-link" href="hermes.html"><span class="rm-ttl">Hermes &amp; Open Local Models <span class="tag">4–7 h</span></span><span class="rm-why">Deep dive that extends step 04: run a local model, test its tool calling and explain the operational trade-offs.</span></a></li>
@@ -247,7 +278,7 @@
         <div class="callout tip"><div class="c-ico">✓</div><div class="c-body"><div class="c-title">Phase 9 checkpoint</div><p>Deliver any of the eight scenarios cold, in 30 minutes, with a diagram and named trade-offs — and finish two consecutive mock rounds without needing notes.</p></div></div>
 
         <h2 id="rail">The parallel rail — Python bank</h2>
-        <p><strong>Steps P01–P16 · 36–54 hours.</strong> Run this <em>alongside</em> the spine from phase 1 onward at 30–60 minutes a day. It is not sequenced into the main track because Python fluency is assumed everywhere rather than needed at one point. Aim to finish P01–P10 by the end of phase 5 and the rest by the end of phase 7.</p>
+        <p><strong>Steps P01–P16 · <span data-metric-hours="python-rail-hours">36–54 hours</span>.</strong> Run this <em>alongside</em> the spine from phase 1 onward at 30–60 minutes a day. It is not sequenced into the main track because Python fluency is assumed everywhere rather than needed at one point. Aim to finish P01–P10 by the end of phase 5 and the rest by the end of phase 7.</p>
         <div class="readmap">
           <div class="rm-head"><span class="ico">🐍</span><strong>Python rail — daily, in order</strong></div>
           <ol style="counter-reset: roadmap 0">
@@ -295,7 +326,7 @@
           <div class="card"><span class="ico">⌨</span><h4>Count active work</h4><p>Hours count when you code, retrieve from memory, draw systems or answer aloud—not when a page is merely open. A checkpoint you cannot pass means the hours have not been spent.</p></div>
         </div>
 
-        <div class="page-nav">
+        <div class="page-nav" data-page-nav>
           <a class="prev" href="index.html"><div class="dir">← Hub</div><div class="ttl">Learning Hub Overview</div></a>
           <a class="next" href="interview-prep/00-neural-networks.html"><div class="dir">Step 01 →</div><div class="ttl">Neural Networks for AI Engineers</div></a>
         </div>

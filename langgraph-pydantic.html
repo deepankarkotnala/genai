@@ -44,8 +44,15 @@
 <link href="assets/office-theme.css?v=20260801a" rel="stylesheet"/>
 <link href="assets/genai-motion.css?v=20260801a" rel="stylesheet"/>
 <link href="assets/glossary.css?v=20260802b" rel="stylesheet"/>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="assets/curriculum.js?v=20260804c"></script>
+<script defer src="assets/page-nav.js?v=20260804c"></script>
 </head>
-<body data-page="langgraph-pydantic">
+<body data-curriculum-id="langgraph-pydantic" data-page="langgraph-pydantic">
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
@@ -184,9 +191,12 @@ class AgentInput(BaseModel):
 </tbody></table></div>
 
 <h2 id="langgraph">6 · Pydantic state in LangGraph</h2>
+<p><strong>Runnable once <code>model</code> is defined.</strong> The node awaits an async model client that this snippet does not create.</p>
 <div class="code-block">
   <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> pydantic_state.py</span><button class="copy-btn">Copy</button></div>
-  <pre><code>from pydantic import BaseModel, ConfigDict, Field
+  <pre><code>import asyncio
+
+from pydantic import BaseModel, ConfigDict, Field
 from langgraph.graph import StateGraph, START, END
 
 class ResearchState(BaseModel):
@@ -209,9 +219,15 @@ builder.add_edge(START, &quot;answer&quot;)
 builder.add_edge(&quot;answer&quot;, END)
 graph = builder.compile()
 
-result = await graph.ainvoke({&quot;question&quot;: &quot;How does cancellation work?&quot;})
-# result is graph output data; validate again if a Pydantic object is required.
-validated_output = ResearchState.model_validate(result)</code></pre>
+async def main() -&gt; None:
+    result = await graph.ainvoke({&quot;question&quot;: &quot;How does cancellation work?&quot;})
+    # result is graph output data; validate again if a Pydantic object is required.
+    validated_output = ResearchState.model_validate(result)
+    print(validated_output)
+
+
+if __name__ == &quot;__main__&quot;:
+    asyncio.run(main())</code></pre>
 </div>
 <div class="callout danger"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">Current LangGraph limitations to know</div><ul style="margin-bottom:0"><li>Graph output is not automatically returned as a Pydantic model instance.</li><li>Runtime validation is documented as occurring on input to the first node, not on every later update/output.</li><li>Validation errors do not necessarily identify the originating node cleanly.</li><li>Recursive Pydantic validation is slower than TypedDict/dataclass state.</li><li>The higher-level <code>create_agent</code> factory does not support Pydantic state schemas.</li></ul></div></div>
 <p><strong>Production implication:</strong> do not assume that choosing a Pydantic state makes every node update safe. Validate critical node outputs explicitly, or place validated models at boundaries and keep internal state lightweight.</p>
@@ -292,9 +308,9 @@ async def handle(payload: dict) -&gt; GraphResponse:
 <h2 id="references">14 · Official references</h2>
 <ul><li><a href="https://docs.pydantic.dev/latest/concepts/models/">Pydantic models</a></li><li><a href="https://docs.pydantic.dev/latest/concepts/validators/">Pydantic validators</a></li><li><a href="https://docs.pydantic.dev/latest/concepts/config/">Pydantic model configuration</a></li><li><a href="https://docs.langchain.com/oss/python/langgraph/use-graph-api#use-pydantic-models-for-graph-state">LangGraph — Pydantic models for graph state</a></li><li><a href="https://docs.langchain.com/oss/python/langgraph/graph-api#schema">LangGraph state schema choices</a></li></ul>
 
-        <div class="page-nav">
-          <a href="modules/12_langgraph.html"><div class="dir">← Core module</div><div class="ttl">12 · LangGraph</div></a>
-          <a class="next" href="langgraph-asyncio.html"><div class="dir">Companion lab →</div><div class="ttl">AsyncIO for LangGraph</div></a>
+        <div class="page-nav" data-page-nav>
+          <a href="langgraph-asyncio.html"><div class="dir">← Previous</div><div class="ttl">AsyncIO for LangGraph</div></a>
+          <a class="next" href="modules/12_langgraph.html"><div class="dir">Next →</div><div class="ttl">Module 12 · LangGraph</div></a>
         </div>
       </main>
       <div class="toc-rail"><nav class="toc"></nav></div>

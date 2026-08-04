@@ -4,19 +4,37 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f4f5f8">
-<title>Study Progress — Interview Preparation</title>
+<title>Study Progress — retired · Interview Preparation</title>
+<!-- Interview Preparation brand metadata -->
 <link rel="icon" href="assets/brand/favicon.svg?v=20260727c" type="image/svg+xml">
 <link rel="icon" href="assets/brand/favicon-32.png?v=20260727c" sizes="32x32" type="image/png">
 <link rel="shortcut icon" href="assets/brand/favicon.ico?v=20260727c">
 <link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png?v=20260727c" sizes="180x180">
+<link rel="manifest" href="assets/brand/site.webmanifest?v=20260727c">
+<link rel="mask-icon" href="assets/brand/safari-pinned-tab.svg?v=20260727c" color="#6f47f5">
+<link rel="image_src" href="assets/brand/social-card.png?v=20260727c">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="msapplication-TileColor" content="#2563eb">
+<meta name="msapplication-config" content="assets/brand/browserconfig.xml?v=20260727c">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Interview Preparation">
+<meta property="og:title" content="Study Progress — retired · Interview Preparation">
+<meta property="og:description" content="The browser-local progress tracker has been retired. Use the Global Study Plan and its phase checkpoints instead.">
+<meta property="og:image" content="assets/brand/social-card.png?v=20260727c">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Switch job learning platform logo">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Study Progress — retired · Interview Preparation">
+<meta name="twitter:description" content="The browser-local progress tracker has been retired. Use the Global Study Plan and its phase checkpoints instead.">
+<meta name="twitter:image" content="assets/brand/social-card.png?v=20260727c">
 <link href="assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
-<link href="assets/brand/site.webmanifest?v=20260727c" rel="manifest"/>
-<link color="#6f47f5" href="assets/brand/safari-pinned-tab.svg?v=20260727c" rel="mask-icon"/>
-<meta content="assets/brand/browserconfig.xml?v=20260727c" name="msapplication-config"/>
-<meta content="#2563eb" name="msapplication-TileColor"/>
-<meta content="Switch job" name="application-name"/>
-<meta content="Switch job" name="apple-mobile-web-app-title"/>
-<meta name="description" content="Track GenAI Mastery topics, ideal study time, completed hours and remaining interview-preparation work.">
+<!-- /Interview Preparation brand metadata -->
+<meta name="description" content="The browser-local progress tracker has been retired. Use the Global Study Plan and its phase checkpoints instead.">
 <!-- Theme before first paint. Without this the document paints with the light
      tokens and only flips when app.js runs at the end of <body>, which is a
      white flash on every navigation in dark mode. Mirrors app.js's getTheme()
@@ -27,8 +45,26 @@
 <link rel="stylesheet" href="assets/styles.css?v=20260801d">
 <link href="assets/office-theme.css?v=20260801a" rel="stylesheet"/>
 <link href="assets/genai-motion.css?v=20260801a" rel="stylesheet"/>
+<style>
+  .nav .sec-num { font-family: var(--font-mono); }
+  .rule-grid { display:grid; gap:14px; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); margin:20px 0; }
+  .rule { border:1px solid var(--border); border-left:4px solid var(--accent); border-radius:var(--radius);
+          padding:16px 18px; background:var(--bg-elevated); }
+  .rule h4 { margin:0 0 6px; }
+  .rule .where { font-size:11.5px; font-weight:700; letter-spacing:.04em; text-transform:uppercase; color:var(--text-muted); }
+  .rule.in  { border-left-color:var(--blue); }
+  .rule.out { border-left-color:var(--purple); }
+  .rule.both{ border-left-color:var(--amber); }
+</style>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="assets/curriculum.js?v=20260804c"></script>
+<script defer src="assets/page-nav.js?v=20260804c"></script>
 </head>
-<body class="progress-page" data-page="progress">
+<body data-curriculum-id="progress-moved" data-page="progress">
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
@@ -40,9 +76,9 @@
     <div class="search-wrap">
       <div class="search-box">
         <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
-        <input type="text" data-search placeholder="Search modules…  ( / )">
+        <input type="text" data-secsearch placeholder="Jump to a section…  ( / )">
       </div>
-      <div class="search-results"></div>
+      <div class="search-results" data-secresults></div>
     </div>
     <nav class="nav"></nav>
   </aside>
@@ -53,29 +89,47 @@
       <button class="icon-btn menu-btn" aria-label="Menu">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
       </button>
-      <div class="crumbs">GenAI Mastery / <b>Study Progress</b></div>
-      <a class="home-btn" href="index.html" aria-label="Hub home">
-        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-8 9 8"/><path d="M5 10v10h14V10"/><path d="M9 20v-6h6v6"/></svg>
-        <span>Home</span>
-      </a>
+      <div class="crumbs">Study Plan / <b>Study Progress — retired</b></div>
       <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
     </header>
 
     <div class="content-wrap">
-      <main class="content" data-progress-dashboard>
-        <noscript>
-          <div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">JavaScript is required</div><p>The progress tracker stores your checklist locally in this browser and needs JavaScript to run.</p></div></div>
-        </noscript>
+      <main class="content">
+<div class="eyebrow"><span class="dot"></span> This page has been retired</div>
+<h1>The progress tracker has been <span class="grad">retired</span></h1>
+<p class="lead">This page used to keep a checklist in your browser's local storage. It has been withdrawn because that is not a trustworthy record: it lived in one browser on one device, and clearing site data erased it without warning.</p>
+
+<div class="callout key">
+<div class="c-ico">🧭</div>
+<div class="c-body">
+<div class="c-title">Where to go instead</div>
+<p>Use the <a href="study-plan.html"><strong>Global Study Plan</strong></a>. It is the sequenced route through the portal, with an hour estimate for every step and a checkpoint at the end of each phase stated as something you can do from memory.</p>
+</div>
+</div>
+
+<div class="callout note">
+<div class="c-ico">📋</div>
+<div class="c-body">
+<div class="c-title">What replaces it</div>
+<p>Printable, copyable phase checklists are planned, so a record of what you have finished lives somewhere you control rather than in one browser's storage. Until then the study plan's phase checkpoints are the intended way to judge whether a phase is done.</p>
+<p><strong>No completion data is being saved by this page</strong>, and nothing you ticked here previously was ever synchronised between devices.</p>
+</div>
+</div>
+
+<div class="page-nav" data-page-nav>
+<a href="index.html"><div class="dir">← Back</div><div class="ttl">GenAI Learning Hub</div></a>
+<a class="next" href="study-plan.html"><div class="dir">Continue →</div><div class="ttl">Global Study Plan</div></a>
+</div>
       </main>
-      <aside class="toc-rail"><nav class="toc"></nav></aside>
+      <div class="toc-rail"><nav class="toc"></nav></div>
     </div>
   </div>
 </div>
-<script src="assets/study-data.js?v=20260801b"></script>
+
 <script src="assets/app.js?v=20260731b"></script>
 <script src="assets/sitenav.js?v=20260801b"></script>
 <script src="assets/enhance.js?v=20260801a"></script>
 <script src="assets/genai-motion.js?v=20260728a"></script>
-<script src="assets/study-tools.js?v=20260727c"></script>
+<script src="assets/section-nav.js?v=20260731b"></script>
 </body>
 </html>

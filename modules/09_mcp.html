@@ -47,8 +47,15 @@
 <link href="../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260801a" rel="stylesheet"/>
 <link href="../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="../assets/curriculum.js?v=20260804c"></script>
+<script defer src="../assets/page-nav.js?v=20260804c"></script>
 </head>
-<body data-page="09">
+<body data-curriculum-id="mcp-module" data-page="09">
 <div class="app">
 <aside class="sidebar">
 <div class="brand">
@@ -88,7 +95,7 @@
 <div class="callout note">
 <div class="c-ico">🔗</div>
 <div class="c-body"><div class="c-title">MCP is one of three agent protocols</div>
-<p>MCP standardises the boundary between an agent and its <em>tools and data</em>. Two sibling standards cover the other two boundaries: <strong>A2A</strong> (Agent2Agent) for delegating work to other agents across vendors, and <strong>A2UI</strong> for agents that render real interfaces instead of walls of text. For the comparative brief — including what changed in the 2026-07-28 MCP revision — see <a href="../agent-protocols.html">Agent Protocols — MCP · A2A · A2UI →</a>.</p></div>
+<p>MCP standardises the boundary between an agent and its <em>tools and data</em>. Two sibling standards cover the other two boundaries: <strong>A2A</strong> (Agent2Agent) for delegating work to other agents across vendors, and <strong>A2UI</strong> for agents that render real interfaces instead of walls of text. For the comparative brief — including what changed in the 2026-07-28 MCP revision — see <a href="../agent-protocols.html">Agent Protocols — MCP · A2A · A2UI →</a>. For the policy layer around all three — trust boundaries, identity and middleware — see <a href="#middleware-identity-interoperability">§11 Middleware, Identity and Agent Interoperability →</a>.</p></div>
 </div>
 <!-- ============ 1. EXECUTIVE SUMMARY ============ -->
 <h2 id="summary">1 · Executive summary</h2>
@@ -420,8 +427,518 @@ ALLOWED = {<span class="tok-str">"app-logs"</span>, <span class="tok-str">"audit
 <div class="card"><h4>❌ Ignoring prompt injection</h4><p>Content the model reads (a log line, a doc) can contain instructions. Treat resource/tool output as untrusted.</p></div>
 <div class="card"><h4>❌ Duplicating business logic</h4><p>Don't reimplement logic in the MCP tool. Share plain functions between REST and MCP surfaces.</p></div>
 </div>
+<!-- ============ 11. MIDDLEWARE, IDENTITY AND AGENT INTEROPERABILITY ============ -->
+<section id="middleware-identity-interoperability">
+<h2 id="middleware-identity">11 · Middleware, Identity and Agent Interoperability</h2>
+<p class="lead">Everything so far has been about the <em>capability</em> boundary: how an agent reaches a tool. This section is about the <em>policy</em> boundaries that sit around it — who is calling, what they are allowed to do, which system is trusted with what, and how independent agent systems talk to each other. This is where most production and system-design interviews for agentic roles actually land.</p>
+<div class="callout note"><div class="c-ico">📅</div><div class="c-body"><div class="c-title">Last reviewed: August 2026</div>
+<p>MCP and A2A are evolving specifications. Concepts, boundaries and security reasoning below are stable; wire-level field names are deliberately kept out of the examples. Check the <a href="#middleware-references">References</a> at the end of this section against the current specifications before quoting exact protocol details in an interview.</p></div></div>
+<h3>What you should be able to do after this section</h3>
+<div class="callout key"><div class="c-ico">🎯</div><div class="c-body"><div class="c-title">Learning objectives</div>
+<ul>
+<li>Explain what middleware is and where it runs.</li>
+<li>Distinguish API middleware from agent-runtime middleware.</li>
+<li>Explain authentication versus authorization.</li>
+<li>Explain where JWT, OAuth 2.0 and OpenID Connect fit.</li>
+<li>Compare MCP and A2A.</li>
+<li>Identify trust boundaries in an agentic application.</li>
+<li>Design middleware for a multi-tenant agent platform.</li>
+<li>Answer production and system-design interview questions about these topics.</li>
+</ul></div></div>
+<h3>11.1 · The complete architecture</h3>
+<p>A request to an agentic application does not travel through one program. It crosses a series of boundaries, and at each boundary a different kind of policy is applied. Read the flow downwards; the amber markers are the points where trust changes.</p>
+<div class="cssflow">
+<div class="fnode accent">User or client<small>browser · mobile app · CLI · another service</small></div>
+<div class="farrow"></div>
+<div><span class="pill amber">Trust boundary 1 · public client → application</span></div>
+<div class="farrow"></div>
+<div class="fnode">API gateway / reverse proxy<small>TLS termination · WAF · coarse rate limits · routing</small></div>
+<div class="farrow"></div>
+<div class="fnode">HTTP application middleware<small>request ID · authentication · authorization · tenant context · request validation · rate limiting · audit metadata</small></div>
+<div class="farrow"></div>
+<div class="fnode accent">Agent orchestrator<small>the loop or graph that decides what happens next</small></div>
+<div class="farrow"></div>
+<div><span class="pill amber">Trust boundary 2 · application → model provider</span></div>
+<div class="farrow"></div>
+<div class="fnode">Agent-runtime middleware<small>prompt and context enrichment · model routing · tool allowlists · retries and fallbacks · cost and token budgets · PII redaction · guardrails · human approval · tracing</small></div>
+<div class="farrow"></div>
+<div><span class="pill amber">Trust boundary 3 · agent → MCP server</span></div>
+<div class="farrow"></div>
+<div class="fnode">MCP clients and servers<small>tools · resources · prompts and context</small></div>
+<div class="farrow"></div>
+<div><span class="pill amber">Trust boundary 4 · agent → remote A2A agent</span></div>
+<div class="farrow"></div>
+<div class="fnode">A2A remote agents<small>discovery · capability declaration · task delegation · messages and artifacts</small></div>
+<div class="farrow"></div>
+<div><span class="pill amber">Trust boundary 5 · service → internal data</span></div>
+<div class="farrow"></div>
+<div class="fnode accent">Databases, APIs, queues and enterprise systems<small>the systems that actually change state</small></div>
+</div>
+<div class="diagram-caption">Figure 2 · Policy is applied at boundaries, not in one place. A sixth boundary — <strong>tenant-to-tenant isolation</strong> — is not a layer in this stack at all: it cuts <em>across</em> every box above, because every one of them can leak one tenant's data into another tenant's request.</div>
+<div class="callout key"><div class="c-ico">🔑</div><div class="c-body"><div class="c-title">The one idea to remember</div>
+<p><strong>Middleware is not one product and not one physical layer.</strong> It is a pattern: apply cross-cutting policy at well-defined boundaries, where every request must pass and where the policy can be reasoned about in one place. A gateway, an ASGI middleware class, an agent hook and a tool wrapper are all the same pattern applied at different boundaries.</p></div></div>
+<h3>11.2 · API middleware versus agent middleware</h3>
+<p>Interviewers ask this because candidates who have only built web services assume middleware means "the thing that checks the JWT", and candidates who have only built agents assume it means "the thing that edits the prompt". Both are middleware; they run at different times and protect different things.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Layer</th><th>Examples</th><th>Runs when</th><th>Main responsibility</th></tr></thead>
+<tbody>
+<tr><td><strong>Gateway middleware</strong></td><td>TLS, WAF, coarse rate limits</td><td>Before the application</td><td>Edge protection and routing</td></tr>
+<tr><td><strong>HTTP middleware</strong></td><td>JWT validation, request IDs, tenant resolution</td><td>On each HTTP request</td><td>Request-level security and context</td></tr>
+<tr><td><strong>Agent middleware</strong></td><td>Tool filtering, prompt enrichment, retries</td><td>Around model and tool calls</td><td>Control agent behaviour</td></tr>
+<tr><td><strong>Tool middleware</strong></td><td>Argument validation, permission checks, idempotency</td><td>Before or after tool execution</td><td>Safe and reliable actions</td></tr>
+<tr><td><strong>Observability middleware</strong></td><td>Traces, metrics, audit logs</td><td>Across all stages</td><td>Explain and debug behaviour</td></tr>
+</tbody>
+</table></div>
+<div class="callout note"><div class="c-ico">🗣</div><div class="c-body"><div class="c-title">The distinction to say out loud</div>
+<p><strong>HTTP middleware controls requests entering the application. Agent middleware controls decisions and actions inside the agent loop. Tool middleware protects the systems the agent can affect.</strong></p>
+<p>The reason the three cannot be collapsed: one HTTP request can produce many model calls and many tool calls. A per-request check runs once; a per-action check runs every time the agent tries to do something. Budgets, allowlists and approval gates only work at the second granularity.</p></div></div>
+<h3>11.3 · JWT, OAuth 2.0 and identity</h3>
+<p>Start with the distinction the rest of this depends on. <strong>Authentication</strong> answers "who is making this call, and can I prove it?" <strong>Authorization</strong> answers "is this caller allowed to perform this specific operation on this specific resource?" They fail differently: a broken authentication check lets a stranger in; a broken authorization check lets a legitimate user do something they should not.</p>
+<h4>JWT — a token format</h4>
+<ul>
+<li>A JWT is a <strong>compact claims-token format</strong>. It is a container for statements about a subject, encoded so it can travel in an HTTP header.</li>
+<li>A JWT may be <strong>signed</strong> (JWS — integrity and origin, contents readable by anyone) and can also be <strong>encrypted</strong> (JWE — contents hidden). Signed is the common case; "the payload is base64, not secret" is worth saying out loud.</li>
+<li>A JWT is <strong>not, by itself, a login system or an authorization policy</strong>. It is what a login system hands you and what a policy engine reads. Choosing JWTs decides nothing about how users authenticate or what they may do.</li>
+<li>Important claims: <code>iss</code> (issuer), <code>aud</code> (audience), <code>sub</code> (subject), <code>exp</code> (expiry), <code>nbf</code> (not-before). Also useful in practice: <code>iat</code>, <code>jti</code> for replay tracking, and <code>kid</code> in the header for key selection.</li>
+<li><strong>Validation must include</strong> the expected issuer, the expected audience, an explicit list of allowed algorithms, the signature, expiry and not-before, and key selection from a trusted source. Every one of these is a real-world breach when omitted.</li>
+</ul>
+<h4>OAuth 2.0 — delegated authorization</h4>
+<ul>
+<li>OAuth 2.0 is an <strong>authorization framework</strong>. It describes how a client obtains permission to act on a resource, not how a person proves who they are.</li>
+<li>An <strong>access token represents delegated authority</strong> — "the bearer may do these things, on this resource server, for this long". The token format is not specified by OAuth itself; it is often a JWT, sometimes opaque.</li>
+<li><strong>Scopes are not a replacement for application-level authorization.</strong> A scope such as <code>orders:write</code> says the client was granted a category of access. It does not say <em>this</em> user may refund <em>that</em> order in <em>that</em> tenant. The resource server still owes a real authorization decision.</li>
+<li><strong>Tokens should not be forwarded blindly</strong> from the user through every agent and tool. A token minted for your API is not a token your downstream tool should accept, and passing it on hands that tool the user's full authority.</li>
+<li><strong>Service-to-service identity and delegated user identity are different things</strong> and often need different tokens. "The agent is calling as itself" and "the agent is calling on behalf of Priya" are different security statements and should be different credentials.</li>
+</ul>
+<h4>OpenID Connect — an identity layer</h4>
+<ul>
+<li>OpenID Connect adds an <strong>identity layer over OAuth 2.0</strong>: a standard way to learn who authenticated and how.</li>
+<li>An <strong>ID token identifies the authenticated user to the client</strong>. Its audience is the client application.</li>
+<li>An <strong>ID token should not automatically be treated as an API access token</strong>. It was issued for a different audience and a different purpose; a resource server that accepts it is accepting a token that was never scoped for it.</li>
+</ul>
+<h4>The identity questions an agentic system forces you to answer</h4>
+<p>A conventional API has one caller per request. An agent has several, layered, and they can differ from one tool call to the next.</p>
+<ul>
+<li><strong>Which identity is acting</strong> — the end user, the application, the agent, or the tool itself?</li>
+<li><strong>Which tenant owns the request</strong>, and is that established from the token rather than from a request body the caller controls?</li>
+<li><strong>Is the agent acting on behalf of a user, or as its own service identity?</strong> Scheduled and background work usually has no user at all.</li>
+<li><strong>Which scopes and permissions should reach an MCP server</strong> — all of the caller's, or the narrow subset this tool needs?</li>
+<li><strong>Should a remote A2A agent receive the original user token?</strong> Almost always no; it is a different trust domain, possibly a different vendor.</li>
+<li><strong>How is an action recorded for audit and non-repudiation</strong>, so that "the agent did it" resolves to a user, a tenant, a prompt and a policy decision?</li>
+<li><strong>What happens when a long-running task outlives its access token?</strong> Agent tasks routinely run longer than a fifteen-minute token lifetime.</li>
+</ul>
+<div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">Do not do these</div>
+<ul>
+<li><strong>Blind token forwarding</strong> — passing the user's access token to every downstream tool, MCP server and remote agent. This is the classic confused-deputy setup.</li>
+<li><strong>Trusting unsigned or incorrectly validated tokens</strong> — including accepting an unsecured algorithm, or letting the token's own header choose the verification algorithm.</li>
+<li><strong>Accepting any issuer or audience</strong> — a valid signature from the wrong issuer, or a token minted for a different service, is not authorization for yours.</li>
+<li><strong>Reading claims without verifying the signature</strong> — decoding a JWT to get <code>sub</code> or <code>tenant</code> "just for logging" is how unverified claims end up in a policy decision.</li>
+<li><strong>Storing secrets in prompts or agent state</strong> — anything in the context window can be summarised, logged, traced, cached, or extracted by prompt injection.</li>
+<li><strong>Giving every tool the same broad credential</strong> — one shared service account defeats least privilege and makes the audit log useless.</li>
+</ul></div></div>
+<h3>11.4 · MCP versus A2A versus middleware</h3>
+<p>These are asked together because candidates conflate them. They solve different problems and none of them substitutes for another.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Concept</th><th>Primary purpose</th><th>Typical participants</th><th>Does not solve</th></tr></thead>
+<tbody>
+<tr><td><strong>Middleware</strong></td><td>Enforce cross-cutting policy and behaviour</td><td>Components inside an application</td><td>Interoperability by itself</td></tr>
+<tr><td><strong>MCP</strong></td><td>Connect AI applications to tools and context</td><td>MCP host/client and MCP server</td><td>General remote-agent collaboration</td></tr>
+<tr><td><strong>A2A</strong></td><td>Enable independent agents to discover and collaborate</td><td>A2A client and remote agent</td><td>Local application middleware</td></tr>
+<tr><td><strong>JWT</strong></td><td>Represent signed or encrypted claims</td><td>Token issuer and consumer</td><td>Complete authentication or authorization architecture</td></tr>
+<tr><td><strong>OAuth / OIDC</strong></td><td>Delegated authorization and identity</td><td>Clients, authorization servers and resource servers</td><td>Agent orchestration</td></tr>
+</tbody>
+</table></div>
+<div class="callout key"><div class="c-ico">🔑</div><div class="c-body"><div class="c-title">Say this clearly</div>
+<p><strong>MCP and A2A are complementary.</strong></p>
+<p>MCP usually connects an agentic application to tools, resources and context. A2A connects independent agent systems that may be implemented by different teams or vendors. Middleware enforces the policies around both.</p>
+<p>A useful test: if the thing on the other side is a <em>capability</em> you call and get a result from, that is the MCP shape. If it is an <em>autonomous peer</em> that accepts a task, works on it over time and returns messages and artifacts, that is the A2A shape.</p></div></div>
+<div class="callout note"><div class="c-ico">💬</div><div class="c-body"><div class="c-title">Interview currency — how deep to go</div>
+<ul>
+<li>Understand <strong>MCP architecture and security boundaries in practical detail</strong>: host, client, server, the three primitives, transports, and who authorizes what. This is expected.</li>
+<li>Understand <strong>A2A concepts, use cases and trade-offs</strong>: discovery and capability declaration, task delegation, messages and artifacts, and when a remote peer beats an in-process tool.</li>
+<li><strong>Do not memorise rapidly changing wire-level fields.</strong> Both specifications are moving. An interviewer who wants a field name will accept "I would check the current specification"; one who wants the trust model will not accept a memorised field name instead of it.</li>
+</ul></div></div>
+<h3>11.5 · Middleware responsibilities in an agentic application</h3>
+<p>Each row is a concern you should be able to name, illustrate and break. The failure mode column is the half candidates skip — and the half interviewers are listening for.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Responsibility</th><th>Example</th><th>Failure mode when it is missing</th></tr></thead>
+<tbody>
+<tr><td><strong>Correlation and request IDs</strong></td><td>Generate <code>X-Request-Id</code> at the edge and attach it to every model call, tool call and log line</td><td>A user reports a wrong refund and you cannot reconstruct which of 40 000 agent runs did it</td></tr>
+<tr><td><strong>Authentication and tenant resolution</strong></td><td>Validate the access token, derive <code>tenant_id</code> from verified claims, never from the body</td><td>A caller sets <code>tenant_id</code> in the payload and reads another customer's orders</td></tr>
+<tr><td><strong>Authorization and tool-level permission checks</strong></td><td>Check "may this principal call <code>issue_refund</code> for this order?" at the tool boundary</td><td>The prompt says the agent may only read, the model calls a write tool anyway, and nothing stops it</td></tr>
+<tr><td><strong>Prompt and context enrichment</strong></td><td>Inject tenant policy, locale, entitlements and current date into the system context</td><td>The agent invents policy it was never told, or applies another tenant's rules</td></tr>
+<tr><td><strong>Dynamic model routing</strong></td><td>Cheap model for classification, frontier model for the final plan, regional model for EU data</td><td>Every trivial step burns frontier-model cost, or regulated data leaves its region</td></tr>
+<tr><td><strong>Tool selection and tool allowlists</strong></td><td>Present only the tools this role and tenant may use, so the model cannot choose the rest</td><td>A read-only support agent is offered <code>delete_account</code> and eventually calls it</td></tr>
+<tr><td><strong>Request and response validation</strong></td><td>Validate tool arguments against a schema; validate structured output before it is used</td><td>A malformed argument reaches the database layer, or downstream code crashes on a hallucinated field</td></tr>
+<tr><td><strong>Retry, timeout and fallback policies</strong></td><td>Retry only transient errors with bounded backoff and jitter; fall back to a second provider</td><td>A retry storm amplifies an outage, or one hung call holds the whole request open</td></tr>
+<tr><td><strong>Circuit breakers</strong></td><td>Open the breaker after N consecutive failures of one dependency and fail fast</td><td>The agent keeps calling a dead service, spending tokens and latency on guaranteed failures</td></tr>
+<tr><td><strong>Idempotency for write operations</strong></td><td>Require an idempotency key on every side-effecting tool and deduplicate server-side</td><td>A retried refund pays the customer twice</td></tr>
+<tr><td><strong>Rate limits and concurrency limits</strong></td><td>Per-tenant and per-tool limits, plus a cap on concurrent tool calls in one run</td><td>One tenant's loop exhausts a shared provider quota for everyone</td></tr>
+<tr><td><strong>Token and cost budgets</strong></td><td>A per-run and per-tenant ceiling enforced in the loop, not only reported afterwards</td><td>A looping agent produces a five-figure bill overnight with no cap to stop it</td></tr>
+<tr><td><strong>PII and secret detection</strong></td><td>Redact card numbers, national IDs and API keys before they reach the model or the trace</td><td>Personal data is sent to a third-party provider and then stored in observability for 90 days</td></tr>
+<tr><td><strong>Input and output guardrails</strong></td><td>Screen inputs for injection patterns; screen outputs for policy violations before display</td><td>Injected instructions in a retrieved document redirect the agent, or unsafe text reaches a customer</td></tr>
+<tr><td><strong>Human approval before irreversible actions</strong></td><td>Pause above a monetary or blast-radius threshold and present evidence for a decision</td><td>An irreversible action executes on a low-confidence inference with no one accountable</td></tr>
+<tr><td><strong>Logging, tracing and audit events</strong></td><td>One trace per run spanning model and tool calls; a separate immutable audit record per action</td><td>You can see that the agent was slow but not what it decided or why</td></tr>
+<tr><td><strong>Redaction of sensitive observability data</strong></td><td>Store prompt hashes and shapes rather than raw prompts; redact tool arguments by field</td><td>Your tracing tool becomes the largest unencrypted store of customer data you own</td></tr>
+<tr><td><strong>Caching and cache-isolation rules</strong></td><td>Include tenant, user entitlements and model version in every cache key</td><td>Two tenants share a cache entry and one sees the other's answer</td></tr>
+<tr><td><strong>Long-running task state and cancellation</strong></td><td>Persist run state, expose a cancel signal, and checkpoint before and after side effects</td><td>A cancelled task keeps spending money, or a resumed one repeats a completed action</td></tr>
+</tbody>
+</table></div>
+<h4>Where each concern belongs</h4>
+<div class="table-wrap"><table>
+<thead><tr><th>Placement</th><th>Concerns that belong here</th></tr></thead>
+<tbody>
+<tr><td><strong>At the gateway</strong></td><td>TLS, WAF, coarse per-IP and per-key rate limits, request size caps, routing. Cheap, blunt, before your code runs.</td></tr>
+<tr><td><strong>In HTTP middleware</strong></td><td>Token validation, principal and tenant resolution, correlation IDs, request schema validation, per-request quota accounting, audit metadata.</td></tr>
+<tr><td><strong>In the agent runtime</strong></td><td>Context enrichment, model routing, tool allowlists, retries and fallbacks, budgets, guardrails, approval gates, tracing of decisions.</td></tr>
+<tr><td><strong>At the MCP / tool server</strong></td><td>Argument validation, the real authorization decision, idempotency, least-privilege credentials, output size bounds, per-tool audit.</td></tr>
+<tr><td><strong>At the remote A2A agent</strong></td><td>Its own authentication of the caller, its own authorization, its own budgets and rate limits. It is a separate trust domain and must not assume you validated anything.</td></tr>
+<tr><td><strong>In the database or service</strong></td><td>Row-level tenant isolation, constraints, unique keys that make duplicate writes impossible, and permissions on the credential itself.</td></tr>
+</tbody>
+</table></div>
+<div class="callout warn"><div class="c-ico">🛡</div><div class="c-body"><div class="c-title">Defence in depth</div>
+<p><strong>The agent layer must not be the only place authorization is enforced.</strong> An allowlist in the agent runtime is a usability and cost control — it stops the model from choosing a tool. It is not a security control, because a prompt injection, a bug, a new code path or a second client can route around it. The tool server and the database must independently refuse an action the caller is not entitled to. If removing the agent's allowlist would let a user do something they should not, the design is one bug away from a breach.</p></div></div>
+<h3>11.6 · A request, end to end</h3>
+<p><strong>A user asks an enterprise support agent to refund an order.</strong></p>
+<div class="cssflow">
+<div class="fnode accent">1 · Gateway applies coarse limits<small>TLS, WAF, per-key rate limit — before any application code</small></div>
+<div class="farrow"></div>
+<div class="fnode">2 · HTTP middleware validates the access token<small>issuer, audience, algorithm, signature, expiry, key selection</small></div>
+<div class="farrow"></div>
+<div class="fnode">3 · Tenant and user context are attached<small>derived from verified claims and pinned to the request</small></div>
+<div class="farrow"></div>
+<div class="fnode">4 · Agent middleware adds policy and allowed-tool context<small>refund policy for this tenant, plus only the tools this role may use</small></div>
+<div class="farrow"></div>
+<div class="fnode">5 · The model proposes a refund-tool call<small>a proposal — nothing has happened yet</small></div>
+<div class="farrow"></div>
+<div class="fnode">6 · Tool middleware validates arguments and permissions<small>schema, order ownership, tenant match, entitlement to refund</small></div>
+<div class="farrow"></div>
+<div class="fnode">7 · An approval gate is triggered above a monetary threshold<small>a human sees the order, the reason and the amount, and decides</small></div>
+<div class="farrow"></div>
+<div class="fnode">8 · An MCP server executes the approved action<small>with its own least-privilege credential and an idempotency key</small></div>
+<div class="farrow"></div>
+<div class="fnode">9 · Audit middleware records user, agent, tool and result<small>immutable, separate from application logs</small></div>
+<div class="farrow"></div>
+<div class="fnode accent">10 · A response is returned with a trace ID<small>so the run can be reconstructed later</small></div>
+</div>
+<div class="diagram-caption">Figure 3 · The model appears once, at step 5, and only proposes. Every step that grants authority or changes state is enforced by code the model cannot influence.</div>
+<h4>The A2A variation</h4>
+<p>Now suppose the refund needs a currency conversion and a ledger adjustment owned by a separate finance platform, run by another team, with its own agent. Steps 1–7 are unchanged. Between steps 7 and 8, the support agent delegates:</p>
+<ul>
+<li>It <strong>discovers</strong> the finance agent and reads its <strong>declared capabilities</strong> — the interviewer wants to hear that you treat that declaration as a claim, not a guarantee.</li>
+<li>It <strong>delegates a task</strong> with the minimum necessary information: the order reference, the amount and the reason. Not the user's access token, not the conversation, not the customer's full profile.</li>
+<li>It authenticates as <strong>its own service identity</strong> to the finance platform, and carries the acting user as an explicit, verifiable assertion rather than by handing over the user's credential.</li>
+<li>The finance agent works over time and returns <strong>messages and artifacts</strong> — a ledger entry reference, a status. The support agent validates those against its own schema before using them.</li>
+<li>The finance platform runs <strong>its own</strong> authentication, authorization, budgets and audit. It does not assume the caller validated anything.</li>
+<li>Both sides record the delegation, so the audit trail crosses the boundary and the refund resolves to a user even though two systems executed it.</li>
+</ul>
+<h3>11.7 · Code examples</h3>
+<p>Three boundaries, three shapes of middleware. Each block states what it takes to run.</p>
+<h4>Example A — HTTP middleware</h4>
+<p><strong>Runnable after installing and configuring dependencies.</strong> Needs <code>pip install fastapi uvicorn</code> and a real implementation of <code>verify_access_token</code>. Written against Starlette's <code>BaseHTTPMiddleware</code>, which FastAPI re-exports.</p>
+<div class="code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> http_middleware.py</span><button class="copy-btn">Copy</button></div>
+<pre><code><span class="tok-kw">import</span> uuid
+<span class="tok-kw">from</span> dataclasses <span class="tok-kw">import</span> dataclass
+
+<span class="tok-kw">from</span> fastapi <span class="tok-kw">import</span> FastAPI, Request
+<span class="tok-kw">from</span> fastapi.responses <span class="tok-kw">import</span> JSONResponse
+<span class="tok-kw">from</span> starlette.middleware.base <span class="tok-kw">import</span> BaseHTTPMiddleware
+
+
+<span class="tok-dec">@dataclass</span>(frozen=<span class="tok-kw">True</span>)
+<span class="tok-kw">class</span> <span class="tok-cls">Principal</span>:
+    <span class="tok-str">"""Who is acting. Every field comes from VERIFIED token claims."""</span>
+    subject: <span class="tok-cls">str</span>
+    tenant_id: <span class="tok-cls">str</span>
+    scopes: <span class="tok-cls">frozenset</span>
+
+
+<span class="tok-kw">class</span> <span class="tok-cls">AuthError</span>(<span class="tok-cls">Exception</span>):
+    <span class="tok-kw">pass</span>
+
+
+<span class="tok-kw">def</span> <span class="tok-fn">verify_access_token</span>(token: <span class="tok-cls">str</span>) -&gt; <span class="tok-cls">dict</span>:
+    <span class="tok-str">"""Verify and return the token claims. Supply this from a maintained
+    library (for example PyJWT with a JWKS client) -- never hand-rolled
+    crypto. It MUST enforce, and raise AuthError on failure:
+
+      * signature, against a key selected by `kid` from the trusted JWKS
+      * `alg` restricted to an explicit allowlist -- never taken from the
+        token header, and never "none"
+      * `iss` equal to the expected issuer
+      * `aud` equal to THIS service's audience
+      * `exp` and `nbf` against the current clock, with small leeway
+
+    Returning unverified claims from here defeats every check below.
+    """</span>
+    <span class="tok-kw">raise</span> <span class="tok-fn">NotImplementedError</span>(<span class="tok-str">"wire this to your identity provider"</span>)
+
+
+<span class="tok-kw">class</span> <span class="tok-cls">CorrelationIdMiddleware</span>(BaseHTTPMiddleware):
+    <span class="tok-str">"""One ID per request, echoed back and carried into every downstream call."""</span>
+
+    <span class="tok-kw">async</span> <span class="tok-kw">def</span> <span class="tok-fn">dispatch</span>(self, request: Request, call_next):
+        request_id = request.headers.<span class="tok-fn">get</span>(<span class="tok-str">"x-request-id"</span>) <span class="tok-kw">or</span> <span class="tok-cls">str</span>(uuid.<span class="tok-fn">uuid4</span>())
+        request.state.request_id = request_id
+        response = <span class="tok-kw">await</span> <span class="tok-fn">call_next</span>(request)
+        response.headers[<span class="tok-str">"x-request-id"</span>] = request_id
+        <span class="tok-kw">return</span> response
+
+
+<span class="tok-kw">class</span> <span class="tok-cls">AuthenticationMiddleware</span>(BaseHTTPMiddleware):
+    <span class="tok-str">"""Attach a verified Principal, or reject. Tenant comes from the token."""</span>
+
+    PUBLIC_PATHS = {<span class="tok-str">"/healthz"</span>, <span class="tok-str">"/openapi.json"</span>}
+
+    <span class="tok-kw">async</span> <span class="tok-kw">def</span> <span class="tok-fn">dispatch</span>(self, request: Request, call_next):
+        <span class="tok-kw">if</span> request.url.path <span class="tok-kw">in</span> self.PUBLIC_PATHS:
+            <span class="tok-kw">return</span> <span class="tok-kw">await</span> <span class="tok-fn">call_next</span>(request)
+
+        header = request.headers.<span class="tok-fn">get</span>(<span class="tok-str">"authorization"</span>, <span class="tok-str">""</span>)
+        scheme, _, token = header.<span class="tok-fn">partition</span>(<span class="tok-str">" "</span>)
+        <span class="tok-kw">if</span> scheme.<span class="tok-fn">lower</span>() != <span class="tok-str">"bearer"</span> <span class="tok-kw">or</span> <span class="tok-kw">not</span> token:
+            <span class="tok-kw">return</span> self.<span class="tok-fn">_deny</span>(request, <span class="tok-str">"missing bearer token"</span>)
+
+        <span class="tok-kw">try</span>:
+            claims = <span class="tok-fn">verify_access_token</span>(token)
+        <span class="tok-kw">except</span> AuthError:
+            <span class="tok-com"># Deliberately vague to the caller; the detail goes to the log.</span>
+            <span class="tok-kw">return</span> self.<span class="tok-fn">_deny</span>(request, <span class="tok-str">"invalid token"</span>)
+
+        <span class="tok-com"># Tenant is read from verified claims, never from a body or query</span>
+        <span class="tok-com"># parameter the caller controls. This one line is the whole</span>
+        <span class="tok-com"># multi-tenant isolation story at this layer.</span>
+        tenant_id = claims.<span class="tok-fn">get</span>(<span class="tok-str">"tenant"</span>)
+        <span class="tok-kw">if</span> <span class="tok-kw">not</span> tenant_id:
+            <span class="tok-kw">return</span> self.<span class="tok-fn">_deny</span>(request, <span class="tok-str">"token carries no tenant"</span>)
+
+        request.state.principal = <span class="tok-fn">Principal</span>(
+            subject=claims[<span class="tok-str">"sub"</span>],
+            tenant_id=tenant_id,
+            scopes=<span class="tok-fn">frozenset</span>(claims.<span class="tok-fn">get</span>(<span class="tok-str">"scope"</span>, <span class="tok-str">""</span>).<span class="tok-fn">split</span>()),
+        )
+        <span class="tok-kw">return</span> <span class="tok-kw">await</span> <span class="tok-fn">call_next</span>(request)
+
+    <span class="tok-kw">def</span> <span class="tok-fn">_deny</span>(self, request: Request, reason: <span class="tok-cls">str</span>) -&gt; JSONResponse:
+        request_id = <span class="tok-fn">getattr</span>(request.state, <span class="tok-str">"request_id"</span>, <span class="tok-str">"-"</span>)
+        <span class="tok-com"># Log `reason` with request_id here. Do NOT return it: token</span>
+        <span class="tok-com"># diagnostics tell an attacker which check they still have to pass.</span>
+        <span class="tok-kw">return</span> <span class="tok-fn">JSONResponse</span>(
+            status_code=<span class="tok-num">401</span>,
+            content={<span class="tok-str">"error"</span>: <span class="tok-str">"unauthenticated"</span>, <span class="tok-str">"request_id"</span>: request_id},
+            headers={<span class="tok-str">"www-authenticate"</span>: <span class="tok-str">"Bearer"</span>},
+        )
+
+
+app = <span class="tok-fn">FastAPI</span>()
+<span class="tok-com"># Starlette runs the LAST-added middleware OUTERMOST, so adding</span>
+<span class="tok-com"># correlation second means every auth denial already has a request ID.</span>
+app.<span class="tok-fn">add_middleware</span>(AuthenticationMiddleware)
+app.<span class="tok-fn">add_middleware</span>(CorrelationIdMiddleware)
+
+
+<span class="tok-dec">@app.get</span>(<span class="tok-str">"/whoami"</span>)
+<span class="tok-kw">async</span> <span class="tok-kw">def</span> <span class="tok-fn">whoami</span>(request: Request) -&gt; <span class="tok-cls">dict</span>:
+    principal = request.state.principal
+    <span class="tok-kw">return</span> {
+        <span class="tok-str">"subject"</span>: principal.subject,
+        <span class="tok-str">"tenant"</span>: principal.tenant_id,
+        <span class="tok-str">"request_id"</span>: request.state.request_id,
+    }</code></pre>
+</div>
+<h4>Example B — agent middleware</h4>
+<p><strong>Runnable after installing and configuring dependencies.</strong> Needs <code>pip install langchain langgraph</code> and a configured model provider. This uses the LangChain agent-middleware API — <code>create_agent</code> with a <code>middleware</code> list, the <code>@wrap_model_call</code> and <code>@wrap_tool_call</code> hooks, and the built-in human-in-the-loop and model-fallback middleware. Middleware APIs in this ecosystem move; check the current documentation linked in the <a href="#middleware-references">References</a> before relying on exact signatures.</p>
+<div class="code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> agent_middleware.py</span><button class="copy-btn">Copy</button></div>
+<pre><code><span class="tok-kw">import</span> logging
+
+<span class="tok-kw">from</span> langchain.agents <span class="tok-kw">import</span> create_agent
+<span class="tok-kw">from</span> langchain.agents.middleware <span class="tok-kw">import</span> (
+    HumanInTheLoopMiddleware,
+    ModelFallbackMiddleware,
+    wrap_model_call,
+    wrap_tool_call,
+)
+
+log = logging.<span class="tok-fn">getLogger</span>(<span class="tok-str">"agent"</span>)
+
+<span class="tok-com"># Role -&gt; the tools that role may even SEE. This is a usability and cost</span>
+<span class="tok-com"># control, not the security boundary: the tool server re-checks (Example C).</span>
+TOOLS_BY_ROLE = {
+    <span class="tok-str">"support_read_only"</span>: {<span class="tok-str">"lookup_order"</span>, <span class="tok-str">"search_policy"</span>},
+    <span class="tok-str">"support_agent"</span>: {<span class="tok-str">"lookup_order"</span>, <span class="tok-str">"search_policy"</span>, <span class="tok-str">"issue_refund"</span>},
+}
+
+
+<span class="tok-dec">@wrap_model_call</span>
+<span class="tok-kw">def</span> <span class="tok-fn">allowlist_tools</span>(request, handler):
+    <span class="tok-str">"""Show the model only the tools this user's role permits."""</span>
+    role = (request.runtime.context <span class="tok-kw">or</span> {}).<span class="tok-fn">get</span>(<span class="tok-str">"role"</span>, <span class="tok-str">"support_read_only"</span>)
+    permitted = TOOLS_BY_ROLE.<span class="tok-fn">get</span>(role, <span class="tok-fn">set</span>())
+    allowed = [t <span class="tok-kw">for</span> t <span class="tok-kw">in</span> request.tools <span class="tok-kw">if</span> t.name <span class="tok-kw">in</span> permitted]
+    <span class="tok-kw">return</span> <span class="tok-fn">handler</span>(request.<span class="tok-fn">override</span>(tools=allowed))
+
+
+<span class="tok-dec">@wrap_model_call</span>
+<span class="tok-kw">def</span> <span class="tok-fn">log_model_calls</span>(request, handler):
+    <span class="tok-str">"""Record shape and outcome, not content -- traces are a data store too."""</span>
+    log.<span class="tok-fn">info</span>(<span class="tok-str">"model call: %d message(s), %d tool(s) offered"</span>,
+             <span class="tok-fn">len</span>(request.messages), <span class="tok-fn">len</span>(request.tools))
+    response = <span class="tok-fn">handler</span>(request)
+    log.<span class="tok-fn">info</span>(<span class="tok-str">"model returned %d tool call(s)"</span>,
+             <span class="tok-fn">len</span>(<span class="tok-fn">getattr</span>(response.result[<span class="tok-num">0</span>], <span class="tok-str">"tool_calls"</span>, []) <span class="tok-kw">or</span> []))
+    <span class="tok-kw">return</span> response
+
+
+<span class="tok-dec">@wrap_tool_call</span>
+<span class="tok-kw">def</span> <span class="tok-fn">retry_transient_tool_errors</span>(request, handler, *, max_attempts: <span class="tok-cls">int</span> = <span class="tok-num">3</span>):
+    <span class="tok-str">"""Retry ONLY transient failures. A rejected permission is not transient,</span>
+<span class="tok-str">    and a write without an idempotency key must never be retried here."""</span>
+    <span class="tok-kw">for</span> attempt <span class="tok-kw">in</span> <span class="tok-fn">range</span>(max_attempts):
+        <span class="tok-kw">try</span>:
+            <span class="tok-kw">return</span> <span class="tok-fn">handler</span>(request)
+        <span class="tok-kw">except</span> (TimeoutError, ConnectionError):
+            <span class="tok-kw">if</span> attempt == max_attempts - <span class="tok-num">1</span>:
+                <span class="tok-kw">raise</span>
+            log.<span class="tok-fn">warning</span>(<span class="tok-str">"transient tool failure, retrying (%d)"</span>, attempt + <span class="tok-num">1</span>)
+
+
+agent = <span class="tok-fn">create_agent</span>(
+    model=<span class="tok-str">"anthropic:claude-sonnet-5"</span>,
+    tools=[],                       <span class="tok-com"># your @tool functions go here</span>
+    middleware=[
+        log_model_calls,
+        allowlist_tools,
+        retry_transient_tool_errors,
+        <span class="tok-com"># Human approval is a CONDITION on a tool, not a prompt instruction:</span>
+        <span class="tok-com"># the run pauses and waits for a decision before the tool executes.</span>
+        <span class="tok-fn">HumanInTheLoopMiddleware</span>(
+            interrupt_on={<span class="tok-str">"issue_refund"</span>: {<span class="tok-str">"allowed_decisions"</span>: [<span class="tok-str">"approve"</span>, <span class="tok-str">"edit"</span>, <span class="tok-str">"reject"</span>]}}
+        ),
+        <span class="tok-fn">ModelFallbackMiddleware</span>(<span class="tok-str">"anthropic:claude-haiku-4-5-20251001"</span>),
+    ],
+)</code></pre>
+</div>
+<h4>Example C — the tool boundary</h4>
+<p><strong>Concept excerpt.</strong> It is valid Python and shows the complete check order, but <code>OrderStore</code>, <code>AuditLog</code> and <code>IdempotencyStore</code> are illustrative interfaces rather than a library you can install. This is the layer that must hold even if the agent layer is bypassed entirely.</p>
+<div class="code-block">
+<div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span> tool_boundary.py</span><button class="copy-btn">Copy</button></div>
+<pre><code><span class="tok-kw">from</span> dataclasses <span class="tok-kw">import</span> dataclass
+<span class="tok-kw">from</span> decimal <span class="tok-kw">import</span> Decimal
+
+<span class="tok-kw">from</span> pydantic <span class="tok-kw">import</span> BaseModel, Field, ValidationError
+
+
+<span class="tok-kw">class</span> <span class="tok-cls">RefundInput</span>(BaseModel):
+    <span class="tok-str">"""The schema is the contract. Anything outside it is rejected before</span>
+<span class="tok-str">    any business logic runs -- the model can propose anything at all."""</span>
+    order_id: <span class="tok-cls">str</span> = <span class="tok-fn">Field</span>(min_length=<span class="tok-num">6</span>, max_length=<span class="tok-num">32</span>, pattern=<span class="tok-str">r"^ord_[A-Za-z0-9]+$"</span>)
+    amount: Decimal = <span class="tok-fn">Field</span>(gt=<span class="tok-num">0</span>, le=<span class="tok-fn">Decimal</span>(<span class="tok-str">"10000.00"</span>))
+    reason: <span class="tok-cls">str</span> = <span class="tok-fn">Field</span>(min_length=<span class="tok-num">3</span>, max_length=<span class="tok-num">400</span>)
+
+
+<span class="tok-dec">@dataclass</span>(frozen=<span class="tok-kw">True</span>)
+<span class="tok-kw">class</span> <span class="tok-cls">ToolCallContext</span>:
+    tenant_id: <span class="tok-cls">str</span>
+    subject: <span class="tok-cls">str</span>
+    permissions: <span class="tok-cls">frozenset</span>
+    request_id: <span class="tok-cls">str</span>
+    idempotency_key: <span class="tok-cls">str</span>
+
+
+<span class="tok-kw">class</span> <span class="tok-cls">ToolDenied</span>(<span class="tok-cls">Exception</span>):
+    <span class="tok-kw">pass</span>
+
+
+<span class="tok-kw">def</span> <span class="tok-fn">issue_refund</span>(raw_args: <span class="tok-cls">dict</span>, ctx: ToolCallContext, *,
+                 orders, idempotency, audit) -&gt; <span class="tok-cls">dict</span>:
+    <span class="tok-str">"""Refund an order. Every guard below runs BEFORE any state changes."""</span>
+
+    <span class="tok-com"># 1. Permission. Checked here as well as in the agent runtime, because</span>
+    <span class="tok-com">#    the runtime allowlist is not a security boundary.</span>
+    <span class="tok-kw">if</span> <span class="tok-str">"orders:refund"</span> <span class="tok-kw">not</span> <span class="tok-kw">in</span> ctx.permissions:
+        <span class="tok-kw">raise</span> <span class="tok-fn">ToolDenied</span>(<span class="tok-str">"caller may not issue refunds"</span>)
+
+    <span class="tok-com"># 2. Input schema. Reject malformed proposals with a message the agent</span>
+    <span class="tok-com">#    can act on, without leaking internals.</span>
+    <span class="tok-kw">try</span>:
+        args = RefundInput.<span class="tok-fn">model_validate</span>(raw_args)
+    <span class="tok-kw">except</span> ValidationError <span class="tok-kw">as</span> err:
+        <span class="tok-kw">raise</span> <span class="tok-fn">ToolDenied</span>(<span class="tok-str">f"invalid arguments: {err.error_count()} problem(s)"</span>)
+
+    <span class="tok-com"># 3. Tenant. The order is loaded WITH the tenant, so a valid order id</span>
+    <span class="tok-com">#    belonging to another customer simply does not resolve.</span>
+    order = orders.<span class="tok-fn">get</span>(tenant_id=ctx.tenant_id, order_id=args.order_id)
+    <span class="tok-kw">if</span> order <span class="tok-kw">is</span> <span class="tok-kw">None</span>:
+        <span class="tok-kw">raise</span> <span class="tok-fn">ToolDenied</span>(<span class="tok-str">"order not found for this tenant"</span>)
+    <span class="tok-kw">if</span> args.amount &gt; order.refundable_amount:
+        <span class="tok-kw">raise</span> <span class="tok-fn">ToolDenied</span>(<span class="tok-str">"amount exceeds the refundable balance"</span>)
+
+    <span class="tok-com"># 4. Idempotency. A retry -- by the agent, the framework or a human --</span>
+    <span class="tok-com">#    returns the FIRST result instead of paying twice.</span>
+    cached = idempotency.<span class="tok-fn">lookup</span>(ctx.tenant_id, ctx.idempotency_key)
+    <span class="tok-kw">if</span> cached <span class="tok-kw">is</span> <span class="tok-kw">not</span> <span class="tok-kw">None</span>:
+        <span class="tok-kw">return</span> cached
+
+    result = orders.<span class="tok-fn">refund</span>(
+        tenant_id=ctx.tenant_id,
+        order_id=args.order_id,
+        amount=args.amount,
+        idempotency_key=ctx.idempotency_key,
+    )
+    idempotency.<span class="tok-fn">store</span>(ctx.tenant_id, ctx.idempotency_key, result)
+
+    <span class="tok-com"># 5. Audit metadata. Immutable, and enough to answer "who caused this?"</span>
+    <span class="tok-com">#    long after the conversation has been deleted.</span>
+    audit.<span class="tok-fn">record</span>(
+        action=<span class="tok-str">"issue_refund"</span>,
+        tenant_id=ctx.tenant_id,
+        subject=ctx.subject,
+        request_id=ctx.request_id,
+        idempotency_key=ctx.idempotency_key,
+        outcome=result[<span class="tok-str">"status"</span>],
+        <span class="tok-com"># The reason is free text proposed by a model. Store it as evidence,</span>
+        <span class="tok-com"># never as an authorization input.</span>
+        stated_reason=args.reason,
+    )
+    <span class="tok-kw">return</span> result</code></pre>
+</div>
+<h3>11.8 · Failure scenarios</h3>
+<p>Interviewers rarely ask "what is a JWT". They describe one of these and watch how you reason. For each: how you notice, how you stop it, how you recover, and the sentence that separates a strong answer.</p>
+<div class="table-wrap"><table>
+<thead><tr><th>Scenario</th><th>Detection</th><th>Prevention</th><th>Recovery</th><th>What the interviewer wants to hear</th></tr></thead>
+<tbody>
+<tr><td><strong>Expired token during a long-running task</strong></td><td>401s appear mid-run; failures cluster at a fixed offset after task start</td><td>Do not hold a user access token for the life of a task. Use a refresh flow, or a service identity plus a recorded user assertion</td><td>Checkpoint before the call, re-acquire credentials, resume from the checkpoint rather than restarting</td><td>That agent task lifetimes and token lifetimes are unrelated, and the design must not assume they match</td></tr>
+<tr><td><strong>JWT has the wrong audience</strong></td><td>Validation rejects with an audience mismatch — or, if unchecked, nothing at all is detected</td><td>Always validate <code>aud</code> against this service's own identifier; never accept a token minted for another service</td><td>Reject, alert, and audit which caller sent it — it may be a misconfiguration or a probe</td><td>That a valid signature is not authorization, and that audience is what stops token replay across services</td></tr>
+<tr><td><strong>Key rotation causes signature failures</strong></td><td>A sudden spike of signature errors, all with the same <code>kid</code></td><td>Select keys by <code>kid</code> from a cached JWKS, refresh on unknown <code>kid</code>, and overlap old and new keys during rotation</td><td>Force a JWKS refresh; keep the previous key valid until the longest possible token has expired</td><td>That rotation is routine and the client must handle it without a deploy</td></tr>
+<tr><td><strong>User token is forwarded to an untrusted tool</strong></td><td>Egress inspection, credential scanning, or an audit showing the user's token used from an unexpected caller</td><td>Token exchange at the boundary: mint a narrow, short-lived, audience-restricted credential per downstream. Never pass the inbound token through</td><td>Revoke the exposed token, rotate anything reachable with it, and audit everything it touched</td><td>The words <em>confused deputy</em>, and least-privilege token exchange as the answer</td></tr>
+<tr><td><strong>MCP server exposes a dangerous tool</strong></td><td>Capability review at registration; alerting on tools that are broad, newly added or rarely used</td><td>Approve servers and tools explicitly; prefer narrow read-only operations; no "run arbitrary query" tools; pin server versions</td><td>Remove the tool from the allowlist, revoke its credential, audit every call it served</td><td>That the host approves capabilities, and that tool surface is reviewed like any other privileged interface</td></tr>
+<tr><td><strong>Prompt injection attempts to bypass tool policy</strong></td><td>Guardrails flagging instruction-like content in retrieved data; tool calls that do not match the user's request</td><td>Treat all retrieved and tool-returned content as untrusted data. Enforce permissions outside the model. Keep the tool surface narrow</td><td>Halt the run, revoke the session, review what was reachable, and audit whether an action succeeded</td><td>That the defence is architectural, not a better system prompt — the model is not a security boundary</td></tr>
+<tr><td><strong>Remote A2A agent exaggerates its capabilities</strong></td><td>Delegated tasks return low-quality or malformed artifacts; declared capability does not match observed behaviour</td><td>Treat a capability declaration as a claim. Validate returned artifacts against your own schema, and evaluate remote agents before trusting them</td><td>Fall back to a local path or another provider, and downgrade the agent's trust rating</td><td>That a self-declared capability is advertising, and cross-organisation trust needs verification</td></tr>
+<tr><td><strong>Retry causes a duplicate payment or refund</strong></td><td>Two ledger entries with the same order and amount seconds apart; reconciliation mismatch</td><td>Idempotency key on every side-effecting call, deduplicated server-side, plus a database uniqueness constraint</td><td>Reverse the duplicate, and make the key survive process restarts so the fix is not defeated by a redeploy</td><td>That idempotency belongs at the tool and database, not in the agent's retry logic</td></tr>
+<tr><td><strong>Two tenants share a cache key</strong></td><td>A customer reports seeing unfamiliar data; cache hit rate implausibly high across tenants</td><td>Tenant, user entitlements and model version in every cache key. Partition caches per tenant where the data is sensitive</td><td>Purge the cache, identify affected requests from traces, and treat it as a disclosure incident</td><td>That caching is a tenancy boundary, and semantic caches are the easiest place to get it wrong</td></tr>
+<tr><td><strong>Trace logs contain prompts or personal data</strong></td><td>A scan of the observability store; a data-inventory review that finds a system nobody classified</td><td>Redact at the emitting layer. Log hashes, shapes and IDs rather than content; apply retention and access control to traces</td><td>Purge, shorten retention, restrict access, and report if the classification requires it</td><td>That observability is a data store with the same obligations as a database</td></tr>
+<tr><td><strong>Tool times out after completing the side effect</strong></td><td>Client timeout with no result, but the downstream system shows the action succeeded</td><td>Idempotency key issued before the call, plus a status-check operation so the outcome can be queried</td><td>Query by idempotency key before retrying; reconcile rather than repeating blindly</td><td>That a timeout is an <em>unknown</em> outcome, not a failure, and must never be treated as "it did not happen"</td></tr>
+<tr><td><strong>Agent keeps calling a failing dependency</strong></td><td>Error rate and latency climbing for one dependency while token spend keeps rising</td><td>Circuit breaker per dependency, bounded retries with jitter, and a per-run tool-call budget</td><td>Open the breaker, serve a degraded path, and close it gradually with probe traffic</td><td>That bounded retries alone are not enough — an agent loop can re-decide to call the same dead service forever</td></tr>
+</tbody>
+</table></div>
+<h3 id="middleware-references">11.9 · References</h3>
+<p>Primary sources only. Paraphrased throughout; nothing above is quoted at length. Where this section and a current specification disagree, the specification wins.</p>
+<ul>
+<li><strong>Model Context Protocol</strong> — the official specification and architecture documentation at <code>modelcontextprotocol.io</code>, for host/client/server roles, the three primitives, transports and the authorization guidance.</li>
+<li><strong>Agent2Agent (A2A)</strong> — the official A2A v1 specification and conceptual documentation, for discovery, capability declaration, task delegation, and messages and artifacts.</li>
+<li><strong>RFC 7519 — JSON Web Token (JWT)</strong>, for the claims format and the meaning of <code>iss</code>, <code>aud</code>, <code>sub</code>, <code>exp</code> and <code>nbf</code>.</li>
+<li><strong>RFC 8725 — JSON Web Token Best Current Practices</strong>, for the validation rules: explicit algorithm allowlists, audience and issuer checks, and key selection.</li>
+<li><strong>RFC 9700 — Best Current Practice for OAuth 2.0 Security</strong>, for token handling, audience restriction and the reasoning behind not forwarding tokens across trust boundaries.</li>
+<li><strong>OpenID Connect Core</strong>, for the ID token, its audience, and the separation between identity and API access.</li>
+<li><strong>LangChain / LangGraph agent middleware documentation</strong>, for the current <code>create_agent</code> middleware hooks and built-in middleware used in Example B.</li>
+</ul>
+<div class="callout key" id="middleware-interview-link"><div class="c-ico">Q</div><div class="c-body"><div class="c-title"><a href="../interview-prep/03-agents-mcp.html#middleware-identity-interview">Practise this section — 10 interview questions</a></div>
+<p>Middleware placement, authentication versus authorization, JWT validation, confused-deputy avoidance, MCP versus A2A, securing a tool call, multi-tenant isolation and safe observability — with model answers, trade-offs and likely follow-ups.</p></div></div>
+</section>
 <!-- ============ 10. INTERVIEW ============ -->
-<div class="callout key" id="mcp-interview-link"><div class="c-ico">Q</div><div class="c-body"><div class="c-title"><a href="../interview-labs/mcp-interview.html">Dedicated MCP interview lab</a></div><p>Practise architecture, lifecycle, tools vs resources, transports, security, and server design.</p></div></div><h2 id="interview">11 · Interview preparation</h2>
+<div class="callout key" id="mcp-interview-link"><div class="c-ico">Q</div><div class="c-body"><div class="c-title"><a href="../interview-labs/mcp-interview.html">Dedicated MCP interview lab</a></div><p>Practise architecture, lifecycle, tools vs resources, transports, security, and server design.</p></div></div><h2 id="interview">12 · Interview preparation</h2>
 <details class="collapse"><summary><span class="pill green">Beginner</span>  What is MCP and what problem does it solve? <span class="chev">›</span></summary>
 <div class="collapse-body"><p>An open standard for how applications expose context and capabilities (tools, resources, prompts) to LLMs over a common JSON-RPC protocol. It replaces bespoke, per-app-per-tool integrations (M×N) with write-once servers any compliant client can use (M+N) — the "USB-C of AI tooling."</p></div></details>
 <details class="collapse"><summary><span class="pill green">Beginner</span>  Name MCP's three primitives. <span class="chev">›</span></summary>
@@ -437,7 +954,7 @@ ALLOWED = {<span class="tok-str">"app-logs"</span>, <span class="tok-str">"audit
 <details class="collapse"><summary><span class="pill purple">Staff · design</span>  Design an enterprise MCP gateway exposing 30 internal systems to AI apps. <span class="chev">›</span></summary>
 <div class="collapse-body"><p>A governed catalog of MCP servers, one per system, behind a central gateway providing: <strong>auth</strong> (SSO/OAuth, per-app and per-user identity propagated to servers), <strong>authorization</strong> (least-privilege scopes; the model only sees tools the caller may use), <strong>safety</strong> (input validation, output redaction/PII, prompt-injection defenses on returned content, human-in-the-loop for consequential tools), <strong>observability</strong> (trace every host↔server call, per-tool cost/latency, full audit log), <strong>schema governance</strong> (versioned tool schemas, deprecation policy, contract tests so client upgrades don't break), and <strong>reliability</strong> (rate limits, timeouts, circuit breakers per backend). Share business logic with existing REST services to avoid drift. The deliverable is reusable, auditable capability infrastructure — the integration spine of the Enterprise GenAI Platform (Module 15).</p></div></details>
 <!-- ============ 11. QUIZ ============ -->
-<h2 id="quiz">12 · Knowledge check</h2>
+<h2 id="quiz">13 · Knowledge check</h2>
 <div class="quiz">
 <div class="q">1 · What is the core value proposition of MCP?</div>
 <label class="opt">It makes models run faster</label>
@@ -471,7 +988,7 @@ ALLOWED = {<span class="tok-str">"app-logs"</span>, <span class="tok-str">"audit
 <div class="explain">Least privilege: constrained read-only operations, an allow-list of indices, validated args, and capped result sizes. A generic "run anything" tool is a security and cost hazard.</div>
 </div>
 <!-- ============ 12. ACTIVE RECALL ============ -->
-<h2 id="recall">13 · Active recall</h2>
+<h2 id="recall">14 · Active recall</h2>
 <p>Answer first, then reveal. Re-test tomorrow and in a week.</p>
 <details class="recall"><summary><span class="q-ico">Q</span> What are MCP's three primitives and who controls each? <span class="chev">›</span></summary><div class="a">Tools (model-controlled actions), Resources (app-controlled read-only data), Prompts (user-controlled templates).</div></details>
 <details class="recall"><summary><span class="q-ico">Q</span> Explain the M×N → M+N argument. <span class="chev">›</span></summary><div class="a">Without a standard, M apps × N tools need up to M×N bespoke integrations. With MCP, each app implements one client (M) and each tool one server (N) → M+N total. Reusable capability infrastructure.</div></details>
@@ -479,12 +996,12 @@ ALLOWED = {<span class="tok-str">"app-logs"</span>, <span class="tok-str">"audit
 <details class="recall"><summary><span class="q-ico">Q</span> List four safety practices for an ES MCP server. <span class="chev">›</span></summary><div class="a">Read-only tools only, index allow-list, bounded result size, server-side input validation; plus auth on HTTP, treat returned content as untrusted, audit logging. (Any four.)</div></details>
 <details class="recall"><summary><span class="q-ico">Q</span> Why share business logic between REST and MCP surfaces? <span class="chev">›</span></summary><div class="a">To avoid duplication and drift — one implementation behind two interfaces (humans via REST, agents via MCP) stays correct and maintainable.</div></details>
 <!-- ============ 13. EXERCISES ============ -->
-<h2 id="exercises">14 · Exercises</h2>
+<h2 id="exercises">15 · Exercises</h2>
 <div class="callout tip"><div class="c-ico">🟢</div><div class="c-body"><div class="c-title">Easy</div><p>Build the minimal FastMCP server with <code>add</code> and <code>greet</code> tools. Run <code>mcp dev server_minimal.py</code> and call both tools from the Inspector UI. Confirm the docstrings appear as descriptions.</p></div></div>
 <div class="callout warn"><div class="c-ico">🟡</div><div class="c-body"><div class="c-title">Medium</div><p>Extend the full server with a resource and a prompt. Write the stdio client from §6, list tools/resources/prompts, call a tool, and read a resource. Then register the server with Claude Desktop (or drive it via the local Ollama host) and use it from a chat.</p></div></div>
 <div class="callout danger"><div class="c-ico">🔴</div><div class="c-body"><div class="c-title">Hard</div><p>Build the ElasticSearch MCP server against a local ES (docker). Implement <code>list_indices</code>, <code>get_mapping</code>, <code>search_index</code> with an allow-list and bounded size. Drive it with a local Ollama agent to answer "what errors happened in app-logs in the last hour?" Add audit logging of every tool call and a test that a disallowed index is rejected.</p></div></div>
 <!-- ============ 14. MINI PROJECT ============ -->
-<h2 id="mini-project">15 · Mini project — "Ops Assistant MCP"</h2>
+<h2 id="mini-project">16 · Mini project — "Ops Assistant MCP"</h2>
 <div class="card">
 <p><strong>Goal:</strong> An MCP server that gives an LLM safe, read-only access to investigate a system — the direct precursor to the ElasticSearch MCP capstone.</p>
 <h4>Requirements</h4>
@@ -499,7 +1016,7 @@ ALLOWED = {<span class="tok-str">"app-logs"</span>, <span class="tok-str">"audit
 <ul style="margin-bottom:0"><li>Add HTTP transport + a simple API key so a remote agent can use it.</li><li>Add a <code>recent_errors(index, minutes)</code> convenience tool with safe defaults.</li></ul>
 </div>
 <!-- ============ 15. REAL PROJECT CONNECTION ============ -->
-<h2 id="real-project">16 · Real project connection</h2>
+<h2 id="real-project">17 · Real project connection</h2>
 <div class="table-wrap"><table>
 <thead><tr><th>Project</th><th>How MCP applies</th></tr></thead>
 <tbody>
@@ -525,7 +1042,7 @@ ALLOWED = {<span class="tok-str">"app-logs"</span>, <span class="tok-str">"audit
 </div>
 </dialog>
 
-<div class="page-nav">
+<div class="page-nav" data-page-nav>
 <a href="08_agents.html"><div class="dir">← Previous</div><div class="ttl">08 · Agentic AI</div></a>
 <a class="next" href="10_langchain.html"><div class="dir">Next →</div><div class="ttl">10 · LangChain</div></a>
 </div>

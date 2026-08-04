@@ -53,8 +53,15 @@
   .loop-fig .muted { color:var(--text-muted); }
   .pill.anthropic { color:#fff; background:linear-gradient(135deg,var(--accent),#a68af5); border-color:transparent; }
 </style>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="assets/curriculum.js?v=20260804c"></script>
+<script defer src="assets/page-nav.js?v=20260804c"></script>
 </head>
-<body data-page="claude-agent">
+<body data-curriculum-id="claude-agent" data-page="claude-agent">
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
@@ -396,7 +403,7 @@ print(next(b.text for b in resp.content if b.type == "text"))
           <li><strong>Give a clear goal up front</strong> — well-specified tasks in the first turn let Claude work more autonomously and efficiently than dribbling context across many turns.</li>
         </ul>
 
-        <div class="page-nav">
+        <div class="page-nav" data-page-nav>
           <a href="modules/08_agents.html"><div class="dir">← Concept</div><div class="ttl">08 · Agentic AI</div></a>
           <a class="next" href="langgraph.html"><div class="dir">Orchestrate it →</div><div class="ttl">LangGraph &amp; its components</div></a>
         </div>

@@ -47,8 +47,15 @@
 <link href="../assets/office-theme.css?v=20260801a" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260801a" rel="stylesheet"/>
 <link href="../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="../assets/curriculum.js?v=20260804c"></script>
+<script defer src="../assets/page-nav.js?v=20260804c"></script>
 </head>
-<body data-page="01">
+<body data-curriculum-id="llm-foundations" data-page="01">
 <div class="app">
 <aside class="sidebar">
 <div class="brand">
@@ -477,7 +484,7 @@ resp = local.chat.completions.<span class="tok-fn">create</span>(
 <details class="collapse"><summary><span class="pill blue">Intermediate</span>  Why is generating long outputs slow and expensive? <span class="chev">›</span></summary>
 <div class="collapse-body"><p>Generation is autoregressive. After a full-prompt prefill, ordinary KV-cached decoding performs roughly one model step per output token, passing the newly sampled token ID directly to the model while reusing cached attention keys and values from earlier positions. Output work still grows with generated length, and the KV cache consumes memory that grows with the active sequence.</p></div></details>
 <details class="collapse"><summary><span class="pill amber">Senior</span>  A model gives confidently wrong answers about your internal docs. Diagnose and fix. <span class="chev">›</span></summary>
-<div class="collapse-body"><p>The model has no knowledge of private data — it's hallucinating plausible text. Fix by <strong>grounding</strong>: retrieve relevant internal documents and inject them into context (RAG, Modules 6–7), instruct the model to answer only from provided context and cite sources, and add an evaluation harness to measure faithfulness. Lower temperature and add a "say 'I don't know'" instruction to reduce fabrication.</p></div></details>
+<div class="collapse-body"><p>The model has no knowledge of private data — it's hallucinating plausible text. Fix by <strong>grounding</strong>: retrieve relevant internal documents and inject them into context (<a href="../rag-deep-dive.html">RAG, End-to-End</a>), instruct the model to answer only from provided context and cite sources, and add an evaluation harness to measure faithfulness. Lower temperature and add a "say 'I don't know'" instruction to reduce fabrication.</p></div></details>
 <details class="collapse"><summary><span class="pill amber">Senior</span>  How do you make LLM features testable in CI given non-determinism? <span class="chev">›</span></summary>
 <div class="collapse-body"><p>Pin temperature to 0; assert on <em>properties</em> not exact strings (schema validity, presence of required fields, no PII, factuality against references); use an LLM-as-judge or rubric eval for open-ended outputs; snapshot-test prompts and version them; run a golden-dataset eval on every prompt change to catch regressions.</p></div></details>
 <details class="collapse"><summary><span class="pill purple">Staff · design</span>  Design a multi-tenant LLM gateway for an enterprise. <span class="chev">›</span></summary>
@@ -612,7 +619,7 @@ resp = local.chat.completions.<span class="tok-fn">create</span>(
 </div>
 </dialog>
 
-<div class="page-nav">
+<div class="page-nav" data-page-nav>
 <a href="../index.html"><div class="dir">← Back</div><div class="ttl">Learning Hub Overview</div></a>
 <a class="next" href="02_transformers.html"><div class="dir">Next →</div><div class="ttl">02 · Transformers Deep Dive</div></a>
 </div>

@@ -48,8 +48,15 @@
 <style>
   .nav .sec-num { font-family: var(--font-mono); }
 </style>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="assets/curriculum.js?v=20260804c"></script>
+<script defer src="assets/page-nav.js?v=20260804c"></script>
 </head>
-<body data-page="hermes">
+<body data-curriculum-id="hermes" data-page="hermes">
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
@@ -272,7 +279,7 @@ print(messages[-1].content if messages[-1].get("role") == "tool" else msg.conten
           <li><strong>Trace it</strong> — point <a href="langfuse.html#openai-wrapper">Langfuse</a> at the OpenAI-compatible calls to see latency, tokens and tool usage, just like a hosted model.</li>
         </ul>
 
-        <div class="page-nav">
+        <div class="page-nav" data-page-nav>
           <a href="modules/03_local_llms.html"><div class="dir">← Foundations</div><div class="ttl">03 · Local LLMs &amp; Ollama</div></a>
           <a class="next" href="claude-agent.html"><div class="dir">Use it as a brain →</div><div class="ttl">How a Claude Agent Works</div></a>
         </div>
