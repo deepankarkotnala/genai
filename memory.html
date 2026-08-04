@@ -50,8 +50,15 @@
   .mem-cols { display:grid; gap:16px; grid-template-columns:1fr 1fr; margin:20px 0; }
   @media (max-width:760px){ .mem-cols{ grid-template-columns:1fr; } }
 </style>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="assets/curriculum.js?v=20260804c"></script>
+<script defer src="assets/page-nav.js?v=20260804c"></script>
 </head>
-<body data-page="memory">
+<body data-curriculum-id="memory" data-page="memory">
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
@@ -501,7 +508,7 @@ memories = memory_agent(transcript, memories)   # → curated, deduped, current<
           <li><strong>Make memory observable</strong> — log what was recalled and written (see <a href="langfuse.html">Langfuse →</a>) so you can debug "why did it forget / why did it recall that?".</li>
         </ul>
 
-        <div class="page-nav">
+        <div class="page-nav" data-page-nav>
           <a href="modules/01_foundations.html"><div class="dir">← Foundations</div><div class="ttl">01 · Foundations of LLMs</div></a>
           <a class="next" href="modules/08_agents.html"><div class="dir">Next →</div><div class="ttl">08 · Agentic AI</div></a>
         </div>
