@@ -895,124 +895,34 @@
 
 
 /* =========================================================================
-   8 · Motion
+   8 · Motion — MOVED OUT 2026-08-04
    -------------------------------------------------------------------------
-   Three kinds, deliberately limited:
-     entrance   content rises into place as it scrolls in (scroll-driven where
-                the browser supports it, a one-shot load animation otherwise)
-     press      every tappable surface acknowledges the touch — mobile has no
-                hover, so without this the UI feels dead
-     page       a short cross-fade between pages
-   All transform/opacity only, so they stay on the compositor.
+   This section used to hold the press feedback, the scroll-driven entrance,
+   the observer-reveal curve and a page transition, all scoped to <= 980px.
+   Every one of them now comes from `../assets/genai-motion.css`, which these
+   pages load last: genai-motion was itself ported from this section and then
+   widened to every width, so keeping a copy here bought nothing except a
+   second file with an opinion about the same properties. The motion tokens are
+   identical on both sides (.18s / .28s / .42s and the same two curves), so
+   nothing about how the section feels has changed.
+
+   Two things did have to go rather than move:
+
+     · the page transition here was gated on
+       `@supports not (view-transition-name: none)`, which is the wrong test —
+       it asks about SAME-document view transitions to decide whether the
+       browser lacks CROSS-document ones. styles.css documents this bug at
+       length; every browser with one and not the other answered wrong.
+     · it animated `translateY` on `.main`, the full page column. That is a
+       whole-texture resample per frame, and it is the jitter that was reported
+       on these pages. The portal path crossfades opacity only.
+
+   Section 9 below deliberately stays: it freezes ML-specific decorations
+   (`.prep-hero::before/::after`) that genai-motion has no selector for.
    ========================================================================= */
 @media (max-width: 980px) {
-
-  /* --- Press feedback --------------------------------------------------- */
-  .prep-topic-card,
-  .card.hover,
-  a.card,
-  .page-nav a,
-  .rm-link {
-    transition:
-      transform var(--ml-dur-fast) var(--ml-ease),
-      box-shadow var(--ml-dur) ease,
-      border-color var(--ml-dur) ease,
-      background var(--ml-dur) ease;
-  }
-  .prep-topic-card:active,
-  .card.hover:active,
-  a.card:active,
-  .page-nav a:active,
-  .rm-link:active {
-    transform: scale(.985);
-    border-color: color-mix(in srgb, var(--accent) 45%, var(--border));
-    background: color-mix(in srgb, var(--accent-soft) 30%, var(--surface));
-  }
-  .prep-topic-card:active > .prep-card-arrow {
-    transform: translateX(3px);
-    opacity: .85;
-  }
-  .nav a:active,
-  .toc-rail .toc-list a:active,
-  .office-ribbon a:active { background: var(--accent-soft); }
-
-  /* Hover effects are meaningless on touch and can stick after a tap. */
-  @media (hover: none) {
-    .prep-topic-card:hover,
-    .card.hover:hover,
-    a.card:hover { transform: none; }
-  }
-
-  /* --- Scroll-driven entrance ------------------------------------------ */
-  /* Preferred path: ties the animation to scroll position, so it runs for
-     every card at any scroll depth with no JS and no observer. */
-  @supports (animation-timeline: view()) {
-    .prep-topic-card,
-    .content > .grid > .card,
-    .content > .callout,
-    .prep-hero,
-    .content > .table-wrap,
-    .content > .code-block,
-    .content > .quiz,
-    .content > .diagram {
-      animation: ml-rise linear both;
-      animation-timeline: view();
-      animation-range: entry 2% cover 20%;
-    }
-    @keyframes ml-rise {
-      from { opacity: 0; transform: translateY(14px) scale(.995); }
-      to   { opacity: 1; transform: none; }
-    }
-  }
-
-  /* Fallback: a single staggered entrance for the first screenful. Applied
-     only where scroll-driven animation is unavailable, so the two never
-     double up. */
-  @supports not (animation-timeline: view()) {
-    .content > .eyebrow,
-    .content > h1,
-    .content > .lead,
-    .prep-hero,
-    .content > .callout:nth-of-type(1),
-    .content > .callout:nth-of-type(2) {
-      animation: ml-rise-once var(--ml-dur-slow) var(--ml-ease-out) both;
-    }
-    .content > .eyebrow            { animation-delay: .02s; }
-    .content > h1                  { animation-delay: .06s; }
-    .content > .lead               { animation-delay: .11s; }
-    .prep-hero                     { animation-delay: .16s; }
-    .content > .callout:nth-of-type(1) { animation-delay: .21s; }
-    .content > .callout:nth-of-type(2) { animation-delay: .26s; }
-    @keyframes ml-rise-once {
-      from { opacity: 0; transform: translateY(12px); }
-      to   { opacity: 1; transform: none; }
-    }
-  }
-
-  /* The existing observer-driven reveal keeps working; just make its curve
-     match everything else here. */
-  .soft-reveal,
-  [data-reveal] {
-    transition:
-      opacity var(--ml-dur-slow) ease,
-      transform var(--ml-dur-slow) var(--ml-ease-out);
-  }
-
-  /* --- Page transition -------------------------------------------------- */
-  @supports not (view-transition-name: none) {
-    .main { animation: ml-page-in var(--ml-dur-slow) var(--ml-ease-out) both; }
-    @keyframes ml-page-in {
-      from { opacity: 0; transform: translateY(6px); }
-      to   { opacity: 1; transform: none; }
-    }
-    html.is-leaving .main {
-      opacity: 0;
-      transform: translateY(-4px);
-      transition: opacity var(--ml-dur-fast) ease, transform var(--ml-dur-fast) ease;
-    }
-  }
-
-  /* Momentum scrolling without rubber-banding the whole document. */
+  /* Momentum scrolling without rubber-banding the whole document. Scroll
+     behaviour, not motion — which is why this one line stayed behind. */
   body { overscroll-behavior-y: none; }
 }
 

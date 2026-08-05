@@ -486,12 +486,11 @@
     });
   }
 
-  /* ---------- Smooth page transitions ----------
-     A subtle fade-out → navigate → fade-in between same-site pages. Where the
-     browser supports the View Transitions API we use a true crossfade; elsewhere
-     we fall back to fading the content out (CSS .is-leaving) before navigating,
-     and the CSS page-enter animation fades the next page in. Honors
-     prefers-reduced-motion and never interferes with normal browser behaviour. */
+  /* ---------- Navigation feedback ----------
+     There is no page transition any more (removed 2026-08-04; the reasoning is
+     in styles.css). A click navigates immediately. What remains below is the
+     slow-navigation loading ring and the link test that decides which clicks
+     count as a same-site navigation worth arming it for. */
   var REDUCED_MOTION = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   function isPlainLeftClick(e) {
@@ -516,33 +515,79 @@
     return url.href;
   }
 
-  function setupPageTransitions() {
-    if (REDUCED_MOTION) return;   // respect the user's preference — no transitions
+  /* ---------- The loading ring ----------
+     Ported from ../../assets/sitenav.js on 2026-08-04 so these pages behave
+     like the rest of the portal. Shown only when a navigation is actually slow:
+     the browser keeps painting the OLD document until the new one is ready, so
+     the wait belongs to the page being left, which is why it lives here rather
+     than in the arriving page's markup where it could only appear after the
+     wait was over.
 
-    // Any browser with the View Transitions API handles the transition via CSS
-    // (`@view-transition`), and the CSS gates the JS-fallback styling behind
-    // `@supports not (view-transition-name)`. So if VT is supported at all, the
-    // JS fade would either double up or have no styling to apply — skip it and
-    // keep the two paths perfectly aligned with the CSS.
-    var hasVT = (window.CSS && CSS.supports && CSS.supports("view-transition-name: none"));
-    if (hasVT) return;
+     GRACE is the whole design: on a warm cache a swap is tens of milliseconds,
+     and a spinner that appears and vanishes inside that window is itself the
+     flicker it is meant to remove. */
+  var GRACE = 220;
+  // A navigation the user abandons never fires pagehide, and the ring would
+  // spin on a page that is going nowhere. It gives up rather than lying.
+  var MAX_VISIBLE = 12000;
+  var loaderTimer = null;
+  var loaderGiveUp = null;
+  var loaderEl = null;
+
+  function buildLoader() {
+    if (loaderEl) return loaderEl;
+    loaderEl = document.createElement("div");
+    loaderEl.className = "page-loader";
+    loaderEl.setAttribute("role", "status");
+    loaderEl.setAttribute("aria-live", "polite");
+    loaderEl.innerHTML =
+      '<svg width="30" height="30" viewBox="0 0 40 40" aria-hidden="true">' +
+        '<circle class="pl-track" cx="20" cy="20" r="16" fill="none" stroke-width="3.5"/>' +
+        '<circle class="pl-arc" cx="20" cy="20" r="16" fill="none" stroke-width="3.5" stroke-linecap="round"/>' +
+      '</svg><span class="sr-only">Loading…</span>';
+    document.body.appendChild(loaderEl);
+    return loaderEl;
+  }
+
+  function armLoader() {
+    clearTimeout(loaderTimer);
+    loaderTimer = window.setTimeout(function () {
+      buildLoader();
+      // Same tick as the insert: the fade is a keyframe (styles.css), so it does
+      // not need the element to have rendered a frame first. A page slow enough
+      // to earn a spinner is a page whose frames may not be running.
+      document.documentElement.classList.add("is-loading");
+      loaderGiveUp = window.setTimeout(disarmLoader, MAX_VISIBLE);
+    }, GRACE);
+  }
+
+  function disarmLoader() {
+    clearTimeout(loaderTimer);
+    clearTimeout(loaderGiveUp);
+    document.documentElement.classList.remove("is-loading");
+  }
+
+  function setupPageTransitions() {
+    /* Page transitions were removed on 2026-08-04 (see styles.css). This function
+       keeps its name because init() calls it, and because what remains is still
+       navigation-adjacent: arming the loading ring.
+
+       No click is intercepted any more. The old code called preventDefault(),
+       added `.is-leaving`, waited for a fade and then set location.href — that
+       wait was pure latency in front of every navigation, on top of an animation
+       that read as jitter. Now the browser navigates on the click, immediately,
+       and the ring appears only if the new document takes longer than GRACE. */
+    window.addEventListener("pagehide", disarmLoader);
+    window.addEventListener("pageshow", function () {
+      // Restored from the back/forward cache: never leave the ring spinning, and
+      // clear the legacy leaving state in case a cached document still carries it.
+      disarmLoader();
+      document.documentElement.classList.remove("is-leaving");
+    });
 
     document.addEventListener("click", function (e) {
       var a = e.target.closest && e.target.closest("a[href]");
-      var dest = shouldIntercept(a, e);
-      if (!dest) return;
-      e.preventDefault();
-      // Fade the content out, then navigate; the next page's CSS page-enter
-      // animation fades it in — giving a smooth out→in between pages.
-      document.documentElement.classList.add("is-leaving");
-      window.setTimeout(function () { window.location.href = dest; }, 180);
-    });
-
-    // Safety net: if navigation is somehow cancelled, or the page is restored
-    // from the back/forward cache, clear the leaving state so it isn't stuck
-    // faded out.
-    window.addEventListener("pageshow", function () {
-      document.documentElement.classList.remove("is-leaving");
+      if (shouldIntercept(a, e)) armLoader();
     });
   }
 
