@@ -132,6 +132,14 @@
     0 1px 2px rgba(22, 27, 35, .05),
     0 8px 18px -8px rgba(22, 27, 35, .09),
     0 22px 46px -18px rgba(22, 27, 35, .15);
+  /* Resting shadow for callout cards. Bottom-weighted on purpose: the card
+     reads as a clean sheet lifted off the page, with the diffusion gathered
+     just under the bottom edge rather than ringing the whole box. Replaces the
+     coloured left accent bar the callouts used to carry. */
+  --shadow-card:
+    0 1px 1px rgba(22, 27, 35, .04),
+    0 6px 14px -6px rgba(22, 27, 35, .10),
+    0 16px 32px -16px rgba(22, 27, 35, .13);
 
   /* SIDEBAR GEOMETRY — one source of truth.
      `--sidebar-w` had been declared seven times across two files (four of them
@@ -234,6 +242,12 @@ html[data-theme="dark"] {
     0 1px 2px rgba(0, 0, 0, .26),
     0 8px 20px -8px rgba(0, 0, 0, .30),
     0 24px 50px -18px rgba(0, 0, 0, .40);
+  /* Dark-mode resting callout shadow — same bottom-weighted structure, higher
+     opacities so it still separates the card from a dark page. */
+  --shadow-card:
+    0 1px 1px rgba(0, 0, 0, .24),
+    0 6px 16px -6px rgba(0, 0, 0, .28),
+    0 18px 36px -16px rgba(0, 0, 0, .32);
 }
 
 html,
@@ -888,9 +902,11 @@ body.sidebar-resizing .sidebar-resizer::after {
   opacity: 0 !important;
 }
 
-.card:hover,
-.card.hover:hover,
-.page-nav a:hover,
+/* Cancels the glass layer's hover lift on the containers that are NOT clickable
+   — a quiz, a demo, a diagram, a readmap, a concept lab. Nothing here is an
+   affordance, so nothing here moves or blooms. The clickable surfaces
+   (.card, .module-card, .prep-topic-card, .page-nav a) are deliberately absent:
+   their hover is the single --card-hover-shadow rule in the CARDS section. */
 .quiz:hover,
 .demo:hover,
 .diagram:hover,
@@ -940,16 +956,16 @@ body.sidebar-resizing .sidebar-resizer::after {
 }
 .card p { font-size: 13px; line-height: 1.55; }
 
+/* Callouts are plain lifted cards: a hairline border on all four sides and a
+   bottom-weighted shadow. No coloured left accent bar — the variant now shows
+   up only in the icon tile, which keeps tip/note/warn/danger distinguishable
+   without a stripe cutting down the edge of the card. */
 .callout {
   gap: 11px;
   padding: 13px 15px;
-  border-left-width: 3px !important;
-  box-shadow: none !important;
+  border-left-width: 1px !important;
+  box-shadow: var(--shadow-card) !important;
 }
-.callout.key,.callout.tip { border-left-color: var(--excel) !important; }
-.callout.note { border-left-color: var(--blue) !important; }
-.callout.warn { border-left-color: var(--amber) !important; }
-.callout.danger { border-left-color: var(--red) !important; }
 .callout .c-ico {
   width: 24px;
   height: 24px;
@@ -961,6 +977,11 @@ body.sidebar-resizing .sidebar-resizer::after {
   background: var(--surface);
   font-size: 13px;
 }
+.callout.key .c-ico,
+.callout.tip .c-ico { border-color: var(--excel); background: var(--excel-soft); }
+.callout.note .c-ico { border-color: var(--blue); background: var(--blue-soft); }
+.callout.warn .c-ico { border-color: var(--amber); background: var(--amber-soft); }
+.callout.danger .c-ico { border-color: var(--red); background: var(--red-soft); }
 .callout .c-title { margin-bottom: 3px; color: var(--text); font-size: 13.5px; }
 .callout p { margin: 0; font-size: 13px; }
 
@@ -1052,10 +1073,15 @@ pre { padding: 14px 15px; font-size: 12.5px; line-height: 1.58; }
 code { border-radius: 4px; font-size: .88em; }
 .copy-btn { border-radius: 4px; box-shadow: none !important; }
 
-.page-nav { gap: 10px; }
-.page-nav a { padding: 13px 14px; box-shadow: none !important; }
-.page-nav .dir { font-size: 9.5px; }
-.page-nav .ttl { font-size: 12.5px; }
+.page-nav { gap: 11px; padding-top: 18px; }
+/* The nav cards carry the same resting shadow as every other card now, so the
+   footer row reads as cards rather than as outlined boxes. */
+.page-nav a { padding: 13px 14px; box-shadow: var(--shadow-card) !important; }
+/* Hover is not declared here. It comes from the single card-hover rule in the
+   CARDS section, which .page-nav a is now part of. */
+.page-nav .pn-progress, .page-nav .pn-notice { font-size: 11.5px; }
+.page-nav .dir { font-size: 9.5px; letter-spacing: .07em; }
+.page-nav .ttl { font-size: 12.5px; line-height: 1.36; }
 
 /* Diagrams keep their teaching animations, but use restrained Office colors. */
 .diagram {
@@ -1637,7 +1663,7 @@ body.focus-mode .content > h4 { max-width: none; }
   .concept-step-mobile strong { font-size: 13px; }
   .concept-step-mobile span { font-size: 11.5px; }
   .diagram { padding: 13px; }
-  .page-nav { grid-template-columns: 1fr; }
+  .page-nav a { flex-basis: 100%; }
   .page-nav > span:empty { display: none; }
 }
 
@@ -3164,8 +3190,12 @@ html[data-theme="dark"] .content dt { color: var(--prose-strong); }
    `.is-hovered` is a forced state used for visual checks; `:focus-visible`
    gives keyboard users the same affordance. `.is-soon` is the greyed-out
    "coming soon" card — not a target, so it keeps its flat resting state. */
+/* `.page-nav a` joined this list on 2026-08-04. It is a card the reader clicks,
+   so it belongs to the one hover gesture; before that it carried its own
+   `--shadow-md` bump, which was a second hover vocabulary for no reason.
+   `.card.hover` still carries the specificity, so the selector stays 0-4-0. */
 :is(.card, .card.hover, .module-card,
-    .prep-topic-card):not(.is-soon):is(:hover, .is-hovered, :focus-visible) {
+    .prep-topic-card, .page-nav a):not(.is-soon):is(:hover, .is-hovered, :focus-visible) {
   box-shadow: var(--card-hover-shadow) !important;
   transform: none !important;
   border-color: var(--border-strong) !important;
@@ -3197,4 +3227,201 @@ html[data-theme="dark"] .content dt { color: var(--prose-strong); }
   :is(.card, .card.hover, .module-card, .prep-topic-card):hover {
     box-shadow: var(--shadow-sm) !important;
   }
+  /* Nav cards rest on --shadow-card, so they return to that and not to
+     --shadow-sm; dropping them a step on tap would read as the card sinking. */
+  .page-nav a:hover { box-shadow: var(--shadow-card) !important; }
+}
+
+/* =========================================================================
+   PAGE NAV — glass slabs
+   -------------------------------------------------------------------------
+   A deliberate, scoped exception to the FLAT DOCUMENT COMPONENTS block above.
+   Everything in that block is a container the reader reads THROUGH; these three
+   are the last thing on the page and the only thing left to click, so they are
+   allowed to read as physical objects. Nothing else on the page is granted
+   this — the exception is the whole point, and it stops here.
+
+   The depth is built from four stacked cues, not from one big drop shadow:
+     1. a vertical translucency gradient (lit at the top, shaded at the foot)
+     2. `backdrop-filter` blur + saturate, so the page tint bleeds through
+     3. an inset top hairline and inset bottom shade — the bevel
+     4. a bottom-weighted outer shadow, so the slab floats rather than smears
+   Plus a ::before specular sweep and a ::after top-edge highlight, both
+   `pointer-events: none` and both behind the text via `isolation: isolate`.
+
+   Specificity notes, since this file fights itself on purpose:
+     - `.page-nav a[href]` is 0-2-1, over the flat block's 0-1-1. Every link
+       page-nav.js builds carries href (buildAction sets it before anything
+       else), and isRenderable rejects the fragment outright if one does not.
+     - the hover rule adds `:not(.is-soon):is(:hover, …)` for 0-4-1, which is
+       what it takes to clear the single card-hover rule's 0-4-0 !important and
+       reinstate a transform that rule sets to `none`.
+   ========================================================================= */
+.page-nav {
+  --pn-glass-top: rgba(255, 255, 255, .92);
+  --pn-glass-bottom: rgba(255, 255, 255, .62);
+  --pn-glass-edge: rgba(255, 255, 255, .85);
+  --pn-bevel-top: rgba(255, 255, 255, .95);
+  --pn-bevel-bottom: rgba(22, 27, 35, .07);
+  --pn-ring: rgba(22, 27, 35, .07);
+  --pn-sheen: rgba(255, 255, 255, .60);
+  --pn-drop:
+    0 1px 2px rgba(22, 27, 35, .05),
+    0 8px 16px -10px rgba(22, 27, 35, .18),
+    0 20px 38px -20px rgba(22, 27, 35, .24);
+  --pn-drop-hover:
+    0 2px 4px rgba(22, 27, 35, .06),
+    0 14px 26px -12px rgba(22, 27, 35, .22),
+    0 34px 58px -26px rgba(22, 27, 35, .30);
+}
+html[data-theme="dark"] .page-nav {
+  /* On a dark page the glass is lit from within rather than being white paper:
+     the gradient is a white veil at low alpha, and the ring goes black so the
+     slab still has an outer edge against --bg. */
+  --pn-glass-top: rgba(255, 255, 255, .11);
+  --pn-glass-bottom: rgba(255, 255, 255, .035);
+  --pn-glass-edge: rgba(255, 255, 255, .13);
+  --pn-bevel-top: rgba(255, 255, 255, .16);
+  --pn-bevel-bottom: rgba(0, 0, 0, .28);
+  --pn-ring: rgba(0, 0, 0, .45);
+  --pn-sheen: rgba(255, 255, 255, .13);
+  --pn-drop:
+    0 1px 2px rgba(0, 0, 0, .30),
+    0 10px 20px -10px rgba(0, 0, 0, .40),
+    0 24px 44px -20px rgba(0, 0, 0, .48);
+  --pn-drop-hover:
+    0 2px 4px rgba(0, 0, 0, .34),
+    0 16px 30px -12px rgba(0, 0, 0, .46),
+    0 38px 64px -26px rgba(0, 0, 0, .56);
+}
+
+.page-nav a[href] {
+  position: relative;
+  isolation: isolate;                 /* keeps the two pseudos under the text */
+  overflow: hidden;
+  padding: 16px 18px 17px !important;
+  border-radius: 16px !important;
+  border: 1px solid var(--pn-glass-edge) !important;
+  background:
+    linear-gradient(180deg, var(--pn-glass-top) 0%, var(--pn-glass-bottom) 100%)
+    !important;
+  backdrop-filter: blur(16px) saturate(1.4) !important;
+  -webkit-backdrop-filter: blur(16px) saturate(1.4) !important;
+  box-shadow:
+    inset 0 1px 0 var(--pn-bevel-top),
+    inset 0 -1px 0 var(--pn-bevel-bottom),
+    0 0 0 1px var(--pn-ring),
+    var(--pn-drop) !important;
+  transform: translateY(0) !important;
+  transition:
+    transform var(--gm-dur-fast, .16s) var(--gm-ease, ease),
+    box-shadow var(--gm-dur, .22s) ease,
+    border-color var(--gm-dur, .22s) ease,
+    background var(--gm-dur, .22s) ease !important;
+}
+
+/* The specular sweep: light entering from the top-left corner and dying out
+   before the middle. Stopping it early is what keeps it reading as a highlight
+   on glass instead of a diagonal stripe. */
+.page-nav a[href]::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  border-radius: inherit;
+  background: linear-gradient(138deg,
+    var(--pn-sheen) 0%,
+    color-mix(in srgb, var(--pn-sheen) 30%, transparent) 26%,
+    transparent 52%);
+  opacity: .9;
+  transition: opacity var(--gm-dur, .22s) ease;
+}
+
+/* The lit top edge. Inset from both sides and faded at the ends so it looks
+   like a rounded rim catching light, not a border. */
+.page-nav a[href]::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 14px;
+  right: 14px;
+  height: 1px;
+  z-index: -1;
+  pointer-events: none;
+  background: linear-gradient(90deg,
+    transparent,
+    var(--pn-bevel-top) 22%,
+    var(--pn-bevel-top) 78%,
+    transparent);
+}
+
+/* A sideways step out of the route reads one level quieter: thinner glass, no
+   sweep, and it sits lower than prev/next rather than beside them. */
+.page-nav a[href].pn-secondary {
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, var(--pn-glass-top) 55%, transparent) 0%,
+      color-mix(in srgb, var(--pn-glass-bottom) 55%, transparent) 100%)
+    !important;
+  box-shadow:
+    inset 0 1px 0 var(--pn-bevel-top),
+    0 0 0 1px var(--pn-ring),
+    var(--shadow-sm) !important;
+}
+.page-nav a[href].pn-secondary::before { opacity: .35; }
+
+/* Hover / focus: the slab rises and the light that was resting on it spreads.
+   0-4-1, which is what clears the card-hover rule's `transform: none`. */
+.page-nav a[href]:not(.is-soon):is(:hover, .is-hovered, :focus-visible) {
+  transform: translateY(-3px) !important;
+  border-color: color-mix(in srgb, var(--accent) 30%, var(--pn-glass-edge))
+    !important;
+  box-shadow:
+    inset 0 1px 0 var(--pn-bevel-top),
+    inset 0 -1px 0 var(--pn-bevel-bottom),
+    0 0 0 1px var(--pn-ring),
+    var(--pn-drop-hover) !important;
+}
+.page-nav a[href]:not(.is-soon):is(:hover, .is-hovered, :focus-visible)::before {
+  opacity: 1;
+}
+
+/* Press: the slab is pushed back down toward the page, not scaled. */
+.page-nav a[href]:active {
+  transform: translateY(-1px) !important;
+  box-shadow:
+    inset 0 2px 4px var(--pn-bevel-bottom),
+    0 0 0 1px var(--pn-ring),
+    var(--shadow-sm) !important;
+}
+
+/* Touch has no pointer to leave, so a tap-applied hover sticks until the next
+   tap elsewhere. Same reasoning as the block above this one — the resting look
+   is restored and `:active` carries the feedback. */
+@media (hover: none) {
+  .page-nav a[href]:not(.is-soon):hover {
+    transform: translateY(0) !important;
+    border-color: var(--pn-glass-edge) !important;
+    box-shadow:
+      inset 0 1px 0 var(--pn-bevel-top),
+      inset 0 -1px 0 var(--pn-bevel-bottom),
+      0 0 0 1px var(--pn-ring),
+      var(--pn-drop) !important;
+  }
+}
+
+/* Under reduced motion the depth stays — it is a static property of the
+   surface — and only the movement goes. */
+@media (prefers-reduced-motion: reduce) {
+  .page-nav a[href] { transition: box-shadow .01ms, border-color .01ms !important; }
+  .page-nav a[href]:not(.is-soon):is(:hover, .is-hovered, :focus-visible),
+  .page-nav a[href]:active { transform: translateY(0) !important; }
+}
+
+/* Without backdrop-filter the gradient alone would leave the slab washed out
+   against the page, so the fallback drops to an opaque elevated surface and
+   keeps the bevel and the drop, which is where most of the depth lives. */
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .page-nav a[href] { background: var(--bg-elevated) !important; }
 }

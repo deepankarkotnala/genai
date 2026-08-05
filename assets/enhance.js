@@ -1021,16 +1021,49 @@
     });
   }
 
+  /* The pointer position each spotlight-capable surface publishes as
+     --spot-x/--spot-y, for `.glass-spotlight::before` to place its gradient.
+
+     This used to attach one `pointermove` listener per element — on a page with
+     forty cards, callouts, quizzes and collapses, that is forty listeners and
+     two inline-style writes on every single mouse move, each one invalidating
+     that element's style. Now it is one delegated listener that resolves the
+     surface under the pointer and writes at most once per frame.
+
+     Gated on a real pointer. A touch device has no hover, so the gradient it
+     would feed can never be seen, and the listener is pure cost there. */
+  var SPOTLIGHT_SELECTOR = ".card, .callout, .quiz, .demo, .diagram, .readmap, .concept-lab, .progress-card, .collapse";
+
   function setupGlassSpotlight() {
-    var selectors = ".card, .callout, .quiz, .demo, .diagram, .readmap, .concept-lab, .progress-card, .collapse";
-    document.querySelectorAll(selectors).forEach(function (element) {
+    document.querySelectorAll(SPOTLIGHT_SELECTOR).forEach(function (element) {
       element.classList.add("glass-spotlight");
-      element.addEventListener("pointermove", function (event) {
-        var rect = element.getBoundingClientRect();
-        element.style.setProperty("--spot-x", (event.clientX - rect.left) + "px");
-        element.style.setProperty("--spot-y", (event.clientY - rect.top) + "px");
-      }, { passive: true });
     });
+
+    if (REDUCED) return;
+    if (window.matchMedia && !window.matchMedia("(hover: hover) and (pointer: fine)").matches) return;
+
+    var pending = null;
+    var queued = false;
+
+    document.addEventListener("pointermove", function (event) {
+      if (event.pointerType && event.pointerType !== "mouse") return;
+      /* Copy what the frame needs. Holding the event itself would pin it, and
+         its coordinates are all this reads. */
+      pending = { x: event.clientX, y: event.clientY, target: event.target };
+      if (queued) return;
+      queued = true;
+      window.requestAnimationFrame(function () {
+        queued = false;
+        var latest = pending;
+        pending = null;
+        if (!latest || !latest.target || !latest.target.closest) return;
+        var surface = latest.target.closest(SPOTLIGHT_SELECTOR);
+        if (!surface) return;
+        var rect = surface.getBoundingClientRect();
+        surface.style.setProperty("--spot-x", (latest.x - rect.left) + "px");
+        surface.style.setProperty("--spot-y", (latest.y - rect.top) + "px");
+      });
+    }, { passive: true });
   }
 
   function addScrollTop() {

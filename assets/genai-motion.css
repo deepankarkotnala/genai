@@ -439,7 +439,9 @@ a.card:active,
   a.card:hover,
   .card.hover:hover,
   .module-card:hover,
-  .prep-topic-card:hover { transform: none; }
+  .prep-topic-card:hover,
+  .page-nav a:hover,
+  .rm-link:hover { transform: none; }
 }
 
 /* Keyboard focus should be instant to appear — a fading focus ring is a
@@ -487,7 +489,8 @@ button:active,
     .content > .diagram,
     .content > .readmap,
     .prep-topic-card,
-    .module-card {
+    .module-card,
+    .prep-hero {
       animation: gm-rise linear both;
       animation-timeline: view();
       /* Complete well before the element reaches the middle of the viewport,
@@ -501,28 +504,17 @@ button:active,
   }
 }
 
-@supports not (animation-timeline: view()) {
-  @media (prefers-reduced-motion: no-preference) {
-    .content > .eyebrow,
-    .content > h1,
-    .content > .lead,
-    .hero,
-    .content > .callout:nth-of-type(1),
-    .content > .callout:nth-of-type(2) {
-      animation: gm-rise-once var(--gm-dur-slow) var(--gm-ease-out) both;
-    }
-    .content > .eyebrow { animation-delay: .02s; }
-    .content > h1      { animation-delay: .06s; }
-    .content > .lead   { animation-delay: .11s; }
-    .hero              { animation-delay: .16s; }
-    .content > .callout:nth-of-type(1) { animation-delay: .21s; }
-    .content > .callout:nth-of-type(2) { animation-delay: .26s; }
-    @keyframes gm-rise-once {
-      from { opacity: 0; transform: translateY(12px); }
-      to   { opacity: 1; transform: none; }
-    }
-  }
-}
+/* The one-shot arrival stagger that used to sit here (`gm-rise-once` on the
+   eyebrow, h1, lead, hero and first two callouts, 0.02s → 0.26s) was removed on
+   2026-08-04 along with the page transitions in styles.css. It ran on document
+   load, which means that to a reader clicking a link it was not an "entrance" —
+   it was the page transition, and it was part of what read as jitter on the
+   browsers that got it (the ones without scroll-driven animations, i.e. Safari).
+
+   Scroll-driven `gm-rise` above is deliberately kept: it plays as the reader
+   scrolls a card into view, which is a scroll animation and not something a
+   navigation triggers. A cold load now paints its first screenful immediately.
+   ------------------------------------------------------------------------- */
 
 .soft-reveal,
 [data-reveal] {
@@ -627,32 +619,16 @@ details > summary .chev {
 }
 
 /* =========================================================================
-   10 · A navigation is one animation, not two
+   10 · A navigation is one animation, not two — RETIRED 2026-08-04
    -------------------------------------------------------------------------
-   Everything in section 7 is an *arrival* animation: the first screenful rises
-   into place when a document loads. That is right for a cold load and wrong
-   the moment the browser is already animating the navigation itself — the
-   cross-document view transition crossfades into the new page while its
-   content is still at opacity 0, waits out the 0.02–0.26s stagger, and only
-   then shows the reader anything. Two entrances stacked on one navigation is
-   what reads as a flash.
+   This section suppressed section 7's arrival stagger while a cross-document
+   view transition was running, so a navigation never played two entrances at
+   once. Both halves are gone now: the transitions were removed in styles.css
+   and the arrival stagger was removed above, so there is nothing to reconcile.
 
-   `.vt-in` is written on <html> by the pagereveal handler in each page's head
-   script, before the first render of the new document, and removed when the
-   transition finishes — so on a transitioned navigation the page arrives
-   already composed, and on a cold load (no transition, no class) section 7
-   plays exactly as before. Scroll-driven `gm-rise` further down the page is
-   untouched: it is a scroll animation, not an arrival, and the reader has not
-   reached it yet. */
-html.vt-in .content > .eyebrow,
-html.vt-in .content > h1,
-html.vt-in .content > .lead,
-html.vt-in .content > .callout:nth-of-type(1),
-html.vt-in .content > .callout:nth-of-type(2),
-html.vt-in .hero,
-html.vt-in .soft-reveal,
-html.vt-in [data-reveal] {
-  animation: none !important;
-  opacity: 1 !important;
-  transform: none !important;
-}
+   The `.xvt` / `.vt-in` classes are still written by the pre-paint head script
+   (`PageRevealEvent` exists whether or not the `@view-transition` at-rule does),
+   but nothing keys off them any more. Left documented rather than deleted so
+   that anyone restoring page transitions restores this guard with them.
+   ========================================================================= */
+

@@ -657,12 +657,11 @@
     });
   }
 
-  /* ---------- Smooth page transitions ----------
-     A subtle fade-out → navigate → fade-in between same-site pages. Where the
-     browser supports the View Transitions API we use a true crossfade; elsewhere
-     we fall back to fading the content out (CSS .is-leaving) before navigating,
-     and the CSS page-enter animation fades the next page in. Honors
-     prefers-reduced-motion and never interferes with normal browser behaviour. */
+  /* ---------- Navigation feedback ----------
+     There is no page transition any more (removed 2026-08-04; the reasoning is
+     in styles.css). A click navigates immediately. What remains below is the
+     slow-navigation loading ring and the link test that decides which clicks
+     count as a same-site navigation worth arming it for. */
   var REDUCED_MOTION = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
   function isPlainLeftClick(e) {
@@ -742,52 +741,26 @@
   }
 
   function setupPageTransitions() {
-    // A navigation the browser is animating for us, or one it is not: either
-    // way the loading ring applies, so it is armed before the paths split.
-    // `pagehide` covers every same-site navigation — link, form, back button,
-    // ribbon tab — without having to guess which clicks lead to one.
+    /* Page transitions were removed on 2026-08-04 (see styles.css). This function
+       keeps its name because init() calls it, and because what remains is still
+       navigation-adjacent: arming the loading ring.
+
+       No click is intercepted any more. The old code called preventDefault(),
+       added `.is-leaving`, waited for a fade and then set location.href — that
+       wait was pure latency in front of every navigation, on top of an animation
+       that read as jitter. Now the browser navigates on the click, immediately,
+       and the ring appears only if the new document takes longer than GRACE. */
     window.addEventListener("pagehide", disarmLoader);
     window.addEventListener("pageshow", function () {
-      // Restored from the back/forward cache: clear both states so the page is
-      // never stuck faded out or spinning.
+      // Restored from the back/forward cache: never leave the ring spinning, and
+      // clear the legacy leaving state in case a cached document still carries it.
       disarmLoader();
       document.documentElement.classList.remove("is-leaving");
     });
 
-    if (REDUCED_MOTION) {
-      // No fades, but a slow navigation should still say so. The ring's own
-      // reduced-motion form is a fade rather than a spin (see styles.css).
-      document.addEventListener("click", function (e) {
-        var a = e.target.closest && e.target.closest("a[href]");
-        if (shouldIntercept(a, e)) armLoader();
-      });
-      return;
-    }
-
-    /* Which path this browser is on. NOT `CSS.supports("view-transition-name")`
-       — that asks about *same-document* transitions, and answering it with
-       "yes" is exactly what used to switch this fallback off on Firefox,
-       Safari 18.0–18.1 and Chrome 111–125, none of which can do the
-       cross-document transition the CSS actually relies on. Those browsers got
-       no transition at all: the hard cut between documents that reads as a
-       flash. `PageRevealEvent` is the cross-document lifecycle, so it is the
-       thing worth testing, and the head script gates the CSS on the same
-       answer via the `.xvt` class. */
-    var hasCrossDocVT = ("PageRevealEvent" in window);
-
     document.addEventListener("click", function (e) {
       var a = e.target.closest && e.target.closest("a[href]");
-      var dest = shouldIntercept(a, e);
-      if (!dest) return;
-
-      armLoader();
-      if (hasCrossDocVT) return;   // the browser animates the swap itself
-
-      e.preventDefault();
-      // Fade the content out, then navigate; the next page's CSS page-enter
-      // animation fades it in — giving a smooth out→in between pages.
-      document.documentElement.classList.add("is-leaving");
-      window.setTimeout(function () { window.location.href = dest; }, 180);
+      if (shouldIntercept(a, e)) armLoader();
     });
   }
 

@@ -266,7 +266,8 @@ img, svg { max-width: 100%; }
 .icon-btn {
   width: 38px; height: 38px; border-radius: 9px; border: 1px solid var(--border);
   background: var(--bg-elevated); color: var(--text-secondary); cursor: pointer;
-  display: grid; place-items: center; transition: all .15s;
+  display: grid; place-items: center;
+  transition: border-color .15s ease, color .15s ease, background .15s ease;
 }
 .icon-btn:hover { border-color: var(--border-strong); color: var(--text); }
 
@@ -324,21 +325,34 @@ img, svg { max-width: 100%; }
 .card .ico { font-size: 23.5px; margin-bottom: 8px; display: block; }
 .card p { margin-bottom: 0; font-size: 15px; }
 
+/* Route-chooser cards (index.html and study-plan.html). The three routes carry
+   descriptions of different lengths, so the steps pill and the Start button
+   each landed at a different height. Making the card a column and giving the
+   pill row the leftover space bottom-aligns both rows across all three cards.
+   Keyed on the CTA's own marker, so no other .card is touched. */
+.card:has(> p > [data-route-entry]) { display: flex; flex-direction: column; }
+.card:has(> p > [data-route-entry]) > p:has(> .pill) { margin-top: auto; padding-top: 10px; }
+.card:has(> p > [data-route-entry]) > p:last-child { margin-top: 12px; margin-bottom: 0; }
+
 /* ---------- Callouts ---------- */
+/* A callout is a clean card: hairline border all the way round, shadow under
+   the bottom edge. It deliberately has no coloured left accent bar — variants
+   are carried by the icon tile instead. */
 .callout {
-  border: 1px solid var(--border); border-left: 4px solid var(--text-muted);
+  border: 1px solid var(--border);
   border-radius: var(--radius); padding: 16px 18px; margin: 22px 0;
   background: var(--bg-elevated); display: flex; gap: 14px; align-items: flex-start;
+  box-shadow: var(--shadow-sm);
 }
 .callout .c-ico { font-size: 19.5px; flex: none; line-height: 1.5; }
 .callout .c-body { min-width: 0; }
 .callout .c-body p:last-child { margin-bottom: 0; }
 .callout .c-title { font-weight: 700; color: var(--text); margin-bottom: 3px; font-size: 15.5px; }
-.callout.tip   { border-left-color: var(--green); background: var(--green-soft); }
-.callout.note  { border-left-color: var(--blue); background: var(--blue-soft); }
-.callout.warn  { border-left-color: var(--amber); background: var(--amber-soft); }
-.callout.danger{ border-left-color: var(--red); background: var(--red-soft); }
-.callout.key   { border-left-color: var(--purple); background: var(--purple-soft); }
+.callout.tip   { background: var(--green-soft); }
+.callout.note  { background: var(--blue-soft); }
+.callout.warn  { background: var(--amber-soft); }
+.callout.danger{ background: var(--red-soft); }
+.callout.key   { background: var(--purple-soft); }
 
 /* Study-plan intro card: larger green title, no bold body emphasis. */
 .callout.commitment-card .c-title { font-size: 20.5px; color: var(--green); font-weight: 700; margin-bottom: 6px; letter-spacing: -.01em; }
@@ -355,7 +369,8 @@ img, svg { max-width: 100%; }
 .code-head .dots { display: inline-flex; gap: 6px; margin-right: 6px; }
 .code-head .dots i { width: 11px; height: 11px; border-radius: 50%; display: inline-block; }
 .code-head .dots i:nth-child(1){background:#ff5f57;} .code-head .dots i:nth-child(2){background:#febc2e;} .code-head .dots i:nth-child(3){background:#28c840;}
-.copy-btn { background: transparent; border: 1px solid #46465260; color: #c9c9d4; border-radius: 6px; padding: 3px 10px; font-size: 12.5px; cursor: pointer; font-family: var(--font-sans); transition: all .15s; }
+.copy-btn { background: transparent; border: 1px solid #46465260; color: #c9c9d4; border-radius: 6px; padding: 3px 10px; font-size: 12.5px; cursor: pointer; font-family: var(--font-sans);
+  transition: background .15s ease, border-color .15s ease, color .15s ease; }
 .copy-btn:hover { background: #46465250; }
 .copy-btn.copied { color: #28c840; border-color: #28c84050; }
 pre { margin: 0; background: var(--bg-code); padding: 16px 18px; overflow-x: auto; font-size: 14px; line-height: 1.65; }
@@ -429,7 +444,8 @@ table.rowlink tbody .row-link:focus-visible::after { outline: 2px solid var(--ac
 /* ---------- Quiz ---------- */
 .quiz { border: 1px solid var(--border); border-radius: var(--radius); padding: 20px; margin: 18px 0; background: var(--bg-elevated); box-shadow: var(--shadow-sm); }
 .quiz .q { font-weight: 650; margin-bottom: 14px; color: var(--text); }
-.quiz .opt { display: block; padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; cursor: pointer; font-size: 15px; color: var(--text-secondary); transition: all .14s; }
+.quiz .opt { display: block; padding: 11px 14px; border: 1px solid var(--border); border-radius: 8px; margin-bottom: 8px; cursor: pointer; font-size: 15px; color: var(--text-secondary);
+  transition: border-color .14s ease, background .14s ease, color .14s ease; }
 .quiz .opt:hover { border-color: var(--accent); background: var(--accent-soft); }
 .quiz .opt.correct { border-color: var(--green); background: var(--green-soft); color: var(--green); font-weight: 600; }
 .quiz .opt.wrong { border-color: var(--red); background: var(--red-soft); color: var(--red); }
@@ -486,7 +502,8 @@ table.rowlink tbody .row-link:focus-visible::after { outline: 2px solid var(--ac
 .demo-input { width: 100%; padding: 10px 13px; border: 1px solid var(--border); border-radius: 8px; font-size: 15px; background: var(--bg); color: var(--text); font-family: inherit; }
 .demo-input:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-ring); }
 .demo-stage { margin-top: 16px; display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
-.chip { padding: 6px 11px; border-radius: 8px; font-size: 13.5px; font-family: var(--font-mono); background: var(--surface); border: 1px solid var(--border); opacity: 0; transform: translateY(6px); transition: all .4s; }
+.chip { padding: 6px 11px; border-radius: 8px; font-size: 13.5px; font-family: var(--font-mono); background: var(--surface); border: 1px solid var(--border); opacity: 0; transform: translateY(6px);
+  transition: opacity .4s ease, transform .4s var(--ease-out, ease-out); }
 .chip.show { opacity: 1; transform: translateY(0); }
 .chip.tok { background: var(--blue-soft); color: var(--blue); border-color: transparent; }
 .chip.vec { background: var(--purple-soft); color: var(--purple); border-color: transparent; }
@@ -501,13 +518,57 @@ table.rowlink tbody .row-link:focus-visible::after { outline: 2px solid var(--ac
 /* mark complete */
 .complete-bar { display: flex; align-items: center; justify-content: space-between; gap: 16px; flex-wrap: wrap; margin: 40px 0 0; padding: 22px; border: 1px dashed var(--border-strong); border-radius: var(--radius-lg); background: var(--bg-subtle); }
 
-/* page nav */
-.page-nav { display: flex; justify-content: space-between; gap: 16px; margin-top: 40px; }
-.page-nav a { flex: 1; border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; background: var(--bg-elevated); transition: all .16s; }
-.page-nav a:hover { border-color: var(--accent); text-decoration: none; transform: translateY(-2px); box-shadow: var(--shadow-md); }
-.page-nav .dir { font-size: 12.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .05em; }
-.page-nav .ttl { font-weight: 650; color: var(--text); font-size: 15.5px; }
-.page-nav .next { text-align: right; }
+/* ---------- Page nav ----------
+   A wrapping flex row. page-nav.js emits the step line (.pn-progress) and any
+   notice as siblings of the link cards, so both take `flex-basis: 100%` and sit
+   as a full-width caption above; the cards below then share what is left, equal
+   width and equal height, one baseline for the labels and one for the titles.
+
+   Flex, not grid, because the caption is what broke grid: `repeat(auto-fit,
+   minmax(210px, 1fr))` only collapses a track when NOTHING occupies it, and a
+   `grid-column: 1 / -1` caption occupies every track. So a 1040px column kept
+   four 251px tracks alive for three cards and the row stopped three-quarters of
+   the way across. `flex: 1 1 210px` has no track to leave empty — whatever the
+   count, the cards divide the full width between them.
+
+   Titles all read left, including "next": mirroring one card's text to the
+   right is what made the row look ragged. */
+.page-nav {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: stretch;
+  gap: 12px;
+  margin-top: 40px;
+  padding-top: 20px;
+  border-top: 1px solid var(--border);
+}
+.page-nav .pn-progress,
+.page-nav .pn-notice {
+  flex: 0 0 100%;
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+.page-nav a {
+  flex: 1 1 210px;
+  min-width: 0;              /* long titles shrink the card instead of the row */
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 14px 16px;
+  background: var(--bg-elevated);
+  transition: border-color .16s, box-shadow .16s, transform .16s;
+}
+/* No hover here either — see the single card-hover rule in office-theme.css.
+   `text-decoration: none` for these links is set with the other card links. */
+.page-nav .dir { font-size: 11.5px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; letter-spacing: .06em; }
+.page-nav .ttl { margin-top: auto; font-weight: 650; color: var(--text); font-size: 15px; line-height: 1.34; }
+/* A sideways step out of the route reads one level quieter than prev/next. */
+.page-nav .pn-secondary { background: var(--bg-subtle); }
+.page-nav .pn-secondary .ttl { color: var(--text-secondary); }
 
 /* meta header chips */
 .meta-row { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 22px; }
@@ -601,129 +662,47 @@ table.rowlink tbody .row-link:focus-visible::after { outline: 2px solid var(--ac
   .fade-anim, .draw-anim path.ln, .draw-anim .flow-arrow:not(.flow-dash) { opacity: 1; transform: none; }
 }
 
-/* ---------- Page transitions ----------
-   Two mutually-exclusive paths, so the effect never doubles up (which looked
-   jittery before):
+/* ---------- Page transitions: REMOVED 2026-08-04 ----------
+   Navigation between pages is now an instant cut. No crossfade, no fade-out on
+   leave, no entrance animation on arrival, and no JS delay before the click is
+   honoured.
 
-   1. Browsers WITH the View Transitions API → a single smooth crossfade of the
-      whole page, handled natively by `@view-transition`. We explicitly turn OFF
-      the JS-era .main entry animation there so nothing competes with it.
-   2. Browsers WITHOUT it → the JS fallback (sitenav.js) fades the content out on
-      leave, and the `page-enter` keyframe fades the next page in.
+   Why, after two attempts to smooth it: the effect was reported as jittery on
+   real hardware both times. The mechanism is unforgiving. `.content-wrap`
+   carries a `view-transition-name`, so the browser snapshots the entire reading
+   column — commonly several thousand pixels tall — and then animates it. Even
+   reduced to opacity alone that is a full-viewport composite per frame during
+   the exact window in which the browser is also parsing, styling and laying out
+   a new document. There is no budget there to buy smoothness with, so the
+   honest move is to stop spending it.
 
-   The light/dark toggle rides on path 1 as well: enhance.js runs it inside
-   `document.startViewTransition`, which produces the same root snapshot and so
-   picks up the same crossfade timing below. That is deliberate — it is why a
-   theme change and a page change feel like one gesture, and why the theme fade
-   cannot stagger (a snapshot carries the gradients, glass and shadows that
-   cannot interpolate between themes). Browsers on path 2 get the atomic flip
-   instead; see the `.theme-switching` block at the end of this file.
+   What replaces it: nothing on a fast navigation, which is the common case on a
+   warm cache and is genuinely instant. On a SLOW navigation the loading ring
+   below fades in after a 220ms grace period — a real signal that something is
+   happening, rather than decoration over a swap that already finished.
 
-   WHICH PATH A BROWSER IS ON IS NOT `@supports (view-transition-name)`.
-   That was the bug behind the "jerky flash" on the ribbon tabs: the effect
-   above is a *cross-document* transition (`@view-transition`), but the test
-   gating the fallback asked about *same-document* support. Every browser that
-   has one and not the other — Firefox, Safari 18.0–18.1, Chrome 111–125 —
-   answered "yes, I have view transitions", so the fallback switched itself off
-   and those browsers got no transition at all: a hard cut between documents.
+   `@view-transition` is deliberately absent rather than set to `navigation: none`
+   — the at-rule opts in, so not writing it is the off state, and a reader
+   grepping for it finds this comment instead of a switch that looks flippable.
 
-   The honest test is whether the browser fires the cross-document lifecycle
-   events, i.e. `PageRevealEvent`. The pre-paint script in each page's <head>
-   runs it and writes `.xvt` on <html>, for the same reason it writes the theme
-   there: a body script would let the entry animation start and then cancel it,
-   which is the flash this is here to remove. */
+   NOTE for anyone restoring this: the pre-paint head script in every page still
+   writes `.xvt` (and `.vt-in` on pagereveal) because `PageRevealEvent` exists
+   independently of the at-rule. Those classes are now inert for navigation. They
+   are left in place because the theme toggle below still runs a same-document
+   view transition through `document.startViewTransition`, which is unaffected by
+   any of this and must keep working. */
 
-/* --- Fallback path: no cross-document view transitions --- */
-html:not(.xvt) .main { animation: page-enter .34s ease both; }
-@keyframes page-enter {
-  from { opacity: 0; transform: translateY(8px); }
-  to   { opacity: 1; transform: none; }
-}
-html:not(.xvt).is-leaving .main {
-  opacity: 0; transform: translateY(-4px);
-  transition: opacity .18s ease, transform .18s ease;
-}
-
-/* --- Native View Transitions path --- */
-@view-transition { navigation: auto; }
-
-/* The chrome does not travel between pages. The sidebar, the top bar, the
-   ribbon and the contents rail hold the same pixels in the same place on both
-   documents, so crossfading them was work with nothing to show for it — and
-   because they are the frame the eye uses to hold position, fading them is
-   most of what read as "the page flashed". Each is lifted out of the root
-   snapshot into its own group and held still; only the reading column
-   actually transitions.
-
-   `view-transition-name` must be unique per document — each of these classes
-   appears exactly once on every page family (hub, modules, prep, DSA, ML,
-   scenario, teach-agents), which is what makes this safe. A duplicate would
-   not degrade, it would skip the transition entirely. */
-.sidebar      { view-transition-name: app-sidebar; }
-.topbar       { view-transition-name: app-topbar; }
-.office-ribbon{ view-transition-name: app-ribbon; }
-.toc-rail     { view-transition-name: app-toc; }
-.content-wrap { view-transition-name: page-body; }
-
-/* The one same-document transition in the portal is the light/dark toggle, and
-   it wants the opposite of the above: every surface listed there is repainted
-   by a theme change, so holding them still would flip the chrome instantly
-   while the reading column faded. enhance.js marks the toggle's transition and
-   the names are withdrawn for its duration, which puts the whole page back into
-   the single root snapshot the theme crossfade was designed around. */
+/* The light/dark toggle is a SAME-document transition — enhance.js runs it
+   inside `document.startViewTransition`. It wants the whole page in one root
+   snapshot: every surface is repainted by a theme change, so naming regions
+   separately would flip the chrome instantly while the reading column faded.
+   These names exist only for that transition's duration; `vt-theme` is set by
+   enhance.js around the flip. */
 html.vt-theme .sidebar,
 html.vt-theme .topbar,
 html.vt-theme .office-ribbon,
 html.vt-theme .toc-rail,
 html.vt-theme .content-wrap { view-transition-name: none; }
-
-@media (prefers-reduced-motion: no-preference) {
-  /* Held still: no animation on the group (so it jumps straight to the new
-     geometry) and none on either snapshot (so identical pixels simply stay
-     put). The new snapshot is painted over the old, which is what makes the
-     swap invisible even where the two differ — the sidebar's active row, the
-     breadcrumb, the ribbon's underline. */
-  ::view-transition-group(app-sidebar),
-  ::view-transition-group(app-topbar),
-  ::view-transition-group(app-ribbon),
-  ::view-transition-group(app-toc),
-  ::view-transition-old(app-sidebar), ::view-transition-new(app-sidebar),
-  ::view-transition-old(app-topbar),  ::view-transition-new(app-topbar),
-  ::view-transition-old(app-ribbon),  ::view-transition-new(app-ribbon),
-  ::view-transition-old(app-toc),     ::view-transition-new(app-toc) {
-    animation: none;
-  }
-
-  /* The reading column is the whole transition: the old one leaves slightly
-     faster than the new one arrives, and the new one carries a 6px rise —
-     the same gesture the fallback path uses, so the two paths feel like one
-     design rather than two. */
-  ::view-transition-old(page-body) { animation: vt-body-out .16s ease both; }
-  ::view-transition-new(page-body) { animation: vt-body-in .26s var(--ease-out, ease) 40ms both; }
-  @keyframes vt-body-out { to   { opacity: 0; } }
-  @keyframes vt-body-in  { from { opacity: 0; transform: translateY(6px); } }
-
-  /* Root is now only the page background, which is identical either side. */
-  ::view-transition-old(root),
-  ::view-transition-new(root) { animation-duration: .16s; animation-timing-function: ease; }
-}
-
-/* The second half of the flash: the arriving page used to run its own staggered
-   entry animation (genai-motion's `gm-rise`, `.reveal`, `[data-reveal]`) *under*
-   the crossfade, so the transition landed on a page whose content was still at
-   opacity 0 and then watched it climb in. When the browser is already animating
-   the navigation, the page arrives finished. `.vt-in` is set from the pagereveal
-   handler in the head script — before the first render of the new document, so
-   these never get a frame at zero. */
-html.vt-in .reveal,
-html.vt-in .main { animation: none !important; opacity: 1 !important; transform: none !important; }
-
-@media (prefers-reduced-motion: reduce) {
-  .main { animation: none; }
-  html.is-leaving .main { opacity: 1; transform: none; transition: none; }
-  /* The UA already suppresses the @view-transition crossfade under
-     prefers-reduced-motion, so nothing more is needed here. */
-}
 
 /* ---------- Loading indicator ----------
    A navigation that resolves in 40ms should never show a spinner — the spinner
@@ -1451,11 +1430,11 @@ body[data-page="00"] .readmap { margin-top: 20px; }
   transition: opacity .25s ease;
 }
 .card:hover::before, .glass-spotlight:hover::before { opacity: 1; }
-.card:hover, .page-nav a:hover {
-  transform: translateY(-5px);
-  border-color: rgba(16, 124, 65, .25);
-  box-shadow: var(--shadow-md), inset 0 1px 0 rgba(255, 255, 255, .56);
-}
+/* The hover lift that used to live here is gone. Card hover is one rule —
+   `:is(.card, .card.hover, .module-card, .prep-topic-card, .page-nav a)…` in
+   office-theme.css, a single diffused shadow with no movement. That rule is
+   `!important` at 0-4-0, so this block had been dead for some time; keeping a
+   dead lift here is how a reader concludes hover is broken when it is not. */
 .card .ico {
   display: grid;
   place-items: center;
@@ -1487,21 +1466,6 @@ body[data-page="00"] .readmap { margin-top: 20px; }
   border-radius: 18px;
   gap: 14px;
 }
-.callout::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  top: 12px;
-  bottom: 12px;
-  width: 3px;
-  border-radius: 0 3px 3px 0;
-  background: var(--text-muted);
-}
-.callout.tip::after { background: var(--green); }
-.callout.note::after { background: var(--blue); }
-.callout.warn::after { background: var(--amber); }
-.callout.danger::after { background: var(--red); }
-.callout.key::after { background: var(--accent); }
 .callout.tip { background: linear-gradient(135deg, var(--green-soft), var(--glass) 42%); }
 .callout.note { background: linear-gradient(135deg, var(--blue-soft), var(--glass) 42%); }
 .callout.warn { background: linear-gradient(135deg, var(--amber-soft), var(--glass) 42%); }
@@ -1928,8 +1892,9 @@ body.focus-mode .hero { padding: clamp(28px, 4vw, 44px); }
   .rm-link { padding-right: 12px; }
   .callout { padding: 16px; }
   .callout .c-ico { flex-basis: 32px; width: 32px; height: 32px; }
-  .page-nav { flex-direction: column; }
-  .page-nav .next { text-align: left; }
+  /* One card per row on phones. The 210px flex-basis already wraps to one card
+     per line at this width; this states it rather than relying on the math. */
+  .page-nav a { flex-basis: 100%; }
   .timeline { padding-left: 30px; }
   .timeline .step { padding: 14px; }
   .timeline .step::before { left: -29px; }
@@ -2567,12 +2532,31 @@ html[data-theme="dark"][data-reading-contrast="high"] .content :is(.card, .callo
 .scenario-answer ol { margin: 0; padding-left: 23px; counter-reset: scenario-answer; }
 .scenario-answer li { margin: 0 0 13px; padding-left: 6px; }
 .scenario-answer li:last-child { margin-bottom: 0; }
-.scenario-framework { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 10px; margin: 26px 0 34px; }
-.scenario-framework > div { min-height: 170px; padding: 18px 15px; border: 1px solid var(--border); border-radius: 17px; background: var(--prep-surface); transition: transform .25s var(--ease-out),border-color .25s ease; }
-.scenario-framework > div:hover { transform: translateY(-4px); border-color: color-mix(in srgb,var(--accent) 38%,var(--border)); }
-.scenario-framework b { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 12px; color: #fff; background: linear-gradient(135deg,var(--accent),var(--purple)); box-shadow: 0 9px 19px var(--accent-ring); }
-.scenario-framework h3 { margin: 13px 0 7px; font-size: 16px; }
-.scenario-framework p { margin: 0; color: var(--text-secondary); font-size: 13px; line-height: 1.5; }
+/* C-D-S-S-M cards. Same card language as the rest of the portal: a white
+   sheet, a hairline border on all four sides, and one bottom-weighted shadow —
+   no gradient chip, no coloured glow, nothing that moves on hover except the
+   border. The letter is a flat accent disc so five of them in a row read as a
+   quiet sequence rather than five competing badges. */
+.scenario-framework { display: grid; grid-template-columns: repeat(5,minmax(0,1fr)); gap: 13px; margin: 26px 0 34px; }
+/* No hover state: these five are read, not clicked. A hover on something that
+   does nothing when clicked is a false affordance. */
+.scenario-framework > div {
+  min-height: 168px; padding: 16px 16px 18px; border: 1px solid var(--border);
+  border-radius: 18px; background: var(--bg-elevated); box-shadow: var(--shadow-card);
+}
+/* Tinted disc, not a solid one: a soft green wash carrying the deep green
+   letter, which is an easier read than white on saturated green. --accent-strong
+   rather than --accent because it moves the right way in both themes — darker
+   on the light wash (6.8:1), lighter on the dark one (7.3:1). The hairline ring
+   keeps the disc's edge visible now that the fill is close to the card colour. */
+.scenario-framework b {
+  width: 34px; height: 34px; display: grid; place-items: center; border-radius: 50%;
+  border: 1px solid color-mix(in srgb, var(--accent) 24%, transparent);
+  color: var(--accent-strong); background: var(--accent-soft); box-shadow: none;
+  font-size: 14px; font-weight: 700; letter-spacing: .01em;
+}
+.scenario-framework h3 { margin: 14px 0 6px; font-size: 15px; font-weight: 700; letter-spacing: -.01em; }
+.scenario-framework p { margin: 0; color: var(--text-secondary); font-size: 13px; line-height: 1.52; }
 .scenario-question-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 13px; margin: 17px 0 28px; }
 .scenario-question-grid .card { margin: 0; }
 .scenario-diagram svg { min-width: 650px; }
