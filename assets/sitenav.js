@@ -21,17 +21,10 @@
 
   /* ---------- Central registry (paths are relative to the SITE ROOT) ---------- */
   var GROUPS = [
-    {
-      id: "studyplan",
-      label: "Study Plan",
-      mark: "P",
-      blurb: "Hours, order and weekly cadence",
-      home: "study-plan.html",
-      direct: true,
-      pages: [
-        { path: "study-plan.html", title: "Study Plan", num: "P", kw: "study plan roadmap hours schedule time weekly daily ai engineer interview route" }
-      ]
-    },
+    // The Study Plan group is deliberately not listed: it is out of the
+    // sidebar and the search index. study-plan.html stays on disk because the
+    // curriculum routes still use it as their overview/finish page, so
+    // nothing 404s for a bookmark or a route link.
     {
       id: "mastery",
       label: "GenAI Mastery",
@@ -117,7 +110,8 @@
         { path: "memory.html", title: "Memory in LLMs", num: "🧠", kw: "memory context window stateless chat history" },
         { path: "langgraph.html", title: "LangGraph & components", num: "🕸️", kw: "langgraph state node edge checkpointer human in the loop asyncio pydantic" },
         { path: "claude-agent.html", title: "How a Claude Agent Works", num: "🤖", kw: "claude agent sdk tool runner loop context safety" },
-        { path: "hermes.html", title: "Hermes - open local models", num: "🔱", kw: "hermes nous ollama open function calling local models" }
+        { path: "hermes.html", title: "Hermes - open local models", num: "🔱", kw: "hermes nous ollama open function calling local models" },
+        { path: "jev.html", title: "Jev - System-1 decisions", num: "⚡", kw: "jev typesafe system one system 1 decision model calibrated confidence choice score noul classify route triage guardrail cascade non autoregressive structured output" }
       ]
     },
     /* ===================================================================

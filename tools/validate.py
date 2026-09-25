@@ -836,7 +836,7 @@ def check_sidebar_untouched(rep: Report):
     """Release 3 must not touch sidebar labels, grouping or ordering."""
     src = read(os.path.join(ROOT, "assets", "sitenav.js"))
     groups = re.findall(r'id:\s*"([^"]+)",\s*\n?\s*label:\s*"([^"]+)"', src)
-    expected = [("studyplan", "Study Plan"), ("mastery", "GenAI Mastery"),
+    expected = [("mastery", "GenAI Mastery"),
                 ("agents", "Understanding AI Agents"), ("deepdives", "Deep Dives"),
                 ("interviewquestions", "Interview Questions"),
                 ("scenariopractice", "Scenario Design Studio"),

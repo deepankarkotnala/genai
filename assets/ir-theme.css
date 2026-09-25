@@ -703,11 +703,6 @@ html[data-reading-size] .content th    { font-size: calc(0.5625rem * var(--readi
 html[data-reading-size] .content .card h3,
 html[data-reading-size] .prep-topic-card h3,
 html[data-reading-size] .prep-topic-card h2 { font-size: calc(0.90625rem * var(--reading-scale)) !important; }
-html[data-reading-size] .content .card p,
-html[data-reading-size] .prep-topic-card p { font-size: calc(0.8125rem * var(--reading-scale)) !important; }
-html[data-reading-size] .content .callout,
-html[data-reading-size] .content .callout p,
-html[data-reading-size] .content .callout li { font-size: calc(0.84375rem * var(--reading-scale)) !important; }
 
 /* ---- width: Standard 65rem, Wide 82.5rem; Full belongs to focus mode ---- */
 html[data-reading-width="default"],
@@ -954,8 +949,10 @@ body.focus-mode[data-focus-width="full"] .content { max-width: none !important; 
 .hero > .lead {
   margin: 0 0 1em;
   color: var(--text-secondary) !important;
-  font-size: var(--fs-lead) !important;
-  line-height: 1.6 !important;
+  /* Same size and leading as body prose (see office-theme.css); the lead is
+     set apart by colour and position, not by being larger. */
+  font-size: var(--reader-font-size) !important;
+  line-height: 1.62 !important;
 }
 
 /* ---- chips and pills: fully rounded ---- */
@@ -1920,4 +1917,69 @@ html.theme-switching *::after {
   .sidebar, .topbar, .toc-rail, .backdrop, .page-nav, .scroll-top, .reading-progress { display: none !important; }
   .content details { break-inside: avoid; }
   body { background: #fff !important; }
+}
+
+/* --- Pinned sidebar header ----------------------------------------------
+   The brand and search stay put; only the navigation (or the search results
+   while searching) scrolls beneath them. The rail itself no longer scrolls, so
+   nothing can slide behind the logo. The scroller is pulled out to the rail's
+   right and bottom edges so its scrollbar sits where the rail's used to. */
+.sidebar {
+  --sb-px: 1rem;
+  --sb-pb: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden !important;
+}
+.sidebar > .brand,
+.sidebar > .search-wrap { flex: none; }
+.sidebar > .nav,
+.sidebar.is-searching .search-results {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+  margin-right: calc(-1 * var(--sb-px)) !important;
+  padding-right: var(--sb-px) !important;
+}
+.sidebar > .nav { margin-bottom: calc(-1 * var(--sb-pb)) !important; }
+.sidebar.is-searching > .search-wrap {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+.sidebar.is-searching > .search-wrap > .search-box { flex: none; }
+@media (max-width: 860px) {
+  .sidebar { --sb-px: 0.875rem; --sb-pb: 1rem; }
+  .app.sidebar-collapsed > .sidebar { display: flex; }
+  /* The drawer nav carries its own 0.625rem side inset. */
+  .sidebar > .nav { padding-right: calc(var(--sb-px) + 0.625rem) !important; }
+}
+
+/* ---- one text size for all reading copy ----
+   Callouts, cards, steps and prompt boxes used to step down from the body
+   (13-14px against 14.5px prose) and a few stepped up (15-15.7px). Every block
+   of running text in the reading column now uses the body size and leading;
+   only headings, tables, pills, code and captions keep their own step. */
+.content .callout,
+.content .callout p,
+.content .callout li,
+.content .card p,
+.content .card li,
+.prep-topic-card p,
+.content .gu-step p,
+.content .step p,
+.content .scenario-prompt p,
+.content .scenario-framework p,
+.content .ats-path-step p,
+.content .review-note p,
+.content .gp-week p,
+.content .gp-matrix p,
+.content .demo p {
+  font-size: var(--reader-font-size) !important;
+  line-height: 1.62 !important;
 }

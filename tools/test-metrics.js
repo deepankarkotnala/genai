@@ -108,7 +108,7 @@ section("4 · Tag-filtered totals");
   });
   // sorted entries, because JSON.stringify key order follows insertion order
   eq("tag populations", Object.entries(tagged).sort(),
-    Object.entries({ "genai-mastery": 14, "deep-dive": 11, "genai-bank": 12,
+    Object.entries({ "genai-mastery": 14, "deep-dive": 12, "genai-bank": 12,
       "tech-drill": 6, scenario: 9 }).sort());
 
   eq("genai-mastery filter", H(checker.compute("genai-mastery-hours").value), [201, 330]);

@@ -453,6 +453,23 @@
         "sections": {}
       }
     },
+    "jev": {
+      "path": "jev.html",
+      "title": "Jev - System-1 decisions",
+      "type": "content",
+      "contentRole": "learn",
+      "tags": [
+        "deep-dive"
+      ],
+      "durations": {
+        "full": [
+          30,
+          45
+        ],
+        "core": null,
+        "sections": {}
+      }
+    },
     "hub-home": {
       "path": "index.html",
       "title": "Learn GenAI engineering in a clear topic sequence",
