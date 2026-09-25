@@ -6,27 +6,28 @@
 <meta name="theme-color" content="#f4f5f8">
 <title>Lesson 14 · Frameworks, deployment and operations | Understanding AI Agents</title>
 <meta name="description" content="A framework comparison you can now judge, then the four things a service forces: stateless service with stateful runs, resume that restores rather than replays, the approval gate as a separate request, and prompt versioning.">
-<link rel="icon" href="../../assets/brand/favicon.svg?v=20260925b" type="image/svg+xml">
-<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260925b" sizes="32x32" type="image/png">
-<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260925b">
-<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260925c" sizes="180x180">
-<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260925b">
-<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260925b" color="#6f47f5">
+<link rel="icon" href="../assets/brand/favicon.svg?v=20260925b" type="image/svg+xml">
+<link rel="icon" href="../assets/brand/favicon-32.png?v=20260925b" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../assets/brand/favicon.ico?v=20260925b">
+<link rel="apple-touch-icon" href="../assets/brand/apple-touch-icon.png?v=20260925c" sizes="180x180">
+<link rel="manifest" href="../assets/brand/site.webmanifest?v=20260925b">
+<link rel="mask-icon" href="../assets/brand/safari-pinned-tab.svg?v=20260925b" color="#6f47f5">
 <meta name="application-name" content="Interview Preparation">
 <meta name="apple-mobile-web-app-title" content="Interview Prep">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:"m";var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link rel="stylesheet" href="../../assets/styles.css?v=20260801d">
-<link href="../../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
-<link href="../../assets/genai-motion.css?v=20260801a" rel="stylesheet"/>
+<link rel="stylesheet" href="../assets/styles.css?v=20260801d">
+<link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
+<link href="../assets/ir-theme.css?v=20260925f" rel="stylesheet"/>
+<link href="../assets/genai-motion.css?v=20260801a" rel="stylesheet"/>
 </head>
 <body data-page="ta-l14">
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
-<a class="brand-link" href="../../index.html" aria-label="Learn GenAI home">
-<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<a class="brand-link" href="../index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
 <div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
 </a>
 </div>
@@ -103,7 +104,7 @@
 
         <h2 id="four">2 · Four things a service forces</h2>
 
-        <p>Everything so far ran in one process, in memory. <a href="../project/service/api.py">service/api.py</a> forces four decisions the in-process loop let you avoid.</p>
+        <p>Everything so far ran in one process, in memory. <a href="../teach-agents/project/service/api.py">service/api.py</a> forces four decisions the in-process loop let you avoid.</p>
 
         <h3>1 · Stateless service, stateful run</h3>
 
@@ -154,7 +155,7 @@
         <h2 id="break">5 · Break it</h2>
 
         <div class="steps">
-          <p><strong>1 · Traverse the path.</strong> Call <code>STORE.load("../../../etc/passwd")</code>. Rejected - the run id arrives from an HTTP path parameter, so it is untrusted input like any other. Remove the guard and see what the store will happily open.</p>
+          <p><strong>1 · Traverse the path.</strong> Call <code>STORE.load("../../etc/passwd")</code>. Rejected - the run id arrives from an HTTP path parameter, so it is untrusted input like any other. Remove the guard and see what the store will happily open.</p>
           <p><strong>2 · Break atomicity.</strong> Replace the temp-file-then-rename with a direct write, then kill the process mid-save. You now have a half-written state file that parses as corrupt or, worse, as plausible. A test asserts no <code>.tmp</code> files survive a save.</p>
           <p><strong>3 · Make resume replay.</strong> Change <code>resume_run</code> to re-run from step 0 on a run that had already prepared a refund. Watch the audit log. This is the double-payment problem arriving through the recovery path.</p>
           <p><strong>4 · Remove the version check.</strong> Resume a run started under an old prompt. Nothing fails; the run finishes; the answer is a blend of two behaviours and the trace says nothing about it. This is the bug you cannot debug later.</p>
@@ -241,9 +242,9 @@
 
         <h2 id="deeper">9 · Optional deep dives</h2>
         <ul>
-          <li><a href="../../modules/12_langgraph.html">Module 12 · LangGraph</a> - checkpointers, durable interrupts, human-in-the-loop.</li>
-          <li><a href="../../modules/14_production_genai.html">Module 14 · Production GenAI</a> - deployment, rate limiting and cost control.</li>
-          <li><a href="../project/docs/decisions.md">docs/decisions.md</a> - all 19 decisions with their trade-offs.</li>
+          <li><a href="../modules/12_langgraph.html">Module 12 · LangGraph</a> - checkpointers, durable interrupts, human-in-the-loop.</li>
+          <li><a href="../modules/14_production_genai.html">Module 14 · Production GenAI</a> - deployment, rate limiting and cost control.</li>
+          <li><a href="../teach-agents/project/docs/decisions.md">docs/decisions.md</a> - all 19 decisions with their trade-offs.</li>
         </ul>
 
         <div class="page-nav">
@@ -258,7 +259,7 @@
 
 <script>
 window.PORTAL = {
-  homeHref: "../../index.html",
+  homeHref: "../index.html",
   navLabel: "The course",
   here: "lessons/0014-deployment.html",
   base: "../",
@@ -282,9 +283,9 @@ window.PORTAL = {
   ]
 };
 </script>
-<script src="../../assets/sitenav.js?v=20260731b"></script>
-<script src="../../assets/portal-page.js?v=20260925c"></script>
-<script src="../../assets/enhance.js?v=20260731b"></script>
-<script src="../../assets/genai-motion.js?v=20260728a"></script>
+<script src="../assets/sitenav.js?v=20260731b"></script>
+<script src="../assets/portal-page.js?v=20260925c"></script>
+<script src="../assets/enhance.js?v=20260731b"></script>
+<script src="../assets/genai-motion.js?v=20260728a"></script>
 </body>
 </html>
