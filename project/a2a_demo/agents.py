@@ -1,5 +1,5 @@
 """
-a2a_demo/agents.py — two agents, one boundary that must hold.
+a2a_demo/agents.py - two agents, one boundary that must hold.
 
 Lesson 13. A triage agent delegates a refund question to a refund specialist
 over A2A. The specialist knows the refund policy in depth; the triage agent does

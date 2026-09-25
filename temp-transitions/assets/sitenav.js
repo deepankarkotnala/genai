@@ -1,8 +1,8 @@
 /* =========================================================================
-   GenAI Learning Hub — Unified site navigation (Option C)
+   GenAI Learning Hub - Unified site navigation (Option C)
    ONE sidebar shared by every page across all folders. Content stays grouped
    and visually distinct by source folder; nothing is flattened into a single
-   mixed list. No iframes — every link is a normal navigation.
+   mixed list. No iframes - every link is a normal navigation.
 
    This module owns the sidebar (.nav) and the cross-site search box. It builds
    from a single central registry of GROUPS → pages, each page carrying a
@@ -12,7 +12,7 @@
    "../" hops, so the same registry works from any folder.
 
    The page's existing controller (app.js or portal-page.js) still handles
-   theme, right-rail TOC, copy buttons, quizzes and the mobile drawer — they
+   theme, right-rail TOC, copy buttons, quizzes and the mobile drawer - they
    just no longer build the sidebar (this does).
    Pure vanilla JS, no deps, offline-safe.
    ========================================================================= */
@@ -61,13 +61,13 @@
         { path: "dsa-prep/15-graphs-grids.html", title: "Graphs & Grids", num: "15", track: "Non-linear structures", kw: "graph grid bfs dfs connected components multi source shortest path islands clone" },
         { path: "dsa-prep/16-advanced-graphs.html", title: "Advanced Graphs", num: "16", track: "Non-linear structures", kw: "topological sort union find dijkstra bellman ford mst weighted shortest path" },
         { path: "dsa-prep/17-greedy.html", title: "Greedy", num: "17", track: "Optimization", kw: "greedy exchange argument interval scheduling reachability partition jump game gas station" },
-        { path: "dsa-prep/18-dynamic-programming-1d.html", title: "Dynamic Programming — 1D", num: "18", track: "Optimization", kw: "dynamic programming 1d state recurrence memoization tabulation rolling house robber coin change lis" },
-        { path: "dsa-prep/19-dynamic-programming-2d.html", title: "Dynamic Programming — 2D", num: "19", track: "Optimization", kw: "dynamic programming 2d grid knapsack edit distance interval dp path counting lcs" },
+        { path: "dsa-prep/18-dynamic-programming-1d.html", title: "Dynamic Programming - 1D", num: "18", track: "Optimization", kw: "dynamic programming 1d state recurrence memoization tabulation rolling house robber coin change lis" },
+        { path: "dsa-prep/19-dynamic-programming-2d.html", title: "Dynamic Programming - 2D", num: "19", track: "Optimization", kw: "dynamic programming 2d grid knapsack edit distance interval dp path counting lcs" },
         { path: "dsa-prep/20-bit-math-matrix.html", title: "Bit, Math & Matrix", num: "20", track: "Optimization", kw: "bit manipulation xor mask math gcd sieve modular matrix rotate image game of life" },
         { path: "dsa-prep/21-data-structure-design.html", title: "Data Structure Design", num: "21", track: "Applied interview work", kw: "data structure design lru lfu min stack median stream twitter time based key value snapshot" },
         { path: "dsa-prep/22-python-numpy-pandas-performance.html", title: "Python, NumPy & Pandas Performance", num: "22", track: "Applied interview work", kw: "numpy pandas vectorization broadcasting memory contiguity itertuples apply categorical chunked cosine similarity top k" },
         { path: "dsa-prep/23-role-tracks-mocks-revision.html", title: "Role Tracks, Mocks & Revision", num: "23", track: "Study tracks", kw: "role tracks mocks revision signal structure map 30 60 90 spaced repetition flashcards readiness" },
-        { path: "dsa-prep/24-advanced-dsa-optional.html", title: "Advanced DSA — Optional", num: "24", track: "Study tracks", kw: "advanced fenwick tree segment tree coordinate compression sweep line reservoir sampling meet in the middle" }
+        { path: "dsa-prep/24-advanced-dsa-optional.html", title: "Advanced DSA - Optional", num: "24", track: "Study tracks", kw: "advanced fenwick tree segment tree coordinate compression sweep line reservoir sampling meet in the middle" }
       ]
     },
     {
@@ -126,10 +126,10 @@
       home: "learn-rag-mcp/index.html",
       pages: [
         { path: "learn-rag-mcp/index.html", title: "Guide home", num: "✦", kw: "rag mcp guide overview home index" },
-        { path: "learn-rag-mcp/01-llms.html", title: "LLMs — The Foundation", num: "01", kw: "llm token context window prediction hallucination temperature prompt" },
-        { path: "learn-rag-mcp/02-rag.html", title: "RAG — Retrieval-Augmented Generation", num: "02", kw: "rag retrieval embedding chunk vector grounding" },
+        { path: "learn-rag-mcp/01-llms.html", title: "LLMs - The Foundation", num: "01", kw: "llm token context window prediction hallucination temperature prompt" },
+        { path: "learn-rag-mcp/02-rag.html", title: "RAG - Retrieval-Augmented Generation", num: "02", kw: "rag retrieval embedding chunk vector grounding" },
         { path: "learn-rag-mcp/03-agents.html", title: "Agents & Tool Use", num: "03", kw: "agent tool loop react planning function calling" },
-        { path: "learn-rag-mcp/04-mcp.html", title: "MCP — Model Context Protocol", num: "04", kw: "mcp protocol server client tools resources" },
+        { path: "learn-rag-mcp/04-mcp.html", title: "MCP - Model Context Protocol", num: "04", kw: "mcp protocol server client tools resources" },
         { path: "learn-rag-mcp/05-build-simple-rag.html", title: "Build: A Simple RAG App", num: "05", kw: "build rag project simple embeddings" },
         { path: "learn-rag-mcp/06-build-pdf-qna.html", title: "Build: PDF Q&A RAG App", num: "06", kw: "pdf qna question answering rag chunk" },
         { path: "learn-rag-mcp/07-eda-agent-ollama.html", title: "Build: EDA Agent with Ollama", num: "07", kw: "eda agent ollama local pandas analysis" }
@@ -246,15 +246,15 @@
       home: "rag-deep-dive.html",
       pages: [
         { path: "rag-deep-dive.html", title: "RAG, End-to-End", num: "📚", kw: "rag pipeline chunking reranking retrieval evaluation end to end" },
-        { path: "agent-protocols.html", title: "Agent Protocols — MCP · A2A · A2UI", num: "🔗", kw: "agent protocols mcp model context protocol a2a agent2agent agent to agent a2ui agent to ui agent user interface generative ui ag-ui copilotkit interoperability agent card well-known task lifecycle input required auth required artifact message part skill json-rpc grpc rest streaming push notification webhook surface component catalog data model json pointer declarative mcp apps extensions stateless 2026-07-28 tools resources prompts linux foundation ap2 agent payments protocol comparison interview" },
+        { path: "agent-protocols.html", title: "Agent Protocols - MCP · A2A · A2UI", num: "🔗", kw: "agent protocols mcp model context protocol a2a agent2agent agent to agent a2ui agent to ui agent user interface generative ui ag-ui copilotkit interoperability agent card well-known task lifecycle input required auth required artifact message part skill json-rpc grpc rest streaming push notification webhook surface component catalog data model json pointer declarative mcp apps extensions stateless 2026-07-28 tools resources prompts linux foundation ap2 agent payments protocol comparison interview" },
         { path: "llm-evals.html", title: "LLM Evals", num: "✅", kw: "llm evals evaluation vibe testing golden dataset llm as judge faithfulness groundedness rag agent safety operational benchmarks mmlu ragas deepeval interview ai engineer" },
         { path: "llmops.html", title: "LLMOps", num: "⚙️", kw: "llmops mlops lifecycle prompt versioning experiment tracking deployment observability tracing cost token latency optimization guardrails feedback loop tooling langfuse langsmith interview" },
-        { path: "langfuse.html", title: "Langfuse — Observability", num: "📡", kw: "langfuse observability trace cost latency quality scores" },
+        { path: "langfuse.html", title: "Langfuse - Observability", num: "📡", kw: "langfuse observability trace cost latency quality scores" },
         { path: "guardrails.html", title: "Guardrails", num: "🛡️", kw: "guardrails safety scope pii hallucination policy" },
         { path: "memory.html", title: "Memory in LLMs", num: "🧠", kw: "memory context window stateless chat history" },
         { path: "langgraph.html", title: "LangGraph & components", num: "🕸️", kw: "langgraph state node edge checkpointer human in the loop asyncio pydantic" },
         { path: "claude-agent.html", title: "How a Claude Agent Works", num: "🤖", kw: "claude agent sdk tool runner loop context safety" },
-        { path: "hermes.html", title: "Hermes — open local models", num: "🔱", kw: "hermes nous ollama open function calling local models" }
+        { path: "hermes.html", title: "Hermes - open local models", num: "🔱", kw: "hermes nous ollama open function calling local models" }
       ]
     },
     {
@@ -380,7 +380,7 @@
 
     var intro = document.createElement("section");
     intro.className = "mobile-nav-intro";
-    var currentLabel = currentGroup ? currentGroup.label : "Switch job Learning Platform";
+    var currentLabel = currentGroup ? currentGroup.label : "Learn GenAI Learning Platform";
     var currentCount = currentGroup ? currentGroup.pages.length : GROUPS.length;
     var countLabel = currentGroup ? (currentCount + (currentCount === 1 ? " page" : " pages") + " in this path") : (currentCount + " learning paths");
     intro.innerHTML =
@@ -446,7 +446,7 @@
     var f = document.createElement("footer");
     f.className = "site-footer";
     f.innerHTML =
-      '<span>© ' + year + ' Switch job</span>' +
+      '<span>© ' + year + ' Learn GenAI</span>' +
       '<span class="sep">·</span>' +
       '<span>Developed by Deepankar Kotnala</span>';
     content.appendChild(f);
@@ -676,12 +676,12 @@
   }
 
   function setupPageTransitions() {
-    if (REDUCED_MOTION) return;   // respect the user's preference — no transitions
+    if (REDUCED_MOTION) return;   // respect the user's preference - no transitions
 
     // Any browser with the View Transitions API handles the transition via CSS
     // (`@view-transition`), and the CSS gates the JS-fallback styling behind
     // `@supports not (view-transition-name)`. So if VT is supported at all, the
-    // JS fade would either double up or have no styling to apply — skip it and
+    // JS fade would either double up or have no styling to apply - skip it and
     // keep the two paths perfectly aligned with the CSS.
     var hasVT = (window.CSS && CSS.supports && CSS.supports("view-transition-name: none"));
     if (hasVT) return;
@@ -692,7 +692,7 @@
       if (!dest) return;
       e.preventDefault();
       // Fade the content out, then navigate; the next page's CSS page-enter
-      // animation fades it in — giving a smooth out→in between pages.
+      // animation fades it in - giving a smooth out→in between pages.
       document.documentElement.classList.add("is-leaving");
       window.setTimeout(function () { window.location.href = dest; }, 180);
     });

@@ -1,5 +1,5 @@
 /* =========================================================================
-   genai-motion.css — the motion layer for the GenAI portal
+   genai-motion.css - the motion layer for the GenAI portal
    =========================================================================
 
    Ported from the Machine Learning portal's motion system (ml-mobile.css
@@ -8,7 +8,7 @@
    the desktop too, so the drawer, the nav, the chrome and the entrances all
    get the same curves at every width.
 
-   Loaded LAST — after styles.css and office-theme.css — for one reason: the
+   Loaded LAST - after styles.css and office-theme.css - for one reason: the
    drawer's timing is currently decided by three files at once. styles.css
    sets `transform .25s ease` at 860px, then again `.32s var(--ease-out)`,
    then office-theme.css overrides both with `.22s ease` and kills the
@@ -17,17 +17,17 @@
    fourth override exists. One trailing file that owns motion is reviewable.
 
    Everything animates transform / opacity / box-shadow / border-color only,
-   so it stays on the compositor. No layout, colour or spacing changes here —
+   so it stays on the compositor. No layout, colour or spacing changes here - 
    this file is timing, nothing else.
 
    Structure
      1  Motion tokens
      2  The navigation drawer (mobile)
      3  Desktop sidebar collapse
-     4  Sidebar internals — groups, chevrons, rows
-     5  Sticky chrome — topbar, ribbon, jump-to-section
-     6  Interactive feedback — hover, press, focus
-     7  Entrances — scroll-driven, with a one-shot fallback
+     4  Sidebar internals - groups, chevrons, rows
+     5  Sticky chrome - topbar, ribbon, jump-to-section
+     6  Interactive feedback - hover, press, focus
+     7  Entrances - scroll-driven, with a one-shot fallback
      8  Collapsibles
      9  Reduced motion & print
    ========================================================================= */
@@ -69,7 +69,7 @@
 
   /* Opening is the slow, decelerating curve: the panel is a large surface
      travelling a long distance, and arriving softly is what makes it read as
-     a physical object rather than a repaint. Closing (below) is quicker —
+     a physical object rather than a repaint. Closing (below) is quicker - 
      a dismissal the user asked for should feel immediate, and a leisurely
      exit on the way out just reads as lag. */
   .sidebar {
@@ -99,7 +99,7 @@
       -webkit-backdrop-filter var(--gm-dur) ease;
   }
 
-  /* Drawer contents stagger in *behind* the panel — the groups are already
+  /* Drawer contents stagger in *behind* the panel - the groups are already
      moving by the time the panel edge reaches them, which is what makes the
      open feel authored rather than mechanical.
 
@@ -151,7 +151,7 @@
    The ☰ button on the desktop toggles `.sidebar-collapsed`, which styles.css
    implements as `display: none` plus a one-column grid. Both are instant and
    unanimatable, so the widest, most-used state change in the portal is the
-   one place with no motion at all — the page just jumps.
+   one place with no motion at all - the page just jumps.
 
    Replaced with a real transition: the grid column collapses to zero while
    the panel slides and fades out behind it. `visibility` is delayed by the
@@ -160,7 +160,7 @@
 
    Animating `grid-template-columns` needs Chrome 107+ / Safari 16+ / Firefox
    66+. Everywhere else the properties still apply, just without interpolation
-   — i.e. exactly today's instant collapse. Nothing to fall back to.
+   - i.e. exactly today's instant collapse. Nothing to fall back to.
    ========================================================================= */
 @media (min-width: 861px) {
   .app {
@@ -175,7 +175,7 @@
 
   .app.sidebar-collapsed { grid-template-columns: 0 minmax(0, 1fr); }
   .app.sidebar-collapsed > .sidebar {
-    /* Beats `display: none` in styles.css — same specificity, later file.
+    /* Beats `display: none` in styles.css - same specificity, later file.
        The panel has to stay in the box tree to be animatable at all. */
     display: block;
     overflow: hidden;
@@ -251,7 +251,7 @@
     background var(--gm-dur-fast) ease,
     transform var(--gm-dur-fast) var(--gm-ease);
 }
-/* While dragging, the panel must track the pointer exactly — a transition
+/* While dragging, the panel must track the pointer exactly - a transition
    here would make the edge lag behind the cursor. */
 body.sidebar-resizing .app,
 body.sidebar-resizing .app > .sidebar { transition: none !important; }
@@ -308,17 +308,22 @@ body.is-scrolled .topbar {
 }
 .office-ribbon a:active { background: var(--accent-soft); }
 
-/* --- Jump-to-section dropdown (mobile) ---------------------------------- */
-@media (max-width: 1100px) {
+/* --- Jump-to-section dropdown (mobile) ----------------------------------
+   Matched to interview_prep (assets/portal.css): the same 980px step as
+   office-theme.css - this block used to start at 1100px, which hid the
+   desktop rail's list between 981 and 1100px - and interview_prep's snappy
+   timings: a 90ms linear toggle and caret, and a 100ms linear fade for the
+   list with no rise. */
+@media (max-width: 980px) {
   .toc-toggle {
     transition:
-      background var(--gm-dur-fast) ease,
-      border-color var(--gm-dur-fast) ease,
-      transform var(--gm-dur-fast) var(--gm-ease);
+      background 90ms linear,
+      border-color 90ms linear,
+      transform 90ms linear;
   }
   .toc-toggle:active { transform: scale(.99); }
   .toc-toggle .toc-toggle-caret {
-    transition: transform var(--gm-dur) var(--gm-ease-out);
+    transition: transform 90ms linear;
   }
 
   /* office-theme.css reveals the dropdown with display: none → block, so it
@@ -330,19 +335,17 @@ body.is-scrolled .topbar {
        - visibility transitions with a delay equal to the duration, so the
          panel stays painted for the whole of its exit
      app.js puts `.toc-open` on `.toc` (the <nav>), not on `.toc-rail`, and
-     office-theme.css matches it the same way — follow that convention or the
+     office-theme.css matches it the same way - follow that convention or the
      selector silently never matches and the dropdown never opens. */
   .toc .toc-list {
     display: block !important;
     visibility: hidden;
     opacity: 0;
-    transform: translateY(-6px) scale(.99);
-    transform-origin: 50% 0;
+    transform: none;
     pointer-events: none;
     transition:
-      opacity var(--gm-dur) ease,
-      transform var(--gm-dur) var(--gm-ease-out),
-      visibility 0s linear var(--gm-dur);
+      opacity 100ms linear,
+      visibility 0s linear 100ms;
   }
   .toc.toc-open .toc-list,
   .toc-open .toc-list {
@@ -351,22 +354,15 @@ body.is-scrolled .topbar {
     transform: none;
     pointer-events: auto;
     transition:
-      opacity var(--gm-dur) ease,
-      transform var(--gm-dur) var(--gm-ease-out),
+      opacity 100ms linear,
       visibility 0s;
   }
 }
 
-/* Desktop right rail: the active section marker travels down the list. */
-@media (min-width: 1101px) {
-  .toc-rail .toc-list a {
-    transition:
-      color var(--gm-dur-fast) ease,
-      background var(--gm-dur-fast) ease,
-      border-color var(--gm-dur-fast) ease;
-  }
-}
-.toc-rail .toc-list a:active { background: var(--accent-soft); }
+/* Desktop right rail: row hover, the click flash and its fade-out are all
+   timed in office-theme.css (RIGHT RAIL, matched to interview_prep). This
+   file used to override them with a colour-only transition, which killed
+   the hover slide and the slow fade. */
 
 .scroll-top {
   transition:
@@ -381,7 +377,7 @@ body.is-scrolled .topbar {
    6 · Interactive feedback
    -------------------------------------------------------------------------
    office-theme.css deliberately flattens card hover to border + shadow only
-   (`transform: none !important`) — that is the Office-inspired look and this
+   (`transform: none !important`) - that is the Office-inspired look and this
    file does not fight it. What it adds is *timing* for those two properties,
    which office-theme never declared, so the change currently snaps.
 
@@ -444,8 +440,8 @@ a.card:active,
   .rm-link:hover { transform: none; }
 }
 
-/* Keyboard focus should be instant to appear — a fading focus ring is a
-   worse focus ring — but the colour may still ease. */
+/* Keyboard focus should be instant to appear - a fading focus ring is a
+   worse focus ring - but the colour may still ease. */
 :where(a, button, summary, input, select, textarea):focus-visible {
   transition: outline-color var(--gm-dur-fast) ease;
 }
@@ -470,7 +466,7 @@ button:active,
    up on the same element:
 
      preferred   `animation-timeline: view()` ties the animation to scroll
-                 position, so every card animates at any scroll depth — no JS,
+                 position, so every card animates at any scroll depth - no JS,
                  no observer, and it replays on scroll back.
      fallback    one staggered entrance for the first screenful. Safari has no
                  scroll-driven animations, and this is what it gets.
@@ -507,7 +503,7 @@ button:active,
 /* The one-shot arrival stagger that used to sit here (`gm-rise-once` on the
    eyebrow, h1, lead, hero and first two callouts, 0.02s → 0.26s) was removed on
    2026-08-04 along with the page transitions in styles.css. It ran on document
-   load, which means that to a reader clicking a link it was not an "entrance" —
+   load, which means that to a reader clicking a link it was not an "entrance" - 
    it was the page transition, and it was part of what read as jitter on the
    browsers that got it (the ones without scroll-driven animations, i.e. Safari).
 
@@ -589,7 +585,10 @@ details > summary .chev {
   .sidebar,
   .backdrop,
   .toc-rail,
+  .toc a,
+  .toc a::before,
   .toc .toc-list,
+  .toc-toggle,
   .toc-toggle-caret,
   .navgroup-head .ng-chev,
   .office-ribbon a::after,
@@ -619,7 +618,7 @@ details > summary .chev {
 }
 
 /* =========================================================================
-   10 · A navigation is one animation, not two — RETIRED 2026-08-04
+   10 · A navigation is one animation, not two - RETIRED 2026-08-04
    -------------------------------------------------------------------------
    This section suppressed section 7's arrival stagger while a cross-document
    view transition was running, so a navigation never played two entrances at

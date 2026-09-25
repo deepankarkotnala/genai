@@ -1,5 +1,5 @@
 /* =========================================================================
-   GenAI Mastery Portal — App Logic
+   GenAI Mastery Portal - App Logic
    Theme toggle · search · quizzes · copy · demos · TOC
    Pure vanilla JS. No dependencies. Works offline.
    ========================================================================= */
@@ -130,7 +130,7 @@
       .replace(/industry perspective/i, "Industry view")
       .replace(/top mistakes engineers make/i, "Common mistakes")
       .replace(/interview preparation/i, "Interview prep")
-      .replace(/mini project\s*[—–-].*$/i, "Mini project")
+      .replace(/mini project\s*[ - –-].*$/i, "Mini project")
       .replace(/real project connection/i, "Project context")
       .replace(/executive summary/i, "Summary")
       .trim();
@@ -145,7 +145,7 @@
     const content = document.querySelector(".content");
     if (!rail || !content) return;
     /* A term dialog carries an <h2> for its accessible name, and those dialogs
-       live inside .content — so an unfiltered query lists every definition as a
+       live inside .content - so an unfiltered query lists every definition as a
        chapter section. Section headings are the ones in the document flow. */
     const heads = [...content.querySelectorAll("h2[id]")].filter(h => !h.closest("dialog"));
     if (!heads.length) { const r = document.querySelector(".toc-rail"); if (r) r.style.display = "none"; return; }
@@ -153,12 +153,12 @@
     rail.classList.add("toc-textbook");
     rail.innerHTML = `
       <div class="toc-book-head">
-        <div><span class="toc-kicker">Chapter contents</span><strong>${heads.length} topics</strong></div>
+        <div><span class="toc-kicker">On this page</span><strong>${heads.length} ${heads.length === 1 ? "section" : "sections"}</strong></div>
         <button class="toc-top" type="button" aria-label="Back to chapter top" title="Back to top">↑</button>
       </div>
       <label class="toc-filter">
         <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg>
-        <input type="search" placeholder="Find topic" aria-label="Find a topic in this chapter">
+        <input type="search" placeholder="Find on this page" aria-label="Find on this page">
       </label>
       <div class="toc-list">${heads.map((h, index) => {
         const full = h.textContent.trim();
@@ -168,7 +168,7 @@
         return `<a href="#${h.id}" data-toc="${h.id}" title="${escapeTOCText(full)}"><span class="toc-num">${num}</span><span class="toc-label">${escapeTOCText(label)}</span></a>`;
       }).join("")}<div class="toc-empty" hidden>No matching topic</div></div>`;
 
-    // Compact "Jump to section" toggle — only shown on narrow screens (CSS).
+    // Compact "Jump to section" toggle - only shown on narrow screens (CSS).
     // Turns the section list into a tap-to-open dropdown instead of a
     // horizontal side-scrolling strip that blocks the page on mobile.
     const toggle = document.createElement("button");
@@ -181,10 +181,8 @@
       '<span class="toc-toggle-label">Jump to section</span>' +
       '<svg class="toc-toggle-caret" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
     rail.insertBefore(toggle, rail.firstChild);
-    const toggleLabel = toggle.querySelector(".toc-toggle-label");
 
     const links = [...rail.querySelectorAll("[data-toc]")];
-    const list = rail.querySelector(".toc-list");
     const filter = rail.querySelector(".toc-filter input");
     const empty = rail.querySelector(".toc-empty");
     const top = rail.querySelector(".toc-top");
@@ -197,7 +195,21 @@
       event.stopPropagation();
       setTocOpen(!rail.classList.contains("toc-open"));
     });
-    links.forEach(link => link.addEventListener("click", () => setTocOpen(false)));
+    /* Smooth jump, as in interview_prep: the page keeps scroll-behavior auto
+       (so find-in-page and restored positions stay instant) and a rail click
+       glides to its section instead. The heading's scroll-margin-top keeps it
+       clear of the sticky bar. */
+    const reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)");
+    links.forEach(link => link.addEventListener("click", event => {
+      setTocOpen(false);
+      flash(link);
+      const target = document.getElementById(link.getAttribute("data-toc"));
+      if (!target) return;
+      event.preventDefault();
+      target.scrollIntoView({ block: "start", behavior: reduceMotion && reduceMotion.matches ? "auto" : "smooth" });
+      // Keep the URL shareable; a history error (sandboxed file://) must not block the scroll.
+      try { history.replaceState(null, "", "#" + target.id); } catch (err) {}
+    }));
     document.addEventListener("click", event => { if (!rail.contains(event.target)) setTocOpen(false); });
     document.addEventListener("keydown", event => { if (event.key === "Escape") setTocOpen(false); });
 
@@ -213,46 +225,130 @@
       if (empty) empty.hidden = shown !== 0;
     });
 
-    const obs = new IntersectionObserver(entries => {
-      entries.forEach(en => {
-        if (en.isIntersecting) {
-          links.forEach(l => l.classList.toggle("active", l.dataset.toc === en.target.id));
-          const active = links.find(l => l.dataset.toc === en.target.id);
-          if (active && list) active.scrollIntoView({ block: "nearest" });
-          if (active && toggleLabel) {
-            const activeLabel = active.querySelector(".toc-label");
-            toggleLabel.textContent = activeLabel ? activeLabel.textContent : "Jump to section";
-          }
-        }
-      });
-    }, { rootMargin: "-72px 0px -72% 0px" });
-    heads.forEach(h => obs.observe(h));
-
-    // Auto-hide the mobile TOC bar: slide it away on scroll-down, reveal it on
-    // scroll-up. Near the very top of the page it always stays visible. (CSS
-    // only applies the hidden transform on mobile, so this is a no-op on the
-    // desktop side rail.)
-    const railEl = document.querySelector(".toc-rail");
-    if (railEl) {
-      let lastY = window.scrollY;
-      let ticking = false;
-      const evaluate = () => {
+    // No scroll spy - matched to the interview_prep portal: reading the page
+    // never lights up the rail. A click flashes the chosen row: it eases in,
+    // holds briefly, then fades out (the slower fade lives on .toc-fade in
+    // office-theme.css).
+    let flashTimer = null, fadeTimer = null;
+    function flash(link) {
+      clearTimeout(flashTimer); clearTimeout(fadeTimer);
+      links.forEach(l => l.classList.remove("active", "toc-fade"));
+      void link.offsetWidth; // restart the ease-in on a repeat click
+      link.classList.add("active");
+      flashTimer = setTimeout(() => {
+        link.classList.add("toc-fade");
+        link.classList.remove("active");
+        fadeTimer = setTimeout(() => link.classList.remove("toc-fade"), 1000);
+      }, 1600);
+    }
+    /* Mobile auto-hide: a downward scroll slides the "Jump to section" bar away,
+       and the first pixel of upward scroll brings it back. Near the top of the
+       page it always shows. The class only has an effect at <=980px (CSS). */
+    (function () {
+      var mq = window.matchMedia ? window.matchMedia("(max-width: 980px)") : null;
+      var lastY = Math.max(0, window.scrollY || 0), down = 0, ticking = false, hidden = false;
+      function setHidden(h) {
+        if (h === hidden) return;
+        hidden = h;
+        (rail.closest(".toc-rail") || rail).classList.toggle("toc-rail-hidden", h);
+        if (h) setTocOpen(false);
+      }
+      function evaluate() {
         ticking = false;
-        const y = Math.max(0, window.scrollY);
-        const delta = y - lastY;
-        if (Math.abs(delta) < 6) return;
-        if (y <= 100 || delta < 0) {
-          railEl.classList.remove("toc-rail-hidden");
-        } else {
-          railEl.classList.add("toc-rail-hidden");
-          setTocOpen(false);
-        }
+        var max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+        var y = Math.min(max, Math.max(0, window.scrollY || 0)); /* ignore iOS overscroll bounce */
+        var delta = y - lastY;
         lastY = y;
-      };
-      window.addEventListener("scroll", () => {
+        if (mq && !mq.matches) { down = 0; setHidden(false); return; }
+        if (y <= 80 || delta < 0) { down = 0; setHidden(false); return; }
+        if (delta > 0) { down += delta; if (down > 12) setHidden(true); }
+      }
+      window.addEventListener("scroll", function () {
         if (!ticking) { ticking = true; window.requestAnimationFrame(evaluate); }
       }, { passive: true });
+    })();
+    initTocResizer();
+  }
+
+  /* ---------- right rail resizer ----------
+     Matches interview_prep portal: mounted on document.body as .sidebar-resizer.right-resizer
+     Operates on --toc-w, clamped between 160px and 500px. */
+  function initTocResizer() {
+    var rail = document.querySelector(".toc-rail");
+    if (!rail) return;
+    if (document.querySelector(".sidebar-resizer.right-resizer, .toc-resizer")) return;
+
+    var handle = document.createElement("div");
+    handle.className = "sidebar-resizer right-resizer toc-resizer";
+    handle.setAttribute("role", "separator");
+    handle.setAttribute("aria-orientation", "vertical");
+    handle.setAttribute("aria-label", "Resize table of contents");
+    handle.setAttribute("title", "Drag to resize table of contents. Double-click to reset.");
+    handle.tabIndex = 0;
+    document.body.appendChild(handle);
+
+    var LS_KEY = "gp.toc.width";
+    var MIN_W = 160;
+    var MAX_W = 500;
+    var DEFAULT_W = 250; // 15.625rem
+    var KEY_STEP = 16;
+    var current = DEFAULT_W;
+    var isResizingRight = false;
+
+    function clampW(v) { return Math.max(MIN_W, Math.min(MAX_W, Math.round(v))); }
+
+    function applyW(value, persist) {
+      current = clampW(value);
+      document.documentElement.style.setProperty("--toc-w", current + "px");
+      handle.setAttribute("aria-valuenow", String(current));
+      handle.setAttribute("aria-valuetext", current + " pixels wide");
+      if (persist) {
+        try { localStorage.setItem(LS_KEY, String(current)); } catch (e) {}
+      }
     }
+
+    try {
+      var saved = parseInt(localStorage.getItem(LS_KEY), 10);
+      if (Number.isFinite(saved)) current = saved;
+    } catch (e) {}
+    applyW(current, false);
+
+    handle.addEventListener("mousedown", function (e) {
+      if (e.button !== 0) return;
+      isResizingRight = true;
+      document.body.classList.add("resizing-right", "resizing-toc");
+      e.preventDefault();
+    });
+
+    window.addEventListener("mousemove", function (e) {
+      if (isResizingRight) {
+        var w = window.innerWidth - e.clientX;
+        applyW(w, false);
+      }
+    });
+
+    window.addEventListener("mouseup", function () {
+      if (isResizingRight) {
+        isResizingRight = false;
+        document.body.classList.remove("resizing-right", "resizing-toc");
+        applyW(current, true);
+      }
+    });
+
+    handle.addEventListener("dblclick", function () {
+      applyW(DEFAULT_W, true);
+    });
+
+    handle.addEventListener("keydown", function (ev) {
+      var next = current;
+      if (ev.key === "ArrowLeft") next += KEY_STEP;
+      else if (ev.key === "ArrowRight") next -= KEY_STEP;
+      else if (ev.key === "Home") next = MAX_W;
+      else if (ev.key === "End") next = MIN_W;
+      else return;
+      ev.preventDefault();
+      applyW(next, true);
+    });
   }
 
   /* ---------- Copy buttons ---------- */
@@ -382,12 +478,12 @@
     if (!host) return;
     const descs = {
       "01": "How LLMs predict the next token, context windows, decoding, and where they fit in your stack.",
-      "02": "Self-attention, multi-head attention, positional encoding — the engine inside every LLM.",
+      "02": "Self-attention, multi-head attention, positional encoding - the engine inside every LLM.",
       "03": "Run models on your own hardware with Ollama. Qwen, Gemma, Llama, quantization & Modelfiles.",
       "04": "Turn text into vectors that capture meaning. The foundation of all semantic retrieval.",
       "05": "Store and search millions of vectors fast. FAISS, Qdrant, pgvector, HNSW & ANN tradeoffs.",
       "06": "The one RAG page: chunk → embed → retrieve → augment → generate, then hybrid search, reranking and evaluation.",
-      "08": "ReAct, tool calling, planning, reflection, memory and the agent loop — with failure modes.",
+      "08": "ReAct, tool calling, planning, reflection, memory and the agent loop - with failure modes.",
       "09": "The USB-C of AI tooling. Build MCP servers/clients, expose tools, resources & prompts.",
       "10": "Compose LLM apps with LCEL, runnables, retrievers and memory the production way.",
       "11": "The data framework for RAG: indexes, nodes, query engines and retrievers.",
@@ -413,7 +509,7 @@
   /* ---------- Hub-home links (iframe-aware) ----------
      Single-topic pages (langfuse, guardrails, memory, langgraph, claude-agent,
      hermes, rag-deep-dive) are shown inside the hub's iframe. Their "Hub home"
-     links point at the sibling index.html — but following that *inside* the
+     links point at the sibling index.html - but following that *inside* the
      iframe would load the whole hub nested inside itself. So when we're in an
      iframe, ask the parent hub to switch to its Home tab instead. When loaded
      directly (not iframed), the link navigates normally. Module pages use
@@ -437,6 +533,7 @@
     buildIndexGrid();
     setupSearch();
     buildTOC();
+    initTocResizer();
     setupCopy();
     setupQuizzes();
     setupMobileNav();

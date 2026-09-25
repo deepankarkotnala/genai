@@ -4,46 +4,46 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f4f5f8">
-<title>Memory in LLMs — How It's Managed &amp; Used · GenAI Mastery</title>
+<title>Memory in LLMs | How It's Managed &amp; Used · GenAI Mastery</title>
 <!-- Interview Preparation brand metadata -->
-<link rel="icon" href="assets/brand/favicon.svg?v=20260727c" type="image/svg+xml">
-<link rel="icon" href="assets/brand/favicon-32.png?v=20260727c" sizes="32x32" type="image/png">
-<link rel="shortcut icon" href="assets/brand/favicon.ico?v=20260727c">
-<link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png?v=20260727c" sizes="180x180">
-<link rel="manifest" href="assets/brand/site.webmanifest?v=20260727c">
-<link rel="mask-icon" href="assets/brand/safari-pinned-tab.svg?v=20260727c" color="#6f47f5">
-<link rel="image_src" href="assets/brand/social-card.png?v=20260727c">
+<link rel="icon" href="assets/brand/favicon.svg?v=20260925b" type="image/svg+xml">
+<link rel="icon" href="assets/brand/favicon-32.png?v=20260925b" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="assets/brand/favicon.ico?v=20260925b">
+<link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png?v=20260925b" sizes="180x180">
+<link rel="manifest" href="assets/brand/site.webmanifest?v=20260925b">
+<link rel="mask-icon" href="assets/brand/safari-pinned-tab.svg?v=20260925b" color="#6f47f5">
+<link rel="image_src" href="assets/brand/social-card.png?v=20260925b">
 <meta name="application-name" content="Interview Preparation">
 <meta name="apple-mobile-web-app-title" content="Interview Prep">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="msapplication-TileColor" content="#2563eb">
-<meta name="msapplication-config" content="assets/brand/browserconfig.xml?v=20260727c">
+<meta name="msapplication-TileColor" content="#1e3a8a">
+<meta name="msapplication-config" content="assets/brand/browserconfig.xml?v=20260925b">
 <meta property="og:type" content="website">
 <meta property="og:site_name" content="Interview Preparation">
-<meta property="og:title" content="Memory in LLMs — How It&#x27;s Managed &amp;amp; Used · GenAI Mastery">
-<meta property="og:description" content="How memory works in LLM applications: the stateless model and context window, short-term vs long-term memory, conversation buffers and summaries, vector-based long-term memory, the memory tool, and memory in agents — with code.">
-<meta property="og:image" content="assets/brand/social-card.png?v=20260727c">
+<meta property="og:title" content="Memory in LLMs | How It&#x27;s Managed &amp;amp; Used · GenAI Mastery">
+<meta property="og:description" content="How memory works in LLM applications: the stateless model and context window, short-term vs long-term memory, conversation buffers and summaries, vector-based long-term memory, the memory tool, and memory in agents - with code.">
+<meta property="og:image" content="assets/brand/social-card.png?v=20260925b">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
-<meta property="og:image:alt" content="Switch job learning platform logo">
+<meta property="og:image:alt" content="Learn GenAI learning platform logo">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Memory in LLMs — How It&#x27;s Managed &amp;amp; Used · GenAI Mastery">
-<meta name="twitter:description" content="How memory works in LLM applications: the stateless model and context window, short-term vs long-term memory, conversation buffers and summaries, vector-based long-term memory, the memory tool, and memory in agents — with code.">
-<meta name="twitter:image" content="assets/brand/social-card.png?v=20260727c">
-<link href="assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
+<meta name="twitter:title" content="Memory in LLMs - How It&#x27;s Managed &amp;amp; Used · GenAI Mastery">
+<meta name="twitter:description" content="How memory works in LLM applications: the stateless model and context window, short-term vs long-term memory, conversation buffers and summaries, vector-based long-term memory, the memory tool, and memory in agents - with code.">
+<meta name="twitter:image" content="assets/brand/social-card.png?v=20260925b">
+<link href="assets/brand/favicon-16.png?v=20260925b" rel="icon" sizes="16x16" type="image/png"/>
 <!-- /Interview Preparation brand metadata -->
-<meta name="description" content="How memory works in LLM applications: the stateless model and context window, short-term vs long-term memory, conversation buffers and summaries, vector-based long-term memory, the memory tool, and memory in agents — with code.">
+<meta name="description" content="How memory works in LLM applications: the stateless model and context window, short-term vs long-term memory, conversation buffers and summaries, vector-based long-term memory, the memory tool, and memory in agents - with code.">
 <!-- Theme before first paint. Without this the document paints with the light
      tokens and only flips when app.js runs at the end of <body>, which is a
      white flash on every navigation in dark mode. Mirrors app.js's getTheme()
-     exactly — same key, same "light" default — so the pre-paint value can never
+     exactly - same key, same "light" default - so the pre-paint value can never
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "s" on phones and "xs" above 860px, unknown width -> "wide", unknown align -> "left". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var mob=!!(window.matchMedia&&window.matchMedia("(max-width:860px)").matches);var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(mob?"s":"xs");var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition — CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
 <link rel="stylesheet" href="assets/styles.css?v=20260805a">
-<link href="assets/office-theme.css?v=20260805c" rel="stylesheet"/>
+<link href="assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <style>
   .nav .sec-num { font-family: var(--font-mono); }
@@ -57,14 +57,15 @@
      page, route and fragment have all resolved. -->
 <script defer src="assets/curriculum.js?v=20260804c"></script>
 <script defer src="assets/page-nav.js?v=20260804c"></script>
+<link href="assets/ir-theme.css?v=20260925c" rel="stylesheet"/>
 </head>
 <body data-curriculum-id="memory" data-page="memory">
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
-<a class="brand-link" href="index.html" aria-label="Switch job home">
-<span class="brand-mark" aria-hidden="true"><img src="assets/brand/switch-job-logo.png?v=20260727c" alt=""/></span>
-<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+<a class="brand-link" href="index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
 </a>
 </div>
     <div class="search-wrap">
@@ -89,438 +90,401 @@
 
     <div class="content-wrap">
       <main class="content">
-        <div class="eyebrow"><span class="dot"></span> How LLMs remember — and how they don't</div>
-        <h1>Memory in LLMs</h1>
-        <p class="lead">A large language model is <strong>stateless</strong>: between two API calls it remembers nothing. Every appearance of "memory" — a chatbot recalling your name, an agent picking up where it left off — is something the <em>application</em> builds around the model by deciding what to put back into its <strong>context window</strong> each turn. This page explains how that's done, from the basics to production patterns.</p>
-        <div class="meta-row">
-          <span class="pill blue">⏱ Deep study + practice · 5–8 h</span>
-          <span class="pill">Foundations → intermediate</span>
-          <span class="pill purple">Buffers · summaries · vector memory · agents</span>
-        </div>
 
-        <div class="callout note">
-          <div class="c-ico">🔗</div>
-          <div class="c-body"><div class="c-title">Where this fits</div>
-          <p>Memory builds on how the context window works (<a href="modules/01_foundations.html">01 · Foundations of LLMs →</a>) and uses the same embeddings + vector-store machinery as retrieval (<a href="modules/04_embeddings.html">04 · Embeddings</a>, <a href="modules/05_vector_databases.html">05 · Vector Databases</a>). Long-term memory and RAG are close cousins — §7 draws the line. Code uses OpenAI + LangChain; the patterns are provider-agnostic.</p></div>
-        </div>
+<!-- ================= 1 ================= -->
+<h2 id="known">1 · What you already know</h2>
+<p>From module 01: a model call takes text and returns text, and holds nothing
+between calls. From page 6 of the agent section: state belongs to one run.</p>
+<p><b>This page is about the facts that should outlive the run</b>, and about why the most
+common assumption people make here is wrong.</p>
 
-        <!-- 1 -->
-        <h2 id="stateless">1 · The starting point — the model is stateless</h2>
-        <p>Each call to a chat model is independent. The model sees only the messages you send in <em>this</em> request and produces a reply. It has no hidden memory of previous requests.</p>
-        <div class="code-block"><div class="code-head"><span class="lang">python · the model forgets</span><button class="copy-btn">Copy</button></div>
-<pre><code>from openai import OpenAI
-oai = OpenAI()
+<!-- ================= 2 ================= -->
+<h2 id="breaks">2 · What breaks now</h2>
+<p><b>A language model has no memory.</b> Not a small memory, not a short one:
+none at all. Each call is independent, and the model retains nothing after it returns.</p>
 
-oai.chat.completions.create(model="gpt-4o-mini",
-    messages=[{"role": "user", "content": "My name is Alice."}])
-# → "Nice to meet you, Alice!"
+<p>Two calls, two seconds apart, same process. The second knows nothing about the first.</p>
+<p>Every chat interface that appears to remember your name is <b>re-sending your name in every
+request</b>. What looks like memory is your application resending text.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>What people assume</th><th>What is actually happening</th></tr></thead>
+<tbody>
+<tr><td>The model remembers the conversation</td><td>Your code re-sends every message, every turn</td></tr>
+<tr><td>A bigger context window means longer memory</td><td>It means more text fits in one call. Nothing persists</td></tr>
+<tr><td>Checkpointing gives the model memory</td><td>It saves your application's state. The model still sees only the prompt</td></tr>
+<tr><td>Fine-tuning teaches it about this user</td><td>It changes behaviour, not per-user facts, and cannot be updated per conversation</td></tr>
+</tbody>
+</table>
+</div>
+<p>The third row is worth stating carefully, because it is the misconception that makes people
+think checkpointing and memory are one feature. <b>A checkpointer makes your run durable; it
+gives the model nothing.</b></p>
 
-oai.chat.completions.create(model="gpt-4o-mini",
-    messages=[{"role": "user", "content": "What's my name?"}])
-# → "I don't have that information."   ← no memory of the previous call</code></pre></div>
-        <div class="callout key">
-          <div class="c-ico">🔑</div>
-          <div class="c-body"><div class="c-title">The one idea</div>
-          <p>"Memory" in an LLM app = <strong>deciding what to put into the context window on the next call.</strong> The model doesn't remember; your code re-supplies the relevant past every turn. Everything below is a strategy for choosing <em>what</em> to re-supply and <em>how</em> to store it.</p></div>
-        </div>
+<!-- ================= 3 ================= -->
+<h2 id="breakdown">3 · Simple breakdown - a memory store vs a longer context window</h2>
+<section class="breakdown">
 
-        <!-- 2 -->
-        <h2 id="context-window">2 · The context window — the model's only "RAM"</h2>
-        <p>The context window is the maximum number of tokens the model can attend to in a single request — system prompt + conversation history + retrieved context + the question + room for the answer, all of it. It is the model's working memory, and it is <strong>finite</strong>.</p>
-        <div class="grid grid-3">
-          <div class="card"><span class="ico">📏</span><h4>It's a budget</h4><p>Everything competes for the same token budget. More history means less room for retrieved context or the answer.</p></div>
-          <div class="card"><span class="ico">💸</span><h4>It costs</h4><p>You pay for every token in the window on every call. Naively replaying a long history gets expensive fast.</p></div>
-          <div class="card"><span class="ico">🪟</span><h4>It's transient</h4><p>When the window fills, something must be dropped or compressed. Nothing persists after the call returns.</p></div>
-        </div>
-        <p>So application memory has two jobs: <strong>(1)</strong> keep the context window within budget, and <strong>(2)</strong> persist anything that must outlive a single request — both of which the model can't do itself.</p>
+<h3 class="bd-tech"><span class="bd-tag">A</span> A memory store</h3>
 
-        <!-- 3 -->
-        <h2 id="short-vs-long">3 · Short-term vs long-term memory</h2>
-        <p>The standard split, by analogy to human memory:</p>
-        <div class="mem-cols">
-          <div class="callout note" style="margin:0">
-            <div class="c-ico">🧠</div>
-            <div class="c-body"><div class="c-title">Short-term (working) memory</div>
-            <p>The <em>current conversation</em>. Lives in the context window for the duration of a session. Implemented by replaying recent messages each turn. Lost when the session ends unless persisted.</p></div>
-          </div>
-          <div class="callout key" style="margin:0">
-            <div class="c-ico">🗄️</div>
-            <div class="c-body"><div class="c-title">Long-term memory</div>
-            <p>Facts that should survive across sessions — user preferences, past decisions, learned context. Stored <em>outside</em> the model (a database or vector store) and selectively retrieved back into the window when relevant.</p></div>
-          </div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <tr><th></th><th>Short-term</th><th>Long-term</th></tr>
-            <tr><td>Scope</td><td>One conversation/session</td><td>Across sessions, indefinitely</td></tr>
-            <tr><td>Stored where</td><td>In-memory message list → context window</td><td>External store (DB / vector DB / files)</td></tr>
-            <tr><td>How it's used</td><td>Replayed verbatim or summarized</td><td>Retrieved by relevance, injected as context</td></tr>
-            <tr><td>Survives restart?</td><td>No (unless persisted)</td><td>Yes</td></tr>
-          </table>
-        </div>
+<p class="bd-item"><b class="no-jargon">What it is.</b> A memory store is a database outside the model that holds facts about a user, written by your application and retrieved back into the prompt when they are relevant.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It lets an application know something in March that it learned in January, without resending every conversation since.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b></p>
 
-        <!-- 4 -->
-        <h2 id="static-vs-runtime">4 · Static vs runtime memory — a second axis</h2>
-        <p>Lifespan (§3) is one way to classify memory. There's a second, independent axis that matters just as much: <strong>who writes it, and when.</strong> Some memory is <em>authored by a human ahead of time</em>; some is <em>written by the app or the model while it runs</em>.</p>
-        <div class="mem-cols">
-          <div class="callout note" style="margin:0">
-            <div class="c-ico">📄</div>
-            <div class="c-body"><div class="c-title">Static (authored) memory</div>
-            <p>Written by a person before the run and loaded into context every session. It doesn't change as the agent works. <strong><code>CLAUDE.md</code> is the canonical example</strong> — also system prompts, a project-instructions file, or a hand-maintained "user preferences" doc.</p></div>
-          </div>
-          <div class="callout key" style="margin:0">
-            <div class="c-ico">⚙️</div>
-            <div class="c-body"><div class="c-title">Runtime (dynamic) memory</div>
-            <p>Written by the <em>application or the model</em> during execution; it grows and changes as work happens. The conversation buffer (§5), the vector memory store (§6), and the model's own scratchpad via the memory tool (§8) are all runtime memory.</p></div>
-          </div>
-        </div>
-        <div class="table-wrap">
-          <table>
-            <tr><th></th><th>Static / authored</th><th>Runtime / dynamic</th></tr>
-            <tr><td>Written by</td><td>A human, ahead of time</td><td>The app or the model, while running</td></tr>
-            <tr><td>Changes during a run?</td><td>No — read-only context</td><td>Yes — appended/updated as it goes</td></tr>
-            <tr><td>Examples</td><td><code>CLAUDE.md</code>, system prompt, project rules, preferences file</td><td>Conversation buffer, vector store, scratchpad / memory-tool files</td></tr>
-            <tr><td>Curated how</td><td>You edit the file</td><td>Automatically, or by a <a href="#memory-agent">memory agent</a></td></tr>
-          </table>
-        </div>
-        <div class="callout key">
-          <div class="c-ico">🔑</div>
-          <div class="c-body"><div class="c-title">The two axes are independent</div>
-          <p>A piece of memory has both a <em>lifespan</em> (short- vs long-term) and an <em>origin</em> (static vs runtime). <code>CLAUDE.md</code> is <strong>static + long-term</strong>; the conversation buffer is <strong>runtime + short-term</strong>; a vector memory store is <strong>runtime + long-term</strong>. The four CoALA agent-memory types in §9 map onto this grid: <strong>semantic</strong> (facts/rules, e.g. <code>CLAUDE.md</code>) and <strong>procedural</strong> (skills) are typically <em>static + long-term</em>; <strong>working</strong> memory is <em>runtime + short-term</em>; <strong>episodic</strong> memory is <em>runtime + long-term</em>.</p></div>
-        </div>
-        <div class="callout tip">
-          <div class="c-ico">💡</div>
-          <div class="c-body"><div class="c-title">Why the distinction is practical</div>
-          <p>Static memory is the cheapest, most reliable way to give an agent durable knowledge — if a fact is always true (coding conventions, who the user is, house style), put it in a <code>CLAUDE.md</code>-style file rather than hoping the model writes it to runtime memory and recalls it later. Reserve runtime memory for what <em>can't</em> be known ahead of time.</p></div>
-        </div>
+<svg class="bd-svg" viewBox="0 0 900 306" role="img" aria-labelledby="mem-exec-t mem-exec-d">
+<title id="mem-exec-t">Where memory actually lives</title>
+<desc id="mem-exec-d">The model holds nothing between calls. The message list your application keeps is the conversation, and it dies with the session. Only what you deliberately write to a store outlives it, and only what retrieval selects comes back.</desc>
+<defs><marker id="ah-mem-exec" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="layer b1" x="150" y="16" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="37">the model: nothing survives one call</text>
+<text class="lbl" x="450" y="55">no memory of any kind</text>
+<rect class="layer b2" x="150" y="82" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="103">the message list: this session only</text>
+<text class="lbl" x="450" y="121">your application resends it every turn</text>
+<path class="arw" d="M450 66 V79" marker-end="url(#ah-mem-exec)"></path>
+<rect class="layer b3" x="150" y="148" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="169">the store: survives the session</text>
+<text class="lbl" x="450" y="187">only what you chose to write</text>
+<path class="arw" d="M450 132 V145" marker-end="url(#ah-mem-exec)"></path>
+<rect class="layer b4" x="150" y="214" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="235">retrieval: a few facts back into the prompt</text>
+<text class="lbl" x="450" y="253">only what it selects is visible</text>
+<path class="arw" d="M450 198 V211" marker-end="url(#ah-mem-exec)"></path>
+<text class="cap" x="450" y="300">every layer below the first is code you wrote, not a model feature</text>
+</svg>
 
-        <!-- 5 -->
-        <h2 id="short-term">5 · Short-term memory patterns</h2>
-        <p>Three ways to manage the running conversation, trading completeness against token cost.</p>
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> A write path that decides what is worth keeping, a store keyed by user or tenant, and a retrieval step that selects a few facts before the model runs.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> Facts persist until superseded or deleted. Each one carries a source and a timestamp, so a later contradiction can supersede an earlier claim.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> Anything not retrieved is invisible to the model. Deciding what to write is the hard part, and a store full of stale facts is worse than an empty one.</p>
 
-        <h3 id="buffer">5.1 Full buffer — replay everything</h3>
-        <p>Keep the entire message list and send it all every turn. Simplest, perfectly faithful — until the conversation outgrows the context window or the cost.</p>
-        <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
-<pre><code>history = []                      # short-term memory = this list
+<h3 class="bd-tech"><span class="bd-tag">B</span> A longer context window</h3>
 
-def chat(user_msg: str) -> str:
-    history.append({"role": "user", "content": user_msg})
-    resp = oai.chat.completions.create(model="gpt-4o-mini", messages=history)
-    reply = resp.choices[0].message.content
-    history.append({"role": "assistant", "content": reply})   # remember the reply too
-    return reply
+<p class="bd-item"><b class="no-jargon">What it is.</b> A larger token limit on the model, so more of the conversation fits into one call without any storage.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It keeps more of the recent conversation available verbatim, with no write path and no retrieval step.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b> The same single call, with more tokens permitted. Nothing about the application changes.</p>
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> Nothing to build. It is a model choice and a price.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> Nothing persists. Every token is re-sent on every call, and the whole thing is gone when the session ends.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> You pay for every token on every call. It cannot reach anything from a previous session, however large it is.</p>
 
-chat("My name is Alice.")
-chat("What's my name?")           # → "Alice" — the full history was re-sent</code></pre></div>
+<h3 class="bd-diff">The core differences</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>A memory store</th><th>A longer context window</th></tr></thead>
+<tbody>
+<tr><th>Survives the session</th><td>Yes, that is the point</td><td>No</td></tr>
+<tr><th>Cost as history grows</th><td>Retrieval plus a few facts</td><td>Every token, every call</td></tr>
+<tr><th>What the model sees</th><td>Only what retrieval selected</td><td>Everything, verbatim</td></tr>
+</tbody>
+</table>
+</div>
 
-        <h3 id="window">5.2 Sliding window — keep the last N turns</h3>
-        <p>Send only the most recent messages. Bounds cost and stays in-window, but the model forgets anything older than the window.</p>
-        <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
-<pre><code>WINDOW = 10                       # keep last 10 messages
+<h3 class="bd-short">In short - which one to choose</h3>
+<ul>
+<li>Use a <b>memory store</b> when a fact must survive the session, and would change a future answer.</li>
+<li>Use a <b>longer window</b> to keep more of the current conversation verbatim. It is free engineering time, and it buys nothing across sessions.</li>
+<li>They solve different problems, so the real question is never which one. <b>It is which facts deserve to outlive this conversation.</b></li>
+</ul>
+</section>
 
-def chat(user_msg: str) -> str:
-    history.append({"role": "user", "content": user_msg})
-    recent = history[-WINDOW:]            # only the tail goes into the window
-    resp = oai.chat.completions.create(model="gpt-4o-mini", messages=recent)
-    ...</code></pre></div>
+<!-- ================= 4 ================= -->
+<h2 id="without">4 · Without the technology</h2>
+<p>The simplest memory is a list you resend. This is what every chat
+application does.</p>
 
-        <h3 id="summary">5.3 Summary memory — compress the old, keep the new</h3>
-        <p>Periodically summarize older turns into a compact "story so far," then send <em>summary + recent messages</em>. Retains the gist of a long conversation at a fraction of the tokens. This is the idea behind <strong>compaction</strong> in long-running agents.</p>
-        <div class="code-block"><div class="code-head"><span class="lang">python</span><button class="copy-btn">Copy</button></div>
-<pre><code>summary = ""                      # rolling summary of older turns
-recent  = []                      # last few verbatim messages
+<p>This works, and for a short conversation it is the correct answer. Three things break as it
+grows.</p>
 
-def summarize(old_summary: str, messages: list) -> str:
-    r = oai.chat.completions.create(model="gpt-4o-mini", temperature=0,
-        messages=[{"role": "system",
-                   "content": "Update the running summary with the new messages. "
-                              "Keep names, decisions and facts; be concise."},
-                  {"role": "user",
-                   "content": f"Summary so far:\n{old_summary}\n\nNew:\n{messages}"}])
-    return r.choices[0].message.content
+<ul>
+<li><b>Cost grows quadratically.</b> Turn 20 re-sends all nineteen previous turns, so the
+conversation costs far more than the sum of its messages.</li>
+<li><b>It ends at the window.</b> There is no turn 34.</li>
+<li><b>It dies with the process.</b> Tomorrow's conversation starts from nothing, however
+much the customer told you today.</li>
+</ul>
+<p>The first two are solved by trimming and compaction. <b>The third is not a size problem at
+all</b>, and no window is large enough to fix it.</p>
 
-def chat(user_msg: str) -> str:
-    global summary, recent
-    recent.append({"role": "user", "content": user_msg})
-    sys = [{"role": "system", "content": f"Conversation summary:\n{summary}"}]
-    resp = oai.chat.completions.create(model="gpt-4o-mini", messages=sys + recent)
-    reply = resp.choices[0].message.content
-    recent.append({"role": "assistant", "content": reply})
-    if len(recent) > 8:           # fold the oldest into the summary
-        summary = summarize(summary, recent[:4]); recent = recent[4:]
-    return reply</code></pre></div>
-        <div class="table-wrap">
-          <table>
-            <tr><th>Pattern</th><th>Token cost</th><th>Fidelity</th><th>Best for</th></tr>
-            <tr><td>Full buffer</td><td>Grows unbounded</td><td>Perfect</td><td>Short chats, prototypes</td></tr>
-            <tr><td>Sliding window</td><td>Bounded</td><td>Forgets older turns</td><td>Long chats where only recent context matters</td></tr>
-            <tr><td>Summary</td><td>Low, near-constant</td><td>Gist preserved, detail lost</td><td>Long conversations needing overall continuity</td></tr>
-          </table>
-        </div>
-        <div class="callout note">
-          <div class="c-ico">🛠️</div>
-          <div class="c-body"><div class="c-title">Frameworks do this for you</div>
-          <p>LangChain/LangGraph and similar expose these as ready-made memory types (buffer, windowed buffer, summary). Some APIs also offer <strong>server-side compaction</strong> that summarizes earlier context automatically as you near the window limit — you append the returned compaction block to the next request. The mechanics are exactly §5.3; the framework just hides the bookkeeping.</p></div>
-        </div>
+<!-- ================= 5 ================= -->
+<h2 id="mechanics">5 · Runtime mechanics</h2>
+<p>Memory is four decisions, and only the first is about the model.</p>
+<ol>
+<li><b>What is resent.</b> The message list, in full or trimmed, forms the conversation the
+model can see this turn.</li>
+<li><b>What is written.</b> After a turn, your code decides whether anything learned should
+outlive the session.</li>
+<li><b>Where it is keyed.</b> A store entry is reachable only by the key you gave it - 
+customer, tenant, thread.</li>
+<li><b>What is retrieved.</b> Before the next call, a few relevant facts are selected and
+placed into the prompt.</li>
+</ol>
+<p>Steps 2 and 4 are separate, and both are yours. <b>A fact that is written but never
+retrieved is invisible</b>, which is the most common reason an agent appears to have
+forgotten something it was told.</p>
 
-        <!-- 5 -->
-        <h2 id="long-term">6 · Long-term memory — persist across sessions</h2>
-        <p>To remember a user between today and next week, store facts <em>outside</em> the model and retrieve them when relevant. The dominant pattern is <strong>vector memory</strong>: embed each memory, store the vector, and on a new request fetch the most semantically similar memories into the context window.</p>
-        <div class="diagram">
-          <div class="cssflow">
-            <div class="fnode">New user message</div>
-            <div class="farrow"></div>
-            <div class="fnode accent">Embed &amp; search memory store <small>top-k similar past facts</small></div>
-            <div class="farrow"></div>
-            <div class="fnode">Inject retrieved memories into the prompt</div>
-            <div class="farrow"></div>
-            <div class="fnode">LLM answers with the recalled context</div>
-            <div class="farrow"></div>
-            <div class="fnode accent">Write new facts back to the store</div>
-          </div>
-          <div class="diagram-caption">Vector long-term memory: retrieve relevant past on the way in, write new memories on the way out.</div>
-        </div>
-        <div class="code-block"><div class="code-head"><span class="lang">python · minimal vector memory</span><button class="copy-btn">Copy</button></div>
-<pre><code>import numpy as np
-from openai import OpenAI
-oai = OpenAI()
+<!-- ================= 7 ================= -->
+<h2 id="components">6 · The components, one at a time</h2>
+<h3>Short-term memory</h3>
+<p>The message list for this conversation. It lives in the context window, is resent every
+turn, and is lost when the session ends unless you persist it.</p>
 
-MEMORIES: list[dict] = []         # each: {"text": ..., "vec": np.ndarray}
+<h3>Long-term memory</h3>
+<div class="def"><strong>Long-term memory</strong> - facts stored outside the model that should
+survive the session, retrieved back into the prompt when relevant.</div>
+<p>Preferences, past decisions, entitlements. Retrieved by relevance rather than replayed
+verbatim, because there may be hundreds and only a few matter now.</p>
+<p>The machinery is the machinery you already have. <b>Chunking, embeddings, ranking and a
+relevance floor work here exactly as they do over a document corpus</b> - see
+<a href="rag-deep-dive.html#indexing">indexing</a> and
+<a href="rag-deep-dive.html#correcting">correcting</a>. The difference is what you point it
+at: per-customer facts rather than documents.</p>
 
-def embed(text: str) -> np.ndarray:
-    v = oai.embeddings.create(model="text-embedding-3-small", input=text).data[0].embedding
-    return np.array(v)
+<h3>The write decision</h3>
 
-def remember(text: str):          # write a long-term memory
-    MEMORIES.append({"text": text, "vec": embed(text)})
+<p><b>The test: if it would be wrong to still have this tomorrow, it is state, not memory.</b>
+Writing state into a memory store is how last week's half-finished investigation leaks into
+today's answer.</p>
 
-def recall(query: str, k: int = 3) -> list[str]:   # read relevant memories
-    if not MEMORIES: return []
-    q = embed(query)
-    scored = sorted(MEMORIES, key=lambda m: -float(q @ m["vec"]))   # cosine ~ dot (normalized)
-    return [m["text"] for m in scored[:k]]
+<h3>The key</h3>
 
-def chat(user_msg: str) -> str:
-    recalled = recall(user_msg)
-    sys = "Relevant things you remember about the user:\n- " + "\n- ".join(recalled) \
-          if recalled else "You have no stored memories yet."
-    resp = oai.chat.completions.create(model="gpt-4o-mini",
-        messages=[{"role": "system", "content": sys},
-                  {"role": "user", "content": user_msg}])
-    return resp.choices[0].message.content
+<p>A fact keyed by session is unreachable from the next conversation, which is the most common
+cause of an agent that seems to forget.</p>
 
-remember("The user's name is Alice and she manages the Billing team.")
-remember("Alice prefers answers in metric units.")
-chat("What units should you use with me?")   # → recalls the metric preference</code></pre></div>
-        <div class="callout tip">
-          <div class="c-ico">✍️</div>
-          <div class="c-body"><div class="c-title">What to write to memory</div>
-          <p>Don't store every message. Store <em>durable facts</em>: stable preferences, decisions, identities, learned corrections. A common pattern is an LLM step that extracts "memory-worthy" facts from a conversation and writes only those — keeping the store small and high-signal.</p></div>
-        </div>
+<h3>Conflict and supersession</h3>
 
-        <!-- 6 -->
-        <h2 id="memory-vs-rag">7 · Memory vs RAG — same machinery, different purpose</h2>
-        <p>Long-term memory and RAG both embed text, store vectors, and retrieve by similarity — so they look identical under the hood. The difference is <em>what</em> is stored and <em>why</em>:</p>
-        <div class="table-wrap">
-          <table>
-            <tr><th></th><th>RAG (retrieval)</th><th>Long-term memory</th></tr>
-            <tr><td>Stores</td><td>A knowledge corpus (docs, manuals, tickets)</td><td>Facts about <em>this</em> user/agent and past interactions</td></tr>
-            <tr><td>Written by</td><td>An ingestion pipeline, ahead of time</td><td>The app, <em>during</em> conversations</td></tr>
-            <tr><td>Scope</td><td>Shared across all users</td><td>Usually per-user / per-agent</td></tr>
-            <tr><td>Purpose</td><td>Ground answers in external knowledge</td><td>Personalize &amp; maintain continuity</td></tr>
-          </table>
-        </div>
-        <div class="callout note">
-          <div class="c-ico">📎</div>
-          <div class="c-body"><div class="c-title">Reuse the deep dive</div>
-          <p>Chunking, embedding models, vector DBs, similarity metrics and retrieval scoring are covered thoroughly in <a href="rag-deep-dive.html#chunking">RAG, End-to-End →</a>. Memory uses the same toolkit — you don't need to relearn it, just point it at per-user facts instead of a document corpus.</p></div>
-        </div>
+<p>Keeping both means retrieval returns both and the model picks one. <b>A newer fact must
+explicitly supersede the older one</b>, or the store degrades as it grows.</p>
 
-        <!-- 7 -->
-        <h2 id="memory-tool">8 · The memory tool — letting the model manage its own notes</h2>
-        <p>A newer pattern gives the model a <strong>memory tool</strong>: a set of file-like operations (view, create, edit, delete) over a dedicated memory directory. The model decides when to jot something down and when to read it back, and your application implements the storage backend.</p>
-        <div class="grid grid-2">
-          <div class="card"><h4>How it works</h4><p>You declare a memory tool; the model emits tool calls like "write <code>/memories/preferences.md</code>"; your handler persists the file. On later sessions the model reads its own notes back.</p></div>
-          <div class="card"><h4>Why it's powerful</h4><p>The model curates its own long-term memory in natural language — no separate extraction pipeline. Especially useful for long-horizon agents that learn as they work.</p></div>
-        </div>
-        <div class="callout danger">
-          <div class="c-ico">🔒</div>
-          <div class="c-body"><div class="c-title">Security — two hard rules</div>
-          <p><strong>(1)</strong> Never let the model store secrets or full PII in memory files — and be careful with personal data under GDPR/CCPA (see <a href="guardrails.html#secrets">Guardrails §5</a>). <strong>(2)</strong> Confine every file operation to the memory directory: validate model-supplied paths and reject traversal (<code>..</code>, symlinks, absolute paths) — the path comes from the model and is untrusted input. In multi-user systems, give each user their own memory directory with access control.</p></div>
-        </div>
+<h3>The four agent memory types</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Type</th><th>Holds</th><th>Implemented by</th></tr></thead>
+<tbody>
+<tr><td><b>Working</b></td><td>The current run's transcript and findings</td><td>The message list</td></tr>
+<tr><td><b>Episodic</b></td><td>What happened in past runs</td><td>A store of past interactions</td></tr>
+<tr><td><b>Semantic</b></td><td>Facts about the world or the user</td><td>A vector store or a database</td></tr>
+<tr><td><b>Procedural</b></td><td>How to do the task</td><td>The system prompt, and tool definitions</td></tr>
+</tbody>
+</table>
+</div>
+<p>These are names for stores you have already built. <b>An agent carrying stores it does not
+use is slower, dearer and harder to debug</b>, so build the ones a real requirement asks
+for.</p>
 
-        <!-- 9 -->
-        <h2 id="agents">9 · Memory in agents — the four CoALA types</h2>
-        <p>Everything so far has been a single technique — a buffer, a vector store, a memory file. An <em>agent</em> that runs many steps over many sessions needs several of them at once, each doing a different job. The standard way to organize them is the <strong>CoALA framework</strong> (Cognitive Architectures for Language Agents), which names <strong>four foundational memory types</strong>. They're worth learning by name — they're how practitioners talk about agent memory, and each maps onto a technique you've already seen.</p>
+<!-- ================= 8 ================= -->
+<h2 id="state">7 · State and data flow</h2>
+<ol>
+<li><b>What data is state?</b> The message list is state. The memory store is not - that is
+the whole distinction.</li>
+<li><b>Who writes each field?</b> The loop appends messages; an explicit write step adds
+facts.</li>
+<li><b>Who reads each field?</b> The model reads the prompt, which holds the messages plus
+whatever retrieval selected.</li>
+<li><b>Replaced, appended or merged?</b> Messages append. Facts are appended, and superseded
+rather than edited.</li>
+<li><b>What reducer controls merging?</b> Your supersession rule. Without one, contradictory
+facts accumulate.</li>
+<li><b>Is it only in process memory?</b> The message list, yes. The store must not be.</li>
+<li><b>Is it checkpointed?</b> The message list can be. <b>A checkpoint is not memory</b>: it
+makes a run resumable, not a customer known.</li>
+<li><b>Is it in a database?</b> The store is, and it is the only part that outlives the
+session.</li>
+<li><b>How long does it survive?</b> Messages: the session. Facts: until superseded or
+deleted.</li>
+<li><b>What thread, user or key retrieves it again?</b> The customer id and tenant id. No key,
+no memory.</li>
+</ol>
+<p>Rows 1 and 7 together are the idea this page exists for. <b>Durability and memory are
+different features</b>, and conflating them produces a system that resumes runs perfectly and
+still cannot remember a customer.</p>
 
-        <div class="callout key">
-          <div class="c-ico">🧠</div>
-          <div class="c-body"><div class="c-title">The big idea</div>
-          <p>These four memory systems are what separate a standard chatbot from a real <em>agent</em>: they let responses be shaped by <strong>persistent knowledge</strong> and <strong>accumulated experience</strong>, not just the immediate conversation.</p></div>
-        </div>
+<svg class="bd-svg" viewBox="0 0 900 192" role="img" aria-labelledby="mem-life-t mem-life-d">
+<title id="mem-life-t">What survives, and what does not</title>
+<desc id="mem-life-d">The message list holds the conversation and dies when the session ends. The memory store holds only what was deliberately written, and is still there on the next session. A checkpoint sits between them: it makes the run resumable without making the customer known.</desc>
+<text class="cap" x="315" y="24">during the run</text>
+<text class="cap" x="545" y="24">session ends</text>
+<text class="cap" x="775" y="24">next session</text>
+<text class="mono" x="12" y="64" style="text-anchor:start">message list</text>
+<rect class="snap s1" x="206" y="46" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="315" y="64">18 messages</text>
+<rect class="snap s2" x="436" y="46" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="545" y="64">gone</text>
+<rect class="snap s3" x="666" y="46" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="775" y="64">empty</text>
+<text class="mono" x="12" y="98" style="text-anchor:start">checkpoint</text>
+<rect class="snap s1" x="206" y="80" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="315" y="98">written each step</text>
+<rect class="snap s2" x="436" y="80" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="545" y="98">still on disk</text>
+<rect class="snap s3" x="666" y="80" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="775" y="98">unrelated thread</text>
+<text class="mono" x="12" y="132" style="text-anchor:start">memory store</text>
+<rect class="snap s1" x="206" y="114" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="315" y="132">2 facts</text>
+<rect class="snap s2" x="436" y="114" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="545" y="132">2 facts</text>
+<rect class="snap s3" x="666" y="114" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="775" y="132">2 facts</text>
+<text class="cap" x="450" y="184">only the bottom row is memory; the middle row is durability</text>
+</svg>
 
-        <h3 id="coala-working">9.1 Working memory — the scratch pad</h3>
-        <p>The agent's <strong>context window</strong> (§2) — its "RAM." Fast and immediately accessible, holding the current task's transcript and intermediate results. But it is <em>volatile</em> (erased when the session ends) and <em>limited</em> in size, so it's managed with the short-term patterns from §5 (windowing, summarizing/compaction).</p>
-        <ul>
-          <li><strong>Lifespan/origin:</strong> short-term · runtime.</li>
-          <li><strong>Implemented by:</strong> the running message list → context window (<a href="#short-term">§5</a>).</li>
-          <li><strong>Analogy:</strong> RAM — what you're actively holding in mind right now.</li>
-        </ul>
+<!-- ================= 10 ================= -->
+<h2 id="trace">8 · Trace</h2>
+<p>The same customer, three sessions apart:</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>When</th><th>What happened</th><th>Store after</th></tr></thead>
+<tbody>
+<tr><td>Jan 4</td><td>"Call me on 0700 900 900"</td><td>1 fact: prefers phone</td></tr>
+<tr><td>Mar 2</td><td>Asked about billing. Nothing durable said</td><td>1 fact, unchanged</td></tr>
+<tr><td>Aug 14</td><td>"Stop calling me, email only"</td><td><b>2 rows, 1 superseded</b></td></tr>
+<tr><td>Aug 19</td><td>"How will you contact me?"</td><td>recall returns 1 fact: email</td></tr>
+</tbody>
+</table>
+</div>
 
-        <h3 id="coala-semantic">9.2 Semantic memory — the knowledge base</h3>
-        <p>The agent's store of <strong>facts, rules and conventions</strong> — durable knowledge that's true regardless of the current task. Crucially, this is often implemented as <strong>simple Markdown files</strong> — <code>CLAUDE.md</code> is the canonical example. Giving the agent persistent semantic memory is how it stops repeating the same mistakes: write the convention down once, and every future session reads it.</p>
-        <ul>
-          <li><strong>Lifespan/origin:</strong> long-term · usually <a href="#static-vs-runtime">static/authored</a>, but can be runtime (a vector store of learned facts, §6).</li>
-          <li><strong>Implemented by:</strong> Markdown knowledge files (<code>CLAUDE.md</code>), or a vector memory store (<a href="#long-term">§6</a>) for facts the agent learns on its own.</li>
-          <li><strong>Analogy:</strong> a reference manual the agent always has open.</li>
-        </ul>
+<p>Note what did <b>not</b> happen. The March conversation was not stored, because nothing in
+it was durable. <b>A memory store that keeps everything is a transcript</b>, and retrieval
+over a transcript returns noise.</p>
 
-        <h3 id="coala-procedural">9.3 Procedural memory — how to do things (skills)</h3>
-        <p>Where semantic memory is <em>what the agent knows</em>, procedural memory is <em>how it knows to do things</em> — its defined <strong>skills</strong>: reusable, step-by-step procedures for specific tasks. The key engineering technique here is <strong>progressive disclosure</strong>: the agent sees only a lightweight <em>index</em> of available skills by default, and loads the full step-by-step instructions for a skill <em>only when a task actually needs it</em>. This keeps the context window small while giving access to a large library of procedures.</p>
-        <div class="callout note">
-          <div class="c-ico">📂</div>
-          <div class="c-body"><div class="c-title">Progressive disclosure, concretely</div>
-          <p>Each skill is a folder with a short description the agent always sees, plus a full instructions file it reads on demand. So the agent "knows" it has 50 skills available (50 one-line descriptions in context), but only pays the token cost of the one or two it's actually using right now. This is exactly how Claude Code's Skills and the agent-tool ecosystems work.</p></div>
-        </div>
-        <ul>
-          <li><strong>Lifespan/origin:</strong> long-term · usually <a href="#static-vs-runtime">static/authored</a> (you write the skills).</li>
-          <li><strong>Implemented by:</strong> a skills directory with an index + per-skill instruction files, loaded on demand.</li>
-          <li><strong>Analogy:</strong> a shelf of how-to guides — you grab the right one only when the job calls for it.</li>
-        </ul>
+<!-- ================= 11 ================= -->
+<h2 id="break">9 · Break it</h2>
+<p>Remove the write filter, and store every message.</p>
 
-        <h3 id="coala-episodic">9.4 Episodic memory — distilled experience</h3>
-        <p>The agent's record of <strong>past interactions and decisions</strong> — but, done well, <em>not</em> raw transcripts. Instead the agent <strong>compresses experiences into useful notes</strong> ("last time this deploy failed because of X; the fix was Y"), so it can learn and improve over time. This is the type that turns a stateless tool into something that gets better with use.</p>
-        <div class="callout warn">
-          <div class="c-ico">⚠️</div>
-          <div class="c-body"><div class="c-title">The hardest type to engineer</div>
-          <p>Episodic memory is the trickiest of the four, because the system must also know <strong>when to forget</strong>. An episodic store that only ever grows fills with obsolete, contradictory notes and <em>degrades</em> recall. Deciding what to distill, what to keep, and what to expire is exactly the job of the <a href="#memory-agent">memory agent</a> in §9.5.</p></div>
-        </div>
-        <ul>
-          <li><strong>Lifespan/origin:</strong> long-term · runtime (the agent writes it as it works).</li>
-          <li><strong>Implemented by:</strong> distilled notes in a vector store or memory files (<a href="#long-term">§6</a>, <a href="#memory-tool">§8</a>), curated by a <a href="#memory-agent">memory agent</a>.</li>
-          <li><strong>Analogy:</strong> a lessons-learned journal, not a security-camera tape.</li>
-        </ul>
+<p>After six weeks, this customer has 1,847 stored facts. Now ask a simple question.</p>
 
-        <h3 id="coala-map">9.5 How the four map onto this page</h3>
-        <div class="table-wrap">
-          <table>
-            <tr><th>CoALA type</th><th>Role</th><th>Origin</th><th>Built with</th></tr>
-            <tr><td><strong>Working</strong></td><td>Scratch pad / "RAM"</td><td>Runtime · short-term</td><td>Context window + short-term patterns (<a href="#short-term">§5</a>)</td></tr>
-            <tr><td><strong>Semantic</strong></td><td>Knowledge base — facts &amp; rules</td><td>Static (or runtime)</td><td><code>CLAUDE.md</code> / Markdown (<a href="#static-vs-runtime">§4</a>), or vector store (<a href="#long-term">§6</a>)</td></tr>
-            <tr><td><strong>Procedural</strong></td><td>Skills — how to do tasks</td><td>Static</td><td>Skills dir + progressive disclosure</td></tr>
-            <tr><td><strong>Episodic</strong></td><td>Distilled past experience</td><td>Runtime · long-term</td><td>Distilled notes (<a href="#long-term">§6</a>/<a href="#memory-tool">§8</a>) + <a href="#memory-agent">memory agent</a></td></tr>
-          </table>
-        </div>
-        <div class="callout key">
-          <div class="c-ico">🎚️</div>
-          <div class="c-body"><div class="c-title">Not every agent needs all four</div>
-          <p>Match the memory to the job. A simple <strong>reflex agent</strong> (answer the current question, no continuity) needs only <strong>working memory</strong>. An advanced <strong>coding agent</strong> needs all four: working memory for the current task, semantic memory (<code>CLAUDE.md</code>) for project conventions, procedural memory (skills) for repeatable workflows, and episodic memory to learn from past runs. Add types as the agent's job demands them — not before.</p></div>
-        </div>
-        <div class="callout note">
-          <div class="c-ico">🔗</div>
-          <div class="c-body"><div class="c-title">The agent-loop view</div>
-          <p>Over a long run an agent continually decides what to keep in working memory (compact), what to write to semantic/episodic memory for later, which procedural skill to load, and what to recall when relevant. Good memory management is what keeps an agent coherent across an overnight run. See <a href="modules/08_agents.html">08 · Agentic AI →</a> and <a href="modules/12_langgraph.html">12 · LangGraph →</a> for the orchestration side.</p></div>
-        </div>
+<p><b>The store is full and the agent is less useful than when it was empty.</b> Two of the
+five retrieved rows were run state that should have died with the session, one is a
+contradiction that was never superseded, and one is not a fact.</p>
 
-        <h3 id="memory-agent">9.6 The "memory agent" pattern</h3>
-        <p>So far the main agent manages its own memory inline. As systems grow, that becomes a distraction — every turn spent deciding "should I remember this?" is a turn not spent on the task, and naïve writing fills the store with duplicates and stale facts. The fix is to split memory management into its own role: a <strong>memory agent</strong>.</p>
-        <p>A memory agent is a dedicated sub-agent (or background job) whose <em>only</em> job is curating the memory store on behalf of the main agent. The main agent just does the work and emits raw events; the memory agent — usually running <strong>asynchronously</strong>, off the critical path — turns those into clean, durable memories.</p>
-        <div class="diagram">
-          <div class="cssflow">
-            <div class="fnode accent">Main agent <small>does the task · emits raw events</small></div>
-            <div class="farrow"></div>
-            <div class="fnode">Memory agent <small>(async, background)</small></div>
-            <div class="fnode" style="border:0;background:transparent;box-shadow:none;min-width:0;color:var(--text-muted);font-size:12.5px;font-weight:400">↳ extract durable facts · consolidate &amp; dedupe · resolve conflicts · prune/expire stale</div>
-            <div class="farrow"></div>
-            <div class="fnode accent">Memory store <small>small, high-signal, current</small></div>
-          </div>
-          <div class="diagram-caption">The memory agent sits between the main agent and the store, keeping memory clean so recall stays accurate.</div>
-        </div>
-        <p>What a memory agent typically does:</p>
-        <ul>
-          <li><strong>Extract</strong> — read the conversation/task and pull out only memory-worthy facts (preferences, decisions, identities, corrections), discarding chatter.</li>
-          <li><strong>Consolidate &amp; dedupe</strong> — merge new facts with existing ones instead of appending near-duplicates ("prefers metric" written ten times becomes one memory).</li>
-          <li><strong>Resolve conflicts</strong> — when a new fact contradicts an old one, update or supersede it (today's decision overrides last week's) — the same conflict logic RAG uses for documents, see <a href="rag-deep-dive.html#conflicts">RAG §19</a>.</li>
-          <li><strong>Prune &amp; expire</strong> — drop stale or low-value memories so the store stays small and recall stays sharp.</li>
-        </ul>
-        <div class="code-block"><div class="code-head"><span class="lang">python · a minimal memory agent (run after each session)</span><button class="copy-btn">Copy</button></div>
-<pre><code>import json
-from openai import OpenAI
-oai = OpenAI()
+<svg class="bd-svg" viewBox="0 0 900 174" role="img" aria-labelledby="mem-noise-t mem-noise-d">
+<title id="mem-noise-t">A store that keeps everything</title>
+<desc id="mem-noise-d">Every message was written, so run state and passing remarks were stored alongside real facts. Retrieval now returns a mixture including a contradiction that was never superseded, and the agent reports conflicting information.</desc>
+<defs><marker id="ah-mem-noise" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="52" width="202.5" height="56" rx="12"></rect>
+<rect class="box b2" x="236.5" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M217.5 80 H232.5" marker-end="url(#ah-mem-noise)"></path>
+<rect class="box fail" x="461" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M442 80 H457" marker-end="url(#ah-mem-noise)"></path>
+<rect class="box after b4" x="685.5" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M666.5 80 H681.5" marker-end="url(#ah-mem-noise)"></path>
+<text class="lbl" x="113.25" y="76">every message</text>
+<text class="lbl" x="113.25" y="94">written</text>
+<text class="lbl" x="337.75" y="76">1,847 rows</text>
+<text class="lbl" x="337.75" y="94">stored</text>
+<text class="lbl" x="562.25" y="76">retrieval returns</text>
+<text class="lbl" x="562.25" y="94">state and noise</text>
+<text class="lbl" x="786.75" y="76">conflicting</text>
+<text class="lbl" x="786.75" y="94">answer</text>
+<path class="xmark" d="M544.25 122 L580.25 150 M580.25 122 L544.25 150"></path>
+<text class="cap rescue" x="450" y="166">the store is full and the agent is worse than when it was empty</text>
+</svg>
 
-def memory_agent(conversation: str, existing: list[str]) -> list[str]:
-    """Curate long-term memories from a finished conversation."""
-    prompt = (
-        "You manage an agent's long-term memory. Given the conversation and the "
-        "existing memories, return the UPDATED memory list as JSON "
-        '{"memories": ["...", ...]}. Rules:\n'
-        "- Keep only durable, reusable facts (preferences, decisions, identities).\n"
-        "- Merge duplicates; do not repeat an existing memory.\n"
-        "- If a new fact contradicts an old one, replace the old one.\n"
-        "- Drop anything stale or trivial. Keep the list small and high-signal."
-    )
-    r = oai.chat.completions.create(
-        model="gpt-4o-mini", temperature=0,
-        response_format={"type": "json_object"},
-        messages=[{"role": "system", "content": prompt},
-                  {"role": "user",
-                   "content": f"EXISTING MEMORIES:\n{existing}\n\nCONVERSATION:\n{conversation}"}])
-    return json.loads(r.choices[0].message.content)["memories"]
+<!-- ================= 12 ================= -->
+<h2 id="fix">10 · Fix it</h2>
+<p><b>1 · Filter on the write, not the read.</b> A fact is stored only if it would
+still be true tomorrow and would change a future answer.</p>
 
-# after a session ends (off the user's critical path):
-memories = memory_agent(transcript, memories)   # → curated, deduped, current</code></pre></div>
-        <div class="callout note">
-          <div class="c-ico">🧩</div>
-          <div class="c-body"><div class="c-title">You usually don't build this from scratch</div>
-          <p>Dedicated <strong>memory-layer tools for agents</strong> implement this pattern for you — extraction, consolidation, conflict resolution, decay and recall — behind a simple <code>add()</code> / <code>search()</code> API. Common ones: <strong>Mem0</strong>, <strong>Letta</strong> (formerly MemGPT, the self-editing-memory approach), <strong>Zep</strong>, and <strong>LangMem</strong> (LangGraph's memory primitives). Reach for one when hand-rolled vector memory (<a href="#long-term">§6</a>) starts accumulating duplicates and stale facts.</p></div>
-        </div>
+<p><b>2 · Supersede contradictions at write time</b>, so retrieval never returns both sides.</p>
 
-        <!-- 9 -->
-        <h2 id="choosing">10 · Choosing a memory strategy</h2>
-        <div class="table-wrap">
-          <table>
-            <tr><th>If you need…</th><th>Use</th></tr>
-            <tr><td>A short chatbot, a few turns</td><td>Full buffer (§5.1)</td></tr>
-            <tr><td>A long chat where only recent context matters</td><td>Sliding window (§5.2)</td></tr>
-            <tr><td>A long chat needing overall continuity, low cost</td><td>Summary / compaction (§5.3)</td></tr>
-            <tr><td>To remember a user across sessions</td><td>Vector long-term memory (§6)</td></tr>
-            <tr><td>To give an agent durable facts &amp; conventions</td><td>Semantic memory — <code>CLAUDE.md</code> / Markdown (§4, §9.2)</td></tr>
-            <tr><td>To give an agent reusable how-to skills</td><td>Procedural memory — skills + progressive disclosure (§9.3)</td></tr>
-            <tr><td>The model to curate its own notes</td><td>Memory tool (§8)</td></tr>
-            <tr><td>An agent to learn from past runs</td><td>Episodic memory — distilled notes + memory agent (§9.4, §9.6)</td></tr>
-            <tr><td>An agent doing long-horizon work</td><td>All four CoALA types, layered (§9)</td></tr>
-          </table>
-        </div>
+<p><b>3 · Retrieve by relevance and cap it.</b> Five facts, not everything the customer ever
+said.</p>
 
-        <!-- 10 -->
-        <h2 id="best-practices">11 · Best practices &amp; pitfalls</h2>
-        <ul>
-          <li><strong>Always budget the context window</strong> — system prompt + memory + retrieval + question + answer must all fit, with headroom.</li>
-          <li><strong>Store durable facts, not chatter</strong> — high-signal memories keep recall accurate and the store small.</li>
-          <li><strong>Summarize before you overflow</strong>, not after — don't wait for a hard context-limit error.</li>
-          <li><strong>Scope memory per user</strong> and enforce access control — one user's memory must never leak into another's context.</li>
-          <li><strong>Never persist secrets or full PII</strong> in memory (buffers, summaries, vector stores or memory files) — mask first.</li>
-          <li><strong>Validate memory-tool paths</strong> — treat model-supplied file paths as untrusted; confine to the memory directory.</li>
-          <li><strong>Decay or expire stale memories</strong> — old preferences and outdated facts should age out or be overwritten. This is the hard part of <a href="#coala-episodic">episodic memory</a>: knowing when to <em>forget</em>.</li>
-          <li><strong>Prefer static for what's always true</strong> — durable facts and conventions belong in <a href="#coala-semantic">semantic memory</a> (a <code>CLAUDE.md</code>-style file), not in runtime memory the agent has to re-learn and re-recall.</li>
-          <li><strong>Use progressive disclosure for skills</strong> — keep <a href="#coala-procedural">procedural memory</a> as a lightweight index and load full instructions on demand, so a big skill library doesn't bloat the context window.</li>
-          <li><strong>Don't over-provision</strong> — add CoALA memory types only as the agent's job demands them (a reflex agent needs just working memory). Each extra store is more to curate and more to get wrong.</li>
-          <li><strong>Make memory observable</strong> — log what was recalled and written (see <a href="langfuse.html">Langfuse →</a>) so you can debug "why did it forget / why did it recall that?".</li>
-        </ul>
+<p><b>4 · Expire what stops being true.</b> A preference from four years ago is a guess.</p>
 
-        <div class="page-nav" data-page-nav>
+<p><b>5 · Make deletion possible.</b> A customer can ask for their facts to be removed, so
+store them where a delete by customer id is one statement.</p>
+
+<!-- ================= 13 ================= -->
+<h2 id="production">11 · Production version</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Concern</th><th>What you do</th></tr></thead>
+<tbody>
+<tr><td>Write filter</td><td>Store only what is still true tomorrow and changes a future answer</td></tr>
+<tr><td>Key</td><td>Customer and tenant, never session. A session-keyed fact is unreachable next time</td></tr>
+<tr><td>Tenant isolation</td><td>Tenant in the query, never a post-filter. A shared store is a cross-tenant read</td></tr>
+<tr><td>Supersession</td><td>A newer fact explicitly retires the older one. Never keep both silently</td></tr>
+<tr><td>Retrieval cap</td><td>A handful of facts by relevance. Everything you retrieve costs prompt budget</td></tr>
+<tr><td>Provenance</td><td>Source and timestamp on every fact, so a wrong one can be traced and removed</td></tr>
+<tr><td>Expiry</td><td>Facts go stale. Decide a lifetime rather than keeping them for ever</td></tr>
+<tr><td>Deletion</td><td>Delete by customer must be one operation, because it will be asked for</td></tr>
+<tr><td>PII</td><td>A memory store is a personal-data store. Classify it as one before you ship it</td></tr>
+<tr><td>Auditability</td><td>Log what was retrieved into a prompt, or you cannot explain an answer later</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ================= 14 ================= -->
+<h2 id="comparison">12 · Comparison</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Memory store</th><th>Longer window</th><th>Checkpointer</th><th>Fine-tuning</th></tr></thead>
+<tbody>
+<tr><th>Survives the session</th><td><b>Yes</b></td><td>No</td><td>The run, not the customer</td><td>Yes, in weights</td></tr>
+<tr><th>Per-user facts</th><td><b>Yes</b></td><td>Only this session</td><td>Per thread</td><td>No</td></tr>
+<tr><th>Updated in seconds</th><td><b>Yes</b></td><td>Not applicable</td><td>Yes</td><td>No, retraining</td></tr>
+<tr><th>Cost as history grows</th><td>Retrieval plus a few facts</td><td><b>Every token, every call</b></td><td>A write per step</td><td>None at inference</td></tr>
+<tr><th>Deletable per customer</th><td><b>Yes</b></td><td>Not applicable</td><td>Per thread</td><td><b>No</b></td></tr>
+<tr><th>Use it for</th><td>Facts that outlive the session</td><td>More of this conversation</td><td>Resumable runs</td><td>Behaviour and format</td></tr>
+</tbody>
+</table>
+</div>
+<p>Read the last row across. <b>These four are not alternatives</b>: a production assistant
+usually has all of them, and the design question is only which facts belong in which. Row 5
+is the one that decides regulated cases - a fact in weights cannot be deleted on request.</p>
+
+<!-- ================= 15 ================= -->
+<div class="carry"><b>New questions</b> written for this page: it had no interview section to carry over.</div>
+<h2 id="interview">13 &middot; Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  Does a language model remember your conversation? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>No. Each call is independent and the model retains nothing after it returns. Every interface that appears to remember is re-sending the earlier messages in the next request.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What is the difference between short-term and long-term memory here? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Short-term memory is the message list for this conversation, resent every turn and lost when the session ends. Long-term memory is facts written to a store outside the model and retrieved back into the prompt when relevant.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  Does a bigger context window give an agent memory? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>No. It means more text fits into one call. Nothing persists after that call, and nothing from a previous session becomes reachable. It raises the budget for this conversation and does nothing for the next one.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  A checkpointer saves state after every step. Is that memory? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>It is durability, not memory. A checkpointer makes a run resumable and keyed by thread. It does not make a customer known across conversations, and conflating the two produces a system that resumes runs perfectly and still cannot remember a preference.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  How do you decide what to write to a memory store? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Store a fact only if it would still be true tomorrow and would change a future answer: a preference, an entitlement, a decision. The test is the inverse - if it would be wrong to still have this tomorrow, it is run state and must not be stored. Storing everything produces a transcript that retrieval turns into noise.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  A customer says the agent forgot something. How do you diagnose it? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Establish first whether it was ever written, because most reported memory failures are writes that never happened rather than reads that failed. Then check the key: a fact keyed by session is unreachable from a new conversation. Then check whether retrieval ranked it out, and whether a later fact superseded it.</p></div></details>
+<details class="collapse"><summary><span class="pill purple">Staff · design</span>  Design memory for a multi-tenant assistant. <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Key every fact by tenant and customer, and put the tenant in the query rather than filtering after retrieval, because a post-filter is a cross-tenant read that happens to be hidden. Carry a source and timestamp on each fact so a wrong one can be traced. Supersede contradictions at write time. Set an expiry, because facts go stale. And make delete-by-customer a single operation, because it will be a legal requirement rather than a feature request.</p></div></details>
+
+<!-- ================= 16 ================= -->
+<h2 id="short">14 · In short, and what comes next</h2>
+<p class="bd-choose">Remember these six:</p>
+<ul>
+<li>A language model has no memory. Every appearance of memory is your code resending text.</li>
+<li>A bigger context window holds more of this conversation and nothing from the last one.</li>
+<li>A checkpointer makes a run resumable. It does not make a customer known.</li>
+<li>If it would be wrong to still have this tomorrow, it is state and must not be stored.</li>
+<li>Key by customer and tenant, never by session, or the fact is unreachable.</li>
+<li>Supersede contradictions at write time, and cap what retrieval returns.</li>
+</ul>
+<div class="callout key">
+<div class="c-ico">🔑</div>
+<div class="c-body"><div class="c-title">The one idea to remember</div>
+<p><b>Memory is a write decision, not a storage problem.</b> Storing everything produces a
+transcript that retrieval turns into noise, and the agent gets worse as the store grows.</p></div>
+</div>
+<p><b>Next:</b> evaluation measures whether any of this works, and the difference between an
+answer that is right and one that was reached correctly.</p>
+
+<div class="page-nav" data-page-nav>
           <a href="modules/01_foundations.html"><div class="dir">← Foundations</div><div class="ttl">01 · Foundations of LLMs</div></a>
           <a class="next" href="modules/08_agents.html"><div class="dir">Next →</div><div class="ttl">08 · Agentic AI</div></a>
         </div>
-      </main>
+      
+</main>
       <div class="toc-rail"><nav class="toc"></nav></div>
     </div>
   </div>
 </div>
 
-<script src="assets/app.js?v=20260731b"></script>
-<script src="assets/sitenav.js?v=20260804b"></script>
-<script src="assets/enhance.js?v=20260804a"></script>
+<script src="assets/app.js?v=20260925c"></script>
+<script src="assets/sitenav.js?v=20260925a"></script>
+<script src="assets/enhance.js?v=20260925c"></script>
 <script src="assets/genai-motion.js?v=20260728a"></script>
 <script src="assets/section-nav.js?v=20260731b"></script>
 </body>

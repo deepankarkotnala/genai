@@ -1,7 +1,7 @@
-# Python, AI & ML Interview Question Bank — 2026
+# Python, AI & ML Interview Question Bank: 2026
 
 > **This file is the raw research bank.** The curated, answered version lives in the portal at
-> [`python-interview/index.html`](python-interview/index.html) — 319 questions that survived a
+> [`python-interview/index.html`](python-interview/index.html) - 319 questions that survived a
 > recency check against 2025–2026 India interview reports, each with a simple answer, a 30-second
 > spoken version and the likely follow-up. Use that section to study; use this file as the wider
 > checklist. Build plan: [`PYTHON_INTERVIEW_PORTAL_PLAN.md`](PYTHON_INTERVIEW_PORTAL_PLAN.md).
@@ -22,34 +22,34 @@
 
 ## Table of contents
 
-1. [Recently reported in 2025-2026 interviews](#recently-reported-in-2025-2026-interviews) — 31 questions
-2. [Python overview, execution, and runtime](#python-overview-execution-and-runtime) — 30 questions
-3. [Syntax, variables, control flow, and operators](#syntax-variables-control-flow-and-operators) — 39 questions
-4. [Built-in types, casting, truthiness, and numbers](#built-in-types-casting-truthiness-and-numbers) — 39 questions
-5. [Strings, bytes, formatting, and regular expressions](#strings-bytes-formatting-and-regular-expressions) — 36 questions
-6. [Lists, tuples, sets, dictionaries, and collections](#lists-tuples-sets-dictionaries-and-collections) — 50 questions
-7. [Functions, parameters, *args, and **kwargs](#functions-parameters-args-and-kwargs) — 44 questions
-8. [Scope, closures, lambdas, and functional programming](#scope-closures-lambdas-and-functional-programming) — 30 questions
-9. [Comprehensions, iterables, iterators, and generators](#comprehensions-iterables-iterators-and-generators) — 35 questions
-10. [Decorators, context managers, descriptors, and properties](#decorators-context-managers-descriptors-and-properties) — 35 questions
-11. [Object-oriented Python](#object-oriented-python) — 54 questions
-12. [Python data model, magic methods, and metaprogramming](#python-data-model-magic-methods-and-metaprogramming) — 43 questions
-13. [Exceptions, modules, imports, environments, and packaging](#exceptions-modules-imports-environments-and-packaging) — 47 questions
-14. [Memory management, garbage collection, performance, and CPython internals](#memory-management-garbage-collection-performance-and-cpython-internals) — 50 questions
-15. [Threading, multiprocessing, asyncio, and parallelism](#threading-multiprocessing-asyncio-and-parallelism) — 58 questions
-16. [Type hints and modern Python](#type-hints-and-modern-python) — 50 questions
-17. [Standard library, files, serialization, logging, and utilities](#standard-library-files-serialization-logging-and-utilities) — 46 questions
-18. [Testing, mocking, debugging, linting, and code quality](#testing-mocking-debugging-linting-and-code-quality) — 55 questions
-19. [Backend Python, APIs, frameworks, databases, and distributed work](#backend-python-apis-frameworks-databases-and-distributed-work) — 60 questions
-20. [NumPy](#numpy) — 36 questions
-21. [Pandas and analytical Python](#pandas-and-analytical-python) — 45 questions
-22. [Data engineering, PySpark, Airflow, and pipelines](#data-engineering-pyspark-airflow-and-pipelines) — 49 questions
-23. [Machine learning and scikit-learn](#machine-learning-and-scikit-learn) — 83 questions
-24. [Deep learning, PyTorch, NLP, and computer vision](#deep-learning-pytorch-nlp-and-computer-vision) — 54 questions
-25. [LLMs, prompt engineering, RAG, vector search, and agents](#llms-prompt-engineering-rag-vector-search-and-agents) — 102 questions
-26. [MLOps, deployment, monitoring, and ML system design](#mlops-deployment-monitoring-and-ml-system-design) — 49 questions
-27. [Python coding and implementation questions](#python-coding-and-implementation-questions) — 158 questions
-28. [Project, architecture, and behavioral questions](#project-architecture-and-behavioral-questions) — 40 questions
+1. [Recently reported in 2025-2026 interviews](#recently-reported-in-2025-2026-interviews) - 31 questions
+2. [Python overview, execution, and runtime](#python-overview-execution-and-runtime) - 30 questions
+3. [Syntax, variables, control flow, and operators](#syntax-variables-control-flow-and-operators) - 39 questions
+4. [Built-in types, casting, truthiness, and numbers](#built-in-types-casting-truthiness-and-numbers) - 39 questions
+5. [Strings, bytes, formatting, and regular expressions](#strings-bytes-formatting-and-regular-expressions) - 36 questions
+6. [Lists, tuples, sets, dictionaries, and collections](#lists-tuples-sets-dictionaries-and-collections) - 50 questions
+7. [Functions, parameters, *args, and **kwargs](#functions-parameters-args-and-kwargs) - 44 questions
+8. [Scope, closures, lambdas, and functional programming](#scope-closures-lambdas-and-functional-programming) - 30 questions
+9. [Comprehensions, iterables, iterators, and generators](#comprehensions-iterables-iterators-and-generators) - 35 questions
+10. [Decorators, context managers, descriptors, and properties](#decorators-context-managers-descriptors-and-properties) - 35 questions
+11. [Object-oriented Python](#object-oriented-python) - 54 questions
+12. [Python data model, magic methods, and metaprogramming](#python-data-model-magic-methods-and-metaprogramming) - 43 questions
+13. [Exceptions, modules, imports, environments, and packaging](#exceptions-modules-imports-environments-and-packaging) - 47 questions
+14. [Memory management, garbage collection, performance, and CPython internals](#memory-management-garbage-collection-performance-and-cpython-internals) - 50 questions
+15. [Threading, multiprocessing, asyncio, and parallelism](#threading-multiprocessing-asyncio-and-parallelism) - 58 questions
+16. [Type hints and modern Python](#type-hints-and-modern-python) - 50 questions
+17. [Standard library, files, serialization, logging, and utilities](#standard-library-files-serialization-logging-and-utilities) - 46 questions
+18. [Testing, mocking, debugging, linting, and code quality](#testing-mocking-debugging-linting-and-code-quality) - 55 questions
+19. [Backend Python, APIs, frameworks, databases, and distributed work](#backend-python-apis-frameworks-databases-and-distributed-work) - 60 questions
+20. [NumPy](#numpy) - 36 questions
+21. [Pandas and analytical Python](#pandas-and-analytical-python) - 45 questions
+22. [Data engineering, PySpark, Airflow, and pipelines](#data-engineering-pyspark-airflow-and-pipelines) - 49 questions
+23. [Machine learning and scikit-learn](#machine-learning-and-scikit-learn) - 83 questions
+24. [Deep learning, PyTorch, NLP, and computer vision](#deep-learning-pytorch-nlp-and-computer-vision) - 54 questions
+25. [LLMs, prompt engineering, RAG, vector search, and agents](#llms-prompt-engineering-rag-vector-search-and-agents) - 102 questions
+26. [MLOps, deployment, monitoring, and ML system design](#mlops-deployment-monitoring-and-ml-system-design) - 49 questions
+27. [Python coding and implementation questions](#python-coding-and-implementation-questions) - 158 questions
+28. [Project, architecture, and behavioral questions](#project-architecture-and-behavioral-questions) - 40 questions
 29. [Research sources](#research-sources)
 
 ## Recently reported in 2025-2026 interviews

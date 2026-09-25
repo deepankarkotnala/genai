@@ -1,5 +1,5 @@
 """
-EDA Agent — an "evolved" Exploratory Data Analysis agent (EnM scenario #6).
+EDA Agent - an "evolved" Exploratory Data Analysis agent (EnM scenario #6).
 
 EnM #6 asks for an EDA that does NOT just analyze a dataset, but correlates findings to the
 process context (P&ID / SOPs) and suggests "nuances of operations which are potential candidates
@@ -31,7 +31,7 @@ TARGET = "yield_pct"
 
 
 # ----------------------------------------------------------------------------- #
-#  Helpers
+# Helpers
 # ----------------------------------------------------------------------------- #
 def load_rows(path=DATA_FILE):
     with open(path, newline="") as f:
@@ -58,7 +58,7 @@ def _pearson(xs, ys):
 
 
 # ----------------------------------------------------------------------------- #
-#  AGENT 1 — EDA Engine (classical statistics)
+# AGENT 1: EDA Engine (classical statistics)
 # ----------------------------------------------------------------------------- #
 def eda_engine():
     rows = load_rows()
@@ -103,7 +103,7 @@ def eda_engine():
 
 
 # ----------------------------------------------------------------------------- #
-#  AGENT 2 — P&ID Engine (join findings to process context)
+# AGENT 2: P&ID Engine (join findings to process context)
 # ----------------------------------------------------------------------------- #
 def pid_engine(eda):
     """Turn raw stats into PROCESS-AWARE findings using process_context.md."""
@@ -147,7 +147,7 @@ def pid_engine(eda):
 
 
 # ----------------------------------------------------------------------------- #
-#  AGENT 3 — Insight layer (LLM, with offline fallback)
+# AGENT 3: Insight layer (LLM, with offline fallback)
 # ----------------------------------------------------------------------------- #
 def insight_layer(joined):
     findings = joined["process_aware_findings"]
@@ -169,7 +169,7 @@ def insight_layer(joined):
 
 
 # ----------------------------------------------------------------------------- #
-#  ORCHESTRATOR
+# ORCHESTRATOR
 # ----------------------------------------------------------------------------- #
 def run():
     print("=" * 64)

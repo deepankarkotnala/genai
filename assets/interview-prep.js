@@ -1,4 +1,4 @@
-/* GenAI Interview Prep — focused practice interactions */
+/* GenAI Interview Prep - focused practice interactions */
 (function () {
   'use strict';
 

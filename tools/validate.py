@@ -49,6 +49,21 @@ PY_EXCERPT_ALLOWLIST = {
         "reason": "injection test: `{..., \"amount\": ...}` is deliberate shorthand for the arguments "
                   "shown earlier; labelled with a leading comment",
     },
+    "teach-agents/lessons/0009-security.html": {
+        "count": 1,
+        "reason": "regression test excerpt: `{..., \"amount\": ...}` stands in for the arguments "
+                  "shown earlier; labelled 'Concept excerpt' in the block itself",
+    },
+    "teach-agents/campusx/12-mcp.html": {
+        "count": 1,
+        "reason": "section 2 shows three teams' signatures side by side in columns to make the "
+                  "duplication visible; labelled by a leading comment on the block",
+    },
+    "modules/09_mcp.html": {
+        "count": 1,
+        "reason": "section 2 shows three teams' signatures side by side in columns to make the "
+                  "duplication visible; labelled by the per-column header comments",
+    },
 }
 
 INELIGIBLE_FOR_PUBLIC_ROUTE = {"migration", "private", "optional-track"}
@@ -1153,7 +1168,11 @@ def check_python_snippets(rep: Report, pages: list[str]):
     for rel in pages:
         src = read(os.path.join(ROOT, rel))
         for match in re.finditer(r"<pre[^>]*>([\s\S]*?)</pre>", src):
-            code = htmlmod.unescape(re.sub(r"<[^>]+>", "", match.group(1))).strip()
+            # Strip real tags only. A bare `<` in code (`if not 1 <= n <= 10`)
+            # must survive: requiring a name character after `<` or `</` keeps
+            # comparison operators out of the tag pattern.
+            code = htmlmod.unescape(
+                re.sub(r"</?[A-Za-z][^>]*>", "", match.group(1))).strip()
             if not code or not re.search(r"^(import |from |def |class |async def )", code, re.M):
                 continue
             total += 1
@@ -1223,9 +1242,14 @@ def baseline_inner(fallback_html: str) -> str:
 
     Stage 2b adds `data-page-nav` to the opening tag, which is deliberately not
     a navigation change -- so drift is measured on the contents only.
+
+    Line endings are normalised for the same reason. The fixture was captured
+    when the tree was CRLF; the rewrite tools now write LF, so an untouched nav
+    block would otherwise read as drift on every page they rewrite.
     """
     inner = re.sub(r'^<div class="page-nav"[^>]*>', "", fallback_html)
-    return re.sub(r"</div>$", "", inner).strip()
+    inner = re.sub(r"</div>$", "", inner).strip()
+    return inner.replace("\r\n", "\n").replace("\r", "\n")
 
 
 def current_nav_block(src: str) -> str | None:
@@ -1283,6 +1307,15 @@ def check_baseline(rep: Report, man: dict):
              "next": rel_link(by_path[ta], order[i_ta + 1])},
         js: {"prev": rel_link(by_path[js], order[i_js - 1]),
              "next": rel_link(by_path[js], full["finish"]["page"])},
+        # The rewrite of rag-deep-dive.html replaced its section ids, so the
+        # fragments these two fallbacks carried (#guardrails, #output-eval) no
+        # longer exist. The destination page is unchanged; only the dead
+        # fragment was dropped. In-body links were remapped to live anchors --
+        # see claude_plan.md 8.3 -- but a nav fallback names its topic in the
+        # title, so the page root is the honest target here.
+        "guardrails.html": {"prev": "rag-deep-dive.html", "next": "langfuse.html"},
+        "langfuse.html": {"prev": "modules/14_production_genai.html",
+                          "next": "rag-deep-dive.html"},
     }
 
     differing, wrong_dest, missing_attr = [], [], []
@@ -1459,6 +1492,98 @@ def check_basics_duration(rep: Report, man: dict):
             "Job-Ready hour total is claimed", problems)
 
 
+REWRITE_SECTIONS = [
+    ("known", "What you already know"),
+    ("breaks", "What breaks now"),
+    ("breakdown", "Simple breakdown"),
+    ("without", "Without the technology"),
+    ("mechanics", "Runtime mechanics"),
+    ("smallest", "Smallest working version"),
+    ("components", "The components, one at a time"),
+    ("state", "State and data flow"),
+    ("assembly", "Full code, in assembly order"),
+    ("trace", "Trace"),
+    ("break", "Break it"),
+    ("fix", "Fix it"),
+    ("production", "Production version"),
+    ("comparison", "Comparison"),
+    ("interview", "Interview preparation"),
+    ("short", "In short"),
+]
+
+BD_LABELS = ["What it is.", "Core purpose.", "Execution model.",
+             "Architecture under the hood.", "State handling.",
+             "Limitations and advanced features."]
+
+
+def check_rewritten_pages(rep: Report, pages: list[str]):
+    """Structure checks for pages converted to the 16-section rewrite template.
+
+    Scoped by content, not by a manifest flag: a page is "rewritten" once it
+    contains a `<section class="breakdown">`. That way the checks switch on one
+    page at a time as the waves land, and the 100-odd pages still on the old
+    template never fail for not being rewritten yet.
+
+    The interview rule is the important one. The rewrite deliberately discards
+    every other section, so the questions exist only in the carry-over archive
+    and in git. This check is what stops a page shipping without them.
+    """
+    try:
+        carry = json.loads(read(os.path.join(ROOT, "docs", "carryover", "index.json")))
+        archived = {r["path"]: r for r in carry["pages"]}
+    except Exception:
+        archived = {}
+
+    done, missing_sec, bad_block, thin_svg, lost_qs = [], [], [], [], []
+
+    for rel in pages:
+        src = read(os.path.join(ROOT, rel))
+        if '<section class="breakdown"' not in src:
+            continue
+        done.append(rel)
+
+        have = set(re.findall(r'<h2 id="([^"]+)"', src))
+        for sid, title in REWRITE_SECTIONS:
+            if sid not in have:
+                missing_sec.append("%s: no <h2 id=\"%s\"> (%s)" % (rel, sid, title))
+
+        block = re.search(r'(?s)<section class="breakdown">(.*?)</section>', src)
+        if block:
+            body = block.group(1)
+            for lab in BD_LABELS:
+                if body.count(">%s<" % lab) < 2:
+                    bad_block.append("%s: label %r not present for both technologies" % (rel, lab))
+            if body.count('class="bd-tech"') != 2:
+                bad_block.append("%s: expected exactly 2 technologies in the block" % rel)
+            if 'class="bd-short"' not in body:
+                bad_block.append("%s: block has no 'In short' list" % rel)
+
+        svgs = re.findall(r'(?s)<svg class="bd-svg".*?</svg>', src)
+        if len(svgs) < 3:
+            thin_svg.append("%s: %d diagram(s), minimum is 3" % (rel, len(svgs)))
+        for i, sv in enumerate(svgs, 1):
+            if "<title" not in sv or "<desc" not in sv:
+                thin_svg.append("%s: diagram %d has no <title>/<desc>" % (rel, i))
+
+        row = archived.get(rel)
+        if row:
+            sec = re.search(r'(?s)<h2 id="interview"[^>]*>(.*?)(?=<h2[ >]|\Z)', src)
+            words = len(re.sub(r"<[^>]+>", " ", sec.group(1)).split()) if sec else 0
+            if words < row["words"] * 0.6:
+                lost_qs.append("%s: interview section is %d words, archive has %d"
+                               % (rel, words, row["words"]))
+
+    rep.add("rewrite-sections", "fail", not missing_sec,
+            "%d rewritten page(s): all 16 sections present" % len(done), missing_sec)
+    rep.add("rewrite-block", "fail", not bad_block,
+            "%d block(s) checked for 6 labels x 2 technologies" % len(done), bad_block)
+    rep.add("rewrite-diagrams", "fail", not thin_svg,
+            "%d page(s) checked for >=3 described diagrams" % len(done), thin_svg)
+    rep.add("interview-carryover", "fail", not lost_qs,
+            "%d rewritten page(s) checked against the carry-over archive" % len(done),
+            lost_qs)
+
+
 def main() -> int:
     ap = argparse.ArgumentParser()
     ap.add_argument("--stage", default="2a", choices=STAGES)
@@ -1500,6 +1625,7 @@ def main() -> int:
     check_page_nav_tests(rep, args.skip_tests)
     check_js(rep)
     check_python_snippets(rep, pages)
+    check_rewritten_pages(rep, pages)
     check_baseline(rep, man)
     check_tests(rep, args.skip_tests)
 

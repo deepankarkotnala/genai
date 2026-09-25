@@ -1,5 +1,5 @@
 /* =========================================================================
-   genai-motion.js — the one piece of motion CSS cannot express
+   genai-motion.js - the one piece of motion CSS cannot express
    =========================================================================
 
    Toggles `body.is-scrolled` once the page has moved off the top, which
@@ -9,7 +9,7 @@
 
    A CSS-only version is not possible: `animation-timeline: scroll()` can drive
    a box-shadow, but the property is not compositable, and Safari has no
-   scroll-driven animations at all — so the header would stay flat on iOS, the
+   scroll-driven animations at all - so the header would stay flat on iOS, the
    platform where the distinction matters most.
 
    Passive listener, rAF-coalesced, one class write per state change.

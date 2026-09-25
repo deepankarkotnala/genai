@@ -1,5 +1,5 @@
 """
-retrieval.py — retrieval as a tool, built from parts you can explain.
+retrieval.py - retrieval as a tool, built from parts you can explain.
 
 Lesson 5. Wave 1's `search_kb` scored whole articles by counting shared words.
 It worked well enough to hide its problem, which is the worst kind of working:

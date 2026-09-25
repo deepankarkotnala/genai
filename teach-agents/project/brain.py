@@ -1,5 +1,5 @@
 """
-brain.py — the one place the agent talks to a model.
+brain.py - the one place the agent talks to a model.
 
 Why this file exists at all
 ---------------------------

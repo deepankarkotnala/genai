@@ -1,5 +1,5 @@
 """
-Lesson 3 — a FORECASTING tool, to contrast with threshold detection.
+Lesson 3 - a FORECASTING tool, to contrast with threshold detection.
 
 In Lesson 2's agent, detect_anomalies uses a z-score: it only fires AFTER a value
 is already far from normal. That missed the slow temperature ramp in our data,

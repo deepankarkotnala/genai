@@ -1,5 +1,5 @@
 /* =========================================================================
-   GenAI Mastery Portal — App Logic
+   GenAI Mastery Portal - App Logic
    Theme toggle · search · quizzes · copy · demos · TOC
    Pure vanilla JS. No dependencies. Works offline.
    ========================================================================= */
@@ -128,7 +128,7 @@
       .replace(/industry perspective/i, "Industry view")
       .replace(/top mistakes engineers make/i, "Common mistakes")
       .replace(/interview preparation/i, "Interview prep")
-      .replace(/mini project\s*[—–-].*$/i, "Mini project")
+      .replace(/mini project\s*[ - –-].*$/i, "Mini project")
       .replace(/real project connection/i, "Project context")
       .replace(/executive summary/i, "Summary")
       .trim();
@@ -163,7 +163,7 @@
         return `<a href="#${h.id}" data-toc="${h.id}" title="${escapeTOCText(full)}"><span class="toc-num">${num}</span><span class="toc-label">${escapeTOCText(label)}</span></a>`;
       }).join("")}<div class="toc-empty" hidden>No matching topic</div></div>`;
 
-    // Compact "Jump to section" toggle — only shown on narrow screens (CSS).
+    // Compact "Jump to section" toggle - only shown on narrow screens (CSS).
     // Turns the section list into a tap-to-open dropdown instead of a
     // horizontal side-scrolling strip that blocks the page on mobile.
     const toggle = document.createElement("button");
@@ -377,13 +377,13 @@
     if (!host) return;
     const descs = {
       "01": "How LLMs predict the next token, context windows, decoding, and where they fit in your stack.",
-      "02": "Self-attention, multi-head attention, positional encoding — the engine inside every LLM.",
+      "02": "Self-attention, multi-head attention, positional encoding - the engine inside every LLM.",
       "03": "Run models on your own hardware with Ollama. Qwen, Gemma, Llama, quantization & Modelfiles.",
       "04": "Turn text into vectors that capture meaning. The foundation of all semantic retrieval.",
       "05": "Store and search millions of vectors fast. FAISS, Qdrant, pgvector, HNSW & ANN tradeoffs.",
       "06": "Ground LLMs in your data. Chunk → embed → retrieve → augment → generate.",
       "07": "Hybrid search, reranking, query expansion, parent-document, Graph RAG & Agentic RAG.",
-      "08": "ReAct, tool calling, planning, reflection, memory and the agent loop — with failure modes.",
+      "08": "ReAct, tool calling, planning, reflection, memory and the agent loop - with failure modes.",
       "09": "The USB-C of AI tooling. Build MCP servers/clients, expose tools, resources & prompts.",
       "10": "Compose LLM apps with LCEL, runnables, retrievers and memory the production way.",
       "11": "The data framework for RAG: indexes, nodes, query engines and retrievers.",
@@ -408,7 +408,7 @@
   /* ---------- Hub-home links (iframe-aware) ----------
      Single-topic pages (langfuse, guardrails, memory, langgraph, claude-agent,
      hermes, rag-deep-dive) are shown inside the hub's iframe. Their "Hub home"
-     links point at the sibling index.html — but following that *inside* the
+     links point at the sibling index.html - but following that *inside* the
      iframe would load the whole hub nested inside itself. So when we're in an
      iframe, ask the parent hub to switch to its Home tab instead. When loaded
      directly (not iframed), the link navigates normally. Module pages use

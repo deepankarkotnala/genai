@@ -1,0 +1,15 @@
+<h2 id="interview">15 &middot; Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What does a trace give you that log lines do not? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Structure. Log lines are independent, so reconstructing one run means guessing which lines belong together. A trace records a run id on every span and a parent on each, so the run reassembles into a tree with durations attached.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What is a span? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>One timed unit of work inside a run: a model call, a tool call, or a control step. It records its own id, its parent, a duration, whether it succeeded, and for model calls the token counts and cost.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  Why store spans flat with a parent id rather than nested? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Spans nest logically, but a flat store with a parent_id is easier to write incrementally, easier to query, and is what every real tracing backend does. The tree is reconstructed at read time.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  What are the levers on agent cost? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Fewer steps, a smaller prompt, a cheaper model for easy work, and caching what repeats. Routing is usually the largest single win, because most requests never needed the full tool set or the expensive model.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  You are told an agent run 'was slow yesterday'. What do you need to answer that? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>A trace with a correlation id, durations per span, and enough retention to reach yesterday. From that you can say which span dominated: a slow tool, a long generation, or too many steps. Without per-span durations you can only say the run was slow, which is what you were already told.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  Traces contain prompts and tool results. How do you handle that? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Treat the trace as a data-retention surface. Record the shape rather than the payload: tool name, argument keys, result size, token counts, latency and decision. Redact at capture, not in the viewer, because a value redacted downstream was still written upstream. Set a retention period and enforce it.</p></div></details>
+
+<!-- ================= 16 ================= -->

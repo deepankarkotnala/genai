@@ -1,5 +1,5 @@
 """
-Integration tests — the only file here that needs a real model.
+Integration tests - the only file here that needs a real model.
 
 Deselected by default (`addopts = -m "not ollama"` in pyproject.toml), so the
 ordinary suite is offline and deterministic. Run these deliberately:

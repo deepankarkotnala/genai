@@ -23,8 +23,8 @@ A new **Complete Interview Hub** section has been added at:
 
 ## Files updated
 
-- `genai-portal/index.html` — new homepage card, reading-order entry and hub counts.
-- `genai-portal/assets/sitenav.js` — new grouped sidebar/search entry.
+- `genai-portal/index.html` - new homepage card, reading-order entry and hub counts.
+- `genai-portal/assets/sitenav.js` - new grouped sidebar/search entry.
 
 ## Deployment note
 

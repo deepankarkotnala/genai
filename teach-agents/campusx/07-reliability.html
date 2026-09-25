@@ -1,0 +1,416 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>07 · Reliability | Understanding AI Agents</title>
+<meta name="description" content="Five controls for the four failures that actually happen. Why a timeout does not stop the work, why retrying is only safe for some errors, and why escalation must never fail.">
+<link rel="icon" href="../../assets/brand/favicon.svg?v=20260925b" type="image/svg+xml">
+<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260925b" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260925b">
+<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260925b" sizes="180x180">
+<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260925b">
+<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260925b" color="#6f47f5">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="../../assets/styles.css?v=20260805a">
+<link href="../../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
+<link href="../../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
+<link href="../../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+<link href="../../assets/ir-theme.css?v=20260925c" rel="stylesheet"/>
+</head>
+<body data-curriculum-id="cx-07" data-page="cx-07">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="../../index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search this section…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Understanding AI Agents · CampusX / <b>07 · Reliability</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> 07 · Safety</div>
+        <h1>Reliability: timeouts, retries, and giving up on purpose</h1>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~18 min read</span>
+          <span class="pill purple">Pairs with · <a href="../lessons/0007-reliability.html">Lesson 7 · Reliability</a></span>
+        </div>
+
+<!-- ================= 1 ================= -->
+<h2 id="known">1 · What you already know</h2>
+<p>From page 3 your dispatch layer returns tool errors to the model instead of
+raising. From page 2 the step limit bounds the run.</p>
+<p><b>That handles errors that arrive.</b> This page is about calls that hang, calls that
+fail intermittently, and calls that succeed while returning half an answer.</p>
+
+<!-- ================= 2 ================= -->
+<h2 id="breaks">2 · What breaks now</h2>
+<p>Your agent worked in development, where every tool returned in 40 ms and
+never failed. In production the same tools sit behind a network.</p>
+
+<p>The run is not failing. It is waiting, and it will wait as long as the socket stays
+open.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Failure</th><th>What it looks like</th><th>What it needs</th></tr></thead>
+<tbody>
+<tr><td>Slow</td><td>The call answers, eventually</td><td>A timeout</td></tr>
+<tr><td>Flaky</td><td>Fails twice, then works</td><td>A bounded retry with backoff</td></tr>
+<tr><td>Unavailable</td><td>Always fails</td><td>A fallback, or escalation</td></tr>
+<tr><td>Partial</td><td>Succeeds, returns incomplete data</td><td>Nothing, until you build it</td></tr>
+</tbody>
+</table>
+</div>
+<p>The fourth row is the one that reaches production. <b>It does not raise, so no error
+handler sees it</b>, and the agent answers confidently from three of the five records it
+should have had.</p>
+
+<!-- ================= 3 ================= -->
+<h2 id="breakdown">3 · Simple breakdown - Retry vs fallback</h2>
+<section class="breakdown">
+
+<h3 class="bd-tech"><span class="bd-tag">A</span> Retry</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> A retry is running the same operation again after a failure, usually with a delay that grows between attempts.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It recovers from failures that are temporary, where the identical request is likely to succeed shortly afterwards.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 302" role="img" aria-labelledby="cx7-exec-t cx7-exec-d">
+<title id="cx7-exec-t">What to do with a failed call</title>
+<desc id="cx7-exec-d">A transient failure is retried with backoff, up to a bound. A permanent failure is not retried, because the identical request will fail identically. When neither retrying nor a fallback applies, the run escalates to a person.</desc>
+<defs><marker id="ah-cx7-exec" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="132" width="270.4" height="56" rx="12"></rect>
+<text class="lbl" x="147.2" y="156">a tool call</text>
+<text class="lbl" x="147.2" y="174">failed</text>
+<rect class="box b2" x="326.4" y="132" width="288.4" height="56" rx="12"></rect>
+<text class="lbl" x="470.6" y="156">what kind of</text>
+<text class="lbl" x="470.6" y="174">failure?</text>
+<path class="arw" d="M287.4 160 H322.4" marker-end="url(#ah-cx7-exec)"></path>
+<rect class="box b3" x="666.8" y="58" width="221.2" height="56" rx="12"></rect>
+<text class="lbl" x="777.4" y="82">transient -- timeout, 429, 5xx</text>
+<text class="lbl" x="777.4" y="100">retry with backoff, bounded</text>
+<path class="arw" d="M617.8 160 C640.8 160, 640.8 86, 662.8 86" marker-end="url(#ah-cx7-exec)"></path>
+<rect class="box b4" x="666.8" y="132" width="221.2" height="56" rx="12"></rect>
+<text class="lbl" x="777.4" y="156">permanent -- 400, validation</text>
+<text class="lbl" x="777.4" y="174">do not retry, it will fail again</text>
+<path class="arw" d="M617.8 160 C640.8 160, 640.8 160, 662.8 160" marker-end="url(#ah-cx7-exec)"></path>
+<rect class="box b5" x="666.8" y="206" width="221.2" height="56" rx="12"></rect>
+<text class="lbl" x="777.4" y="230">no path succeeds</text>
+<text class="lbl" x="777.4" y="248">escalate to a human</text>
+<path class="arw" d="M617.8 160 C640.8 160, 640.8 234, 662.8 234" marker-end="url(#ah-cx7-exec)"></path>
+<text class="cap" x="450" y="296">the classification decides the response; retrying everything is the common mistake</text>
+</svg>
+
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> An attempt counter, a backoff schedule, a classification of which errors are retryable, and an idempotency guarantee for anything with an effect.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> The attempt count for the current call. Nothing survives the run unless the operation itself wrote something.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> It cannot fix a request that is wrong. Retrying a non-idempotent operation can apply the effect twice. Unbounded retries turn one slow dependency into an outage.</p>
+
+<h3 class="bd-tech"><span class="bd-tag">B</span> Fallback</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> A fallback is doing something different after a failure: a cached value, a simpler method, a degraded answer, or handing the task to a person.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It produces a usable outcome when the intended operation cannot succeed at all.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b> The failure is caught, and an alternative path runs instead of the original.</p>
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> An alternative implementation, and a rule for when it is acceptable to use it.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> Whatever the fallback path itself uses. The result must be labelled as degraded, or callers cannot tell.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> The fallback answer is worse by definition. A silent fallback hides an outage until something else breaks.</p>
+
+<h3 class="bd-diff">The core differences</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Retry</th><th>Fallback</th></tr></thead>
+<tbody>
+<tr><th>Fixes a permanent failure</th><td>No</td><td>Yes</td></tr>
+<tr><th>Result quality</th><td>Identical when it succeeds</td><td>Degraded, and must say so</td></tr>
+<tr><th>Risk if misapplied</th><td>Duplicate effects, or an outage amplified</td><td>A wrong answer served as if it were correct</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 class="bd-short">In short - which one to choose</h3>
+<ul>
+<li><b>Retry</b> transient failures: timeouts, 429s, 5xx. Bounded, with backoff, and only when the operation is idempotent.</li>
+<li><b>Fall back</b> when the failure is permanent, and label the result as degraded so nothing downstream treats it as complete.</li>
+<li>When neither applies, <b>escalate</b>. Handing over is a normal outcome, and it is better than guessing or looping.</li>
+</ul>
+</section>
+
+<!-- ================= 4 ================= -->
+<h2 id="without">4 · Without the technology</h2>
+<p>Without any of this, the loop calls the tool directly.</p>
+
+<p>One line, and four separate production incidents:</p>
+<ul>
+<li>A hung call holds the worker until something outside kills it.</li>
+<li>A transient 503 ends a run that would have succeeded on the next attempt.</li>
+<li>A dead dependency produces the same failure on every ticket, all day.</li>
+<li>A partial result becomes a confident wrong answer with no error anywhere.</li>
+</ul>
+<p><b>None of these is an agent problem.</b> They are the ordinary failure modes of calling
+something over a network, and you have handled them before. What is new is that the caller
+is a loop that will keep going.</p>
+
+<!-- ================= 5 ================= -->
+<h2 id="mechanics">5 · Runtime mechanics</h2>
+<p>Five controls, applied in this order:</p>
+<ol>
+<li><b>Timeout</b> every call, so waiting is bounded.</li>
+<li><b>Classify</b> the failure: transient or permanent.</li>
+<li><b>Retry</b> transient failures, bounded, with exponential backoff and jitter.</li>
+<li><b>Fall back</b> when retries are exhausted and a degraded answer is acceptable.</li>
+<li><b>Escalate</b> when neither works, as a normal recorded outcome.</li>
+</ol>
+<p>Two guards sit alongside them, watching the loop rather than the call: a <b>repeat
+check</b> for the same call three times, and an <b>oscillation check</b> for two calls
+alternating.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 174" role="img" aria-labelledby="cx7-timeout-t cx7-timeout-d">
+<title id="cx7-timeout-t">A timeout bounds your wait, not their work</title>
+<desc id="cx7-timeout-d">You stop waiting after five seconds. The call you gave up on may still be running on the other side and may still complete. If you then retry a non-idempotent operation, the effect is applied twice.</desc>
+<defs><marker id="ah-cx7-timeout" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="52" width="157.6" height="56" rx="12"></rect>
+<rect class="box fail" x="191.6" y="52" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M172.6 80 H187.6" marker-end="url(#ah-cx7-timeout)"></path>
+<rect class="box after b3" x="371.2" y="52" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M352.2 80 H367.2" marker-end="url(#ah-cx7-timeout)"></path>
+<rect class="box after b4" x="550.8" y="52" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M531.8 80 H546.8" marker-end="url(#ah-cx7-timeout)"></path>
+<rect class="box after b5" x="730.4" y="52" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M711.4 80 H726.4" marker-end="url(#ah-cx7-timeout)"></path>
+<text class="lbl" x="90.8" y="76">you call</text>
+<text class="lbl" x="90.8" y="94">the service</text>
+<text class="lbl" x="270.4" y="76">you stop</text>
+<text class="lbl" x="270.4" y="94">waiting at 5s</text>
+<text class="lbl" x="450" y="76">their work</text>
+<text class="lbl" x="450" y="94">continues</text>
+<text class="lbl" x="629.6" y="85">you retry</text>
+<text class="lbl" x="809.2" y="76">two effects</text>
+<text class="lbl" x="809.2" y="94">if not idempotent</text>
+<path class="xmark" d="M252.4 122 L288.4 150 M288.4 122 L252.4 150"></path>
+<text class="cap rescue" x="450" y="166">giving up waiting is not the same as the work being cancelled</text>
+</svg>
+
+<!-- ================= 7 ================= -->
+<h2 id="components">6 · The components, one at a time</h2>
+<h3>The timeout</h3>
+<p>It bounds your wait, not their work. That distinction is the whole reason idempotency
+exists in page 8.</p>
+
+<h3>The backoff</h3>
+
+<p>Jitter matters at scale. Without it, every agent that failed at the same moment retries at
+the same moment.</p>
+
+<h3>The oscillation check</h3>
+
+<p>A repeat check never catches this, because each call differs from the one immediately
+before it.</p>
+
+<h3>Escalation</h3>
+
+<p>No lookups, no external calls, no validation beyond its own arguments. <b>It is the
+fallback for everything else, so it cannot be allowed to fail.</b></p>
+
+<!-- ================= 8 ================= -->
+<h2 id="state">7 · State and data flow</h2>
+<ol>
+<li><b>What data is state?</b> Attempt counts per call, and the signature window for the guards.</li>
+<li><b>Who writes each field?</b> The retry wrapper and the loop.</li>
+<li><b>Who reads it?</b> The guards, before each dispatch.</li>
+<li><b>Replaced, appended or merged?</b> Counts increment; the window slides.</li>
+<li><b>What reducer controls merging?</b> None. Plain counters.</li>
+<li><b>Only in process memory?</b> Yes.</li>
+<li><b>Is it checkpointed?</b> No, and that matters: a resumed run restarts its counters.</li>
+<li><b>Is it in a database?</b> Only the trace.</li>
+<li><b>How long does it survive?</b> The run.</li>
+<li><b>What retrieves it again?</b> Nothing. This state is deliberately per-run.</li>
+</ol>
+<p>Row 7 is worth stating out loud in an interview. <b>If a run resumes after a crash, its
+retry budget resets</b>, so the guarantee you actually have is per-attempt, not per-task.</p>
+
+<!-- ================= 10 ================= -->
+<h2 id="trace">8 · Trace</h2>
+<p>One run against a flaky dependency.</p>
+
+<p>The model never saw the two failures. <b>They were handled below the loop</b>, which is
+correct: a transient failure that recovered is not information the next decision needs.</p>
+<p>Compare with a permanent failure.</p>
+
+<p>One attempt, not three. <b>The classification saved two calls and 3 seconds</b>, and the
+error reached the model because it was one the model could act on.</p>
+
+<!-- ================= 11 ================= -->
+<h2 id="break">9 · Break it</h2>
+<p>Now the failure nobody plans for. The dependency is up, the call succeeds, and
+the data is incomplete.</p>
+
+<p>No timeout. No 5xx. No retry, because nothing failed. The response is well-formed and
+<code>count</code> agrees with the list it returned.</p>
+
+<p><b>That answer is wrong and nothing anywhere is aware of it.</b> One of the two missing
+orders was eligible.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 168" role="img" aria-labelledby="cx7-osc-t cx7-osc-d">
+<title id="cx7-osc-t">Oscillation: A, B, A, B</title>
+<desc id="cx7-osc-d">Two calls alternate. A check that compares each call only against the one immediately before it sees a different call every time, so it never fires, and the run continues until the step limit stops it.</desc>
+<defs><marker id="ah-cx7-osc" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker><marker id="ah-cx7-oscp" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--accent)"></path></marker></defs>
+<path class="loop" d="M629.6 62 C629.6 16, 90.8 16, 90.8 54" marker-end="url(#ah-cx7-oscp)"></path>
+<text class="loop-lbl" x="360.2" y="14">every call differs from the previous one, so a repeat check never fires</text>
+<rect class="box b1" x="12" y="62" width="157.6" height="56" rx="12"></rect>
+<rect class="box b2" x="191.6" y="62" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M172.6 90 H187.6" marker-end="url(#ah-cx7-osc)"></path>
+<rect class="box b3" x="371.2" y="62" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M352.2 90 H367.2" marker-end="url(#ah-cx7-osc)"></path>
+<rect class="box b4" x="550.8" y="62" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M531.8 90 H546.8" marker-end="url(#ah-cx7-osc)"></path>
+<rect class="box b5" x="730.4" y="62" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M711.4 90 H726.4" marker-end="url(#ah-cx7-osc)"></path>
+<text class="lbl" x="90.8" y="95">call A</text>
+<text class="lbl" x="270.4" y="95">call B</text>
+<text class="lbl" x="450" y="86">call A</text>
+<text class="lbl" x="450" y="104">again</text>
+<text class="lbl" x="629.6" y="86">call B</text>
+<text class="lbl" x="629.6" y="104">again</text>
+<text class="lbl" x="809.2" y="95">step limit</text>
+<text class="cap" x="450" y="160">detecting this needs a window of four, not a comparison with the last call</text>
+</svg>
+
+<!-- ================= 12 ================= -->
+<h2 id="fix">10 · Fix it</h2>
+<p>Partial failure can only be fixed where the data is produced. <b>The tool must
+report completeness.</b></p>
+<p><b>1 · Return what was asked and what was reached.</b></p>
+
+<p><b>2 · Make the loop treat incompleteness as a first-class case.</b></p>
+
+<p><b>3 · Say so in the answer</b> when a degraded answer is genuinely acceptable.</p>
+
+<p>The third option is a product decision, not an engineering one. <b>What is never
+acceptable is presenting partial data as complete</b>, because the caller has no way to
+know.</p>
+
+<!-- ================= 13 ================= -->
+<h2 id="production">11 · Production version</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Concern</th><th>What you do</th></tr></thead>
+<tbody>
+<tr><td>Timeouts</td><td>On every call, tuned per tool. A remote tool can hang where a local function cannot</td></tr>
+<tr><td>Retry classification</td><td>Transient only. Retrying a 400 spends money to fail identically</td></tr>
+<tr><td>Backoff and jitter</td><td>Exponential, capped, jittered. Lockstep retries amplify an outage</td></tr>
+<tr><td>Retry budget</td><td>Per run, not per call. Six tools retrying three times each is eighteen attempts</td></tr>
+<tr><td>Idempotency</td><td>Required before any retry of an operation with an effect. Page 8 covers it</td></tr>
+<tr><td>Repeat and oscillation</td><td>Both guards, because one does not catch the other</td></tr>
+<tr><td>Completeness</td><td>Tools report it explicitly. Partial data must never look complete</td></tr>
+<tr><td>Escalation</td><td>Always available, never able to fail, and recorded as a normal outcome</td></tr>
+<tr><td>Circuit breaker</td><td>After N consecutive failures, stop calling and fail fast for a cool-down period</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ================= 14 ================= -->
+<h2 id="comparison">12 · Comparison</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Retry</th><th>Fallback</th><th>Escalate</th><th>Circuit breaker</th></tr></thead>
+<tbody>
+<tr><th>Fixes transient failure</th><td><b>Yes</b></td><td>Masks it</td><td>No</td><td>No</td></tr>
+<tr><th>Fixes permanent failure</th><td>No</td><td><b>Yes, degraded</b></td><td><b>Yes, by handing over</b></td><td>No</td></tr>
+<tr><th>Result quality</th><td>Full</td><td>Degraded</td><td>None, but honest</td><td>None</td></tr>
+<tr><th>Protects the dependency</th><td>No, adds load</td><td>Yes</td><td>Yes</td><td><b>Yes</b></td></tr>
+<tr><th>Needs idempotency</th><td><b>Yes</b></td><td>No</td><td>No</td><td>No</td></tr>
+<tr><th>Use it for</th><td>Timeouts, 429, 5xx</td><td>A cached or simpler answer</td><td>Anything unresolvable</td><td>A dependency that is down</td></tr>
+</tbody>
+</table>
+</div>
+<p>Row 4 is the one people miss. <b>Retrying adds load to a dependency that is already
+struggling</b>, so a retry policy without a circuit breaker can turn a slow service into a
+dead one.</p>
+
+<!-- ================= 15 ================= -->
+<div class="carry"><b>New questions</b> written for this page: it is new, so there was nothing to carry over.</div>
+<h2 id="interview">13 &middot; Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What does a timeout actually bound? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>How long your process waits. It does not stop the work on the other side. The call you gave up on may still be running and may still complete, which is why a retry after a timeout needs the operation to be idempotent.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  Which errors are safe to retry? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Transient ones: a timeout, a 429, a 5xx, a dropped connection. Never a 400 or a validation error, because the same request will fail the same way and the retry only spends money and time.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  Why must escalation never fail? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>It is the fallback for every other failure. If escalation does a lookup or calls an external system, it can fail exactly when everything else has already failed. A fallible fallback is not a fallback, so escalate should validate its own arguments and nothing else.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  What is the difference between a repeat and an oscillation? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>A repeat is the same call with the same arguments again. An oscillation is two calls alternating: A, B, A, B. A check that compares only against the previous call never fires on an oscillation, because every call differs from the one before it. Detecting it needs a window of four.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  Your agent is looping in production. Walk through your response. <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Stop the bleeding first: the step limit and the cost budget should already cap it, so confirm they are set and firing. Then read a trace of one looping run and identify whether it is a repeat or an oscillation. Repeats usually mean a tool returns an error the model cannot act on. Oscillation usually means two instructions conflict. Fix the cause, keep the guard.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  What is partial failure, and why does nobody plan for it? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>A call that succeeds and returns incomplete data - three of five records, or a field that is null because an upstream service was degraded. It does not raise, so no error handler sees it. The agent treats partial data as complete and answers confidently. The fix is for tools to report completeness explicitly.</p></div></details>
+
+<!-- ================= 16 ================= -->
+<h2 id="short">14 · In short, and what comes next</h2>
+<p class="bd-choose">Remember these six:</p>
+<ul>
+<li>A timeout bounds your wait, never the other side's work.</li>
+<li>Retry transient failures only, bounded, with backoff and jitter.</li>
+<li>A retry of anything with an effect requires idempotency first.</li>
+<li>Repeat and oscillation are different bugs, and need different checks.</li>
+<li>Escalation must never fail, so it touches nothing external.</li>
+<li>Partial success is the failure nobody plans for. Tools must report completeness.</li>
+</ul>
+<div class="callout key">
+<div class="c-ico">🔑</div>
+<div class="c-body"><div class="c-title">The one idea to remember</div>
+<p><b>An agent with no escalation path has two options: guess, or loop.</b> Both are worse
+than handing over, so make handing over a normal, recorded outcome.</p></div>
+</div>
+<p><b>Next:</b> page 8 is about the calls you cannot take back, and the order of the checks
+that must run before one of them happens.</p>
+
+<div class="page-nav" data-page-nav>
+<a href="06-context-and-memory.html"><div class="dir">← Previous</div><div class="ttl">06 · Context and memory</div></a>
+          <a class="next" href="08-irreversible-actions.html"><div class="dir">Next →</div><div class="ttl">08 · Irreversible actions</div></a>
+</div>
+
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script>
+window.__pageNav = {
+  navLabel: "Understanding AI Agents · CampusX",
+  here: "campusx/07-reliability.html",
+  base: "../",
+  pages: [
+    { file: "campusx/index.html", title: "Section index", num: "✦", kw: "campusx agents index" }
+  ]
+};
+</script>
+<script src="../../assets/app.js?v=20260925c"></script>
+<script src="../../assets/sitenav.js?v=20260925a"></script>
+<script src="../../assets/enhance.js?v=20260925c"></script>
+<script src="../../assets/genai-motion.js?v=20260728a"></script>
+<script src="../../assets/glossary.js?v=20260802b"></script>
+</body>
+</html>

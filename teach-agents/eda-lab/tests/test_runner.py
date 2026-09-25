@@ -1,5 +1,5 @@
 """
-Runner tests — the control layer.
+Runner tests - the control layer.
 
 What is being tested here is not "does it answer". It is: when the model gets it
 wrong, does the system stop, and does it say why. Most of these use a

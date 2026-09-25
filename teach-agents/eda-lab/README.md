@@ -1,8 +1,8 @@
-# EDA Lab — a data-analysis agent that runs entirely on your machine
+# EDA Lab: a data-analysis agent that runs entirely on your machine
 
 **Supplementary to the main course.** Roughly 4–6 hours. Everything here is a
-second angle on ideas Lessons 3, 9, 10, 14 and 15 already cover — structured
-output, guardrails, evaluation, safety, and honest limitations — applied to a
+second angle on ideas Lessons 3, 9, 10, 14 and 15 already cover - structured
+output, guardrails, evaluation, safety, and honest limitations - applied to a
 domain where the failure modes look different and the interview questions are
 sharper.
 
@@ -22,7 +22,7 @@ this lab is designed to prepare you for:
 > **Gemma decides what analysis to run. pandas decides what the numbers are.**
 
 The model never writes Python, never executes anything, and never touches the
-dataframe. Not because it is instructed not to — because no tool in the registry
+dataframe. Not because it is instructed not to - because no tool in the registry
 can do those things.
 
 ## Setup
@@ -71,11 +71,11 @@ enough at constrained JSON to be interesting.
 
 | Tag | Size | Notes |
 | --- | --- | --- |
-| `gemma3:1b` | ~0.8 GB | Fast, and it will produce invalid plans. Useful for that reason — set it deliberately and watch the repair path work. |
+| `gemma3:1b` | ~0.8 GB | Fast, and it will produce invalid plans. Useful for that reason - set it deliberately and watch the repair path work. |
 | `gemma3:4b` | ~3.3 GB | Default. |
 | `gemma3:12b` | ~8.1 GB | Better plans, noticeably slower. Needs ~9 GB free RAM. |
 
-There is no `gemma3:7b` — that tag does not exist, and asking for it produces a
+There is no `gemma3:7b` - that tag does not exist, and asking for it produces a
 confusing 404 rather than a clear error.
 
 To swap:
@@ -102,7 +102,7 @@ python -m eda_lab.cli "your question"
 ```
 
 Charts land in `out/` with a filename derived from the plan. The model cannot
-name the file — a model-supplied path is a write-anywhere primitive.
+name the file - a model-supplied path is a write-anywhere primitive.
 
 ## Tests and evaluation
 
@@ -118,7 +118,7 @@ suite nobody runs. `-m ollama` is excluded by `addopts` in `pyproject.toml`.
 
 The two runs measure different things, and the difference is the point:
 
-- **`run_evals.py`** (fake backend) checks the *system* — the guards, the repair
+- **`run_evals.py`** (fake backend) checks the *system* - the guards, the repair
   budget, the caveats, the refusals. Deterministic, so a regression is a
   regression.
 - **`run_evals.py --ollama`** checks the *model*. Expect variation between runs.
@@ -126,7 +126,7 @@ The two runs measure different things, and the difference is the point:
 
 Ten metrics, split the way an interviewer will ask you to split them:
 
-| Trajectory — *how it got there* | Outcome — *what came out* |
+| Trajectory - *how it got there* | Outcome - *what came out* |
 | --- | --- |
 | tool selection | numerical correctness |
 | column selection | missing-data handling |
@@ -151,7 +151,7 @@ Say it in this order in an interview. The order *is* the answer.
    There is no `eval`, `exec`, `subprocess`, dynamic import or path argument
    anywhere in the package. `test_no_execution_capability_exists` asserts it and
    fails the moment someone adds one.
-2. **Semantics.** The plan names real columns, real tools, real aggregations —
+2. **Semantics.** The plan names real columns, real tools, real aggregations - 
    checked in `guards.py`, because JSON Schema structurally cannot. `{"group_by":
    "sentiment_score"}` satisfies every schema constraint and names a column that
    does not exist.
@@ -162,8 +162,8 @@ Say it in this order in an interview. The order *is* the answer.
    trivially bypassed by rephrasing, and there is a test asserting exactly that.
    It is logging, not defence.
 
-There is a test — `test_unsafe_request_stays_harmless_with_the_screen_disabled`
-— that turns layer 4 off entirely and shows nothing changes. That is the
+There is a test - `test_unsafe_request_stays_harmless_with_the_screen_disabled`
+ - that turns layer 4 off entirely and shows nothing changes. That is the
 demonstration. A keyword filter guarding a real capability is theatre; one
 guarding nothing is useful logging.
 

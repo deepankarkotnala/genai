@@ -1,0 +1,406 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>03 · Tools and the trust boundary | Understanding AI Agents</title>
+<meta name="description" content="What a tool declaration really is, why the description is prompt engineering, and why a trusted tool delivers untrusted text into your prompt.">
+<link rel="icon" href="../../assets/brand/favicon.svg?v=20260925b" type="image/svg+xml">
+<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260925b" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260925b">
+<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260925b" sizes="180x180">
+<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260925b">
+<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260925b" color="#6f47f5">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="../../assets/styles.css?v=20260805a">
+<link href="../../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
+<link href="../../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
+<link href="../../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+<link href="../../assets/ir-theme.css?v=20260925c" rel="stylesheet"/>
+</head>
+<body data-curriculum-id="cx-03" data-page="cx-03">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="../../index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search this section…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Understanding AI Agents · CampusX / <b>03 · Tools and the trust boundary</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> 03 · Foundations</div>
+        <h1>Tools, and the boundary you cannot move</h1>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~19 min read</span>
+          <span class="pill purple">Pairs with · <a href="../lessons/0003-tool-calling.html">Lesson 3 · Tools & validation</a></span>
+        </div>
+
+<!-- ================= 1 ================= -->
+<h2 id="known">1 · What you already know</h2>
+<p>From page 2: the loop sends the goal, the model names a tool, your code runs
+it, and the result is appended. You wrote a registry mapping names to functions.</p>
+<p><b>This page is about what the model actually sees of those tools</b>, and about the one
+security property that follows from it.</p>
+
+<!-- ================= 2 ================= -->
+<h2 id="breaks">2 · What breaks now</h2>
+<p>You declare a tool and the model refuses to use it. Or it uses the wrong one. Or it calls the right one with an argument that makes no sense.</p>
+
+<p>Nothing here is a bug in your code. The model was given three lines of information and
+made a reasonable guess from them.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>What went wrong</th><th>Where the fix actually is</th></tr></thead>
+<tbody>
+<tr><td>The wrong tool was chosen</td><td>The description does not say when to use it</td></tr>
+<tr><td>The argument was malformed</td><td>The description does not say what an id looks like</td></tr>
+<tr><td>The tool was skipped entirely</td><td>The description does not say what it returns</td></tr>
+</tbody>
+</table>
+</div>
+<p>All three point at the same place. <b>The description is not documentation; it is the
+prompt that decides whether your tool is used correctly.</b></p>
+
+<!-- ================= 3 ================= -->
+<h2 id="breakdown">3 · Simple breakdown - Tool calling vs parsing free text</h2>
+<section class="breakdown">
+
+<h3 class="bd-tech"><span class="bd-tag">A</span> Tool calling</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> Tool calling is a protocol where you describe functions to a model, and it replies with the name of one and a JSON object of arguments for it.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It lets a model request an action without performing one, so your code keeps every decision about whether the action actually runs.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 372" role="img" aria-labelledby="cx3-exec-t cx3-exec-d">
+<title id="cx3-exec-t">What crosses to the model, and what comes back</title>
+<desc id="cx3-exec-d">Your Python function stays in your process. Only its name, description and parameter schema are serialised into the prompt. What returns is a request: a tool name and arguments, which your code validates before running anything.</desc>
+<defs><marker id="ah-cx3-exec" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="layer b1" x="150" y="16" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="37">your Python function</text>
+<text class="lbl" x="450" y="55">the model never sees this</text>
+<rect class="layer b2" x="150" y="82" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="112">name + description + parameter schema</text>
+<path class="arw" d="M450 66 V79" marker-end="url(#ah-cx3-exec)"></path>
+<rect class="layer b3" x="150" y="148" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="178">the prompt the model reads</text>
+<path class="arw" d="M450 132 V145" marker-end="url(#ah-cx3-exec)"></path>
+<rect class="layer b4" x="150" y="214" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="244">a request: tool name + arguments</text>
+<path class="arw" d="M450 198 V211" marker-end="url(#ah-cx3-exec)"></path>
+<rect class="layer b5" x="150" y="280" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="310">your dispatch layer decides whether to run it</text>
+<path class="arw" d="M450 264 V277" marker-end="url(#ah-cx3-exec)"></path>
+<text class="cap" x="450" y="366">the model asks; it never calls</text>
+</svg>
+
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> A tool registry mapping names to functions, a JSON schema per tool sent with the prompt, and a dispatch layer that validates arguments before calling.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> None in the protocol. The requested call is one message; the result is another. Both live in the message list your code holds.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> The model can request a call that does not exist, or arguments that fail validation. Providers support several calls per reply. Every declared tool costs tokens on every request.</p>
+
+<h3 class="bd-tech"><span class="bd-tag">B</span> Parsing free text</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> Parsing free text means asking the model to write its intent in prose or JSON, then extracting that intent with your own string handling.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It gets structure out of a model that has no tool-calling support, or out of a reply format you designed yourself.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b> The model writes text. Your code applies a regular expression or a JSON parse to recover the fields.</p>
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> A prompt describing the format, and parsing code that must handle every way the model can deviate from it.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> None. Whatever your parser produces is the only structure that exists.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> It breaks on prose around the JSON, on markdown fences, and on any format drift after a model upgrade. Repair heuristics accumulate.</p>
+
+<h3 class="bd-diff">The core differences</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Tool calling</th><th>Parsing free text</th></tr></thead>
+<tbody>
+<tr><th>Argument structure</th><td>Constrained by a schema the provider enforces</td><td>Whatever the model happened to write</td></tr>
+<tr><th>Unknown field or wrong type</th><td>Caught by validation before dispatch</td><td>Often silently accepted</td></tr>
+<tr><th>Cost</th><td>Schema tokens on every request</td><td>No schema tokens, but repair code forever</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 class="bd-short">In short - which one to choose</h3>
+<ul>
+<li>Use <b>tool calling</b> whenever the provider supports it. The schema is enforced during generation, not requested politely.</li>
+<li>Use <b>free-text parsing</b> only for models without tool support, and validate the result exactly as strictly.</li>
+<li>Either way, <b>validation before dispatch is your code's job</b>. The protocol constrains the shape and never the meaning.</li>
+</ul>
+</section>
+
+<!-- ================= 4 ================= -->
+<h2 id="without">4 · Without the technology</h2>
+<p>Before tool calling existed, you asked for a format and parsed it.</p>
+
+<p>This works until the model writes any of these, all of which are reasonable text.</p>
+
+<p>Each one gets a repair rule. The repair rules accumulate, and each is a place where a
+malformed reply is silently turned into a plausible wrong call.</p>
+<p><b>Tool calling replaces the repair pile with a schema the provider enforces during
+generation.</b> What it does not replace is validation: the shape is guaranteed, the meaning
+is not.</p>
+
+<!-- ================= 5 ================= -->
+<h2 id="mechanics">5 · Runtime mechanics</h2>
+<p>One tool-calling round trip, in order:</p>
+<ol>
+<li>Your code sends the messages <b>and</b> the tool schemas in the same request.</li>
+<li>The model returns a reply whose content is empty and whose <code>tool_calls</code>
+field holds one or more requested calls.</li>
+<li>Your code validates the arguments against the schema.</li>
+<li>Your code runs the function, or returns a validation error as the result.</li>
+<li>The result is appended as a <code>tool</code> message, and the loop continues.</li>
+</ol>
+<p><b>The model performs no step in that list except the second.</b> Everything else is your
+process.</p>
+
+<!-- ================= 7 ================= -->
+<h2 id="components">6 · The components, one at a time</h2>
+<h3>The name</h3>
+<p>Short, and a verb phrase. It appears in traces and in error messages, so it is also the
+label you will read at three in the morning.</p>
+
+<h3>The description</h3>
+<p>Three things, in this order: what comes back, when to use it, and what the arguments look
+like. No other text in an agent changes behaviour as much for as few words.</p>
+
+<h3>The parameter schema</h3>
+<p>JSON Schema. Use <code>enum</code> for closed sets and <code>pattern</code> for formatted
+identifiers - the provider constrains generation to match, so a malformed id becomes
+impossible rather than merely unlikely.</p>
+
+<h3>The dispatch layer</h3>
+<p>Three checks before anything runs: the tool exists, the arguments validate, and the
+caller is allowed to run it.</p>
+
+<p>Every branch returns a result rather than raising. <b>A tool error is information the next
+decision can use.</b>
+
+<!-- ================= 8 ================= -->
+<h2 id="state">7 · State and data flow</h2>
+<ol>
+<li><b>What data is state?</b> The requested call, and the result it produced.</li>
+<li><b>Who writes each field?</b> The model writes the request; your code writes the result.</li>
+<li><b>Who reads it?</b> The model, on the next pass, as two more messages.</li>
+<li><b>Replaced, appended or merged?</b> Appended, as a pair.</li>
+<li><b>What reducer controls merging?</b> None. The pair is opaque to the loop.</li>
+<li><b>Only in process memory?</b> Yes.</li>
+<li><b>Is it checkpointed?</b> No.</li>
+<li><b>Is it in a database?</b> The audit log, if you write one.</li>
+<li><b>How long does it survive?</b> For the run, plus however long you keep the log.</li>
+<li><b>What retrieves it again?</b> The run id, in the trace.</li>
+</ol>
+<p>Row 8 is the one that matters in production. <b>The tool result is the only record that
+the action happened</b>, so if you did not log it, it did not happen as far as anyone
+investigating is concerned.</p>
+
+<!-- ================= 10 ================= -->
+<h2 id="trace">8 · Trace</h2>
+
+<p>The second and third results go back to the model as tool messages. It reads
+<code>Field required</code>, corrects the argument name, and calls again. <b>The error was
+useful because it was returned rather than raised.</b></p>
+
+<!-- ================= 11 ================= -->
+<h2 id="break">9 · Break it</h2>
+<p>Fixture <code>TCK-1008</code> is a real support ticket whose body says.</p>
+
+<p>Run the agent on it. Your <code>read_ticket</code> tool is your code, it is not
+compromised, and it returns a correctly shaped dictionary. <b>And it has just placed an
+instruction from a stranger into the model's prompt.</b></p>
+<p>Nothing bad happens here, and the reason matters: <b>there is no refund tool to call.</b>
+The instruction is inert for a structural reason, not because the model resisted it and not
+because the system prompt forbade it.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 306" role="img" aria-labelledby="cx3-trust-t cx3-trust-d">
+<title id="cx3-trust-t">Trusted and untrusted text in the same prompt</title>
+<desc id="cx3-trust-d">The system prompt and the shape of a tool result come from your code and are trusted. The content inside that result was written by a customer, so a trusted tool delivers untrusted text into the model's context.</desc>
+<defs><marker id="ah-cx3-trust" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="layer b1" x="150" y="16" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="37">system prompt -- you wrote it</text>
+<text class="lbl" x="450" y="55">TRUSTED</text>
+<rect class="layer b2" x="150" y="82" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="103">tool result shape -- your code</text>
+<text class="lbl" x="450" y="121">TRUSTED</text>
+<path class="arw" d="M450 66 V79" marker-end="url(#ah-cx3-trust)"></path>
+<rect class="layer b3" x="150" y="148" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="169">the ticket body inside it -- a stranger</text>
+<text class="lbl" x="450" y="187">UNTRUSTED</text>
+<path class="arw" d="M450 132 V145" marker-end="url(#ah-cx3-trust)"></path>
+<rect class="layer b4" x="150" y="214" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="244">one prompt, with both mixed together</text>
+<path class="arw" d="M450 198 V211" marker-end="url(#ah-cx3-trust)"></path>
+<text class="cap" x="450" y="300">the boundary runs inside the tool result, not around it</text>
+</svg>
+
+<!-- ================= 12 ================= -->
+<h2 id="fix">10 · Fix it</h2>
+<p>The defences, strongest first. Only the first is structural.</p>
+<p><b>1 · The capability does not exist.</b> An agent with no refund tool cannot issue a
+refund, however persuasive the text. This is the only defence that does not depend on
+judgement.</p>
+<p><b>2 · Policy in code, not in the prompt.</b> A function cannot be argued with.</p>
+
+<p><b>3 · Authorisation against the request, never against the model's claim.</b></p>
+
+<p><b>4 · Mark untrusted content when it enters the prompt</b>, so the system prompt can
+refer to it.</p>
+
+<p>The fourth helps and is not a boundary. <b>Prompt-based defences reduce the rate; only
+the absent capability changes what is possible.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 376" role="img" aria-labelledby="cx3-def-t cx3-def-d">
+<title id="cx3-def-t">The defences, and which one is structural</title>
+<desc id="cx3-def-d">A tool that does not exist cannot be called, whatever the text says. Policy in code cannot be argued with. Authorisation is checked against the caller. Prompt wording reduces the rate but decides nothing.</desc>
+<defs><marker id="ah-cx3-def" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="169" width="267.35" height="56" rx="12"></rect>
+<text class="lbl" x="145.675" y="193">injected text</text>
+<text class="lbl" x="145.675" y="211">reaches the model</text>
+<rect class="box b2" x="323.35" y="169" width="285.35" height="56" rx="12"></rect>
+<text class="lbl" x="466.025" y="193">what stops the</text>
+<text class="lbl" x="466.025" y="211">dangerous action?</text>
+<path class="arw" d="M284.35 197 H319.35" marker-end="url(#ah-cx3-def)"></path>
+<rect class="box b3" x="660.7" y="58" width="227.3" height="56" rx="12"></rect>
+<text class="lbl" x="774.35" y="82">the tool does not exist</text>
+<text class="lbl" x="774.35" y="100">STRUCTURAL -- nothing to call</text>
+<path class="arw" d="M611.7 197 C634.7 197, 634.7 86, 656.7 86" marker-end="url(#ah-cx3-def)"></path>
+<rect class="box b4" x="660.7" y="132" width="227.3" height="56" rx="12"></rect>
+<text class="lbl" x="774.35" y="156">policy is a function</text>
+<text class="lbl" x="774.35" y="174">a function cannot be persuaded</text>
+<path class="arw" d="M611.7 197 C634.7 197, 634.7 160, 656.7 160" marker-end="url(#ah-cx3-def)"></path>
+<rect class="box b5" x="660.7" y="206" width="227.3" height="56" rx="12"></rect>
+<text class="lbl" x="774.35" y="230">authorisation on the caller</text>
+<text class="lbl" x="774.35" y="248">not on what the model claimed</text>
+<path class="arw" d="M611.7 197 C634.7 197, 634.7 234, 656.7 234" marker-end="url(#ah-cx3-def)"></path>
+<rect class="box b5" x="660.7" y="280" width="227.3" height="56" rx="12"></rect>
+<text class="lbl" x="774.35" y="304">wording in the system prompt</text>
+<text class="lbl" x="774.35" y="322">reduces the rate, decides nothing</text>
+<path class="arw" d="M611.7 197 C634.7 197, 634.7 308, 656.7 308" marker-end="url(#ah-cx3-def)"></path>
+<text class="cap" x="450" y="370">only the first row changes what is possible; the rest change how likely it is</text>
+</svg>
+
+<!-- ================= 13 ================= -->
+<h2 id="production">11 · Production version</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Concern</th><th>What you do</th></tr></thead>
+<tbody>
+<tr><td>Least capability</td><td>Declare the smallest set of tools the task needs. Absent beats filtered</td></tr>
+<tr><td>Validation</td><td>Every argument, against a schema, before dispatch. Return errors, do not raise</td></tr>
+<tr><td>Authorisation</td><td>Checked against the caller from your auth layer, never against anything in the arguments</td></tr>
+<tr><td>Result caps</td><td>Truncate or paginate at the tool, so one result cannot fill the context window</td></tr>
+<tr><td>Untrusted content</td><td>Assume every string field inside a result was written by a stranger</td></tr>
+<tr><td>Schema cost</td><td>Every declared tool costs tokens on every request. Declare what the task needs</td></tr>
+<tr><td>Timeouts</td><td>Per tool call. A remote tool can hang where a local function would not</td></tr>
+<tr><td>Audit</td><td>Tool, arguments, result and caller, against the run id, for every call</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ================= 14 ================= -->
+<h2 id="comparison">12 · Comparison</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Tool calling</th><th>Free-text parsing</th><th>A fixed function call</th></tr></thead>
+<tbody>
+<tr><th>Who chooses the function</th><td><b>The model</b></td><td>The model</td><td>You</td></tr>
+<tr><th>Argument shape guaranteed</th><td><b>Yes, by the provider</b></td><td>No</td><td>Yes, by Python</td></tr>
+<tr><th>Handles a new request type</th><td>Yes</td><td>Yes</td><td>No</td></tr>
+<tr><th>Token cost</th><td>Schema on every request</td><td>Format instructions</td><td>None</td></tr>
+<tr><th>Failure mode</th><td>Wrong tool, or invalid arguments</td><td>Unparseable text</td><td>None</td></tr>
+<tr><th>Use it for</th><td>Agents with several tools</td><td>Models without tool support</td><td>Known, fixed steps</td></tr>
+</tbody>
+</table>
+</div>
+<p>Row 2 is the reason tool calling won. <b>A schema enforced during generation removes a
+whole category of repair code</b>, and repair code is where malformed replies quietly become
+plausible wrong calls.</p>
+
+<!-- ================= 15 ================= -->
+<div class="carry"><b>New questions</b> written for this page: it is new, so there was nothing to carry over.</div>
+<h2 id="interview">13 &middot; Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What does the model see of your tool? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Three things: the name, the description, and the parameter schema. It never sees your Python. Those three are serialised into the prompt, and the model chooses from them alone.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  Why is the tool description called prompt engineering? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Because it is text in the prompt that decides behaviour. A description that says what comes back, when to reach for the tool, and what an identifier looks like gets the tool selected correctly. "Gets an order" does not.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  The model asked for a tool with a bad argument. Whose job is it to catch that? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Yours. The model requests a call; it does not perform one. Validate the arguments against the schema before dispatch, and return the validation error to the model as a tool result rather than raising. A recoverable error is information the next decision can use.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  When should tool calls run in parallel? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>When every argument is known before any call runs and the results do not affect each other. If one call's argument comes from another call's result, they must run in order. Parallel calls also make partial failure normal, so the caller must decide what to do with two results and one error.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  Where is the trust boundary in a tool result? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Inside it, not around it. The shape of the result comes from your code and is trusted. The content can be text a customer wrote, so a trusted tool delivers untrusted text into the model's context. Treat the content as untrusted input regardless of which tool returned it.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  How do you stop a tool result from taking over the context window? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Cap it where it is produced. A tool that can return 40,000 characters should truncate, paginate or summarise before returning. Trimming the prompt later is too late, because the goal and earlier findings have already been crowded out by one document.</p></div></details>
+
+<!-- ================= 16 ================= -->
+<h2 id="short">14 · In short, and what comes next</h2>
+<p class="bd-choose">Remember these six:</p>
+<ul>
+<li>The model sees a name, a description and a schema. Never your code.</li>
+<li>The description decides whether your tool is used correctly. Write it as prompt text.</li>
+<li>The model requests a call. Your code decides whether it runs.</li>
+<li>Validate every argument before dispatch, and return errors as results.</li>
+<li>The trust boundary is inside the tool result, not around it.</li>
+<li>The strongest defence is that the dangerous tool does not exist.</li>
+</ul>
+<div class="callout key">
+<div class="c-ico">🔑</div>
+<div class="c-body"><div class="c-title">The one idea to remember</div>
+<p><b>A tool you trust can deliver text you must not trust.</b> The shape of a result comes
+from your code; the content can come from anyone.</p></div>
+</div>
+<p><b>Next:</b> the hands-on course builds this for real, and the remaining pages in this
+section cover reasoning patterns, retrieval, memory and the safety mechanisms that follow
+from this boundary.</p>
+
+<div class="page-nav" data-page-nav>
+<a href="02-the-agent-loop.html"><div class="dir">← Previous</div><div class="ttl">02 · The agent loop</div></a>
+          <a class="next" href="index.html"><div class="dir">Next →</div><div class="ttl">Section index</div></a>
+</div>
+
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script>
+window.__pageNav = {
+  navLabel: "Understanding AI Agents · CampusX",
+  here: "campusx/03-tools-and-the-boundary.html",
+  base: "../",
+  pages: [
+    { file: "campusx/index.html", title: "Section index", num: "✦", kw: "campusx agents index" }
+  ]
+};
+</script>
+<script src="../../assets/app.js?v=20260925c"></script>
+<script src="../../assets/sitenav.js?v=20260925a"></script>
+<script src="../../assets/enhance.js?v=20260925c"></script>
+<script src="../../assets/genai-motion.js?v=20260728a"></script>
+<script src="../../assets/glossary.js?v=20260802b"></script>
+</body>
+</html>

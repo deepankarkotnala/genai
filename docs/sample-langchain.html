@@ -1,0 +1,814 @@
+<!DOCTYPE html>
+<html data-theme="light" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="#f4f5f8" name="theme-color"/>
+<title>SAMPLE · 10 · LangChain | full rewrite for review</title>
+<link href="../assets/brand/favicon.svg?v=20260925b" rel="icon" type="image/svg+xml"/>
+<meta content="Review sample: the LangChain module rewritten to the 16-section CampusX template." name="description"/>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:"m";var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260805a" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
+<link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
+<link href="../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+
+<!-- ===================================================================
+     PROPOSED COMPONENTS - move into assets/styles.css on approval.
+     Inlined here so the shared stylesheet is untouched before review.
+     Existing design tokens only, so dark mode needs no extra rules.
+     =================================================================== -->
+<style>
+/* ---------- the breakdown block ---------- */
+.breakdown{
+  border:1px solid var(--border-strong);border-radius:14px;
+  background:var(--bg-elevated);box-shadow:var(--shadow-sm);
+  padding:clamp(16px,2.2vw,28px);margin:18px 0 28px;
+}
+.breakdown > .bd-tech:first-child{margin-top:0}
+.bd-tech{
+  display:flex;align-items:center;gap:10px;margin:26px 0 12px;
+  padding-bottom:8px;border-bottom:2px solid var(--accent-soft);font-size:1.06em;
+}
+.bd-tech .bd-tag{
+  flex:0 0 auto;font-size:.68em;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--accent);
+  background:var(--accent-soft);border-radius:999px;padding:3px 9px;
+}
+.breakdown h4{
+  margin:16px 0 8px;font-size:.82em;font-weight:700;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--text-muted);
+}
+.bd-item{margin:0 0 10px;line-height:1.62}
+.bd-item > b:first-child{color:var(--text)}
+.bd-diff,.bd-short{
+  margin:26px 0 12px;padding-bottom:8px;
+  border-bottom:2px solid var(--accent-soft);font-size:1.06em;
+}
+.breakdown .table-wrap{overflow-x:auto;margin:12px 0}
+.breakdown table{width:100%;border-collapse:collapse;font-size:.94em}
+.breakdown th,.breakdown td{
+  border:1px solid var(--border);padding:9px 11px;text-align:left;vertical-align:top;
+}
+.breakdown thead th{background:var(--surface);font-weight:700}
+.breakdown tbody th{background:var(--surface);white-space:nowrap;width:1%}
+.bd-choose{margin:16px 0 6px;font-weight:700}
+.breakdown ul{margin:0 0 14px;padding-left:22px}
+.breakdown ul li{margin:4px 0;line-height:1.58}
+.bd-avoid{color:var(--red)}
+
+/* ---------- diagram system: 6 of the 7 types are used on this page ---------- */
+.bd-svg{display:block;width:100%;height:auto;max-width:920px;margin:10px 0 18px}
+.bd-svg .box{
+  fill:var(--surface);stroke:var(--border-strong);stroke-width:1.5;
+  animation:bd-lit 6s linear infinite;
+}
+.bd-svg .b2{animation-delay:1.2s}
+.bd-svg .b3{animation-delay:2.4s}
+.bd-svg .b4{animation-delay:3.6s}
+.bd-svg .b5{animation-delay:4.8s}
+.bd-svg .lbl{
+  fill:var(--text);text-anchor:middle;font-family:var(--font-sans);
+  font-size:13px;font-weight:600;
+}
+.bd-svg .mono{font-family:var(--font-mono);font-size:11.5px;font-weight:500}
+.bd-svg .cap{
+  fill:var(--text-secondary);text-anchor:middle;
+  font-family:var(--font-sans);font-size:11.5px;font-weight:500;
+}
+.bd-svg .arw{stroke:var(--text-muted);stroke-width:1.6;fill:none}
+.bd-svg .pkt{fill:var(--accent);animation:bd-move 6s linear infinite}
+.bd-svg .loop{
+  stroke:var(--accent);stroke-width:1.8;fill:none;
+  stroke-dasharray:7 7;animation:bd-dash 1.1s linear infinite;
+}
+.bd-svg .loop-lbl{
+  fill:var(--accent);text-anchor:middle;font-family:var(--font-sans);
+  font-size:11.5px;font-weight:600;
+}
+/* branch: the paths not taken stay unlit */
+.bd-svg .off{fill:var(--bg-subtle);stroke:var(--border);stroke-width:1.5;animation:none}
+.bd-svg .off + .lbl,.bd-svg .off-lbl{fill:var(--text-muted)}
+/* parallel: two branches light together */
+.bd-svg .par{animation-delay:1.2s}
+/* state-trace: snapshots appear in turn */
+.bd-svg .snap{
+  fill:var(--surface);stroke:var(--border-strong);stroke-width:1.5;
+  animation:bd-appear 6s linear infinite;
+}
+.bd-svg .snap-txt{animation:bd-appear 6s linear infinite}
+.bd-svg .s2,.bd-svg .s2 + .snap-txt{animation-delay:1.6s}
+.bd-svg .s3,.bd-svg .s3 + .snap-txt{animation-delay:3.2s}
+/* failure */
+.bd-svg .fail{animation:bd-fail 6s linear infinite}
+.bd-svg .after{animation:bd-dim 6s linear infinite}
+.bd-svg .rescue{animation:bd-appear 6s linear infinite;animation-delay:2.6s}
+.bd-svg .xmark{stroke:var(--red);stroke-width:2.4;animation:bd-appear 6s linear infinite;animation-delay:2s}
+
+@keyframes bd-lit{
+  0%,4%    {fill:var(--surface);stroke:var(--border-strong)}
+  8%,20%   {fill:var(--accent-soft);stroke:var(--accent)}
+  26%,100% {fill:var(--surface);stroke:var(--border-strong)}
+}
+@keyframes bd-move{
+  0%      {transform:translateX(0);opacity:0}
+  4%      {opacity:1}
+  20%     {transform:translateX(0)}
+  28%,40% {transform:translateX(180px)}
+  48%,60% {transform:translateX(360px)}
+  68%,80% {transform:translateX(540px)}
+  88%     {transform:translateX(720px);opacity:1}
+  100%    {transform:translateX(720px);opacity:0}
+}
+@keyframes bd-dash{to{stroke-dashoffset:-14}}
+@keyframes bd-appear{
+  0%,6%    {opacity:.12}
+  14%,92%  {opacity:1}
+  100%     {opacity:.12}
+}
+@keyframes bd-fail{
+  0%,30%   {fill:var(--surface);stroke:var(--border-strong)}
+  38%,100% {fill:var(--red-soft);stroke:var(--red)}
+}
+@keyframes bd-dim{
+  0%,30%   {opacity:1}
+  38%,100% {opacity:.28}
+}
+@media (prefers-reduced-motion:reduce){
+  .bd-svg *{animation:none !important;opacity:1 !important}
+  .bd-svg .loop{stroke-dasharray:none}
+}
+@media (max-width:600px){
+  .bd-svg{max-width:100%}
+  .bd-svg .lbl{font-size:16px}
+  .bd-svg .cap,.bd-svg .loop-lbl{font-size:14px}
+  .bd-svg .mono{font-size:14px}
+}
+
+/* Review-only. Not part of the proposed components. */
+.review-note{
+  border:2px dashed var(--orange);border-radius:12px;
+  background:var(--orange-soft);padding:16px 18px;margin:0 0 22px;
+}
+.review-note h3{margin:0 0 8px;font-size:1em}
+.review-note p{font-size:.93em;line-height:1.6}
+.carry{
+  border-left:3px solid var(--green);background:var(--green-soft);
+  padding:10px 16px;margin:16px 0;border-radius:0 10px 10px 0;font-size:.92em;
+}
+</style>
+</head>
+<body data-page="10">
+<div class="app">
+<aside class="sidebar">
+<div class="brand">
+<a class="brand-link" href="../index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
+</a>
+</div>
+<div class="search-wrap">
+<div class="search-box">
+<svg fill="none" height="15" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="15"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+<input data-search="" placeholder="Search modules…  ( / )" type="text"/>
+</div>
+<div class="search-results"></div>
+</div>
+<nav class="nav"></nav>
+</aside>
+<div class="backdrop"></div>
+<div class="main">
+<header class="topbar">
+<button aria-label="Menu" class="icon-btn menu-btn">
+<svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg>
+</button>
+<div class="crumbs">Review sample / <b>10 · LangChain</b></div>
+<button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
+</header>
+<div class="content-wrap">
+<main class="content">
+
+<div class="review-note">
+<h3>⚠ Review sample - not the live page</h3>
+<p><b>This is a complete page.</b> All sixteen sections of the new template, six
+animated diagrams, seventeen components taught one at a time, and the interview
+questions carried over from the current page.</p>
+<p><b>One deliberate edit to the carried-over interview answers:</b> question 2 said
+the pipe works "like Unix pipes". That is a metaphor, which the portal now bans, so
+the phrase is removed. Everything else in section 13 is word for word from
+<code>modules/10_langchain.html</code>.</p>
+</div>
+
+<div class="eyebrow"><span class="dot"></span> Module 10 · Frameworks track</div>
+<h1>LangChain</h1>
+<p class="lead">You have written model calls, retrieval and an agent loop by hand.
+LangChain does not add a new idea about language models. It gives the components you
+already wrote one shared interface, so you can replace any one of them without
+rewriting the others.</p>
+<div class="meta-row">
+<span class="pill blue">⏱ Study + practice · 10–16 h</span>
+<span class="pill">Difficulty · Intermediate</span>
+<span class="pill purple">Prereq · Modules 01, 04–06, 08</span>
+</div>
+<a class="yt-btn" href="https://www.youtube.com/watch?v=yC36gN-rqjo&amp;list=PLKnIA16_RmvYsvB8qkUQuJmJNuiCUJFPL" target="_blank" rel="noopener noreferrer">
+<svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="#ff0000" d="M23.5 6.2a3.02 3.02 0 0 0-2.12-2.14C19.5 3.55 12 3.55 12 3.55s-7.5 0-9.38.51A3.02 3.02 0 0 0 .5 6.2 31.6 31.6 0 0 0 0 12a31.6 31.6 0 0 0 .5 5.8 3.02 3.02 0 0 0 2.12 2.14c1.88.51 9.38.51 9.38.51s7.5 0 9.38-.51a3.02 3.02 0 0 0 2.12-2.14A31.6 31.6 0 0 0 24 12a31.6 31.6 0 0 0-.5-5.8z"></path><path fill="#fff" d="M9.6 15.6V8.4l6.2 3.6-6.2 3.6z"></path></svg>
+<span>CampusX LangChain <span class="yt-sub"> - video playlist</span></span>
+</a>
+
+<!-- ================= 1 ================= -->
+<h2 id="known">1 · What you already know</h2>
+<p>In module 06 you built retrieval by hand: load a document, split it, embed the
+chunks, search them, put the results in a prompt. In module 08 you built an agent
+loop by hand: send messages, read the reply, run a tool, append the result, send
+again.</p>
+<p>Both work. Both are code you wrote and now maintain.</p>
+
+<!-- ================= 2 ================= -->
+<h2 id="breaks">2 · What breaks now</h2>
+<p>Take that hand-written code and ask it to do five ordinary things.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>You are asked to…</th><th>What you have to change</th></tr></thead>
+<tbody>
+<tr><td>Use a different provider</td><td>Every line that reads the reply, because the response shape differs</td></tr>
+<tr><td>Answer 200 questions</td><td>Write the concurrency yourself, and the rate limiting with it</td></tr>
+<tr><td>Show the answer as it is typed</td><td>Rewrite the call to stream, and every function that returns a string</td></tr>
+<tr><td>Retry when the API times out</td><td>Wrap every call site separately</td></tr>
+<tr><td>See where the time went</td><td>Add logging into every function by hand</td></tr>
+</tbody>
+</table>
+</div>
+<p>None of these five is about language models. All five are the same problem: your
+steps have no common shape, so nothing can be done to all of them at once.
+<b>That is the problem LangChain solves.</b></p>
+
+<!-- ================= 3 ================= -->
+<h2 id="breakdown">3 · Simple breakdown - LangChain vs LangGraph</h2>
+
+<section class="breakdown">
+
+<h3 class="bd-tech"><span class="bd-tag">A</span> LangChain</h3>
+
+<h4>Basic level</h4>
+<p class="bd-item"><b class="no-jargon">What it is.</b> LangChain is an open-source Python framework
+for building LLM-based applications from reusable components such as models,
+prompts, retrievers, tools, and runnables.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It reduces the amount of application code you
+need to write when several LLM-related components must work together.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 130" role="img" aria-labelledby="lc-t lc-d">
+<title id="lc-t">LangChain execution model</title>
+<desc id="lc-d">input, then prompt or component, then model or retriever or tool, then the next component, then output. Each stage runs once, in order, left to right.</desc>
+<defs><marker id="ah-a" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="11" y="40" width="158" height="58" rx="12"></rect>
+<rect class="box b2" x="191" y="40" width="158" height="58" rx="12"></rect>
+<rect class="box b3" x="371" y="40" width="158" height="58" rx="12"></rect>
+<rect class="box b4" x="551" y="40" width="158" height="58" rx="12"></rect>
+<rect class="box b5" x="731" y="40" width="158" height="58" rx="12"></rect>
+<path class="arw" d="M172 69 H186" marker-end="url(#ah-a)"></path>
+<path class="arw" d="M352 69 H366" marker-end="url(#ah-a)"></path>
+<path class="arw" d="M532 69 H546" marker-end="url(#ah-a)"></path>
+<path class="arw" d="M712 69 H726" marker-end="url(#ah-a)"></path>
+<text class="lbl" x="90" y="74">input</text>
+<text class="lbl" x="270" y="65">prompt /</text>
+<text class="lbl" x="270" y="83">component</text>
+<text class="lbl" x="450" y="65">model or</text>
+<text class="lbl" x="450" y="83">retriever / tool</text>
+<text class="lbl" x="630" y="65">next</text>
+<text class="lbl" x="630" y="83">component</text>
+<text class="lbl" x="810" y="74">output</text>
+<circle class="pkt" cx="90" cy="18" r="7"></circle>
+</svg>
+
+<h4>Intermediate level</h4>
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> Every component implements one
+interface, <code>Runnable</code>, which defines <code>invoke</code>,
+<code>batch</code>, <code>stream</code> and their async versions. The <code>|</code>
+operator builds a <code>RunnableSequence</code> that runs components in order.
+<code>RunnableParallel</code> runs components at the same time and returns a
+dictionary. Streaming, batching and callbacks are implemented once on
+<code>Runnable</code>, so every chain gets them.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> A chain is stateless. The only data that
+exists during a run is the value passed from one component to the next. Chat history
+is added with <code>RunnableWithMessageHistory</code>, which reads and writes a store
+you supply, keyed by a session id.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> A chain is acyclic and
+runs forward once: no loops, no rejoining branches, no pause for approval, no
+recovery after a crash. Advanced features wrap any component - 
+<code>.with_retry()</code>, <code>.with_fallbacks()</code>,
+<code>.with_structured_output()</code>, <code>.bind_tools()</code>.</p>
+
+<h3 class="bd-tech"><span class="bd-tag">B</span> LangGraph</h3>
+
+<h4>Basic level</h4>
+<p class="bd-item"><b class="no-jargon">What it is.</b> LangGraph is an open-source Python framework,
+built on LangChain, for writing LLM applications as a graph of nodes that read and
+update one shared state object.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It runs workflows that loop, choose the next
+step at run time, pause for human approval, or continue after a crash.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 148" role="img" aria-labelledby="lg-t lg-d">
+<title id="lg-t">LangGraph execution model</title>
+<desc id="lg-d">input, then the initial state, then a node runs, then the state is updated. An edge then selects the next node, sending the run back to the node step, or forward to END.</desc>
+<defs>
+<marker id="ah-b" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker>
+<marker id="ah-bp" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--accent)"></path></marker>
+</defs>
+<path class="loop" d="M630 58 C630 14, 470 14, 452 50" marker-end="url(#ah-bp)"></path>
+<text class="loop-lbl" x="548" y="14">edge picks the next node</text>
+<rect class="box b1" x="11" y="58" width="158" height="58" rx="12"></rect>
+<rect class="box b2" x="191" y="58" width="158" height="58" rx="12"></rect>
+<rect class="box b3" x="371" y="58" width="158" height="58" rx="12"></rect>
+<rect class="box b4" x="551" y="58" width="158" height="58" rx="12"></rect>
+<rect class="box b5" x="731" y="58" width="158" height="58" rx="12"></rect>
+<path class="arw" d="M172 87 H186" marker-end="url(#ah-b)"></path>
+<path class="arw" d="M352 87 H366" marker-end="url(#ah-b)"></path>
+<path class="arw" d="M532 87 H546" marker-end="url(#ah-b)"></path>
+<path class="arw" d="M712 87 H726" marker-end="url(#ah-b)"></path>
+<text class="lbl" x="90" y="92">input</text>
+<text class="lbl" x="270" y="83">initial</text>
+<text class="lbl" x="270" y="101">state</text>
+<text class="lbl" x="450" y="92">node runs</text>
+<text class="lbl" x="630" y="83">state</text>
+<text class="lbl" x="630" y="101">update</text>
+<text class="lbl" x="810" y="92">END</text>
+<circle class="pkt" cx="90" cy="36" r="7"></circle>
+</svg>
+
+<h4>Intermediate level</h4>
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> A <code>StateGraph</code> holds
+the state schema, the nodes and the edges. Compiling it produces a Pregel runtime
+that executes in supersteps: every node scheduled for a step runs, then their updates
+are merged. A <b>reducer</b> declared per state field decides how the merge works - 
+overwrite by default, or <code>add_messages</code> to append. A <b>checkpointer</b>
+(<code>MemorySaver</code>, <code>SqliteSaver</code>, <code>PostgresSaver</code>)
+writes the state after every superstep.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> One shared state object exists for the whole
+run. Each node returns a partial update, which the runtime merges through the
+reducers. With a checkpointer, every version is stored under a
+<code>thread_id</code>, which is what allows resume, replay and history.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> More setup than a chain:
+a schema, node functions, edges and a compile step before anything runs. A cycle with
+no exit condition is easy to write, so the runtime enforces a
+<code>recursion_limit</code>. Advanced features are <code>interrupt_before</code> and
+<code>interrupt_after</code> for human approval, <code>Command</code> to route and
+update state in one return, subgraphs, per-node streaming, and time travel from any
+checkpoint.</p>
+
+<h3 class="bd-diff">The core differences</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>LangChain</th><th>LangGraph</th></tr></thead>
+<tbody>
+<tr><th>Workflow design</th>
+<td>A fixed forward sequence built with <code>|</code>. The order is decided before the run starts and does not change during it.</td>
+<td>Named nodes with edges evaluated while running. A conditional edge reads the state and picks the next node, so loops and branches are normal.</td></tr>
+<tr><th>Error recovery</th>
+<td><code>.with_retry()</code> re-runs one component from its own beginning. <code>.with_fallbacks()</code> swaps in a different component. Nothing is saved, so a crash loses the run.</td>
+<td>The checkpointer saves state after every node, so a failed run resumes from the last completed node instead of starting over.</td></tr>
+<tr><th>Architectural paradigm</th>
+<td>A directed acyclic graph of components behind one shared interface.</td>
+<td>A state machine with a persistent shared state object.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 class="bd-short">In short - which one to choose</h3>
+<p class="bd-choose">Choose LangChain when:</p>
+<ul>
+<li>The steps always run in the same fixed order.</li>
+<li>You want retrieval, prompting and parsing wired together with less code.</li>
+<li>You expect to swap the model, the retriever or the vector store later.</li>
+<li>You want streaming, batching and tracing without writing them.</li>
+</ul>
+<p class="bd-choose">Choose LangGraph when:</p>
+<ul>
+<li>The workflow loops - call the model, run a tool, call the model again.</li>
+<li>The next step depends on what the previous step returned.</li>
+<li>The run must pause for a person to approve something, then continue.</li>
+<li>The run must survive a crash and continue from where it stopped.</li>
+</ul>
+<p class="bd-choose bd-avoid">Choose neither when:</p>
+<ul>
+<li>The whole task is one prompt and one answer. Call the model directly.</li>
+<li>You have not yet built the same thing by hand once. Build it first, then replace it.</li>
+<li>You cannot say in one sentence what the framework is doing for you.</li>
+</ul>
+</section>
+
+<!-- ================= 4 ================= -->
+<h2 id="without">4 · Without the technology</h2>
+<p>A question-answering step in plain Python.</p>
+
+<p>Build a string, send it, read one field, clean it. What it cannot do: stream,
+batch, retry, or survive a provider change. Each of those means editing this
+function, and every other function shaped like it.</p>
+
+<!-- ================= 5 ================= -->
+<h2 id="mechanics">5 · Runtime mechanics</h2>
+<p>Here is what happens when you call <code>chain.invoke()</code> on a retrieval
+chain. Seven steps, no framework vocabulary yet.</p>
+<ol>
+<li>You pass a question string in.</li>
+<li>Two things start at the same time: the retriever searches, and the question is
+copied through unchanged.</li>
+<li>Both results are collected into one dictionary.</li>
+<li>The prompt template fills its variables from that dictionary.</li>
+<li>The filled prompt goes to the model as one HTTPS request.</li>
+<li>The reply comes back as a message object.</li>
+<li>The parser takes the text out of that object and returns it.</li>
+</ol>
+
+<svg class="bd-svg" viewBox="0 0 900 180" role="img" aria-labelledby="rm-t rm-d">
+<title id="rm-t">A retrieval chain, running</title>
+<desc id="rm-d">A question goes to two components at once: a retriever and a passthrough. Their outputs merge into one dictionary, which feeds the prompt, then the model, then the parser, which returns the answer.</desc>
+<defs><marker id="ah-c" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="8" y="62" width="130" height="52" rx="11"></rect>
+<rect class="box par" x="196" y="12" width="180" height="52" rx="11"></rect>
+<rect class="box par" x="196" y="112" width="180" height="52" rx="11"></rect>
+<rect class="box b3" x="434" y="62" width="150" height="52" rx="11"></rect>
+<rect class="box b4" x="620" y="62" width="130" height="52" rx="11"></rect>
+<rect class="box b5" x="786" y="62" width="106" height="52" rx="11"></rect>
+<path class="arw" d="M141 80 C170 80, 170 38, 192 38" marker-end="url(#ah-c)"></path>
+<path class="arw" d="M141 96 C170 96, 170 138, 192 138" marker-end="url(#ah-c)"></path>
+<path class="arw" d="M379 38 C405 38, 405 80, 430 84" marker-end="url(#ah-c)"></path>
+<path class="arw" d="M379 138 C405 138, 405 96, 430 92" marker-end="url(#ah-c)"></path>
+<path class="arw" d="M587 88 H616" marker-end="url(#ah-c)"></path>
+<path class="arw" d="M753 88 H782" marker-end="url(#ah-c)"></path>
+<text class="lbl" x="73" y="93">question</text>
+<text class="lbl" x="286" y="43">retriever</text>
+<text class="lbl" x="286" y="143">passthrough</text>
+<text class="lbl" x="509" y="83">prompt</text>
+<text class="lbl mono" x="509" y="100">{context, question}</text>
+<text class="lbl" x="685" y="93">model</text>
+<text class="lbl" x="839" y="93">parser</text>
+<text class="cap" x="286" y="176">these two run at the same time</text>
+</svg>
+
+<!-- ================= 7 ================= -->
+<h2 id="components">6 · The components, one at a time</h2>
+<p>LangChain calls these <b>components</b>. Each block below runs on its own. Learn
+them in this order - the order matches how they are assembled later.</p>
+
+<h3>Model, prompt, output</h3>
+
+<h4>1 · Model</h4>
+<p>Holds the provider, the model name and the settings. Returns an
+<code>AIMessage</code>, not a string.</p>
+
+<h4>2 · Prompt</h4>
+<p>A string with named variables. Filling it returns a prompt value. Nothing is sent
+yet.</p>
+
+<h4>3 · Messages</h4>
+<p>Chat models take a list of messages. Each message has a role.</p>
+
+<h4>4 · Output</h4>
+<p><code>.content</code> holds the text. <code>.response_metadata</code> holds the
+token counts and the finish reason.</p>
+
+<h4>5 · Structured output</h4>
+<p>Describe the shape and you get an object back instead of text. A reply that does
+not fit the shape raises a validation error instead of passing bad data on.</p>
+
+<h4>6 · Output parser</h4>
+<p>Converts the reply into the type your code wants. A parser failure is an output
+problem, not a model failure - the two are debugged differently.</p>
+
+<h3>Composition</h3>
+
+<h4>7 · Runnable</h4>
+<p>Every component above is a Runnable. That word means it has these methods:</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Method</th><th>What it does</th></tr></thead>
+<tbody>
+<tr><td><code>invoke(x)</code></td><td>One input, one output.</td></tr>
+<tr><td><code>batch([x, y])</code></td><td>Many inputs at once, results in the same order.</td></tr>
+<tr><td><code>stream(x)</code></td><td>Yields pieces of the output as they arrive.</td></tr>
+<tr><td><code>ainvoke</code> · <code>abatch</code> · <code>astream</code></td><td>The same three, as coroutines.</td></tr>
+</tbody>
+</table>
+</div>
+<p><b>Everything else on this page follows from every component having these four
+methods.</b></p>
+
+<h4>8 · RunnableSequence</h4>
+<p><code>|</code> runs components in order. The output of one is the input of the
+next. The sequence is itself a Runnable, so it also has all four methods.</p>
+
+<h4>9 · RunnableParallel</h4>
+<p>Runs components at the same time and returns a dictionary with one key per
+component.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 170" role="img" aria-labelledby="pl-t pl-d">
+<title id="pl-t">RunnableParallel</title>
+<desc id="pl-d">One input feeds two components that run at the same time. Their outputs are collected into a single dictionary, which is returned.</desc>
+<defs><marker id="ah-p" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="14" y="58" width="150" height="52" rx="11"></rect>
+<rect class="box par" x="272" y="8" width="200" height="52" rx="11"></rect>
+<rect class="box par" x="272" y="108" width="200" height="52" rx="11"></rect>
+<rect class="box b3" x="580" y="58" width="200" height="52" rx="11"></rect>
+<path class="arw" d="M167 76 C215 76, 215 34, 268 34" marker-end="url(#ah-p)"></path>
+<path class="arw" d="M167 92 C215 92, 215 134, 268 134" marker-end="url(#ah-p)"></path>
+<path class="arw" d="M475 34 C530 34, 530 78, 576 82" marker-end="url(#ah-p)"></path>
+<path class="arw" d="M475 134 C530 134, 530 96, 576 90" marker-end="url(#ah-p)"></path>
+<text class="lbl" x="89" y="89">input</text>
+<text class="lbl mono" x="372" y="39">short_chain</text>
+<text class="lbl mono" x="372" y="139">long_chain</text>
+<text class="lbl mono" x="680" y="83">{"short": …,</text>
+<text class="lbl mono" x="680" y="99">"long": …}</text>
+<text class="cap" x="372" y="166">both start together; the dictionary waits for the slower one</text>
+</svg>
+
+<h4>10 · RunnableBranch</h4>
+<p>Picks one path from a list of conditions. Only the matching path runs. The last
+entry is the default.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 200" role="img" aria-labelledby="br-t br-d">
+<title id="br-t">RunnableBranch</title>
+<desc id="br-d">One input reaches a test. The test picks exactly one of three paths. The two paths not selected do not run at all.</desc>
+<defs><marker id="ah-r" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="10" y="76" width="140" height="52" rx="11"></rect>
+<rect class="box b2" x="200" y="76" width="176" height="52" rx="11"></rect>
+<rect class="off" x="470" y="8" width="210" height="48" rx="11"></rect>
+<rect class="box b3" x="470" y="78" width="210" height="48" rx="11"></rect>
+<rect class="off" x="470" y="148" width="210" height="48" rx="11"></rect>
+<path class="arw" d="M153 102 H196" marker-end="url(#ah-r)"></path>
+<path class="arw" d="M379 96 C420 96, 425 32, 466 32" marker-end="url(#ah-r)"></path>
+<path class="arw" d="M379 102 H466" marker-end="url(#ah-r)"></path>
+<path class="arw" d="M379 108 C420 108, 425 172, 466 172" marker-end="url(#ah-r)"></path>
+<text class="lbl" x="80" y="107">input</text>
+<text class="lbl" x="288" y="98">test each</text>
+<text class="lbl" x="288" y="115">condition</text>
+<text class="lbl off-lbl mono" x="575" y="38">short_chain</text>
+<text class="lbl mono" x="575" y="108">code_chain</text>
+<text class="lbl off-lbl mono" x="575" y="178">general_chain</text>
+<text class="cap" x="575" y="196">only the first matching path runs - the other two never execute</text>
+</svg>
+
+<h4>11 · RunnableLambda and RunnablePassthrough</h4>
+<p><code>RunnableLambda</code> turns any function into a component. <code>RunnablePassthrough</code> copies its input through unchanged, which is how you
+keep an earlier value available further down the chain.</p>
+
+<h3>Getting your own data in</h3>
+
+<h4>12 · Document loader</h4>
+<p>Reads an external source and returns <code>Document</code> objects. A Document
+holds <code>page_content</code> and <code>metadata</code>. Loading is not retrieval,
+embedding or searching - it is only reading.</p>
+
+<h4>13 · Text splitter</h4>
+<p>Cuts long Documents into chunks. <code>chunk_size</code> is the target length,
+<code>chunk_overlap</code> is how much of the previous chunk is repeated at the start
+of the next one so a sentence cut in half is still readable in one of them.</p>
+
+<p>Overlap costs storage and tokens on every query. 10–20% of
+<code>chunk_size</code> is the usual starting point.</p>
+
+<h4>14 · Vector store</h4>
+<p>Embeds the chunks and stores each vector next to its text and metadata. It also
+searches: embed the query, compare, return the closest records.</p>
+
+<h4>15 · Retriever</h4>
+<p>Takes a question, returns Documents. It is a Runnable, so it drops into a chain
+with no adapter. Your chain depends on "retrieve relevant documents" and not on
+FAISS.</p>
+
+<h3>Actions</h3>
+
+<h4>16 · Tool and tool calling</h4>
+<p>A tool is a function with a name, a description and typed arguments. <code>bind_tools</code> sends those definitions with the request. <b>The model does
+not run the function.</b> It returns a request naming the tool and its arguments, and
+your code decides whether to run it.</p>
+
+<h4>17 · Chain</h4>
+<p>Now they assemble, and none of them is new.</p>
+
+<p><b>Retrieve, fill, call, parse. If you ran each component on its own first, this
+line contains nothing new.</b></p>
+
+<!-- ================= 8 ================= -->
+<h2 id="state">7 · State and data flow</h2>
+<p>Ten questions, answered on every page in this portal that has state.</p>
+<div class="table-wrap">
+<table>
+<tbody>
+<tr><th>1 · What data is state?</th><td>One value, handed from each component to the next.</td></tr>
+<tr><th>2 · Who writes each field?</th><td>Only the component that produced it. Values are returned, never edited in place.</td></tr>
+<tr><th>3 · Who reads it?</th><td>The next component in the sequence, and nothing else.</td></tr>
+<tr><th>4 · Replaced, appended or merged?</th><td>Replaced. <code>RunnableParallel</code> is the one exception: it merges its results into one dictionary.</td></tr>
+<tr><th>5 · What reducer controls merging?</th><td>None. LangChain has no reducers - that is a LangGraph idea.</td></tr>
+<tr><th>6 · Only in process memory?</th><td>Yes.</td></tr>
+<tr><th>7 · Checkpointed?</th><td>No.</td></tr>
+<tr><th>8 · In a database?</th><td>Only chat history, and only if the store you supply is one.</td></tr>
+<tr><th>9 · How long does it survive?</th><td>Until <code>invoke</code> returns.</td></tr>
+<tr><th>10 · What key retrieves it again?</th><td>Nothing. There is no key, because nothing was stored.</td></tr>
+</tbody>
+</table>
+</div>
+
+<p>Here is the value as it moves, for
+<code>chain.invoke({"topic": "HNSW"})</code>:</p>
+
+<svg class="bd-svg" viewBox="0 0 900 190" role="img" aria-labelledby="st-t st-d">
+<title id="st-t">The value moving through a chain</title>
+<desc id="st-d">After the prompt the value is a ChatPromptValue. After the model it is an AIMessage. After the parser it is a plain string. Each step replaces the value rather than adding to it.</desc>
+<rect class="snap s1" x="10" y="34" width="272" height="118" rx="12"></rect>
+<g class="snap-txt">
+<text class="lbl" x="146" y="60">after the prompt</text>
+<text class="cap mono" x="146" y="88">ChatPromptValue</text>
+<text class="cap mono" x="146" y="110">messages=[Human(</text>
+<text class="cap mono" x="146" y="130">"Explain HNSW…")]</text>
+</g>
+<rect class="snap s2" x="314" y="34" width="272" height="118" rx="12"></rect>
+<g class="snap-txt">
+<text class="lbl" x="450" y="60">after the model</text>
+<text class="cap mono" x="450" y="88">AIMessage</text>
+<text class="cap mono" x="450" y="110">content="HNSW is a…"</text>
+<text class="cap mono" x="450" y="130">response_metadata={…}</text>
+</g>
+<rect class="snap s3" x="618" y="34" width="272" height="118" rx="12"></rect>
+<g class="snap-txt">
+<text class="lbl" x="754" y="60">after the parser</text>
+<text class="cap mono" x="754" y="88">str</text>
+<text class="cap mono" x="754" y="110">"HNSW is a graph</text>
+<text class="cap mono" x="754" y="130">index that…"</text>
+</g>
+<text class="cap" x="450" y="180">the type changes at every step - the previous value is gone</text>
+</svg>
+
+<p><b>A chain holds no data about past calls</b>, so one chain object is safe to share
+across many requests. Chat history is the exception, and it is not automatic.</p>
+
+<p><b>LangChain does not store your conversation. It calls the store you supply.</b>
+If <code>get_session_history</code> returns a list, the history dies on restart. If
+it returns a Redis or Postgres object, it does not.</p>
+
+<!-- ================= 10 ================= -->
+<h2 id="trace">8 · Trace</h2>
+<p>What actually executed for <code>rag_chain.invoke("What is the refund
+window?")</code>, and what each step received and returned.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>#</th><th>Component</th><th>Receives</th><th>Returns</th></tr></thead>
+<tbody>
+<tr><td>1</td><td><code>RunnableParallel</code></td><td><code>"What is the refund window?"</code></td><td>starts both branches</td></tr>
+<tr><td>1a</td><td><code>retriever</code></td><td>the question string</td><td>4 <code>Document</code> objects</td></tr>
+<tr><td>1b</td><td><code>format_docs</code></td><td>4 Documents</td><td>one string, chunks joined by blank lines</td></tr>
+<tr><td>1c</td><td><code>RunnablePassthrough</code></td><td>the question string</td><td>the same string</td></tr>
+<tr><td>2</td><td><em>merge</em></td><td>both branch results</td><td><code>{"context": "...", "question": "..."}</code></td></tr>
+<tr><td>3</td><td><code>prompt</code></td><td>that dictionary</td><td><code>ChatPromptValue</code></td></tr>
+<tr><td>4</td><td><code>model</code></td><td>ChatPromptValue</td><td><code>AIMessage</code> + token counts</td></tr>
+<tr><td>5</td><td><code>StrOutputParser</code></td><td>AIMessage</td><td><code>str</code></td></tr>
+</tbody>
+</table>
+</div>
+<p>Steps 1a and 1c ran at the same time. Step 2 waited for the slower of the two.
+<b>Everything after step 2 is sequential, and the model call is almost always the
+slowest step in the whole trace.</b></p>
+
+<!-- ================= 11 ================= -->
+<h2 id="break">9 · Break it</h2>
+<p>Ask the chain a question its documents do not answer.</p>
+
+<p>There is no such policy in the handbook. Nothing raised. No warning. The retriever
+returned four chunks that were the closest available but not relevant, the prompt
+included them, and the model produced a fluent answer anyway.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 190" role="img" aria-labelledby="fl-t fl-d">
+<title id="fl-t">A silent retrieval failure</title>
+<desc id="fl-d">The retriever returns nothing relevant. No error is raised, so the prompt, the model and the parser all continue normally and produce a confident but wrong answer.</desc>
+<defs><marker id="ah-f" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="10" y="52" width="150" height="52" rx="11"></rect>
+<rect class="box fail" x="200" y="52" width="180" height="52" rx="11"></rect>
+<rect class="box after b3" x="420" y="52" width="150" height="52" rx="11"></rect>
+<rect class="box after b4" x="610" y="52" width="140" height="52" rx="11"></rect>
+<rect class="box after b5" x="790" y="52" width="100" height="52" rx="11"></rect>
+<path class="arw" d="M163 78 H196" marker-end="url(#ah-f)"></path>
+<path class="arw" d="M383 78 H416" marker-end="url(#ah-f)"></path>
+<path class="arw" d="M573 78 H606" marker-end="url(#ah-f)"></path>
+<path class="arw" d="M753 78 H786" marker-end="url(#ah-f)"></path>
+<text class="lbl" x="85" y="83">question</text>
+<text class="lbl" x="290" y="74">retriever</text>
+<text class="lbl" x="290" y="92">0 relevant docs</text>
+<text class="lbl" x="495" y="83">prompt</text>
+<text class="lbl" x="680" y="83">model</text>
+<text class="lbl" x="840" y="83">answer</text>
+<path class="xmark" d="M272 122 L308 152 M308 122 L272 152"></path>
+<text class="cap rescue" x="450" y="180">no exception is raised, so every later step runs normally</text>
+</svg>
+
+<p><b>This is the only failure on this page with no exception attached to it.</b>
+Every other failure - a missing prompt variable, a wrong type, a timeout, a schema
+mismatch - raises something you can catch. This one does not.</p>
+
+<!-- ================= 12 ================= -->
+<h2 id="fix">10 · Fix it</h2>
+<p>The chain cannot detect it, so you check it yourself, before the model call.</p>
+
+<p>An empty result now raises. A weak-but-non-empty result still does not, so the
+prompt does the rest of the work.</p>
+
+<p>Now the failure is visible: either an exception, or the string
+<code>NOT_IN_CONTEXT</code> your code can test for. <b>You cannot fix what you cannot
+see, and this failure was invisible by default.</b></p>
+
+<!-- ================= 13 ================= -->
+<h2 id="production">11 · Production version</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Concern</th><th>What you add</th></tr></thead>
+<tbody>
+<tr><td>Retry</td><td><code>model.with_retry(stop_after_attempt=3)</code> - for timeouts and rate limits, which usually pass</td></tr>
+<tr><td>Fallback</td><td><code>model.with_fallbacks([cheaper_model])</code> - for when the first choice is unavailable rather than busy</td></tr>
+<tr><td>Timeout</td><td><code>ChatOpenAI(timeout=20, max_retries=0)</code> - set it explicitly, never rely on the default</td></tr>
+<tr><td>Idempotency</td><td>Hash the question and cache the answer. A retried HTTP request must not pay for a second model call</td></tr>
+<tr><td>Concurrency</td><td><code>chain.batch(questions, config={"max_concurrency": 5})</code> - bounded, or you will hit the rate limit yourself</td></tr>
+<tr><td>Authorisation</td><td>Filter the retriever by user before it searches: <code>search_kwargs={"filter": {"team": user.team}}</code>. Never filter after retrieval</td></tr>
+<tr><td>Audit</td><td>Log the question, the retrieved document ids, the prompt version and the answer. The document ids are what let you explain an answer later</td></tr>
+<tr><td>Rate limits</td><td>One shared limiter per provider key, not per process</td></tr>
+<tr><td>Cost</td><td>Read <code>response_metadata["token_usage"]</code> on every call and record it per request</td></tr>
+<tr><td>Evaluation</td><td>A fixed question set with expected answers, run in CI before any prompt change ships</td></tr>
+<tr><td>Rollback</td><td>Version the prompt string. A bad prompt must be revertible without a redeploy</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><b>Neither retry nor fallback can resume a chain from the middle.</b> Retrying the
+whole chain re-runs retrieval, re-fills the prompt and pays for everything again.</p>
+
+<!-- ================= 14 ================= -->
+<h2 id="comparison">12 · Comparison</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Provider SDK</th><th>LangChain</th><th>LlamaIndex</th><th>LangGraph</th></tr></thead>
+<tbody>
+<tr><th>Built for</th><td>One model call</td><td>Composing components</td><td>Indexing and querying documents</td><td>Controlling execution</td></tr>
+<tr><th>Control flow</th><td>Your own Python</td><td>Fixed forward sequence</td><td>Query engines over an index</td><td>Graph with branches and loops</td></tr>
+<tr><th>State</th><td>None</td><td>None between calls</td><td>The index is persistent</td><td>Shared, checkpointed</td></tr>
+<tr><th>Recovery</th><td>Your own try/except</td><td>Retry and fallback per component</td><td>Per query</td><td>Resume from the last node</td></tr>
+<tr><th>Reach for it when</th><td>One prompt, one answer</td><td>Fixed multi-step pipelines</td><td>Document-heavy retrieval is the whole product</td><td>Loops, approval, or crash recovery</td></tr>
+</tbody>
+</table>
+</div>
+<p>LlamaIndex and LangChain overlap on retrieval and are usually an either/or choice.
+LangGraph does not compete with LangChain - it is built on it, and a LangGraph node
+is very often a LangChain chain.</p>
+
+<!-- ================= 15 ================= -->
+<div class="carry"><b>Carried over</b> from the current page, unchanged apart from one
+removed metaphor.</div>
+<h2 id="interview">13 · Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What is LangChain and why use it? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>An orchestration framework for LLM apps that standardizes components (prompts, models, parsers, retrievers) behind a common Runnable interface, so you compose them with the pipe operator and swap parts without rewriting plumbing. It provides provider-agnosticism, free streaming/batching/async/retries, a large integration ecosystem, and tracing via LangSmith.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What does <code>prompt | model | parser</code> mean? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>An LCEL chain: format the prompt with input variables, send it to the model, then parse the model's response (e.g. to a plain string). The <code>|</code> pipes each step's output into the next. The whole chain is itself a Runnable you can invoke/batch/stream.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  What is the Runnable interface and why does it matter? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>The common contract - <code>invoke</code>, <code>batch</code>, <code>stream</code>, and async variants - implemented by every LangChain component. Because they all share it, any component is interchangeable and composable, and the framework can derive streaming, batching, and async automatically from the composition graph. It's the foundation that makes LCEL work.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  How do you build a RAG chain in LCEL? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Run the retriever and the question in parallel into a dict (<code>{"context": retriever | format_docs, "question": RunnablePassthrough()}</code>), pipe that into a prompt template, then into the model, then an output parser. The parallel dict fetches context while passing the question through; the pipes sequence prompt→model→parse. The retriever comes from <code>vectorstore.as_retriever()</code> and is itself a Runnable.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  When would you NOT use LangChain, or drop to raw SDK? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>For a single, simple completion the abstraction adds dependency weight and indirection with no benefit - call the provider SDK. Drop to raw calls in hot paths where you need precise control over requests/streaming, or when debugging an issue the abstraction obscures. Use LangChain where composition, swappability, integrations, or tracing genuinely pay off; for cyclic/stateful agent flows, use LangGraph instead of bending LCEL. Match the tool to the complexity.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  How do you make a LangChain app production-ready? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Pin exact package versions; enable LangSmith tracing for observability and prompt/version management; add <code>.with_retry()</code>/<code>.with_fallbacks()</code> for resilience and a fallback model; use structured output for machine-consumable results; keep prompts in a versioned registry; build an eval set (Module 06/14) gating prompt/chain changes; wrap chains behind your own service boundary (FastAPI/LangServe) so you can swap the framework if needed; and set temperature/timeouts/token budgets explicitly. Treat the chain as one component in your system, not the whole architecture.</p></div></details>
+<details class="collapse"><summary><span class="pill purple">Staff · design</span>  Design a provider-agnostic LLM layer for an org using LangChain. <span class="chev">›</span></summary>
+<div class="collapse-body"><p>A thin internal library exposing chains built from <code>langchain-core</code> Runnables, with the model created by a factory driven by config (so local Ollama, OpenAI, or a gateway are interchangeable). Centralize: a versioned <strong>prompt registry</strong>; <strong>retry/fallback</strong> policies (primary → cheaper/local fallback); <strong>structured-output</strong> schemas; <strong>LangSmith tracing</strong> for per-team cost/latency and eval; and <strong>guardrails</strong> wrapping inputs/outputs (Module 14). Expose chains via a service boundary (LangServe/FastAPI) so consumers don't import LangChain directly - that keeps you free to swap or drop the framework. Gate every prompt/chain change on an eval set in CI. The goal: teams get composable, observable, swappable LLM components without lock-in to any single provider or even to LangChain itself.</p></div></details>
+
+<!-- ================= 16 ================= -->
+<h2 id="short">14 · In short, and what comes next</h2>
+<p class="bd-choose">Use LangChain when:</p>
+<ul>
+<li>Three or more steps always run in the same order.</li>
+<li>You expect to swap the model, the retriever or the vector store.</li>
+<li>You want streaming, batching and tracing without writing them.</li>
+</ul>
+<p class="bd-choose bd-avoid">Do not use it when:</p>
+<ul>
+<li>One prompt, one answer. Call the provider SDK.</li>
+<li>You have not built the same thing by hand once.</li>
+<li>The flow needs to loop, branch and rejoin, pause, or survive a crash.</li>
+</ul>
+<div class="callout key">
+<div class="c-ico">🔑</div>
+<div class="c-body"><div class="c-title">The limitation module 12 fixes</div>
+<p>Every gap on this page is the same one: <b>a chain has no memory of where it
+is.</b> It cannot loop back, it cannot stop and wait, and a crash loses everything
+because nothing was written down. LangGraph gives the run a state object and saves it
+after every step. That is the whole difference.</p></div>
+</div>
+<p><b>Next:</b> module 11 (LlamaIndex) if document retrieval is your main problem;
+module 12 (LangGraph) if control flow is.</p>
+
+</main>
+</div>
+</div>
+</div>
+<script src="../assets/app.js?v=20260925c"></script>
+<script src="../assets/enhance.js?v=20260804a"></script>
+<script src="../assets/genai-motion.js?v=20260728a"></script>
+<script src="../assets/glossary.js?v=20260802b"></script>
+</body>
+</html>

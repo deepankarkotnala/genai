@@ -1,5 +1,5 @@
 """
-policy.py — the rules, in code, where a model cannot argue with them.
+policy.py - the rules, in code, where a model cannot argue with them.
 
 Lesson 8. The knowledge base *describes* the refund policy in prose so the agent
 can quote it to a customer. This module *enforces* it, and the two are not the

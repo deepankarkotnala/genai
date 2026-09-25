@@ -1,5 +1,5 @@
 """
-schemas.py — tool declarations and the argument validator.
+schemas.py - tool declarations and the argument validator.
 
 Two ideas live here, and both are interview material.
 

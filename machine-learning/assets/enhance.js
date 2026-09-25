@@ -1,5 +1,5 @@
 /* =========================================================================
-   GenAI Learning Hub — Glass Learning UI enhancements
+   GenAI Learning Hub - Glass Learning UI enhancements
    - Wide, distraction-free reading layout
    - Reading progress, section guidance and scroll-to-top
    - Topic-aware animated SVG explainers on every lesson
@@ -179,7 +179,7 @@
 
     /* ---------- Reading-width control ----------
        Focus mode hides both rails, which on a wide monitor left the text
-       running the full width of the screen — well past a readable line length.
+       running the full width of the screen - well past a readable line length.
        The canvas is now capped by --focus-measure in office-theme.css, and
        this control lets the reader choose that cap. The choice is stored, so
        it carries across pages and sessions. */
@@ -928,8 +928,8 @@
      instant `data-theme` changes on <html>. Left alone the flip arrives in
      pieces: each component carries its own transition (`all .15s`, `.2s`,
      `border-color .3s`…) so each starts and finishes re-colouring on its own
-     clock, while gradients, glass and shadows — which cannot interpolate
-     between themes — snap over immediately.
+     clock, while gradients, glass and shadows - which cannot interpolate
+     between themes - snap over immediately.
 
      So the switch is made atomic instead: `.theme-switching` suppresses every
      transition on the page (see styles.css), the new colours paint in a single
@@ -974,7 +974,7 @@
 
      The listener is on `document` in the capture phase deliberately. Listeners
      added to the button itself run in registration order regardless of the
-     capture flag, and app.js registers its handler first — so a listener on the
+     capture flag, and app.js registers its handler first - so a listener on the
      button could never run before the theme had already flipped. Document
      capture runs ahead of any listener on the target.
 
@@ -988,7 +988,7 @@
     var busy = false;
 
     document.addEventListener("click", function (event) {
-      if (passthrough) return;                     // our own re-dispatch — let it through
+      if (passthrough) return;                     // our own re-dispatch - let it through
       var button = event.target.closest && event.target.closest("[data-theme-toggle]");
       if (!button) return;
 
@@ -1000,7 +1000,7 @@
       if (busy) { flip(); return; }
       busy = true;
 
-      /* A theme change is one crossfade of the whole page — that is the point
+      /* A theme change is one crossfade of the whole page - that is the point
          of routing it through a view transition at all. Page navigation names
          the sidebar, top bar, ribbon and contents rail as separate groups and
          holds them still (see "Page transitions" in styles.css), which is right
@@ -1081,7 +1081,7 @@
     // portal. Its links are resolved against this folder (ml-sitenav.js makes
     // machine-learning/ the site root so the directory stays deployable on its
     // own), and machine-learning/ has no modules/, scenario-practice/ or
-    // interview-hub/ — so three of the four tabs pointed at nothing. The
+    // interview-hub/ - so three of the four tabs pointed at nothing. The
     // sidebar, the topbar Home button and the mobile "Jump to section" bar
     // already cover navigation here.
     // addOfficeRibbon();

@@ -122,7 +122,7 @@ def show_memory(ticket: str) -> None:
             label = m.tool_name or m.role
             print(f"    {label:12} {m.content[:88].replace(chr(10), ' / ')}")
 
-    print("\n  MEMORY (outlives the run) — prior tickets for this customer:")
+    print("\n  MEMORY (outlives the run) - prior tickets for this customer:")
     recall = recall_prior_tickets(ticket, limit=3)
     for t in recall.get("prior_tickets", []):
         print(f"    {t['ticket_id']}  {t['category']:10} {t['subject']}")

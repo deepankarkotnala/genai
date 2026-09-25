@@ -1,0 +1,30 @@
+<h2 id="interview">15 &middot; Interview preparation</h2>
+        <div class="callout note">
+          <div class="c-ico">🎤</div>
+          <div class="c-body"><div class="c-title">Q · "What's the difference between MCP and A2A?"</div>
+          <p>"Different boundaries. MCP standardises how an agent uses <em>capabilities</em> - tools, resources, prompts - over JSON-RPC, where the counterparty is transparent and I can see the schemas. A2A standardises how an agent delegates to <em>another agent</em>, which is a black box, possibly at another company. The tell is the unit of work: MCP's is a tool call, A2A's is a Task with a lifecycle, artifacts, and interrupted states for when the remote agent needs input or auth. They compose - an A2A remote agent typically uses MCP internally."</p></div>
+        </div>
+        <div class="callout note">
+          <div class="c-ico">🎤</div>
+          <div class="c-body"><div class="c-title">Q · "Why not just have the model generate the UI as code?"</div>
+          <p>"Two reasons, security and consistency. Generated code is executable model output - an injection and exfiltration surface, and if you sandbox it in an iframe it looks nothing like the rest of the product. A2UI keeps the payload declarative: the agent names components from a catalog the client already trusts, and the client renders them with its own widgets. Safe like data, expressive like code. It also stays machine-readable, so an orchestrating agent can tell what's on screen - which generated HTML in an iframe cannot."</p></div>
+        </div>
+        <div class="callout note">
+          <div class="c-ico">🎤</div>
+          <div class="c-body"><div class="c-title">Q · "How would you handle an agent task that takes two hours?"</div>
+          <p>"A2A models it directly. <code>SendMessage</code> returns a Task rather than a value, so I'd register a push-notification config - a webhook - instead of holding a streaming connection open, and make the handler idempotent because webhooks retry. The client can also <code>GetTask</code> to poll, and <code>CancelTask</code> if the user backs out. If the remote agent needs something mid-flight it moves the task to <code>INPUT_REQUIRED</code> and I resume it, rather than the whole thing failing."</p></div>
+        </div>
+        <div class="callout note">
+          <div class="c-ico">🎤</div>
+          <div class="c-body"><div class="c-title">Q · "What changed in MCP recently?"</div>
+          <p>"The 2026-07-28 revision made it stateless at the protocol layer - the <code>initialize</code> handshake and <code>Mcp-Session-Id</code> header are gone, with client metadata in <code>_meta</code> per request. That's an operations win: no sticky routing or shared session store, so any instance serves any request. It also formalised Extensions with reverse-DNS IDs, shipped MCP Apps and Tasks as official extensions, hardened authorization, and deprecated Roots, Sampling and Logging under a 12-month policy. Tools, resources and prompts didn't change."</p></div>
+        </div>
+        <div class="callout note">
+          <div class="c-ico">🎤</div>
+          <div class="c-body"><div class="c-title">Q · "Would you adopt all three?"</div>
+          <p>"Only where there's a boundary to justify it. MCP first - the tool boundary shows up in every project and a governed capability layer pays for itself. A2A once a second organisation or a long-running delegation appears; before that its ceremony buys nothing. A2UI when I can show text-only interaction is costing completion rate. For a single-team chatbot with five in-process tools, direct function calling is the right answer and I'd say so."</p></div>
+        </div>
+
+        <!-- ============ 11 ============ -->
+
+<!-- ================= 16 ================= -->

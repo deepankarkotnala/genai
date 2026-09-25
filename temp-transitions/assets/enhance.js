@@ -1,5 +1,5 @@
 /* =========================================================================
-   GenAI Learning Hub — Glass Learning UI enhancements
+   GenAI Learning Hub - Glass Learning UI enhancements
    - Wide, distraction-free reading layout
    - Reading progress, section guidance and scroll-to-top
    - Topic-aware animated SVG explainers on every lesson
@@ -179,7 +179,7 @@
 
     /* ---------- Reading-width control ----------
        Focus mode hides both rails, which on a wide monitor left the text
-       running the full width of the screen — well past a readable line length.
+       running the full width of the screen - well past a readable line length.
        The canvas is now capped by --focus-measure in office-theme.css, and
        this control lets the reader choose that cap. The choice is stored, so
        it carries across pages and sessions. */
@@ -928,8 +928,8 @@
      instant `data-theme` changes on <html>. Left alone the flip arrives in
      pieces: each component carries its own transition (`all .15s`, `.2s`,
      `border-color .3s`…) so each starts and finishes re-colouring on its own
-     clock, while gradients, glass and shadows — which cannot interpolate
-     between themes — snap over immediately.
+     clock, while gradients, glass and shadows - which cannot interpolate
+     between themes - snap over immediately.
 
      So the switch is made atomic instead: `.theme-switching` suppresses every
      transition on the page (see styles.css), the new colours paint in a single

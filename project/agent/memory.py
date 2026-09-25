@@ -1,5 +1,5 @@
 """
-memory.py — the context window as a budget, and the two stores worth building.
+memory.py - the context window as a budget, and the two stores worth building.
 
 Lesson 6. There are seven things people call "memory" in an agent. Naming all
 seven is interview-useful; building all seven is not. This module builds the two

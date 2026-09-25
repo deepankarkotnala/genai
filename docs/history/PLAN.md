@@ -1,6 +1,6 @@
-# DSA Interview Preparation — Best Consolidated Build Plan
+# DSA Interview Preparation: Best Consolidated Build Plan
 
-**Status:** planning specification only. Build one requested page at a time. This is the canonical plan — superseded drafts are kept as `PLAN-v1-draft.md` and `PLAN-v2-master.md` for reference.
+**Status:** planning specification only. Build one requested page at a time. This is the canonical plan - superseded drafts are kept as `PLAN-v1-draft.md` and `PLAN-v2-master.md` for reference.
 
 ## 1. Decision and design principle
 
@@ -13,7 +13,7 @@ The result is a **Python-first, interview-first textbook**, not a random LeetCod
 
 ### Non-negotiable priorities
 
-1. Arrays and Linked Lists receive the deepest treatment of any chapter: a curated 15-problem ladder each. Linked Lists is nearly fully self-contained (only LRU Cache is cross-linked, to Data Structure Design). Arrays cross-links a handful of its 15 listed problems (Contains Duplicate, Container With Most Water, Merge Intervals, Longest Consecutive Sequence, Trapping Rain Water) to the chapter that owns their full canonical write-up — Hashing, Two Pointers, or Sorting/Intervals — so the same editorial isn't duplicated. Arrays fully owns roughly 10 of its 15 and cross-references the rest; this is intentional, not a shortfall.
+1. Arrays and Linked Lists receive the deepest treatment of any chapter: a curated 15-problem ladder each. Linked Lists is nearly fully self-contained (only LRU Cache is cross-linked, to Data Structure Design). Arrays cross-links a handful of its 15 listed problems (Contains Duplicate, Container With Most Water, Merge Intervals, Longest Consecutive Sequence, Trapping Rain Water) to the chapter that owns their full canonical write-up - Hashing, Two Pointers, or Sorting/Intervals - so the same editorial isn't duplicated. Arrays fully owns roughly 10 of its 15 and cross-references the rest; this is intentional, not a shortfall.
 2. Every topic explains Python representation, time complexity, auxiliary memory, mutation, and practical trade-offs.
 3. Problems are ordered as a learning ladder, not by popularity alone.
 4. Repeated problems have **one canonical full write-up** and are cross-linked from other pattern pages.
@@ -30,14 +30,14 @@ The result is a **Python-first, interview-first textbook**, not a random LeetCod
 
 Use two layers:
 
-### Layer A — Core curriculum
+### Layer A: Core curriculum
 
 - 10–15 canonical problems per topic.
 - Arrays and Linked Lists: exactly 15 listed problems each (see §1.1 for how "canonical" ownership applies within that count).
 - Every canonical problem includes reasoning, code, tests, complexity, memory notes, interview narration, and follow-ups.
 - Approximately 230–270 canonical problems across the complete curriculum, with duplicate write-ups removed through cross-linking.
 
-### Layer B — Expandable question catalog
+### Layer B: Expandable question catalog
 
 A centralized metadata registry can later index any additional LeetCode problem by topic, pattern, difficulty, role, and study status without requiring a full editorial immediately.
 
@@ -68,7 +68,7 @@ Suggested navigation metadata:
   pages: []
   // each page entry needs path/title/num/kw (search keywords), matching
   // the shape already used by the ats-agent-lab / interview-prep groups
-  // in sitenav.js — populated once pages exist.
+  // in sitenav.js - populated once pages exist.
 }
 ```
 
@@ -429,7 +429,7 @@ Store locally:
 
 # 10. Detailed chapter plan
 
-## 00 — Interview Strategy
+## 00: Interview Strategy
 
 ### Outcome
 
@@ -452,7 +452,7 @@ Run a 45-minute coding interview with a repeatable process rather than jumping s
 
 ---
 
-## 01 — Python DSA Foundations
+## 01: Python DSA Foundations
 
 ### Outcome
 
@@ -485,7 +485,7 @@ Understand Python behavior that changes correctness, runtime, or memory.
 
 ---
 
-## 02 — Arrays
+## 02: Arrays
 
 ### Foundations
 
@@ -511,23 +511,23 @@ Understand Python behavior that changes correctness, runtime, or memory.
 - partitioning;
 - array-as-index.
 
-### Canonical problem ladder — 15
+### Canonical problem ladder: 15
 
-1. LC 121 — Best Time to Buy and Sell Stock
-2. LC 217 — Contains Duplicate *(full write-up canonical in Hashing; array lens cross-link here)*
-3. LC 238 — Product of Array Except Self
-4. LC 53 — Maximum Subarray
-5. LC 88 — Merge Sorted Array
-6. LC 189 — Rotate Array
-7. LC 169 — Majority Element
-8. LC 54 — Spiral Matrix
-9. LC 73 — Set Matrix Zeroes
-10. LC 11 — Container With Most Water *(canonical in Two Pointers)*
-11. LC 56 — Merge Intervals *(canonical in Sorting/Intervals)*
-12. LC 31 — Next Permutation
-13. LC 128 — Longest Consecutive Sequence *(canonical in Hashing)*
-14. LC 42 — Trapping Rain Water *(canonical in Two Pointers)*
-15. LC 41 — First Missing Positive
+1. LC 121 - Best Time to Buy and Sell Stock
+2. LC 217 - Contains Duplicate *(full write-up canonical in Hashing; array lens cross-link here)*
+3. LC 238 - Product of Array Except Self
+4. LC 53 - Maximum Subarray
+5. LC 88 - Merge Sorted Array
+6. LC 189 - Rotate Array
+7. LC 169 - Majority Element
+8. LC 54 - Spiral Matrix
+9. LC 73 - Set Matrix Zeroes
+10. LC 11 - Container With Most Water *(canonical in Two Pointers)*
+11. LC 56 - Merge Intervals *(canonical in Sorting/Intervals)*
+12. LC 31 - Next Permutation
+13. LC 128 - Longest Consecutive Sequence *(canonical in Hashing)*
+14. LC 42 - Trapping Rain Water *(canonical in Two Pointers)*
+15. LC 41 - First Missing Positive
 
 ### Mandatory interview guidance
 
@@ -540,7 +540,7 @@ Understand Python behavior that changes correctness, runtime, or memory.
 
 ---
 
-## 03 — Linked Lists
+## 03: Linked Lists
 
 ### Foundations
 
@@ -566,23 +566,23 @@ Understand Python behavior that changes correctness, runtime, or memory.
 - linked-list merge sort;
 - doubly linked list + hash map.
 
-### Canonical problem ladder — 15
+### Canonical problem ladder: 15
 
-1. LC 206 — Reverse Linked List
-2. LC 21 — Merge Two Sorted Lists
-3. LC 141 — Linked List Cycle
-4. LC 142 — Linked List Cycle II
-5. LC 19 — Remove Nth Node From End of List
-6. LC 143 — Reorder List
-7. LC 2 — Add Two Numbers
-8. LC 138 — Copy List with Random Pointer
-9. LC 160 — Intersection of Two Linked Lists
-10. LC 234 — Palindrome Linked List
-11. LC 82 — Remove Duplicates from Sorted List II
-12. LC 148 — Sort List
-13. LC 23 — Merge k Sorted Lists
-14. LC 25 — Reverse Nodes in k-Group
-15. LC 146 — LRU Cache *(canonical in Data Structure Design; linked-list lens here)*
+1. LC 206 - Reverse Linked List
+2. LC 21 - Merge Two Sorted Lists
+3. LC 141 - Linked List Cycle
+4. LC 142 - Linked List Cycle II
+5. LC 19 - Remove Nth Node From End of List
+6. LC 143 - Reorder List
+7. LC 2 - Add Two Numbers
+8. LC 138 - Copy List with Random Pointer
+9. LC 160 - Intersection of Two Linked Lists
+10. LC 234 - Palindrome Linked List
+11. LC 82 - Remove Duplicates from Sorted List II
+12. LC 148 - Sort List
+13. LC 23 - Merge k Sorted Lists
+14. LC 25 - Reverse Nodes in k-Group
+15. LC 146 - LRU Cache *(canonical in Data Structure Design; linked-list lens here)*
 
 ### Mandatory interview guidance
 
@@ -594,7 +594,7 @@ Understand Python behavior that changes correctness, runtime, or memory.
 
 ---
 
-## 04 — Hashing
+## 04: Hashing
 
 ### Foundations
 
@@ -617,199 +617,199 @@ Understand Python behavior that changes correctness, runtime, or memory.
 - index/value mapping;
 - consecutive-sequence starts.
 
-### Canonical problems — 15
+### Canonical problems: 15
 
 LC 1 Two Sum; 217 Contains Duplicate; 242 Valid Anagram; 49 Group Anagrams; 347 Top K Frequent Elements; 219 Contains Duplicate II; 560 Subarray Sum Equals K; 128 Longest Consecutive Sequence; 383 Ransom Note; 205 Isomorphic Strings; 290 Word Pattern; 387 First Unique Character; 706 Design HashMap; 36 Valid Sudoku; 380 Insert Delete GetRandom O(1) *(canonical in Design)*.
 
 ---
 
-## 05 — Strings
+## 05: Strings
 
 ### Foundations and patterns
 
 String immutability, Unicode assumptions, slicing, efficient concatenation, normalization, parsing, substring vs subsequence, frequency maps, palindrome pointers, expand-around-center, index-driven parsing, stack decoding, and KMP overview.
 
-### Canonical problems — 15
+### Canonical problems: 15
 
 LC 125 Valid Palindrome; 14 Longest Common Prefix; 3 Longest Substring Without Repeating Characters *(canonical in Sliding Window)*; 424 Longest Repeating Character Replacement *(canonical in Sliding Window)*; 567 Permutation in String *(canonical in Sliding Window)*; 438 Find All Anagrams *(canonical in Sliding Window)*; 76 Minimum Window Substring *(canonical in Sliding Window)*; 5 Longest Palindromic Substring; 647 Palindromic Substrings; 151 Reverse Words in a String; 394 Decode String *(canonical in Stacks)*; 8 String to Integer; 28 Find First Occurrence; 49 Group Anagrams *(canonical in Hashing)*; 165 Compare Version Numbers.
 
 ---
 
-## 06 — Two Pointers
+## 06: Two Pointers
 
 ### Patterns
 
 Opposite ends, read/write compaction, anchor + pair, merge pointers, fast/slow movement, and partitioning.
 
-### Canonical problems — 15
+### Canonical problems: 15
 
 LC 125 Valid Palindrome; 167 Two Sum II; 283 Move Zeroes; 26 Remove Duplicates; 27 Remove Element; 977 Squares of a Sorted Array; 344 Reverse String; 15 3Sum; 11 Container With Most Water; 42 Trapping Rain Water; 75 Sort Colors; 80 Remove Duplicates II; 392 Is Subsequence; 881 Boats to Save People; 287 Find the Duplicate Number.
 
 ---
 
-## 07 — Sliding Window & Prefix Sums
+## 07: Sliding Window & Prefix Sums
 
 ### Patterns
 
 Fixed window, variable window, frequency-constrained window, monotonic deque, prefix sums, prefix sum + hash map, difference arrays, running extrema, and Kadane.
 
-### Canonical problems — 15
+### Canonical problems: 15
 
 LC 643 Maximum Average Subarray I; 3 Longest Substring Without Repeating; 424 Longest Repeating Character Replacement; 567 Permutation in String; 438 Find All Anagrams; 76 Minimum Window Substring; 904 Fruit Into Baskets; 1004 Max Consecutive Ones III; 239 Sliding Window Maximum; 209 Minimum Size Subarray Sum; 560 Subarray Sum Equals K *(canonical in Hashing)*; 525 Contiguous Array; 724 Find Pivot Index; 238 Product Except Self *(canonical in Arrays)*; 53 Maximum Subarray *(canonical in Arrays)*.
 
 ---
 
-## 08 — Stacks, Queues & Deques
+## 08: Stacks, Queues & Deques
 
 ### Patterns
 
 LIFO/FIFO, matching delimiters, expression evaluation, monotonic stack, monotonic deque, queue-via-stacks, stack-via-queues, and circular buffers.
 
-### Canonical problems — 15
+### Canonical problems: 15
 
 LC 20 Valid Parentheses; 155 Min Stack *(canonical in Design)*; 150 Evaluate Reverse Polish Notation; 739 Daily Temperatures; 496 Next Greater Element I; 84 Largest Rectangle in Histogram; 232 Queue using Stacks; 225 Stack using Queues; 239 Sliding Window Maximum *(canonical in Sliding Window)*; 735 Asteroid Collision; 394 Decode String; 227 Basic Calculator II; 622 Design Circular Queue *(canonical in Design)*; 1047 Remove Adjacent Duplicates; 71 Simplify Path.
 
 ---
 
-## 09 — Sorting, Intervals & Selection
+## 09: Sorting, Intervals & Selection
 
 ### Foundations
 
 Stability, in-place vs extra memory, comparison lower bound, Python Timsort, custom keys/comparators, merge sort, quicksort, quickselect, bucket/counting techniques, interval sorting.
 
-### Canonical problems — 15
+### Canonical problems: 15
 
 Merge sort implementation; quicksort implementation; LC 75 Sort Colors; 215 Kth Largest; 179 Largest Number; 56 Merge Intervals; 57 Insert Interval; 435 Non-overlapping Intervals; 253 Meeting Rooms II; 88 Merge Sorted Array *(canonical in Arrays)*; 347 Top K Frequent via bucket sort *(canonical in Hashing)*; 274 H-Index; 791 Custom Sort String; classic Count Inversions; 324 Wiggle Sort II.
 
 ---
 
-## 10 — Binary Search
+## 10: Binary Search
 
 ### Patterns
 
 Exact search, lower/upper bound, rotated array, matrix search, peak finding, and binary search on a monotonic answer.
 
-### Canonical problems — 15
+### Canonical problems: 15
 
 LC 704 Binary Search; 35 Search Insert; 34 First and Last Position; 33 Search Rotated Array; 153 Find Minimum Rotated Array; 74 Search 2D Matrix; 875 Koko Eating Bananas; 1011 Ship Packages; 4 Median of Two Sorted Arrays; 852 Peak Index; 162 Find Peak; 410 Split Array Largest Sum; 981 Time Based Key-Value Store *(canonical in Design)*; 69 Sqrt(x); 275 H-Index II.
 
 ---
 
-## 11 — Recursion & Backtracking
+## 11: Recursion & Backtracking
 
 ### Patterns
 
 Choice tree, choose/explore/unchoose, duplicate handling, pruning, state restoration, recursion-stack analysis, and iterative alternatives.
 
-### Canonical problems — 15
+### Canonical problems: 15
 
 LC 78 Subsets; 90 Subsets II; 46 Permutations; 39 Combination Sum; 40 Combination Sum II; 79 Word Search; 131 Palindrome Partitioning; 51 N-Queens; 22 Generate Parentheses; 17 Phone Letter Combinations; 37 Sudoku Solver; 93 Restore IP Addresses; 77 Combinations; 526 Beautiful Arrangement; 50 Pow(x,n).
 
 ---
 
-## 12 — Trees & BSTs
+## 12: Trees & BSTs
 
 ### Foundations and patterns
 
 Recursive/iterative DFS, BFS, subtree aggregation, path state, BST ordering, inorder reasoning, construction, serialization, and lowest common ancestor.
 
-### Canonical problems — 15
+### Canonical problems: 15
 
 LC 104 Max Depth; 226 Invert Tree; 100 Same Tree; 572 Subtree; 235 LCA BST; 236 LCA Binary Tree; 102 Level Order; 199 Right Side View; 98 Validate BST; 230 Kth Smallest; 105 Build from Traversals; 543 Diameter; 110 Balanced Tree; 124 Max Path Sum; 297 Serialize/Deserialize.
 
 ---
 
-## 13 — Heaps & Priority Queues
+## 13: Heaps & Priority Queues
 
 ### Patterns
 
 Top K, streaming extrema, two heaps, k-way merge, scheduling, greedy heap selection, and bounded heaps.
 
-### Canonical problems — 15
+### Canonical problems: 15
 
 LC 215 Kth Largest; 703 Kth Largest Stream; 1046 Last Stone Weight; 973 K Closest Points; 621 Task Scheduler; 347 Top K Frequent *(canonical in Hashing)*; 295 Median from Stream; 23 Merge k Lists *(canonical in Linked Lists)*; 767 Reorganize String; 253 Meeting Rooms II *(canonical in Sorting/Intervals)*; 264 Ugly Number II; 480 Sliding Window Median; 355 Design Twitter *(canonical in Design)*; classic Connect Sticks; 502 IPO.
 
 ---
 
-## 14 — Tries
+## 14: Tries
 
 ### Foundations and patterns
 
 Prefix search, trie node design, memory trade-offs, wildcard search, trie + DFS, compressed representations, and binary trie.
 
-### Canonical problems — 10
+### Canonical problems: 10
 
 LC 208 Implement Trie; 211 Add and Search Words; 212 Word Search II; 648 Replace Words; 720 Longest Word in Dictionary; 421 Maximum XOR; 1268 Search Suggestions; 336 Palindrome Pairs; 676 Magic Dictionary; 745 Prefix and Suffix Search.
 
 ---
 
-## 15 — Graphs & Grids
+## 15: Graphs & Grids
 
 ### Foundations and patterns
 
 Adjacency list/matrix, BFS/DFS, visited-state design, grid-as-graph, connected components, multi-source BFS, and unweighted shortest path.
 
-### Canonical problems — 15
+### Canonical problems: 15
 
 LC 200 Number of Islands; 133 Clone Graph; 695 Max Area of Island; 417 Pacific Atlantic; 130 Surrounded Regions; 994 Rotting Oranges; 542 01 Matrix; 127 Word Ladder; 752 Open the Lock; 733 Flood Fill; 1091 Shortest Path Binary Matrix; 463 Island Perimeter; 841 Keys and Rooms; 547 Number of Provinces; 934 Shortest Bridge.
 
 ---
 
-## 16 — Advanced Graphs
+## 16: Advanced Graphs
 
 ### Foundations and patterns
 
 Topological sorting, cycle detection, union-find, Dijkstra, Bellman-Ford overview, MST, weighted shortest path, and state-augmented graphs.
 
-### Canonical problems — 15
+### Canonical problems: 15
 
 LC 207 Course Schedule; 210 Course Schedule II; 684 Redundant Connection; 323 Connected Components; 261 Graph Valid Tree; 721 Accounts Merge; 743 Network Delay Time; 787 Cheapest Flights K Stops; 1584 Min Cost to Connect Points; 1631 Path With Minimum Effort; 332 Reconstruct Itinerary; 269 Alien Dictionary; 778 Swim in Rising Water; 399 Evaluate Division; 1462 Course Schedule IV.
 
 ---
 
-## 17 — Greedy
+## 17: Greedy
 
 ### Foundations and patterns
 
 Exchange argument intuition, local-choice proof, interval scheduling, reachability, partitioning, sorting before choosing, and contrast with DP.
 
-### Canonical problems — 15
+### Canonical problems: 15
 
 LC 55 Jump Game; 45 Jump Game II; 134 Gas Station; 435 Non-overlapping Intervals *(canonical in Sorting/Intervals)*; 452 Minimum Arrows; 763 Partition Labels; 621 Task Scheduler *(canonical in Heaps)*; 135 Candy; 122 Stock II; 881 Boats *(canonical in Two Pointers)*; 860 Lemonade Change; 455 Assign Cookies; 767 Reorganize String *(canonical in Heaps)*; 678 Valid Parenthesis String; 846 Hand of Straights.
 
 ---
 
-## 18 — Dynamic Programming I: 1D
+## 18: Dynamic Programming I: 1D
 
 ### Foundations and patterns
 
 State definition, recurrence, base cases, memoization vs tabulation, rolling-state compression, decision DP, subsequence DP preview.
 
-### Canonical problems — 15
+### Canonical problems: 15
 
 LC 70 Climbing Stairs; 746 Min Cost Climbing Stairs; 198 House Robber; 213 House Robber II; 322 Coin Change; 139 Word Break; 300 LIS; 91 Decode Ways; 152 Maximum Product Subarray; 309 Stock with Cooldown; 377 Combination Sum IV; 416 Partition Equal Subset Sum; 279 Perfect Squares; 647 Palindromic Substrings *(canonical in Strings)*; 740 Delete and Earn.
 
 ---
 
-## 19 — Dynamic Programming II: 2D & Sequence
+## 19: Dynamic Programming II: 2D & Sequence
 
 ### Patterns
 
 Grid DP, sequence alignment, knapsack, interval DP, partition DP, path counting, and memory compression.
 
-### Canonical problems — 15
+### Canonical problems: 15
 
 LC 62 Unique Paths; 63 Unique Paths II; 64 Minimum Path Sum; 1143 LCS; 72 Edit Distance; 115 Distinct Subsequences; 97 Interleaving String; 494 Target Sum; 518 Coin Change II; 1049 Last Stone Weight II; 312 Burst Balloons; 10 Regular Expression Matching; 44 Wildcard Matching; 221 Maximal Square; 329 Longest Increasing Path in Matrix.
 
 ---
 
-## 20 — Bit Manipulation, Math & Matrix
+## 20: Bit Manipulation, Math & Matrix
 
 ### Foundations and patterns
 
 Binary representation, masks, XOR, shifts, overflow assumptions, GCD/LCM, sieve, modular arithmetic, coordinate/matrix traversal, and geometry caveats.
 
-### Canonical problems — 18, divided into three mini-ladders
+### Canonical problems: 18, divided into three mini-ladders
 
 **Bits:** LC 136, 137, 260, 191, 338, 190, 268, 371.
 
@@ -819,19 +819,19 @@ Binary representation, masks, XOR, shifts, overflow assumptions, GCD/LCM, sieve,
 
 ---
 
-## 21 — Data Structure Design
+## 21: Data Structure Design
 
 ### Foundations and patterns
 
 Translate requirements into operations, combine structures, preserve invariants, reason about amortized complexity, eviction policies, streaming state, snapshots, and API design.
 
-### Canonical problems — 15
+### Canonical problems: 15
 
 LC 155 Min Stack; 225 Stack using Queues; 232 Queue using Stacks; 622 Circular Queue; 641 Circular Deque; 380 Insert Delete GetRandom; 981 Time Based Key-Value Store; 146 LRU Cache; 460 LFU Cache; 295 Median from Stream; 355 Design Twitter; 729 My Calendar I; 1146 Snapshot Array; 1396 Underground System; 2034 Stock Price Fluctuation.
 
 ---
 
-## 22 — Python, NumPy & Pandas Performance for DS/AI
+## 22: Python, NumPy & Pandas Performance for DS/AI
 
 ### Purpose
 
@@ -852,7 +852,7 @@ Bridge textbook DSA with the practical coding and performance questions asked in
 - vectorized cosine similarity;
 - measuring before optimizing.
 
-### Practical exercises — 12
+### Practical exercises: 12
 
 1. Memory-efficient stable deduplication.
 2. Moving average with a deque.
@@ -871,7 +871,7 @@ Each exercise includes runtime and memory reasoning, not only code.
 
 ---
 
-## 23 — Role Tracks, Mocks & Revision
+## 23: Role Tracks, Mocks & Revision
 
 ### Pattern reference
 
@@ -929,13 +929,13 @@ Every track includes:
 
 ---
 
-## 24 — Advanced DSA (Optional)
+## 24: Advanced DSA (Optional)
 
 ### Scope
 
 Fenwick tree, segment tree, coordinate compression, sweep line, advanced monotonic structures, reservoir sampling, meet-in-the-middle, and advanced string matching.
 
-### Canonical problems — 12
+### Canonical problems: 12
 
 LC 307 Range Sum Query Mutable; 315 Count Smaller After Self; 327 Count of Range Sum; 493 Reverse Pairs; 218 Skyline; 699 Falling Squares; 715 Range Module; 732 My Calendar III; 850 Rectangle Area II; 480 Sliding Window Median *(canonical in Heaps)*; 214 Shortest Palindrome; 528 Random Pick with Weight *(canonical in Bit/Math/Matrix)*.
 
@@ -947,7 +947,7 @@ The page must clearly state when these structures are unnecessary for the learne
 
 Build only the requested milestone and stop.
 
-## Milestone 0 — Shell and infrastructure
+## Milestone 0: Shell and infrastructure
 
 - Create the DSA top-level navigation group.
 - Create `dsa-prep/index.html` as the compact textbook contents page.
@@ -956,20 +956,20 @@ Build only the requested milestone and stop.
 - Create progress/filter primitives.
 - Do not generate full chapter content yet.
 
-## Milestone 1 — Interview Strategy and Python Foundations
+## Milestone 1: Interview Strategy and Python Foundations
 
 - Build pages 00 and 01.
 - Keep them concise and practical.
 - Add diagnostic quiz and study-route selector.
 
-## Milestone 2 — Arrays
+## Milestone 2: Arrays
 
 - Build the complete Arrays page.
 - Include 15 problem entries; full canonical write-ups only where Arrays owns the problem.
 - Cross-link problems canonically owned elsewhere.
 - Test every original code sample.
 
-## Milestone 3 — Linked Lists
+## Milestone 3: Linked Lists
 
 - Build the complete Linked Lists page.
 - Include pointer diagrams using lightweight HTML/SVG.

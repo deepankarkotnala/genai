@@ -1,5 +1,5 @@
 /* =========================================================================
-   DSA Interview Preparation — central question-bank metadata registry
+   DSA Interview Preparation - central question-bank metadata registry
    One record per problem. Canonical ownership lives here: `canonicalChapter`
    names the single chapter that carries the full editorial; `relatedChapters`
    lists every other chapter that shows a compact cross-reference.
@@ -10,7 +10,7 @@
    editorialLevel: "full" | "hints" | "listed" | "review"
    ========================================================================= */
 window.DSA_QUESTION_BANK = [
-  /* ---------------- 02 — Arrays (owns 10 of 15) ---------------- */
+  /* ---------------- 02 - Arrays (owns 10 of 15) ---------------- */
   { id: "lc-121", source: "LeetCode", number: 121, title: "Best Time to Buy and Sell Stock", slug: "best-time-to-buy-and-sell-stock", difficulty: "Easy", canonicalChapter: "02-arrays", relatedChapters: ["18-dynamic-programming-1d"], patterns: ["Running minimum", "Single pass"], roles: ["SDE", "Python", "Data Science", "ML/AI", "GenAI"], estimatedMinutes: 15, editorialLevel: "full", page: "02-arrays.html", anchor: "lc-121" },
   { id: "lc-217", source: "LeetCode", number: 217, title: "Contains Duplicate", slug: "contains-duplicate", difficulty: "Easy", canonicalChapter: "04-hashing", relatedChapters: ["02-arrays"], patterns: ["Seen set"], roles: ["SDE", "Python", "Data Science", "ML/AI", "GenAI"], estimatedMinutes: 10, editorialLevel: "full", page: "04-hashing.html", anchor: "lc-217" },
   { id: "lc-238", source: "LeetCode", number: 238, title: "Product of Array Except Self", slug: "product-of-array-except-self", difficulty: "Medium", canonicalChapter: "02-arrays", relatedChapters: ["07-sliding-window-prefix-sums"], patterns: ["Prefix/suffix products"], roles: ["SDE", "Python", "Data Science", "ML/AI"], estimatedMinutes: 20, editorialLevel: "full", page: "02-arrays.html", anchor: "lc-238" },
@@ -27,7 +27,7 @@ window.DSA_QUESTION_BANK = [
   { id: "lc-42", source: "LeetCode", number: 42, title: "Trapping Rain Water", slug: "trapping-rain-water", difficulty: "Hard", canonicalChapter: "06-two-pointers", relatedChapters: ["02-arrays", "08-stacks-queues-deques"], patterns: ["Two pointers", "Prefix extrema"], roles: ["SDE"], estimatedMinutes: 30, editorialLevel: "full", page: "06-two-pointers.html", anchor: "lc-42" },
   { id: "lc-41", source: "LeetCode", number: 41, title: "First Missing Positive", slug: "first-missing-positive", difficulty: "Hard", canonicalChapter: "02-arrays", relatedChapters: [], patterns: ["Array as index (cyclic sort)"], roles: ["SDE"], estimatedMinutes: 30, editorialLevel: "full", page: "02-arrays.html", anchor: "lc-41" },
 
-  /* ---------------- 03 — Linked Lists (owns 14 of 15) ---------------- */
+  /* ---------------- 03 - Linked Lists (owns 14 of 15) ---------------- */
   { id: "lc-206", source: "LeetCode", number: 206, title: "Reverse Linked List", slug: "reverse-linked-list", difficulty: "Easy", canonicalChapter: "03-linked-lists", relatedChapters: [], patterns: ["In-place reversal"], roles: ["SDE", "Python", "Data Science", "ML/AI", "GenAI"], estimatedMinutes: 15, editorialLevel: "full", page: "03-linked-lists.html", anchor: "lc-206" },
   { id: "lc-21", source: "LeetCode", number: 21, title: "Merge Two Sorted Lists", slug: "merge-two-sorted-lists", difficulty: "Easy", canonicalChapter: "03-linked-lists", relatedChapters: ["09-sorting-intervals-selection"], patterns: ["Dummy head", "Merge pointers"], roles: ["SDE", "Python"], estimatedMinutes: 15, editorialLevel: "full", page: "03-linked-lists.html", anchor: "lc-21" },
   { id: "lc-141", source: "LeetCode", number: 141, title: "Linked List Cycle", slug: "linked-list-cycle", difficulty: "Easy", canonicalChapter: "03-linked-lists", relatedChapters: [], patterns: ["Fast/slow pointers"], roles: ["SDE", "Python"], estimatedMinutes: 15, editorialLevel: "full", page: "03-linked-lists.html", anchor: "lc-141" },
@@ -56,11 +56,11 @@ window.DSA_QUESTION_BANK = [
 ];
 
 /* =========================================================================
-   High-frequency interview set — the pattern-defining problems most asked at
+   High-frequency interview set - the pattern-defining problems most asked at
    FAANG / MAANG and major Indian product companies (the Blind-75 / NeetCode
    core plus common India favourites). dsa-prep.js renders these with a small
    ★ indicator so learners can focus on the highest-leverage problems first and
-   skip lower-yield practice. Keyed by LeetCode number — edit freely; a number
+   skip lower-yield practice. Keyed by LeetCode number - edit freely; a number
    that isn't present on any page is simply ignored.
    ========================================================================= */
 window.DSA_INTERVIEW_MUST = [

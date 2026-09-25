@@ -39,7 +39,7 @@ def regress() -> None:
     decorative -- and the second regression below was NOT caught the first time
     it was tried, which is why the golden set has a case pinning it now.
     """
-    print(BAR); print("  REGRESSION DRILL — does the suite actually catch anything?"); print(BAR)
+    print(BAR); print("  REGRESSION DRILL - does the suite actually catch anything?"); print(BAR)
     experiments = [
         ("agent/tools.py", "    dry_run: bool = True,", "    dry_run: bool = False,",
          "the refund tool's safe default is removed"),
@@ -66,7 +66,7 @@ def regress() -> None:
 
 
 def show_trace() -> None:
-    print(BAR); print("  TRACE — one healthy run"); print(BAR)
+    print(BAR); print("  TRACE - one healthy run"); print(BAR)
     t = Trace(goal=GOAL)
     run_controlled(GOAL, get_brain(), trace=t)
     print(t.render())
@@ -75,7 +75,7 @@ def show_trace() -> None:
 
 
 def debug_trace() -> None:
-    print(BAR); print("  DEBUG — a run that went wrong. Find the fault from the trace alone."); print(BAR)
+    print(BAR); print("  DEBUG - a run that went wrong. Find the fault from the trace alone."); print(BAR)
     set_faults(FaultPlan(unavailable={"search_kb"}, slow={"lookup_order": 0.15},
                          flaky={"read_ticket": 1}))
     t = Trace(goal=GOAL + "  [degraded]")
@@ -91,7 +91,7 @@ def debug_trace() -> None:
 
 
 def show_cost() -> None:
-    print(BAR); print("  COST — accounting, then routing"); print(BAR)
+    print(BAR); print("  COST - accounting, then routing"); print(BAR)
     t = Trace(goal=GOAL)
     run_controlled(GOAL, get_brain(), trace=t)
     model_spans = [s for s in t.spans if s.kind == "model"]

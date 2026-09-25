@@ -1,5 +1,5 @@
 """
-trace.py — structured traces, and the numbers you will be asked about.
+trace.py - structured traces, and the numbers you will be asked about.
 
 Lesson 11. A trace answers four questions that logs cannot:
 

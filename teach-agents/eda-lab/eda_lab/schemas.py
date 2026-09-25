@@ -1,5 +1,5 @@
 """
-schemas.py — the analysis plan, as a Pydantic model.
+schemas.py - the analysis plan, as a Pydantic model.
 
 The model's job is to produce ONE of these. It never writes Python, never runs
 anything, and never touches the dataframe. It decides *what* analysis is needed;

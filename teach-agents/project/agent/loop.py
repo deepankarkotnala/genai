@@ -1,5 +1,5 @@
 """
-loop.py — the agent loop, written out in full.
+loop.py - the agent loop, written out in full.
 
 This is the whole idea of an agent, and it is about forty lines of ordinary
 Python. No framework. Read `run()` once and you have seen everything: the model

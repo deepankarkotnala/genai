@@ -1,4 +1,4 @@
-# Design decisions — EDA Lab
+# Design decisions: EDA Lab
 
 What was chosen, what was rejected, and what is still exposed. The last section
 is the one worth reading twice: a system with no listed weaknesses has an
@@ -8,14 +8,14 @@ author who has not looked.
 
 ## 1 · The model plans; it never computes
 
-**Chosen.** Gemma emits an `AnalysisPlan` — a list of tool calls with arguments.
+**Chosen.** Gemma emits an `AnalysisPlan` - a list of tool calls with arguments.
 Deterministic pandas functions execute it.
 
 **Rejected:** having the model generate pandas code and running it.
 
 Code generation is more flexible and it is the wrong trade here. Executing
 generated code makes the model's output a capability rather than a request, and
-every guard after that point is trying to prove things about arbitrary Python —
+every guard after that point is trying to prove things about arbitrary Python - 
 a losing position. With a plan, the set of things that can happen is the eleven
 functions in `REGISTRY`, and that set is enumerable, testable, and short.
 
@@ -39,7 +39,7 @@ loaded example behind.
 
 What generated-code execution would break, concretely: arbitrary filesystem
 read and write, network egress, dataset mutation, secret exfiltration via
-`os.environ`, and resource exhaustion — none of which are reachable from a plan
+`os.environ`, and resource exhaustion - none of which are reachable from a plan
 that can only name eleven functions.
 
 ## 3 · One loose `arguments` dict, tightened per tool
@@ -49,7 +49,7 @@ checks required and permitted arguments per tool.
 
 **Rejected:** eleven per-tool schemas in a discriminated union.
 
-The union is more correct and it measurably hurts plan quality on a 4B model —
+The union is more correct and it measurably hurts plan quality on a 4B model - 
 it becomes eleven schemas the model has to choose between before it can start.
 Moving the check one stage later keeps the decoding problem small. The check is
 not weaker, only later, and it runs before any tool executes.
@@ -66,7 +66,7 @@ it is where most real failures are caught.
 
 It collects **every** fault rather than short-circuiting on the first, so one
 repair attempt can fix everything at once. And the message names the real
-columns — "invalid column" on its own produces a second guess, not a correction.
+columns - "invalid column" on its own produces a second guess, not a correction.
 
 ## 5 · Exactly one repair attempt
 
@@ -74,7 +74,7 @@ columns — "invalid column" on its own produces a second guess, not a correctio
 
 Zero is too strict: a hallucinated column with feedback naming the real ones is
 genuinely recoverable, and the fake's `repair_then_ok` mode proves the path
-works. Three is a loop that bills for every turn — a model returning unparseable
+works. Three is a loop that bills for every turn - a model returning unparseable
 output will keep returning unparseable output.
 
 `test_malformed_output_does_not_loop` asserts the exact call count, not just the
@@ -114,7 +114,7 @@ says nothing and is indistinguishable from success.
 
 ## 9 · Silent narrowing is a bug class, and it bit three times
 
-Three separate bugs in this lab were the same shape — an argument quietly
+Three separate bugs in this lab were the same shape - an argument quietly
 ignored, everything downstream looking completely normal:
 
 - **The chart.** A plan asked for `y="mean_resolution_minutes"`, a name that
@@ -122,7 +122,7 @@ ignored, everything downstream looking completely normal:
   so it rendered nothing. Validation had passed with a warning. Now a hard
   fault, with the real column names in the message.
 - **The correlation.** `correlation_summary` filtered unknown names out of
-  `columns` and correlated whatever was left — answering a question nobody
+  `columns` and correlated whatever was left - answering a question nobody
   asked, and looking normal doing it. Now `unusable_columns`.
 - **The truncated table.** See §8.
 
@@ -135,7 +135,7 @@ available.** It is worse than a crash, because a crash gets investigated.
 `clarification_needed` is a field on the plan, and `clarification` is a run
 status alongside `answered` and `rejected`.
 
-"Which tickets are bad?" has no answer in this dataset — bad could mean low
+"Which tickets are bad?" has no answer in this dataset - bad could mean low
 CSAT, long resolution, or escalated. A system that asks is better than one that
 picks. Making it a *status* rather than an error means it can be measured:
 `ambiguity_clarification` is one of the ten eval metrics.
@@ -165,14 +165,14 @@ Five controls: seeded `default_rng`, fixed category tuples, sort by `ticket_id`,
 
 Every pinned number in the golden set is a fact about one specific file. Without
 byte-stability the suite drifts into grading against numbers that no longer
-exist — so `test_pinned_numbers_are_recomputable` derives all of them from the
+exist - so `test_pinned_numbers_are_recomputable` derives all of them from the
 CSV again and fails loudly if the generator moved.
 
 ## 14 · Integration tests assert properties, not exact plans
 
 A test that pins the exact output of a 4B model fails on Tuesday for no reason.
 `test_ollama_integration.py` asserts that plans parse, that columns are real,
-that a plausible tool was chosen — never a specific plan.
+that a plausible tool was chosen - never a specific plan.
 
 They are also deselected by default. A suite that needs a 3 GB download is a
 suite nobody runs.
@@ -183,8 +183,8 @@ The behaviours that regress silently are the refusals, so the set is weighted
 towards them.
 
 `test_every_failure_mode_of_the_fake_is_covered` pins every mode the fake can
-produce to a case in the set. It found a genuine hole the first time it ran —
-`too_many_ops` had no case — which is the argument for having it.
+produce to a case in the set. It found a genuine hole the first time it ran - 
+`too_many_ops` had no case - which is the argument for having it.
 
 ---
 
@@ -205,7 +205,7 @@ produce to a case in the set. It found a genuine hole the first time it ran —
    is shared. Fine for a single-user lab; the caching question is unanswered.
 6. **Cost is untracked.** Local inference is free, so there is no token
    accounting here. Port this to a hosted model and quadratic step cost becomes
-   the first thing that bites — the main course covers it; this lab does not.
+   the first thing that bites - the main course covers it; this lab does not.
 7. **The clarification path is only as good as the model.** `clarification_needed`
    exists, but a 4B model asked "which tickets are bad?" will sometimes guess
    instead. The integration test accepts several honest outcomes for that

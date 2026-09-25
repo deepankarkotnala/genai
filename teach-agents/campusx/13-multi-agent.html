@@ -1,0 +1,410 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>13 · Multi-agent | Understanding AI Agents</title>
+<meta name="description" content="An agent is not a tool, because the far side has its own goals. When a supervisor earns its cost, what A2A adds over MCP, and why delegation moves work but never authority.">
+<link rel="icon" href="../../assets/brand/favicon.svg?v=20260925b" type="image/svg+xml">
+<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260925b" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260925b">
+<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260925b" sizes="180x180">
+<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260925b">
+<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260925b" color="#6f47f5">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="../../assets/styles.css?v=20260805a">
+<link href="../../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
+<link href="../../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
+<link href="../../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+<link href="../../assets/ir-theme.css?v=20260925c" rel="stylesheet"/>
+</head>
+<body data-curriculum-id="cx-13" data-page="cx-13">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="../../index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search this section…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Understanding AI Agents · CampusX / <b>13 · Multi-agent</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> 13 · Scale</div>
+        <h1>Multi-agent, and when one agent is the right answer</h1>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~17 min read</span>
+          <span class="pill purple">Pairs with · <a href="../lessons/0013-multi-agent.html">Lesson 13 · Multi-agent & A2A</a></span>
+        </div>
+
+<!-- ================= 1 ================= -->
+<h2 id="known">1 · What you already know</h2>
+<p>From page 12 a tool can live in another process behind a protocol. From page
+4 a router can pick which tools a run declares.</p>
+<p><b>This page is about the far side having its own goals</b>, which is the point where a
+tool stops being the right description.</p>
+
+<!-- ================= 2 ================= -->
+<h2 id="breaks">2 · What breaks now</h2>
+<p>Your support agent now covers billing and technical requests. The system
+prompt has grown to 900 tokens, and it declares eleven tools.</p>
+
+<p>That is 2,300 tokens on every model call, on every step, whether the ticket is about a
+refund or a failed deployment.</p>
+<p>Two further problems appear once the tools diverge:</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Problem</th><th>Why one agent struggles</th></tr></thead>
+<tbody>
+<tr><td>Wrong tool chosen</td><td>Eleven tools, and half are irrelevant to any given ticket</td></tr>
+<tr><td>Conflicting instructions</td><td>Billing rules and incident rules in one prompt</td></tr>
+<tr><td>Different credentials needed</td><td>One process holds every credential the union of paths needs</td></tr>
+</tbody>
+</table>
+</div>
+<p>The third row is the one that justifies real separation. <b>The first two are solved by
+routing</b>, which costs one cheap classification call and no coordination.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 228" role="img" aria-labelledby="cx13-vs-t cx13-vs-d">
+<title id="cx13-vs-t">A tool returns; an agent decides</title>
+<desc id="cx13-vs-d">A tool is a function with a fixed contract: given arguments, it returns a value. An agent receives a goal, chooses its own steps, and may come back having done something you did not specify, or having refused.</desc>
+<defs><marker id="ah-cx13-vs" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="95" width="252.1" height="56" rx="12"></rect>
+<text class="lbl" x="138.05" y="119">you delegate</text>
+<text class="lbl" x="138.05" y="137">some work</text>
+<rect class="box b2" x="308.1" y="95" width="270.1" height="56" rx="12"></rect>
+<text class="lbl" x="443.15" y="119">does the far side</text>
+<text class="lbl" x="443.15" y="137">have its own goals?</text>
+<path class="arw" d="M269.1 123 H304.1" marker-end="url(#ah-cx13-vs)"></path>
+<rect class="box b3" x="630.2" y="58" width="257.8" height="56" rx="12"></rect>
+<text class="lbl" x="759.1" y="82">no -- fixed contract, returns a value</text>
+<text class="lbl" x="759.1" y="100">that is a TOOL</text>
+<path class="arw" d="M581.2 123 C604.2 123, 604.2 86, 626.2 86" marker-end="url(#ah-cx13-vs)"></path>
+<rect class="box b4" x="630.2" y="132" width="257.8" height="56" rx="12"></rect>
+<text class="lbl" x="759.1" y="156">yes -- picks its own steps, may refuse</text>
+<text class="lbl" x="759.1" y="174">that is an AGENT</text>
+<path class="arw" d="M581.2 123 C604.2 123, 604.2 160, 626.2 160" marker-end="url(#ah-cx13-vs)"></path>
+<text class="cap" x="450" y="222">reach for the tool first; an agent is the expensive answer</text>
+</svg>
+
+<!-- ================= 3 ================= -->
+<h2 id="breakdown">3 · Simple breakdown - A supervisor vs a single agent</h2>
+<section class="breakdown">
+
+<h3 class="bd-tech"><span class="bd-tag">A</span> A supervisor</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> A supervisor is an agent whose tools are other agents. It reads a request, delegates to a specialist, and combines what comes back.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It handles requests that span areas needing genuinely different tools, instructions or authority.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 232" role="img" aria-labelledby="cx13-exec-t cx13-exec-d">
+<title id="cx13-exec-t">The supervisor pattern</title>
+<desc id="cx13-exec-d">The supervisor reads the request and sends it to the specialist whose tools and instructions fit. Each specialist runs its own loop with its own tool set. The supervisor combines what comes back into one answer.</desc>
+<defs><marker id="ah-cx13-exec" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="95" width="176" height="56" rx="12"></rect>
+<text class="lbl" x="100" y="119">request</text>
+<text class="lbl" x="100" y="137">arrives</text>
+<rect class="box par" x="298" y="58" width="286" height="56" rx="12"></rect>
+<text class="lbl" x="441" y="82">billing specialist</text>
+<text class="lbl" x="441" y="100">refund + order tools</text>
+<path class="arw" d="M191 123 C250 123, 250 86, 294 86" marker-end="url(#ah-cx13-exec)"></path>
+<path class="arw" d="M587 86 C650 86, 650 123, 700 123" marker-end="url(#ah-cx13-exec)"></path>
+<rect class="box par" x="298" y="132" width="286" height="56" rx="12"></rect>
+<text class="lbl" x="441" y="156">technical specialist</text>
+<text class="lbl" x="441" y="174">logs + status tools</text>
+<path class="arw" d="M191 123 C250 123, 250 160, 294 160" marker-end="url(#ah-cx13-exec)"></path>
+<path class="arw" d="M587 160 C650 160, 650 123, 700 123" marker-end="url(#ah-cx13-exec)"></path>
+<rect class="box b5" x="704" y="95" width="184" height="56" rx="12"></rect>
+<text class="lbl" x="796" y="119">supervisor</text>
+<text class="lbl" x="796" y="137">combines</text>
+<text class="cap" x="450" y="224">worth it for different tools or different authority, not for tidiness</text>
+</svg>
+
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> A supervisor loop, one sub-agent per specialism with its own tool set, and a contract for what a delegated result looks like.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> Each sub-agent has its own message list. The supervisor holds only the goal and the returned summaries.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> Cost and latency multiply by the number of delegations. Failures compound: a sub-agent that answers wrongly is harder to detect than a tool that errors.</p>
+
+<h3 class="bd-tech"><span class="bd-tag">B</span> A single routed agent</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> A single agent with one loop, where a cheap classification call selects which tools and instructions are declared for the run.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It handles requests that fall into known categories but do not need separate authority or separate processes.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b> One classification call, then one loop with a smaller tool set and a path specific system prompt.</p>
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> A router, a prompt per path, and a tool set per path. One loop.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> One message list for the whole run.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> It cannot give two paths different credentials or run them in parallel. Every path shares one process and one identity.</p>
+
+<h3 class="bd-diff">The core differences</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>A supervisor</th><th>A single routed agent</th></tr></thead>
+<tbody>
+<tr><th>Model calls per request</th><td>One per sub-agent step, plus the supervisor's</td><td>One per step, plus one to route</td></tr>
+<tr><th>Different credentials per path</th><td>Yes</td><td>No, one identity for the run</td></tr>
+<tr><th>Failure modes</th><td>Coordination, plus each sub-agent's</td><td>One loop's</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 class="bd-short">In short - which one to choose</h3>
+<ul>
+<li>Use a <b>supervisor</b> when specialists need different tools, different credentials, or genuinely separate deployment.</li>
+<li>Use a <b>single routed agent</b> otherwise, which is most of the time. It costs one classification call and no coordination.</li>
+<li><b>Measure the routed version first.</b> If it is already good enough, the supervisor is cost with no gain.</li>
+</ul>
+</section>
+
+<!-- ================= 4 ================= -->
+<h2 id="without">4 · Without the technology</h2>
+<p>Routing, from page 4, applied to this problem.</p>
+
+<p>Measured on the same 40 tickets.</p>
+
+<p><b>The supervisor cost three times the routed version and answered no better.</b> That is
+the usual result, and it is why this page argues against reaching for multi-agent
+first.</p>
+<p>What routing cannot do: give the billing path a credential the technical path does not
+have. When that is the requirement, separation is real.</p>
+
+<!-- ================= 5 ================= -->
+<h2 id="mechanics">5 · Runtime mechanics</h2>
+<p>A delegated call, in order:</p>
+<ol>
+<li>The supervisor decides which specialist should handle the request.</li>
+<li>It sends a <b>goal</b>, not a function call, along with the caller's identity.</li>
+<li>The specialist runs its own loop, with its own tools and its own step limit.</li>
+<li>It returns a result, a status, and what it did - or it refuses.</li>
+<li>The supervisor combines the results and produces one answer.</li>
+</ol>
+<p>Step 4 is where this differs from a tool. <b>A tool returns a value; an agent returns an
+outcome</b>, which may be "I could not do this, and here is why".</p>
+
+<!-- ================= 7 ================= -->
+<h2 id="components">6 · The components, one at a time</h2>
+<h3>The supervisor</h3>
+<p>Owns the decomposition and the combination, and nothing else. It should not have the
+specialists' tools, or it will do the work itself.</p>
+
+<h3>The specialist</h3>
+<p>An ordinary agent with a narrow tool set and a specific prompt. Its own step limit, so a
+looping specialist cannot exhaust the supervisor's budget.</p>
+
+<h3>The delegation contract</h3>
+
+<p>A status the supervisor can branch on. <b>A specialist that only ever returns text cannot
+be distinguished from one that failed politely.</b></p>
+
+<h3>Identity propagation</h3>
+
+<p>Never a service identity, and never a broader one. Delegating must not widen what is
+permitted.</p>
+
+<h3>The agent card (A2A)</h3>
+
+<p>Discovery for peers, as <code>tools/list</code> is discovery for tools. The difference is
+that a peer can decline.</p>
+
+<!-- ================= 8 ================= -->
+<h2 id="state">7 · State and data flow</h2>
+<ol>
+<li><b>What data is state?</b> The supervisor's goal and collected results; each specialist's
+own message list.</li>
+<li><b>Who writes each field?</b> Each loop writes its own. Nothing writes another's.</li>
+<li><b>Who reads it?</b> The supervisor reads only returned results, never a specialist's
+internal messages.</li>
+<li><b>Replaced, appended or merged?</b> Results are collected by specialist name.</li>
+<li><b>What reducer controls merging?</b> The combining call, which is a model call and can
+therefore be wrong.</li>
+<li><b>Only in process memory?</b> Yes, unless a specialist is remote and its task is
+long-running.</li>
+<li><b>Is it checkpointed?</b> In A2A, a task has an id and can be resumed. In a local
+supervisor, no.</li>
+<li><b>Is it in a database?</b> Only the trace, which must carry the same run id across
+every sub-agent.</li>
+<li><b>How long does it survive?</b> The supervisor's run, or the task's lifetime for A2A.</li>
+<li><b>What retrieves it again?</b> The run id, or the A2A task id.</li>
+</ol>
+<p>Row 8 is a practical requirement. <b>Propagate the run id into every sub-agent</b>, or the
+trace shows three unrelated runs and no way to connect them.</p>
+
+<!-- ================= 10 ================= -->
+<h2 id="trace">8 · Trace</h2>
+
+<p>Seven model calls and 8.4 seconds, against 3.8 calls and 2.9 seconds for the routed
+version. <b>The two delegations ran in sequence</b>, so their latency added rather than
+overlapped.</p>
+<p>Running them concurrently halves the wall-clock time and changes nothing about the cost.
+It is the first optimisation to reach for, and it only works because they are
+independent.</p>
+
+<!-- ================= 11 ================= -->
+<h2 id="break">9 · Break it</h2>
+<p>Give the billing specialist its own credentials, which is a natural thing to
+do when it talks to the payments system.</p>
+
+<p>Now a read-only user asks a question that the supervisor routes to billing.</p>
+
+<p><b>Delegation widened what was permitted.</b> The caller could not issue a refund; the
+service account could; and the hop between them is where the check was lost.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 174" role="img" aria-labelledby="cx13-authority-t cx13-authority-d">
+<title id="cx13-authority-t">Delegation must not widen permissions</title>
+<desc id="cx13-authority-d">The sub-agent runs with a service account instead of the original caller. A read-only user's request reaches an operation they could never have performed directly, because the hop replaced the identity.</desc>
+<defs><marker id="ah-cx13-authority" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="52" width="202.5" height="56" rx="12"></rect>
+<rect class="box b2" x="236.5" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M217.5 80 H232.5" marker-end="url(#ah-cx13-authority)"></path>
+<rect class="box fail" x="461" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M442 80 H457" marker-end="url(#ah-cx13-authority)"></path>
+<rect class="box after b4" x="685.5" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M666.5 80 H681.5" marker-end="url(#ah-cx13-authority)"></path>
+<text class="lbl" x="113.25" y="76">caller:</text>
+<text class="lbl" x="113.25" y="94">read-only</text>
+<text class="lbl" x="337.75" y="76">supervisor</text>
+<text class="lbl" x="337.75" y="94">delegates</text>
+<text class="lbl" x="562.25" y="76">sub-agent uses</text>
+<text class="lbl" x="562.25" y="94">service account</text>
+<text class="lbl" x="786.75" y="76">refund runs</text>
+<text class="lbl" x="786.75" y="94">caller could not</text>
+<path class="xmark" d="M544.25 122 L580.25 150 M580.25 122 L544.25 150"></path>
+<text class="cap rescue" x="450" y="166">pass the caller's identity down; never let a hop escalate what is allowed</text>
+</svg>
+
+<!-- ================= 12 ================= -->
+<h2 id="fix">10 · Fix it</h2>
+<p><b>1 · Propagate the caller, always.</b> The sub-agent acts as the original
+caller and nothing else.</p>
+
+<p><b>2 · Enforce authorisation at the far end</b>, not at the supervisor. The supervisor's
+decision to delegate is not an authorisation decision.</p>
+
+<p><b>3 · If a service account is genuinely required</b>, scope it to exactly the operations
+the sub-agent needs, and re-check the caller's permission before using it.</p>
+
+<p><b>4 · Test the widening case explicitly.</b> A read-only caller reaching a privileged
+operation through a hop belongs in the evaluation suite from page 10.</p>
+
+<!-- ================= 13 ================= -->
+<h2 id="production">11 · Production version</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Concern</th><th>What you do</th></tr></thead>
+<tbody>
+<tr><td>Justify the pattern</td><td>Measure the routed single agent first. Most cases stop there</td></tr>
+<tr><td>Identity</td><td>The caller propagates through every hop. Delegation never widens permissions</td></tr>
+<tr><td>Budgets</td><td>Per specialist and per request, so one looping sub-agent cannot exhaust the whole budget</td></tr>
+<tr><td>Status contract</td><td>Every specialist returns a status the supervisor can branch on</td></tr>
+<tr><td>Partial results</td><td>A specialist that did not complete stops the request. Never combine partial answers silently</td></tr>
+<tr><td>Concurrency</td><td>Independent delegations run concurrently; dependent ones cannot</td></tr>
+<tr><td>Trace</td><td>One run id across every sub-agent, or the trace shows unrelated runs</td></tr>
+<tr><td>Loop prevention</td><td>A depth limit, so a specialist cannot delegate back to its supervisor</td></tr>
+<tr><td>A2A auth</td><td>Mutual authentication with a peer, and verify the peer's claims rather than trusting them</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ================= 14 ================= -->
+<h2 id="comparison">12 · Comparison</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Supervisor</th><th>Routed single agent</th><th>MCP tool</th><th>A2A peer</th></tr></thead>
+<tbody>
+<tr><th>Far side has its own goals</th><td><b>Yes</b></td><td>No</td><td>No</td><td><b>Yes</b></td></tr>
+<tr><th>Can refuse</th><td>Yes</td><td>Not applicable</td><td>Returns an error</td><td><b>Yes</b></td></tr>
+<tr><th>Different credentials</th><td>Yes</td><td>No</td><td>Yes, at the server</td><td>Yes</td></tr>
+<tr><th>Cost</th><td>Highest</td><td><b>Lowest</b></td><td>One call</td><td>Highest</td></tr>
+<tr><th>Long-running work</th><td>Blocking</td><td>Blocking</td><td>Blocking</td><td><b>Task lifecycle</b></td></tr>
+<tr><th>Use it for</th><td>Different tools and authority</td><td>Known categories</td><td>Shared capabilities</td><td>Another org's agent</td></tr>
+</tbody>
+</table>
+</div>
+<p>Read rows 1 and 4 together. <b>You pay the most for the two options where the far side can
+have its own goals</b>, so only choose them when that property is what you need.</p>
+
+<!-- ================= 15 ================= -->
+<div class="carry"><b>New questions</b> written for this page: it is new, so there was nothing to carry over.</div>
+<h2 id="interview">13 &middot; Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What is the difference between calling a tool and delegating to an agent? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>A tool has a fixed contract: given arguments, it returns a value. An agent receives a goal, chooses its own steps, and may come back having done something you did not specify, or having refused. The far side having its own goals is the whole distinction.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What is the supervisor pattern? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>One agent reads the request, routes it to the specialist whose tools and instructions fit, and combines what comes back. The specialists do not talk to each other.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  When does a supervisor genuinely earn its place? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>When the specialists need genuinely different tools or different authority. If they share a tool set and differ only in wording, a router with different prompts does the same job for one model call instead of three.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  What does A2A add that MCP does not? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>MCP connects an agent to a tool. A2A connects an agent to a peer that plans, may take a long time, may ask for more input, and may refuse. It adds a task lifecycle, an agent card for discovery, and mutual authentication, because neither side is in charge.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  Why is multi-agent usually the wrong first answer? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>It multiplies cost and latency and adds a coordination failure mode, and the gain is usually smaller than expected. Measure a single routed agent first. Most cases people reach for a supervisor for are solved by routing with a smaller tool set per path.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  What does 'delegation moves work, never authority' mean in code? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>The sub-agent must act with the original caller's identity and permissions, never with its own broader credentials. If delegating widens what is allowed, an attacker who can influence the supervisor can reach anything the sub-agent can reach. Propagate the caller and enforce authorisation at the far end.</p></div></details>
+
+<!-- ================= 16 ================= -->
+<h2 id="short">14 · In short, and what comes next</h2>
+<p class="bd-choose">Remember these six:</p>
+<ul>
+<li>An agent is not a tool, because the far side has its own goals and can refuse.</li>
+<li>Measure a routed single agent first. It is usually as accurate and far cheaper.</li>
+<li>A supervisor earns its place on different tools, different credentials, or separate deployment.</li>
+<li>Delegation moves work, never authority. Propagate the caller through every hop.</li>
+<li>Every specialist returns a status, so a partial result cannot be combined silently.</li>
+<li>One run id across every sub-agent, or the trace is three unrelated runs.</li>
+</ul>
+<div class="callout key">
+<div class="c-ico">🔑</div>
+<div class="c-body"><div class="c-title">The one idea to remember</div>
+<p><b>Reach for the tool first, then the routed agent, and only then the supervisor.</b> Each
+step up multiplies cost and adds a failure mode, so each one needs a reason you can
+state.</p></div>
+</div>
+<p><b>Next:</b> page 14 puts the agent behind an HTTP service, which forces four decisions a
+script never made you make.</p>
+
+<div class="page-nav" data-page-nav>
+<a href="12-mcp.html"><div class="dir">← Previous</div><div class="ttl">12 · MCP</div></a>
+          <a class="next" href="14-deployment.html"><div class="dir">Next →</div><div class="ttl">14 · Deployment</div></a>
+</div>
+
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script>
+window.__pageNav = {
+  navLabel: "Understanding AI Agents · CampusX",
+  here: "campusx/13-multi-agent.html",
+  base: "../",
+  pages: [
+    { file: "campusx/index.html", title: "Section index", num: "✦", kw: "campusx agents index" }
+  ]
+};
+</script>
+<script src="../../assets/app.js?v=20260925c"></script>
+<script src="../../assets/sitenav.js?v=20260925a"></script>
+<script src="../../assets/enhance.js?v=20260925c"></script>
+<script src="../../assets/genai-motion.js?v=20260728a"></script>
+<script src="../../assets/glossary.js?v=20260802b"></script>
+</body>
+</html>

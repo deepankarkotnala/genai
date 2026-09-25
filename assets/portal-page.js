@@ -1,5 +1,5 @@
 /* =========================================================================
-   GenAI Learning Hub — shared sub-site page controller
+   GenAI Learning Hub - shared sub-site page controller
    Used by the sub-sites (teach-agents, and the retired learn-rag-mcp pages) so they share the exact
    look + behaviour of the GenAI Mastery module pages, while keeping their own
    navigation. app.js is hard-wired to the Mastery module registry, so those
@@ -120,7 +120,7 @@
       .replace(/industry perspective/i, "Industry view")
       .replace(/top mistakes engineers make/i, "Common mistakes")
       .replace(/interview preparation/i, "Interview prep")
-      .replace(/mini project\s*[—–-].*$/i, "Mini project")
+      .replace(/mini project\s*[ - –-].*$/i, "Mini project")
       .replace(/real project connection/i, "Project context")
       .replace(/executive summary/i, "Summary")
       .trim();
@@ -150,17 +150,41 @@
         '<span class="toc-num">' + num + '</span><span class="toc-label">' + escapeTOCText(compactTOCLabel(full)) + '</span></a>';
     }).join("");
     rail.innerHTML =
-      '<div class="toc-book-head"><div><span class="toc-kicker">Chapter contents</span><strong>' + heads.length + ' topics</strong></div>' +
+      '<div class="toc-book-head"><div><span class="toc-kicker">On this page</span><strong>' + heads.length + (heads.length === 1 ? ' section' : ' sections') + '</strong></div>' +
       '<button class="toc-top" type="button" aria-label="Back to chapter top" title="Back to top">↑</button></div>' +
       '<label class="toc-filter"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"></circle><path d="m16 16 4 4"></path></svg>' +
-      '<input type="search" placeholder="Find topic" aria-label="Find a topic in this chapter"></label>' +
+      '<input type="search" placeholder="Find on this page" aria-label="Find on this page"></label>' +
       '<div class="toc-list">' + rows + '<div class="toc-empty" hidden>No matching topic</div></div>';
 
+    /* Compact "Jump to section" toggle - only shown on narrow screens (CSS),
+       the same control app.js builds. */
+    var toggle = document.createElement("button");
+    toggle.type = "button";
+    toggle.className = "toc-toggle";
+    toggle.setAttribute("aria-expanded", "false");
+    toggle.setAttribute("aria-label", "Jump to a section on this page");
+    toggle.innerHTML =
+      '<svg class="toc-toggle-ico" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>' +
+      '<span class="toc-toggle-label">Jump to section</span>' +
+      '<svg class="toc-toggle-caret" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>';
+    rail.insertBefore(toggle, rail.firstChild);
+
     var links = [].slice.call(rail.querySelectorAll("[data-toc]"));
-    var list = rail.querySelector(".toc-list");
     var filter = rail.querySelector(".toc-filter input");
     var empty = rail.querySelector(".toc-empty");
     var top = rail.querySelector(".toc-top");
+
+    function setTocOpen(open) {
+      rail.classList.toggle("toc-open", open);
+      toggle.setAttribute("aria-expanded", open ? "true" : "false");
+    }
+    toggle.addEventListener("click", function (event) {
+      event.stopPropagation();
+      setTocOpen(!rail.classList.contains("toc-open"));
+    });
+    document.addEventListener("click", function (event) { if (!rail.contains(event.target)) setTocOpen(false); });
+    document.addEventListener("keydown", function (event) { if (event.key === "Escape") setTocOpen(false); });
+
     if (top) top.addEventListener("click", function () { window.scrollTo({ top: 0, behavior: "smooth" }); });
     if (filter) filter.addEventListener("input", function () {
       var query = filter.value.trim().toLowerCase();
@@ -172,18 +196,66 @@
       });
       if (empty) empty.hidden = shown !== 0;
     });
-    if (window.IntersectionObserver) {
-      var obs = new IntersectionObserver(function (entries) {
-        entries.forEach(function (en) {
-          if (en.isIntersecting) {
-            links.forEach(function (l) { l.classList.toggle("active", l.getAttribute("data-toc") === en.target.id); });
-            var active = links.find(function (l) { return l.getAttribute("data-toc") === en.target.id; });
-            if (active && list) active.scrollIntoView({ block: "nearest" });
-          }
-        });
-      }, { rootMargin: "-72px 0px -72% 0px" });
-      heads.forEach(function (h) { obs.observe(h); });
+
+    /* No scroll spy - matched to the interview_prep portal: reading the page
+       never lights up the rail. A click flashes the chosen row: it eases in,
+       holds briefly, then fades out (the slower fade lives on .toc-fade in
+       office-theme.css). */
+    var flashTimer = null, fadeTimer = null;
+    function flash(link) {
+      clearTimeout(flashTimer); clearTimeout(fadeTimer);
+      links.forEach(function (l) { l.classList.remove("active", "toc-fade"); });
+      void link.offsetWidth; /* restart the ease-in on a repeat click */
+      link.classList.add("active");
+      flashTimer = setTimeout(function () {
+        link.classList.add("toc-fade");
+        link.classList.remove("active");
+        fadeTimer = setTimeout(function () { link.classList.remove("toc-fade"); }, 1000);
+      }, 1600);
     }
+    /* Smooth jump, as in interview_prep: the page keeps scroll-behavior auto
+       (so find-in-page and restored positions stay instant) and a rail click
+       glides to its section instead. The heading's scroll-margin-top keeps it
+       clear of the sticky bar. */
+    var reduceMotion = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)");
+    links.forEach(function (link) {
+      link.addEventListener("click", function (event) {
+        setTocOpen(false);
+        flash(link);
+        var target = document.getElementById(link.getAttribute("data-toc"));
+        if (!target) return;
+        event.preventDefault();
+        target.scrollIntoView({ block: "start", behavior: reduceMotion && reduceMotion.matches ? "auto" : "smooth" });
+        // Keep the URL shareable; a history error (sandboxed file://) must not block the scroll.
+        try { history.replaceState(null, "", "#" + target.id); } catch (err) {}
+      });
+    });
+    /* Mobile auto-hide: a downward scroll slides the "Jump to section" bar away,
+       and the first pixel of upward scroll brings it back. Near the top of the
+       page it always shows. The class only has an effect at <=980px (CSS). */
+    (function () {
+      var mq = window.matchMedia ? window.matchMedia("(max-width: 980px)") : null;
+      var lastY = Math.max(0, window.scrollY || 0), down = 0, ticking = false, hidden = false;
+      function setHidden(h) {
+        if (h === hidden) return;
+        hidden = h;
+        (rail.closest(".toc-rail") || rail).classList.toggle("toc-rail-hidden", h);
+        if (h) setTocOpen(false);
+      }
+      function evaluate() {
+        ticking = false;
+        var max = Math.max(0, document.documentElement.scrollHeight - window.innerHeight);
+        var y = Math.min(max, Math.max(0, window.scrollY || 0)); /* ignore iOS overscroll bounce */
+        var delta = y - lastY;
+        lastY = y;
+        if (mq && !mq.matches) { down = 0; setHidden(false); return; }
+        if (y <= 80 || delta < 0) { down = 0; setHidden(false); return; }
+        if (delta > 0) { down += delta; if (down > 12) setHidden(true); }
+      }
+      window.addEventListener("scroll", function () {
+        if (!ticking) { ticking = true; window.requestAnimationFrame(evaluate); }
+      }, { passive: true });
+    })();
   }
 
   /* ---------- Copy buttons ---------- */

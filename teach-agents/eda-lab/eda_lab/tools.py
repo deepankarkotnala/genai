@@ -1,5 +1,5 @@
 """
-tools.py — eleven deterministic pandas tools. The model calls none of them.
+tools.py - eleven deterministic pandas tools. The model calls none of them.
 
 The whole safety argument of this lab is visible in the imports: pandas,
 matplotlib, hashlib, re. No `os.system`, no `subprocess`, no `eval`, no `exec`,

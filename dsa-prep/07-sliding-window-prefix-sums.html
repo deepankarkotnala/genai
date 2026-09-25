@@ -1,38 +1,39 @@
-<!DOCTYPE html><html data-theme="light" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1" name="viewport"/><meta content="#f4f5f8" name="theme-color"/><title>07 · Sliding Window &amp; Prefix Sums — DSA Interview Preparation</title><link href="../assets/brand/favicon.svg?v=20260727c" rel="icon" type="image/svg+xml"/>
+<!DOCTYPE html><html data-theme="light" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1" name="viewport"/><meta content="#f4f5f8" name="theme-color"/><title>07 · Sliding Window &amp; Prefix Sums | DSA Interview Preparation</title><link href="../assets/brand/favicon.svg?v=20260925b" rel="icon" type="image/svg+xml"/>
 <!-- Theme before first paint. Without this the document paints with the light
      tokens and only flips when app.js runs at the end of <body>, which is a
      white flash on every navigation in dark mode. Mirrors app.js's getTheme()
-     exactly — same key, same "light" default — so the pre-paint value can never
+     exactly - same key, same "light" default - so the pre-paint value can never
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "s" on phones and "xs" above 860px, unknown width -> "wide", unknown align -> "left". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var mob=!!(window.matchMedia&&window.matchMedia("(max-width:860px)").matches);var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(mob?"s":"xs");var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition — CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20260805a" rel="stylesheet"/><link href="../assets/office-theme.css?v=20260805c" rel="stylesheet"/><link href="../assets/dsa-prep.css?v=20260804a" rel="stylesheet"/>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260805a" rel="stylesheet"/><link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/><link href="../assets/dsa-prep.css?v=20260804a" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
-<link href="../assets/brand/favicon-32.png?v=20260727c" rel="icon" sizes="32x32" type="image/png"/>
-<link href="../assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
-<link href="../assets/brand/favicon.ico?v=20260727c" rel="shortcut icon"/>
-<link href="../assets/brand/apple-touch-icon.png?v=20260727c" rel="apple-touch-icon" sizes="180x180"/>
-<link href="../assets/brand/site.webmanifest?v=20260727c" rel="manifest"/>
-<link color="#6f47f5" href="../assets/brand/safari-pinned-tab.svg?v=20260727c" rel="mask-icon"/>
-<meta content="../assets/brand/browserconfig.xml?v=20260727c" name="msapplication-config"/>
+<link href="../assets/brand/favicon-32.png?v=20260925b" rel="icon" sizes="32x32" type="image/png"/>
+<link href="../assets/brand/favicon-16.png?v=20260925b" rel="icon" sizes="16x16" type="image/png"/>
+<link href="../assets/brand/favicon.ico?v=20260925b" rel="shortcut icon"/>
+<link href="../assets/brand/apple-touch-icon.png?v=20260925b" rel="apple-touch-icon" sizes="180x180"/>
+<link href="../assets/brand/site.webmanifest?v=20260925b" rel="manifest"/>
+<link color="#6f47f5" href="../assets/brand/safari-pinned-tab.svg?v=20260925b" rel="mask-icon"/>
+<meta content="../assets/brand/browserconfig.xml?v=20260925b" name="msapplication-config"/>
 <meta content="#2563eb" name="msapplication-TileColor"/>
-<meta content="Switch job" name="application-name"/>
-<meta content="Switch job" name="apple-mobile-web-app-title"/><!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+<meta content="Learn GenAI" name="application-name"/>
+<meta content="Learn GenAI" name="apple-mobile-web-app-title"/><!-- Release 2 runtime. The manifest loads first, the renderer second; classic
      deferred scripts execute in document order after parsing, so the nav slot
      exists and the manifest is defined before the renderer runs. The authored
      links inside [data-page-nav] stay in the source and are replaced only after
      page, route and fragment have all resolved. -->
 <script defer src="../assets/curriculum.js?v=20260804c"></script>
 <script defer src="../assets/page-nav.js?v=20260804c"></script>
+<link href="../assets/ir-theme.css?v=20260925c" rel="stylesheet"/>
 </head><body data-curriculum-id="dsa-07" data-page="dsa-chapter"><div class="app"><aside class="sidebar"><div class="brand">
-<a class="brand-link" href="../index.html" aria-label="Switch job home">
-<span class="brand-mark" aria-hidden="true"><img src="../assets/brand/switch-job-logo.png?v=20260727c" alt=""/></span>
-<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+<a class="brand-link" href="../index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
 </a>
 </div><div class="search-wrap"><div class="search-box"><input data-search="" placeholder="Search everything…  ( / )" type="text"/></div><div class="search-results"></div></div><nav class="nav"></nav></aside><div class="backdrop"></div><div class="main"><header class="topbar"><button aria-label="Menu" class="icon-btn menu-btn">☰</button><div class="crumbs">DSA Interview Preparation / 07 · Sliding Window &amp; Prefix Sums</div><button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button></header><div class="content-wrap"><main class="content">
 <div class="eyebrow"><span class="dot"></span> Chapter 07 · Core patterns</div>
 <h1>Sliding Window &amp; Prefix Sums</h1>
-<p class="lead">Two techniques that turn repeated subarray work into single passes: a <em>sliding window</em> reuses a computation as it moves, and a <em>prefix sum</em> precomputes cumulative totals so any range answers in O(1). This chapter builds both from scratch — every problem has a full, tested solution in LeetCode's <code>class Solution</code> format.</p>
+<p class="lead">Two techniques that turn repeated subarray work into single passes: a <em>sliding window</em> reuses a computation as it moves, and a <em>prefix sum</em> precomputes cumulative totals so any range answers in O(1). This chapter builds both from scratch - every problem has a full, tested solution in LeetCode's <code>class Solution</code> format.</p>
 <div class="dsa-chead">
 <span class="dsa-chapter-no">Outcome</span>
 <p class="dsa-outcome">Recognise window vs prefix problems, choose fixed/variable windows, prefix maps, 2D prefix, difference arrays, or monotonic deques, and state the invariant and complexity precisely.</p>
@@ -52,15 +53,15 @@
 <span class="dsa-progress-line" data-dsa-progress="">0 / 34 solved</span>
 </div>
 <h2 id="foundations">1 · Foundations</h2>
-<p class="dsa-note-sm" style="margin-bottom:6px">New to these techniques? Read this section top to bottom — each idea builds on the one before it. Already fluent? Skip to <a href="#patterns">§2 Pattern library</a>.</p>
+<p class="dsa-note-sm" style="margin-bottom:6px">New to these techniques? Read this section top to bottom - each idea builds on the one before it. Already fluent? Skip to <a href="#patterns">§2 Pattern library</a>.</p>
 
 <h3 id="the-problem">The problem both techniques solve</h3>
-<p>Many questions ask about <strong>contiguous subarrays or substrings</strong>: the largest sum of any window of size k, the longest substring with some property, the number of subarrays summing to a value. The brute force recomputes each range from scratch — O(n²) or worse. Sliding windows and prefix sums both remove that repeated work, usually reaching O(n).</p>
+<p>Many questions ask about <strong>contiguous subarrays or substrings</strong>: the largest sum of any window of size k, the longest substring with some property, the number of subarrays summing to a value. The brute force recomputes each range from scratch - O(n²) or worse. Sliding windows and prefix sums both remove that repeated work, usually reaching O(n).</p>
 <div class="dsa-key"><span><b>Sliding window</b> reuses the previous window's answer as the window moves by one. <b>Prefix sums</b> precompute cumulative totals once, so any range is a single subtraction. Learn to spot which one a problem wants.</span></div>
 
 <h3 id="fixed-window">Sliding window: fixed size</h3>
 <p>When the window has a <em>fixed</em> length k, you compute the first window directly, then <strong>slide</strong>: add the element entering on the right and subtract the one leaving on the left. Each step is O(1), so the whole scan is O(n).</p>
-<div class="dsa-eg">Example — max sum of any window of size k</div>
+<div class="dsa-eg">Example - max sum of any window of size k</div>
 <div class="code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>fixed_window.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>def max_window_sum(nums, k):
@@ -74,11 +75,11 @@
 print(max_window_sum([1, 12, -5, -6, 50, 3], 4))   # 41  (window -6,50,3,... )</code></pre>
 </div>
 <div class="dsa-result"><span class="rk">Output</span>41</div>
-<p class="dsa-note-sm">Never re-sum the whole window — the add-one/drop-one update is what makes it O(n) instead of O(n·k).</p>
+<p class="dsa-note-sm">Never re-sum the whole window - the add-one/drop-one update is what makes it O(n) instead of O(n·k).</p>
 
 <h3 id="variable-window">Sliding window: variable size</h3>
 <p>When the window can grow and shrink to satisfy a condition ("longest substring without repeats", "shortest subarray with sum ≥ target"), use two pointers: <strong>grow the right edge</strong> to include more, and <strong>shrink the left edge</strong> whenever the window breaks the rule. Each index enters and leaves at most once, so it's still O(n).</p>
-<div class="dsa-eg">Example — longest substring of at most 2 distinct characters</div>
+<div class="dsa-eg">Example - longest substring of at most 2 distinct characters</div>
 <div class="code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>variable_window.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>def at_most_two_distinct(s):
@@ -97,11 +98,11 @@ print(max_window_sum([1, 12, -5, -6, 50, 3], 4))   # 41  (window -6,50,3,... )</
 
 print(at_most_two_distinct("eceba"))   # 3  ("ece")</code></pre>
 </div>
-<div class="dsa-note-sm">The whole family — longest/shortest/at-most-k — shares this grow-right, shrink-left skeleton. The condition in the <code>while</code> is all that changes.</div>
+<div class="dsa-note-sm">The whole family - longest/shortest/at-most-k - shares this grow-right, shrink-left skeleton. The condition in the <code>while</code> is all that changes.</div>
 
 <h3 id="prefix-sums">Prefix sums: precompute once, query fast</h3>
-<p>A <strong>prefix sum</strong> array stores cumulative totals: <code>prefix[i]</code> is the sum of the first <code>i</code> elements. Then the sum of any range <code>[l, r]</code> is a single subtraction, <code>prefix[r+1] − prefix[l]</code> — O(1) per query after an O(n) build. This is the right tool when a window <em>won't</em> work (e.g. arrays with negative numbers).</p>
-<div class="dsa-eg">Example — build once, answer ranges in O(1)</div>
+<p>A <strong>prefix sum</strong> array stores cumulative totals: <code>prefix[i]</code> is the sum of the first <code>i</code> elements. Then the sum of any range <code>[l, r]</code> is a single subtraction, <code>prefix[r+1] − prefix[l]</code> - O(1) per query after an O(n) build. This is the right tool when a window <em>won't</em> work (e.g. arrays with negative numbers).</p>
+<div class="dsa-eg">Example - build once, answer ranges in O(1)</div>
 <div class="code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>prefix_sum.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>nums = [3, 1, 4, 1, 5, 9]
@@ -117,21 +118,21 @@ print(prefix[4] - prefix[1])        # 6</code></pre>
 
 <h3 id="prefix-map">Prefix sums + a hash map</h3>
 <p>The most powerful combination: to <em>count</em> subarrays with a target sum, store how many times each prefix sum has occurred in a hash map. A subarray ending here sums to <code>k</code> exactly when some earlier prefix equals <code>running − k</code>. This handles negatives, which sliding windows cannot.</p>
-<div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">Which technique? — and common traps</div><p>Sliding windows need a <em>monotonic</em> condition, which usually means <strong>non-negative</strong> values (adding grows, removing shrinks). With negatives, reach for <strong>prefix sums + a map</strong>. Seed the prefix map with <code>{0: 1}</code> (or <code>{0: -1}</code> for indices) so a whole prefix counts. And remember: a <em>difference array</em> is the inverse of a prefix sum — mark range edges, then integrate once.</p></div></div>
+<div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">Which technique? - and common traps</div><p>Sliding windows need a <em>monotonic</em> condition, which usually means <strong>non-negative</strong> values (adding grows, removing shrinks). With negatives, reach for <strong>prefix sums + a map</strong>. Seed the prefix map with <code>{0: 1}</code> (or <code>{0: -1}</code> for indices) so a whole prefix counts. And remember: a <em>difference array</em> is the inverse of a prefix sum - mark range edges, then integrate once.</p></div></div>
 <h2 id="patterns">2 · Pattern library</h2>
 <p>Almost every problem here is one of these six. Learn the recognition signal and the core move, and the code follows.</p>
 <div class="dsa-patterns">
-<div class="dsa-pattern"><h4><span class="pnum">1</span>Fixed-size window</h4><dl><dt>Signal</dt><dd>"of size k" — max/avg/count over length-k windows</dd><dt>Move</dt><dd>slide: add entering, drop leaving</dd><dt>Cost</dt><dd>O(n) / O(1)</dd></dl></div>
-<div class="dsa-pattern"><h4><span class="pnum">2</span>Variable window — longest</h4><dl><dt>Signal</dt><dd>"longest substring/subarray with a property"</dd><dt>Move</dt><dd>grow right; shrink left while invalid</dd><dt>Cost</dt><dd>O(n) / O(k)</dd></dl></div>
-<div class="dsa-pattern"><h4><span class="pnum">3</span>Variable window — shortest / count</h4><dl><dt>Signal</dt><dd>"shortest ≥ target", "count subarrays with…"</dd><dt>Move</dt><dd>shrink greedily; or atMost(k) − atMost(k−1)</dd><dt>Cost</dt><dd>O(n) / O(k)</dd></dl></div>
+<div class="dsa-pattern"><h4><span class="pnum">1</span>Fixed-size window</h4><dl><dt>Signal</dt><dd>"of size k" - max/avg/count over length-k windows</dd><dt>Move</dt><dd>slide: add entering, drop leaving</dd><dt>Cost</dt><dd>O(n) / O(1)</dd></dl></div>
+<div class="dsa-pattern"><h4><span class="pnum">2</span>Variable window - longest</h4><dl><dt>Signal</dt><dd>"longest substring/subarray with a property"</dd><dt>Move</dt><dd>grow right; shrink left while invalid</dd><dt>Cost</dt><dd>O(n) / O(k)</dd></dl></div>
+<div class="dsa-pattern"><h4><span class="pnum">3</span>Variable window - shortest / count</h4><dl><dt>Signal</dt><dd>"shortest ≥ target", "count subarrays with…"</dd><dt>Move</dt><dd>shrink greedily; or atMost(k) − atMost(k−1)</dd><dt>Cost</dt><dd>O(n) / O(k)</dd></dl></div>
 <div class="dsa-pattern"><h4><span class="pnum">4</span>Prefix sum + hash map</h4><dl><dt>Signal</dt><dd>"count/exists subarray summing to k" (negatives allowed)</dd><dt>Store</dt><dd>prefix sum (or remainder/balance) → count / index</dd><dt>Cost</dt><dd>O(n) / O(n)</dd></dl></div>
 <div class="dsa-pattern"><h4><span class="pnum">5</span>Prefix arrays &amp; difference arrays</h4><dl><dt>Signal</dt><dd>many range-sum queries; many range updates</dd><dt>Store</dt><dd>1D/2D prefix; or edge marks to integrate</dd><dt>Cost</dt><dd>build O(n) / query O(1)</dd></dl></div>
 <div class="dsa-pattern"><h4><span class="pnum">6</span>Monotonic deque</h4><dl><dt>Signal</dt><dd>window max/min, or window bounded by max−min</dd><dt>Store</dt><dd>deque of indices with monotone values</dd><dt>Cost</dt><dd>O(n) / O(k)</dd></dl></div>
 </div>
-<h2 id="ladder">3 · Problem ladder — 34</h2>
+<h2 id="ladder">3 · Problem ladder - 34</h2>
 <p>Grouped into <strong>Easy → Medium → Hard</strong> tiers, and inside each tier ordered so patterns build on one another. Every solution is complete and tested in LeetCode's <code>class Solution</code> format. Expand a row for the full write-up; use <span class="dsa-kbd">🙈 Practice mode</span> to hide solutions and rebuild from the pattern.</p>
 <div class="dsa-ladder">
-<div class="dsa-tier"><span class="tdot easy"></span>Tier 1 · Easy — prefix sums & fixed windows <span class="cnt">(7)</span></div>
+<div class="dsa-tier"><span class="tdot easy"></span>Tier 1 · Easy - prefix sums & fixed windows <span class="cnt">(7)</span></div>
 <details class="dsa-prob" id="lc-1480" data-pid="lc-1480">
 <summary>
 <span class="p-idx">1</span>
@@ -170,9 +171,9 @@ class Solution:
 </summary>
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Answer many <code>sumRange(left, right)</code> queries on a fixed array, each returning the inclusive range sum. <a href="https://leetcode.com/problems/range-sum-query-immutable/" target="_blank" rel="noopener">LeetCode 303 ↗</a></p>
-<p class="wu-clarify"><strong>Clarify:</strong> Array is immutable? (Yes.) Many queries? (Yes — so precompute.)</p>
+<p class="wu-clarify"><strong>Clarify:</strong> Array is immutable? (Yes.) Many queries? (Yes - so precompute.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Summing each query is O(n); too slow for many.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Precompute prefix sums; any range is one subtraction.</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> Build a prefix array once (<code>prefix[i]</code> = sum of the first <code>i</code> elements, with a leading 0). Then a range sum is <code>prefix[right+1] − prefix[left]</code> — constant time per query. Build once, query fast.</p>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Build a prefix array once (<code>prefix[i]</code> = sum of the first <code>i</code> elements, with a leading 0). Then a range sum is <code>prefix[right+1] − prefix[left]</code> - constant time per query. Build once, query fast.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>range_sum.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from typing import List
@@ -216,7 +217,7 @@ class Solution:
         return -1
 </code></pre>
 </div>
-<p><strong>Time</strong> O(n) · <strong>Space</strong> O(1). A prefix-sum classic that needs no extra array — just a running total.</p>
+<p><strong>Time</strong> O(n) · <strong>Space</strong> O(1). A prefix-sum classic that needs no extra array - just a running total.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-643" data-pid="lc-643">
@@ -229,7 +230,7 @@ class Solution:
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Return the maximum average of any contiguous subarray of length <code>k</code>. <a href="https://leetcode.com/problems/maximum-average-subarray-i/" target="_blank" rel="noopener">LeetCode 643 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Fixed length k? (Yes.) Return a float average? (Yes.)</p>
-<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Compute the first window's sum, then slide it one step at a time.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Sliding = add the entering element, subtract the leaving one — O(1) per step.</div></details></div>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Compute the first window's sum, then slide it one step at a time.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Sliding = add the entering element, subtract the leaving one - O(1) per step.</div></details></div>
 <p class="wu-approach"><span class="wu-section">How to think about it</span> The canonical fixed-window move. Sum the first <code>k</code> elements, then slide: each step adds the new element and drops the one that left the window, keeping the sum in O(1). Track the maximum sum and divide by <code>k</code> at the end.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>max_average.py</span><button class="copy-btn">Copy</button></div>
@@ -286,7 +287,7 @@ class Solution:
 <p class="wu-clarify"><strong>Problem.</strong> Return whether two equal values exist within index distance <code>k</code>. <a href="https://leetcode.com/problems/contains-duplicate-ii/" target="_blank" rel="noopener">LeetCode 219 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Indices within k of each other? (Yes.) Any pair? (Yes.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">For each value, only the most recent index matters.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Store value → last index; on a repeat, check the gap against k.</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> Keep a map from each value to its most recent index — effectively a window of the last occurrence. On revisiting a value, if the index gap is ≤ <code>k</code>, return True; otherwise update its index.</p>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Keep a map from each value to its most recent index - effectively a window of the last occurrence. On revisiting a value, if the index gap is ≤ <code>k</code>, return True; otherwise update its index.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>contains_dup_ii.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from typing import List
@@ -313,7 +314,7 @@ class Solution:
 </summary>
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Replace each number with the sum of the next <code>k</code> numbers (or previous <code>|k|</code>) in a circular array; 0 means all zeros. <a href="https://leetcode.com/problems/defuse-the-bomb/" target="_blank" rel="noopener">LeetCode 1652 ↗</a></p>
-<p class="wu-clarify"><strong>Clarify:</strong> Array is circular? (Yes — wrap with modulo.) k can be negative? (Yes — look backward.)</p>
+<p class="wu-clarify"><strong>Clarify:</strong> Array is circular? (Yes - wrap with modulo.) k can be negative? (Yes - look backward.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">For each index, sum the next k (or previous |k|) values, wrapping with modulo.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">k = 0 means the answer is all zeros.</div></details></div>
 <p class="wu-approach"><span class="wu-section">How to think about it</span> A circular fixed-size window. For each position, sum the appropriate <code>k</code> neighbours, using <code>index % n</code> to wrap around the ends. (A sliding sum reduces it to O(n); the direct O(n·k) version is clearest here.)</p>
 <div class="wu-solution code-block">
@@ -339,7 +340,7 @@ class Solution:
 <p><strong>Time</strong> O(n·k) · <strong>Space</strong> O(n). The modulo wrap is the whole trick for circular windows.</p>
 </div>
 </details>
-<div class="dsa-tier"><span class="tdot medium"></span>Tier 2 · Medium — variable windows, prefix maps, 2D <span class="cnt">(24)</span></div>
+<div class="dsa-tier"><span class="tdot medium"></span>Tier 2 · Medium - variable windows, prefix maps, 2D <span class="cnt">(24)</span></div>
 <details class="dsa-prob" id="lc-3" data-pid="lc-3">
 <summary>
 <span class="p-idx">8</span>
@@ -575,7 +576,7 @@ class Solution:
 </summary>
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Count length-<code>k</code> subarrays whose average is at least <code>threshold</code>. <a href="https://leetcode.com/problems/number-of-sub-arrays-of-size-k-and-average-greater-than-or-equal-to-threshold/" target="_blank" rel="noopener">LeetCode 1343 ↗</a></p>
-<p class="wu-clarify"><strong>Clarify:</strong> Fixed length k? (Yes.) Average ≥ threshold means sum ≥ k·threshold? (Yes — avoid floats.)</p>
+<p class="wu-clarify"><strong>Clarify:</strong> Fixed length k? (Yes.) Average ≥ threshold means sum ≥ k·threshold? (Yes - avoid floats.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Average ≥ threshold ⟺ window sum ≥ k × threshold.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Slide the window sum and count when it clears the target.</div></details></div>
 <p class="wu-approach"><span class="wu-section">How to think about it</span> Turn the average test into a sum test: sum ≥ <code>k × threshold</code>. Slide a fixed window of size <code>k</code>, incrementing the count whenever the window sum clears that target. Comparing sums avoids floating-point issues.</p>
 <div class="wu-solution code-block">
@@ -680,7 +681,7 @@ class Solution:
 </summary>
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Given positive numbers and a target, return the shortest subarray length with sum ≥ target, or 0. <a href="https://leetcode.com/problems/minimum-size-subarray-sum/" target="_blank" rel="noopener">LeetCode 209 ↗</a></p>
-<p class="wu-clarify"><strong>Clarify:</strong> All values positive? (Yes — enables the window.) Shortest length? (Yes.)</p>
+<p class="wu-clarify"><strong>Clarify:</strong> All values positive? (Yes - enables the window.) Shortest length? (Yes.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Grow the window until the sum reaches target.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Then shrink from the left while still ≥ target, recording the length.</div></details></div>
 <p class="wu-approach"><span class="wu-section">How to think about it</span> A shortest-window search. Extend the right edge accumulating the sum; whenever it reaches the target, record the length and shrink from the left to find the tightest valid window. Positivity makes the sum monotonic under growth and shrink.</p>
 <div class="wu-solution code-block">
@@ -714,7 +715,7 @@ class Solution:
 <p class="wu-clarify"><strong>Problem.</strong> Count contiguous subarrays whose product is strictly less than <code>k</code>. <a href="https://leetcode.com/problems/subarray-product-less-than-k/" target="_blank" rel="noopener">LeetCode 713 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> All values positive? (Yes.) Strictly less than k? (Yes.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Grow the window; when the product reaches k, shrink from the left.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">For each right end, the number of valid subarrays is the current window length.</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> Slide a window keeping the product of its elements. When the product reaches <code>k</code>, divide out the left elements until it drops below. For each right endpoint, every subarray ending there and starting within the window is valid — add <code>right − left + 1</code>.</p>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Slide a window keeping the product of its elements. When the product reaches <code>k</code>, divide out the left elements until it drops below. For each right endpoint, every subarray ending there and starting within the window is valid - add <code>right − left + 1</code>.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>product_less_k.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from typing import List
@@ -809,7 +810,7 @@ class Solution:
 </summary>
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Count contiguous subarrays whose sum equals <code>k</code>. <a href="https://leetcode.com/problems/subarray-sum-equals-k/" target="_blank" rel="noopener">LeetCode 560 ↗</a></p>
-<p class="wu-clarify"><strong>Clarify:</strong> Negatives allowed? (Yes — rules out a plain window.) Count, not list? (Count.)</p>
+<p class="wu-clarify"><strong>Clarify:</strong> Negatives allowed? (Yes - rules out a plain window.) Count, not list? (Count.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">A subarray sum is prefix[j] − prefix[i]; you want it to equal k.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Track counts of prefix sums; add how many earlier prefixes equal running − k.</div></details></div>
 <p class="wu-approach"><span class="wu-section">How to think about it</span> The prefix-sum + hashmap pattern (needed here because negatives break sliding windows). A subarray ending now sums to <code>k</code> when some earlier prefix equals <code>running − k</code>. Keep a map of prefix-sum → count (seed <code>{0:1}</code>) and add the needed count at each step.</p>
 <div class="wu-solution code-block">
@@ -841,7 +842,7 @@ class Solution:
 </summary>
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Count contiguous subarrays whose sum is divisible by <code>k</code>. <a href="https://leetcode.com/problems/subarray-sums-divisible-by-k/" target="_blank" rel="noopener">LeetCode 974 ↗</a></p>
-<p class="wu-clarify"><strong>Clarify:</strong> Negatives allowed? (Yes — normalise the remainder.) Count? (Yes.)</p>
+<p class="wu-clarify"><strong>Clarify:</strong> Negatives allowed? (Yes - normalise the remainder.) Count? (Yes.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Two prefixes with the same remainder mod k bound a divisible subarray.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Count occurrences of each remainder; add the running count of the current one.</div></details></div>
 <p class="wu-approach"><span class="wu-section">How to think about it</span> A remainder-keyed prefix map. Two prefix sums with equal remainder mod <code>k</code> enclose a subarray divisible by <code>k</code>. Track remainder counts (seed <code>{0:1}</code>); Python's <code>%</code> keeps remainders non-negative, handling negatives automatically.</p>
 <div class="wu-solution code-block">
@@ -874,7 +875,7 @@ class Solution:
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Return whether there is a subarray of length ≥ 2 with sum a multiple of <code>k</code>. <a href="https://leetcode.com/problems/continuous-subarray-sum/" target="_blank" rel="noopener">LeetCode 523 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Length at least 2? (Yes.) A multiple includes 0·k? (Yes.)</p>
-<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Same remainder trick — two equal remainders bound a multiple of k.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Store the earliest index per remainder and require the gap ≥ 2.</div></details></div>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Same remainder trick - two equal remainders bound a multiple of k.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Store the earliest index per remainder and require the gap ≥ 2.</div></details></div>
 <p class="wu-approach"><span class="wu-section">How to think about it</span> Track the running sum mod <code>k</code> and remember the earliest index for each remainder (seed <code>{0:-1}</code>). When a remainder repeats with an index gap ≥ 2, a valid subarray exists. Keeping the earliest index maximises the chance of a length-≥-2 span.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>continuous_subarray.py</span><button class="copy-btn">Copy</button></div>
@@ -908,7 +909,7 @@ class Solution:
 <p class="wu-clarify"><strong>Problem.</strong> Given a binary array, return the longest subarray with equal numbers of 0s and 1s. <a href="https://leetcode.com/problems/contiguous-array/" target="_blank" rel="noopener">LeetCode 525 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Equal count of 0s and 1s? (Yes.) Only 0/1? (Yes.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Treat 0 as −1; 'equal counts' becomes 'subarray sum 0'.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Two indices with the same running balance bound such a subarray.</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> Reframe by treating 0 as −1, so a balanced subarray has sum 0 — meaning two positions with the same running balance. Record the earliest index per balance value (seed <code>{0:-1}</code>) and take the largest span between equal balances.</p>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Reframe by treating 0 as −1, so a balanced subarray has sum 0 - meaning two positions with the same running balance. Record the earliest index per balance value (seed <code>{0:-1}</code>) and take the largest span between equal balances.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>contiguous_array.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from typing import List
@@ -961,7 +962,7 @@ class Solution:
         return at_most(k) - at_most(k - 1)   # exactly k odds
 </code></pre>
 </div>
-<p><strong>Time</strong> O(n) · <strong>Space</strong> O(1). Same at-most identity as Binary Subarrays With Sum — a reusable counting tool.</p>
+<p><strong>Time</strong> O(n) · <strong>Space</strong> O(1). Same at-most identity as Binary Subarrays With Sum - a reusable counting tool.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-238" data-pid="lc-238">
@@ -972,10 +973,10 @@ class Solution:
 <span class="p-sub">Prefix × suffix products</span>
 </summary>
 <div class="p-body">
-<p class="wu-clarify"><strong>Problem.</strong> Return an array where each position holds the product of all other elements — no division, O(n). <a href="https://leetcode.com/problems/product-of-array-except-self/" target="_blank" rel="noopener">LeetCode 238 ↗</a></p>
-<p class="wu-clarify"><strong>Clarify:</strong> Zeros allowed? (Yes — why division is banned.) Output counts as space? (No.)</p>
+<p class="wu-clarify"><strong>Problem.</strong> Return an array where each position holds the product of all other elements - no division, O(n). <a href="https://leetcode.com/problems/product-of-array-except-self/" target="_blank" rel="noopener">LeetCode 238 ↗</a></p>
+<p class="wu-clarify"><strong>Clarify:</strong> Zeros allowed? (Yes - why division is banned.) Output counts as space? (No.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">The answer at i is (product left of i) × (product right of i).</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">One left-to-right pass writes prefixes; a right-to-left pass multiplies in suffixes.</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> Prefix and suffix products — the multiplicative cousin of prefix sums. First pass: <code>out[i]</code> = product of everything before <code>i</code>. Second pass backward: multiply in a running product of everything after <code>i</code>. Two scalars, no division.</p>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Prefix and suffix products - the multiplicative cousin of prefix sums. First pass: <code>out[i]</code> = product of everything before <code>i</code>. Second pass backward: multiply in a running product of everything after <code>i</code>. Two scalars, no division.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>product_except.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from typing import List
@@ -1007,7 +1008,7 @@ class Solution:
 </summary>
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Answer many queries for the sum of a rectangular submatrix of a fixed grid. <a href="https://leetcode.com/problems/range-sum-query-2d-immutable/" target="_blank" rel="noopener">LeetCode 304 ↗</a></p>
-<p class="wu-clarify"><strong>Clarify:</strong> Matrix immutable? (Yes.) Many queries? (Yes — precompute.)</p>
+<p class="wu-clarify"><strong>Clarify:</strong> Matrix immutable? (Yes.) Many queries? (Yes - precompute.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Build a 2D prefix grid where pre[r][c] is the sum of the rectangle from (0,0) to (r−1,c−1).</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">A rectangle sum is one addition and two subtractions (inclusion–exclusion).</div></details></div>
 <p class="wu-approach"><span class="wu-section">How to think about it</span> Extend prefix sums to 2D. <code>pre[r+1][c+1]</code> holds the sum of the top-left rectangle up to <code>(r,c)</code>, built with inclusion–exclusion. Any query rectangle is then computed as <code>bottom-right − top-strip − left-strip + double-counted-corner</code> in O(1).</p>
 <div class="wu-solution code-block">
@@ -1041,7 +1042,7 @@ class NumMatrix:
 <p class="wu-clarify"><strong>Problem.</strong> Apply many 'add <code>seats</code> to flights <code>first..last</code>' updates and return the final per-flight totals. <a href="https://leetcode.com/problems/corporate-flight-bookings/" target="_blank" rel="noopener">LeetCode 1109 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Many range updates, one final read? (Yes.) 1-indexed flights? (Yes.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Instead of updating every flight in a range, mark the start and just-after-end.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">A prefix sum over those marks reconstructs the totals.</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> A difference array: for each booking add <code>seats</code> at the start index and subtract it just past the end. A single prefix-sum pass over the diff array then reconstructs each flight's total — turning many O(range) updates into O(1) each plus one O(n) sweep.</p>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> A difference array: for each booking add <code>seats</code> at the start index and subtract it just past the end. A single prefix-sum pass over the diff array then reconstructs each flight's total - turning many O(range) updates into O(1) each plus one O(n) sweep.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>flight_bookings.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from typing import List
@@ -1060,7 +1061,7 @@ class Solution:
         return res
 </code></pre>
 </div>
-<p><strong>Time</strong> O(n + bookings) · <strong>Space</strong> O(n). Difference arrays are the inverse of prefix sums — mark edges, integrate once.</p>
+<p><strong>Time</strong> O(n + bookings) · <strong>Space</strong> O(n). Difference arrays are the inverse of prefix sums - mark edges, integrate once.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-1094" data-pid="lc-1094">
@@ -1072,7 +1073,7 @@ class Solution:
 </summary>
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Given trips (passengers, start, end) and a capacity, return whether the car never exceeds capacity. <a href="https://leetcode.com/problems/car-pooling/" target="_blank" rel="noopener">LeetCode 1094 ↗</a></p>
-<p class="wu-clarify"><strong>Clarify:</strong> Passengers board at start, leave at end? (Yes.) Locations bounded? (Yes — small range.)</p>
+<p class="wu-clarify"><strong>Clarify:</strong> Passengers board at start, leave at end? (Yes.) Locations bounded? (Yes - small range.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Mark +passengers at each start and −passengers at each end on a timeline.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Sweep the timeline; if the running count ever exceeds capacity, fail.</div></details></div>
 <p class="wu-approach"><span class="wu-section">How to think about it</span> A difference array over locations: add passengers at the start location, subtract at the end. Sweep the timeline accumulating the running occupancy; if it ever exceeds capacity, the trip is infeasible. Same edge-mark-then-integrate idea as flight bookings.</p>
 <div class="wu-solution code-block">
@@ -1106,7 +1107,7 @@ class Solution:
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Return the longest subarray where the difference between its max and min is at most <code>limit</code>. <a href="https://leetcode.com/problems/longest-continuous-subarray-with-absolute-diff-less-than-or-equal-to-limit/" target="_blank" rel="noopener">LeetCode 1438 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Absolute diff of max and min ≤ limit? (Yes.) Contiguous? (Yes.)</p>
-<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">You need the current window's max and min quickly.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Maintain two monotonic deques — one decreasing (max), one increasing (min) — and shrink when max − min > limit.</div></details></div>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">You need the current window's max and min quickly.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Maintain two monotonic deques - one decreasing (max), one increasing (min) - and shrink when max − min > limit.</div></details></div>
 <p class="wu-approach"><span class="wu-section">How to think about it</span> Track the window's max and min with two monotonic deques of indices: a decreasing deque gives the max at its front, an increasing deque gives the min. Grow the window; whenever <code>max − min &gt; limit</code>, advance the left edge and pop indices that fall out. The largest valid window is the answer.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>abs_diff_limit.py</span><button class="copy-btn">Copy</button></div>
@@ -1134,10 +1135,10 @@ class Solution:
         return best
 </code></pre>
 </div>
-<p><strong>Time</strong> O(n) · <strong>Space</strong> O(n). Two monotonic deques give O(1) amortised window max/min — the same tool as Sliding Window Maximum.</p>
+<p><strong>Time</strong> O(n) · <strong>Space</strong> O(n). Two monotonic deques give O(1) amortised window max/min - the same tool as Sliding Window Maximum.</p>
 </div>
 </details>
-<div class="dsa-tier"><span class="tdot hard"></span>Tier 3 · Hard — deques & exact-count windows <span class="cnt">(3)</span></div>
+<div class="dsa-tier"><span class="tdot hard"></span>Tier 3 · Hard - deques & exact-count windows <span class="cnt">(3)</span></div>
 <details class="dsa-prob" id="lc-76" data-pid="lc-76">
 <summary>
 <span class="p-idx">32</span>
@@ -1189,7 +1190,7 @@ class Solution:
 </summary>
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Return the maximum of every contiguous window of size <code>k</code>. <a href="https://leetcode.com/problems/sliding-window-maximum/" target="_blank" rel="noopener">LeetCode 239 ↗</a></p>
-<p class="wu-clarify"><strong>Clarify:</strong> Fixed window size k? (Yes.) O(n) expected? (Yes — a heap is O(n log n).)</p>
+<p class="wu-clarify"><strong>Clarify:</strong> Fixed window size k? (Yes.) O(n) expected? (Yes - a heap is O(n log n).)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">A heap works but is O(n log k). Can you get O(1) amortised per window?</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Keep a deque of indices with decreasing values; the front is always the window max.</div></details></div>
 <p class="wu-approach"><span class="wu-section">How to think about it</span> Maintain a deque of indices whose values are decreasing. Before adding a new index, pop smaller values off the back (they can never be the max while the new one is in the window). Drop the front if it falls outside the window. The front index always holds the current window's maximum.</p>
 <div class="wu-solution code-block">
@@ -1212,7 +1213,7 @@ class Solution:
         return res
 </code></pre>
 </div>
-<p><strong>Time</strong> O(n) · <strong>Space</strong> O(k). Each index is pushed and popped once — the monotonic-deque workhorse.</p>
+<p><strong>Time</strong> O(n) · <strong>Space</strong> O(k). Each index is pushed and popped once - the monotonic-deque workhorse.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-992" data-pid="lc-992">
@@ -1259,7 +1260,7 @@ class Solution:
 <ul>
 <li><strong>Window or prefix?</strong> Non-negative values and a monotonic condition → sliding window. Negatives or "count subarrays with sum = k" → prefix sums + a map.</li>
 <li><strong>Fixed vs variable window:</strong> "of size k" is fixed (add/drop one); "longest/shortest with a property" is variable (grow right, shrink left).</li>
-<li><strong>Counting exactly k:</strong> use <code>atMost(k) − atMost(k−1)</code> — two window passes.</li>
+<li><strong>Counting exactly k:</strong> use <code>atMost(k) − atMost(k−1)</code> - two window passes.</li>
 <li><strong>Seed the prefix map</strong> with <code>{0: 1}</code> (counts) or <code>{0: -1}</code> (indices) so a whole prefix is handled.</li>
 <li><strong>Range updates?</strong> Reach for a difference array; range queries? a prefix array (1D or 2D with inclusion–exclusion). Window max/min? a monotonic deque.</li>
 </ul>
@@ -1288,7 +1289,7 @@ class Solution:
 <h3 id="concept-checks">Concept checks</h3>
 <div class="quiz">
 <div class="q">Why does a sliding window fail for "count subarrays with sum = k" when the array has negatives?</div>
-<div class="opt" data-correct="true">Adding an element no longer only increases the sum, so shrinking/growing isn't monotonic — the window can't decide when to move</div>
+<div class="opt" data-correct="true">Adding an element no longer only increases the sum, so shrinking/growing isn't monotonic - the window can't decide when to move</div>
 <div class="opt" data-correct="false">Because negatives make the array unsorted</div>
 <div class="opt" data-correct="false">Because Python can't sum negative numbers efficiently</div>
 <div class="explain">Sliding windows rely on a monotonic response: growing the window changes the metric in one direction. Negatives break that (a later element can lower the sum), so you can't know whether to move the left edge. Prefix sums + a hash map handle it instead.</div>
@@ -1315,5 +1316,5 @@ class Solution:
 <a class="prev" href="06-two-pointers.html"><div class="dir">← Previous</div><div class="ttl">06 · Two Pointers</div></a>
 <a class="next" href="08-stacks-queues-deques.html"><div class="dir">Next →</div><div class="ttl">08 · Stacks, Queues &amp; Deques</div></a>
 </div>
-</main><div class="toc-rail"><nav class="toc"></nav></div></div></div></div><script src="../assets/app.js?v=20260731b"></script><script src="../assets/sitenav.js?v=20260804b"></script><script src="../assets/enhance.js?v=20260804a"></script><script src="../assets/dsa-question-bank.js?v=20260727c"></script><script src="../assets/dsa-prep.js?v=20260727c"></script></body></html>
+</main><div class="toc-rail"><nav class="toc"></nav></div></div></div></div><script src="../assets/app.js?v=20260925c"></script><script src="../assets/sitenav.js?v=20260925a"></script><script src="../assets/enhance.js?v=20260925c"></script><script src="../assets/dsa-question-bank.js?v=20260727c"></script><script src="../assets/dsa-prep.js?v=20260727c"></script></body></html>
 <script src="../assets/genai-motion.js?v=20260728a"></script>

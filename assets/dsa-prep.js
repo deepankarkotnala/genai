@@ -1,5 +1,5 @@
 /* =========================================================================
-   DSA Interview Preparation — progress, filters, practice mode
+   DSA Interview Preparation - progress, filters, practice mode
    Pure vanilla JS. Offline-safe. All content is meaningful without JS;
    this layer only adds progress tracking, filtering and practice tooling.
 
@@ -159,7 +159,7 @@
      Marks the pattern-defining problems most asked at FAANG/MAANG and major
      India companies, so learners can prioritise the highest-leverage practice.
      The curated set lives in dsa-question-bank.js (window.DSA_INTERVIEW_MUST). */
-  var MUST_TIP = "High-frequency interview problem — commonly asked at FAANG/MAANG and major India companies. Prioritise these to learn the core patterns fast.";
+  var MUST_TIP = "High-frequency interview problem - commonly asked at FAANG/MAANG and major India companies. Prioritise these to learn the core patterns fast.";
   function markInterviewMust() {
     var must = window.DSA_INTERVIEW_MUST;
     if (!must || !must.length) return;
@@ -188,7 +188,7 @@
     if (marked && ladder && !document.querySelector(".dsa-must-legend")) {
       var legend = document.createElement("p");
       legend.className = "dsa-must-legend";
-      legend.innerHTML = '<span class="p-must" aria-hidden="true">★</span> marks <strong>high-frequency interview problems</strong> — the pattern-defining questions most asked at FAANG/MAANG and major India companies. Short on time? Start with these.';
+      legend.innerHTML = '<span class="p-must" aria-hidden="true">★</span> marks <strong>high-frequency interview problems</strong> - the pattern-defining questions most asked at FAANG/MAANG and major India companies. Short on time? Start with these.';
       ladder.insertAdjacentElement("beforebegin", legend);
     }
   }
@@ -209,7 +209,7 @@
       var cp = chapterProgress(row.getAttribute("data-chapter"), bank);
       var badge = row.querySelector("[data-chapter-progress]");
       var dot = row.querySelector(".dsa-state-dot");
-      if (cp && badge) badge.textContent = cp.total ? (cp.solved + "/" + cp.total + " solved") : "—";
+      if (cp && badge) badge.textContent = cp.total ? (cp.solved + "/" + cp.total + " solved") : " - ";
       if (cp && dot) {
         dot.className = "dsa-state-dot" + (cp.total && cp.solved === cp.total ? " solved" : (cp.solved > 0 ? " learning" : ""));
       }
@@ -253,7 +253,7 @@
      `02-arrays.html#lc-217`. Each problem is a <details> that is closed by
      default, so the browser's native anchor jump lands on a collapsed element
      and the reader sees a summary line with no write-up. This opens the match
-     first, then scrolls — and it runs on `hashchange` as well as at load so the
+     first, then scrolls - and it runs on `hashchange` as well as at load so the
      browser's Back and Forward buttons behave the same as a fresh visit.
 
      `scrollIntoView` (not `location.hash =`) because the hash is already set by
@@ -277,7 +277,7 @@
     for (var i = 0; i < probs.length; i += 1) {
       if (probs[i].getAttribute("data-pid") === id) { target = probs[i]; break; }
     }
-    // Not a problem id — a section anchor, a stale link, or nothing at all.
+    // Not a problem id - a section anchor, a stale link, or nothing at all.
     // Leave the browser's own handling alone rather than guessing.
     if (!target) return;
 
@@ -290,7 +290,7 @@
     }
 
     // Opening the <details> reflows everything below it, so scroll on the next
-    // frame — measuring before the reflow scrolls to where the element *was*.
+    // frame - measuring before the reflow scrolls to where the element *was*.
     window.requestAnimationFrame(function () {
       target.scrollIntoView({ block: "start", behavior: "auto" });
     });

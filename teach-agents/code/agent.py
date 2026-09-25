@@ -1,5 +1,5 @@
 """
-Mini Anomaly Detector — your first agent.
+Mini Anomaly Detector - your first agent.
 
 A hands-on, free version of EnM scenario #2 (Anomaly Prediction).
 
@@ -26,7 +26,7 @@ DATA_FILE = "sensor_data.csv"
 
 
 # ----------------------------------------------------------------------------- #
-#  TOOLS  -- the things the agent can DO. The agent's power = the sum of these.
+# TOOLS  -- the things the agent can DO. The agent's power = the sum of these.
 # ----------------------------------------------------------------------------- #
 
 def load_data(path=DATA_FILE):
@@ -69,7 +69,7 @@ TOOLS = {
 
 
 # ----------------------------------------------------------------------------- #
-#  THE BRAIN  -- decides the next action given the goal + history so far.
+# THE BRAIN  -- decides the next action given the goal + history so far.
 # ----------------------------------------------------------------------------- #
 
 SYSTEM_PROMPT = """You are a plant reliability agent. Goal: find anomalies in sensor data
@@ -128,7 +128,7 @@ def get_brain():
 
 
 # ----------------------------------------------------------------------------- #
-#  THE AGENT LOOP  -- this is the whole idea of an agent, in ~15 lines.
+# THE AGENT LOOP  -- this is the whole idea of an agent, in ~15 lines.
 # ----------------------------------------------------------------------------- #
 
 def run(max_steps=12):

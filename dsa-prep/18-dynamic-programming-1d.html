@@ -1,38 +1,39 @@
-<!DOCTYPE html><html data-theme="light" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1" name="viewport"/><meta content="#f4f5f8" name="theme-color"/><title>18 · Dynamic Programming — 1D — DSA Interview Preparation</title><link href="../assets/brand/favicon.svg?v=20260727c" rel="icon" type="image/svg+xml"/>
+<!DOCTYPE html><html data-theme="light" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1" name="viewport"/><meta content="#f4f5f8" name="theme-color"/><title>18 · Dynamic Programming | 1D | DSA Interview Preparation</title><link href="../assets/brand/favicon.svg?v=20260925b" rel="icon" type="image/svg+xml"/>
 <!-- Theme before first paint. Without this the document paints with the light
      tokens and only flips when app.js runs at the end of <body>, which is a
      white flash on every navigation in dark mode. Mirrors app.js's getTheme()
-     exactly — same key, same "light" default — so the pre-paint value can never
+     exactly - same key, same "light" default - so the pre-paint value can never
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "s" on phones and "xs" above 860px, unknown width -> "wide", unknown align -> "left". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var mob=!!(window.matchMedia&&window.matchMedia("(max-width:860px)").matches);var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(mob?"s":"xs");var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition — CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20260805a" rel="stylesheet"/><link href="../assets/office-theme.css?v=20260805c" rel="stylesheet"/><link href="../assets/dsa-prep.css?v=20260804a" rel="stylesheet"/>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260805a" rel="stylesheet"/><link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/><link href="../assets/dsa-prep.css?v=20260804a" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
-<link href="../assets/brand/favicon-32.png?v=20260727c" rel="icon" sizes="32x32" type="image/png"/>
-<link href="../assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
-<link href="../assets/brand/favicon.ico?v=20260727c" rel="shortcut icon"/>
-<link href="../assets/brand/apple-touch-icon.png?v=20260727c" rel="apple-touch-icon" sizes="180x180"/>
-<link href="../assets/brand/site.webmanifest?v=20260727c" rel="manifest"/>
-<link color="#6f47f5" href="../assets/brand/safari-pinned-tab.svg?v=20260727c" rel="mask-icon"/>
-<meta content="../assets/brand/browserconfig.xml?v=20260727c" name="msapplication-config"/>
+<link href="../assets/brand/favicon-32.png?v=20260925b" rel="icon" sizes="32x32" type="image/png"/>
+<link href="../assets/brand/favicon-16.png?v=20260925b" rel="icon" sizes="16x16" type="image/png"/>
+<link href="../assets/brand/favicon.ico?v=20260925b" rel="shortcut icon"/>
+<link href="../assets/brand/apple-touch-icon.png?v=20260925b" rel="apple-touch-icon" sizes="180x180"/>
+<link href="../assets/brand/site.webmanifest?v=20260925b" rel="manifest"/>
+<link color="#6f47f5" href="../assets/brand/safari-pinned-tab.svg?v=20260925b" rel="mask-icon"/>
+<meta content="../assets/brand/browserconfig.xml?v=20260925b" name="msapplication-config"/>
 <meta content="#2563eb" name="msapplication-TileColor"/>
-<meta content="Switch job" name="application-name"/>
-<meta content="Switch job" name="apple-mobile-web-app-title"/><!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+<meta content="Learn GenAI" name="application-name"/>
+<meta content="Learn GenAI" name="apple-mobile-web-app-title"/><!-- Release 2 runtime. The manifest loads first, the renderer second; classic
      deferred scripts execute in document order after parsing, so the nav slot
      exists and the manifest is defined before the renderer runs. The authored
      links inside [data-page-nav] stay in the source and are replaced only after
      page, route and fragment have all resolved. -->
 <script defer src="../assets/curriculum.js?v=20260804c"></script>
 <script defer src="../assets/page-nav.js?v=20260804c"></script>
+<link href="../assets/ir-theme.css?v=20260925c" rel="stylesheet"/>
 </head><body data-curriculum-id="dsa-18" data-page="dsa-chapter"><div class="app"><aside class="sidebar"><div class="brand">
-<a class="brand-link" href="../index.html" aria-label="Switch job home">
-<span class="brand-mark" aria-hidden="true"><img src="../assets/brand/switch-job-logo.png?v=20260727c" alt=""/></span>
-<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+<a class="brand-link" href="../index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
 </a>
-</div><div class="search-wrap"><div class="search-box"><input data-search="" placeholder="Search everything…  ( / )" type="text"/></div><div class="search-results"></div></div><nav class="nav"></nav></aside><div class="backdrop"></div><div class="main"><header class="topbar"><button aria-label="Menu" class="icon-btn menu-btn">☰</button><div class="crumbs">DSA Interview Preparation / 18 · Dynamic Programming — 1D</div><button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button></header><div class="content-wrap"><main class="content">
+</div><div class="search-wrap"><div class="search-box"><input data-search="" placeholder="Search everything…  ( / )" type="text"/></div><div class="search-results"></div></div><nav class="nav"></nav></aside><div class="backdrop"></div><div class="main"><header class="topbar"><button aria-label="Menu" class="icon-btn menu-btn">☰</button><div class="crumbs">DSA Interview Preparation / 18 · Dynamic Programming - 1D</div><button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button></header><div class="content-wrap"><main class="content">
 <div class="eyebrow"><span class="dot"></span> Chapter 18 · Optimization</div>
-<h1>Dynamic Programming — 1D</h1>
-<p class="lead">Dynamic programming solves a problem by breaking it into overlapping subproblems and remembering their answers instead of recomputing them. This chapter builds the core skill on a <em>single</em> dimension: define a state, write the recurrence, pick an order, and — usually — collapse the table to a couple of variables. Master the 1D case here and the 2D chapter becomes a natural extension. Every problem has a full, tested solution in LeetCode's <code>class Solution</code> format.</p>
+<h1>Dynamic Programming - 1D</h1>
+<p class="lead">Dynamic programming solves a problem by breaking it into overlapping subproblems and remembering their answers instead of recomputing them. This chapter builds the core skill on a <em>single</em> dimension: define a state, write the recurrence, pick an order, and - usually - collapse the table to a couple of variables. Master the 1D case here and the 2D chapter becomes a natural extension. Every problem has a full, tested solution in LeetCode's <code>class Solution</code> format.</p>
 <div class="dsa-chead">
 <span class="dsa-chapter-no">Outcome</span>
 <p class="dsa-outcome">Define a DP state and recurrence over one dimension, choose the right iteration order (including combinations vs permutations), recognise the classic families (Fibonacci-style, House Robber, Kadane, coin-change/knapsack, string partition, LIS, stock state machines), and reduce space to O(1) when only the last few states matter.</p>
@@ -52,15 +53,15 @@
 <span class="dsa-progress-line" data-dsa-progress="">0 / 28 solved</span>
 </div>
 <h2 id="foundations">1 · Foundations</h2>
-<p class="dsa-note-sm" style="margin-bottom:6px">Read top to bottom — the state/recurrence/order framework is the reusable core of every DP problem. Already fluent? Skip to <a href="#patterns">§2 Pattern library</a>.</p>
+<p class="dsa-note-sm" style="margin-bottom:6px">Read top to bottom - the state/recurrence/order framework is the reusable core of every DP problem. Already fluent? Skip to <a href="#patterns">§2 Pattern library</a>.</p>
 
 <h3 id="what-is-dp">What is dynamic programming?</h3>
 <p><strong>Dynamic programming</strong> applies when a problem has two properties: <strong>overlapping subproblems</strong> (the same smaller problems recur) and <strong>optimal substructure</strong> (an optimal answer is built from optimal answers to those subproblems). DP computes each subproblem once and stores it, turning exponential recursion into polynomial time. The whole method comes down to four questions:</p>
-<div class="dsa-key"><span><b>1. State</b> — what does <code>dp[i]</code> mean? <b>2. Recurrence</b> — how does <code>dp[i]</code> depend on earlier states? <b>3. Base case</b> — what are the smallest states? <b>4. Order</b> — in what sequence can we fill them so dependencies are ready?</span></div>
+<div class="dsa-key"><span><b>1. State</b> - what does <code>dp[i]</code> mean? <b>2. Recurrence</b> - how does <code>dp[i]</code> depend on earlier states? <b>3. Base case</b> - what are the smallest states? <b>4. Order</b> - in what sequence can we fill them so dependencies are ready?</span></div>
 
 <h3 id="memo-vs-tab">Two ways to fill the table: memoization vs tabulation</h3>
 <p><strong>Top-down (memoization)</strong> writes the recursion naturally and caches results. <strong>Bottom-up (tabulation)</strong> fills an array from the base cases forward. They compute the same thing; tabulation avoids recursion limits and makes the space optimisation below obvious. We'll mostly tabulate.</p>
-<div class="dsa-eg">Example — the same recurrence, both ways (Fibonacci)</div>
+<div class="dsa-eg">Example - the same recurrence, both ways (Fibonacci)</div>
 <div class="code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>fib_ways.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from functools import lru_cache
@@ -85,8 +86,8 @@ print(fib_memo(10), fib_tab(10))   # 55 55</code></pre>
 <p class="dsa-note-sm">Both are O(n). The recursion caches each <code>n</code> once; the table computes each <code>dp[i]</code> once. Same subproblems, same work.</p>
 
 <h3 id="space-opt">The 1D space optimisation: keep only what you need</h3>
-<p>When <code>dp[i]</code> depends only on the last one or two states, you don't need the whole array — just those variables. Fibonacci needs two; House Robber needs two; the stock DPs need a fixed handful. This drops O(n) space to O(1) and is expected in interviews once the recurrence is clear.</p>
-<div class="dsa-eg">Example — House Robber, table then rolled to O(1)</div>
+<p>When <code>dp[i]</code> depends only on the last one or two states, you don't need the whole array - just those variables. Fibonacci needs two; House Robber needs two; the stock DPs need a fixed handful. This drops O(n) space to O(1) and is expected in interviews once the recurrence is clear.</p>
+<div class="dsa-eg">Example - House Robber, table then rolled to O(1)</div>
 <div class="code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>rob_roll.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>def rob(nums):
@@ -101,8 +102,8 @@ print(rob([2, 7, 9, 3, 1]))      # 12  (rob houses 2, 9, 1)</code></pre>
 <div class="dsa-result"><span class="rk">Output</span>12</div>
 
 <h3 id="order-matters">Iteration order changes the answer: combinations vs permutations</h3>
-<p>In counting DPs, the loop order can decide <em>what</em> you count. Looping items on the outside counts each combination once (Coin Change II); looping the target on the outside counts every ordering (Combination Sum IV). Same recurrence, different loop nesting, different meaning — a subtlety worth internalising.</p>
-<div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">1D DP pitfalls</div><p>State the meaning of <code>dp[i]</code> in words before coding — a fuzzy state is the #1 source of wrong recurrences. Initialise base cases correctly (<code>dp[0]=1</code> for counting, <code>0</code>/<code>∞</code> for min). In 0/1 knapsack iterate capacity <em>downward</em> so each item is used once; in unbounded knapsack, upward. And watch loop order in counting DPs — it silently switches combinations and permutations.</p></div></div>
+<p>In counting DPs, the loop order can decide <em>what</em> you count. Looping items on the outside counts each combination once (Coin Change II); looping the target on the outside counts every ordering (Combination Sum IV). Same recurrence, different loop nesting, different meaning - a subtlety worth internalising.</p>
+<div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">1D DP pitfalls</div><p>State the meaning of <code>dp[i]</code> in words before coding - a fuzzy state is the #1 source of wrong recurrences. Initialise base cases correctly (<code>dp[0]=1</code> for counting, <code>0</code>/<code>∞</code> for min). In 0/1 knapsack iterate capacity <em>downward</em> so each item is used once; in unbounded knapsack, upward. And watch loop order in counting DPs - it silently switches combinations and permutations.</p></div></div>
 <h2 id="patterns">2 · Pattern library</h2>
 <p>Nearly every 1D DP is one of these six families. Learn the state and recurrence for each, and new problems become 'which family is this?'</p>
 <div class="dsa-patterns">
@@ -113,10 +114,10 @@ print(rob([2, 7, 9, 3, 1]))      # 12  (rob houses 2, 9, 1)</code></pre>
 <div class="dsa-pattern"><h4><span class="pnum">5</span>String / sequence partition</h4><dl><dt>Signal</dt><dd>segment or decode a string, prefix solvable?</dd><dt>Move</dt><dd>dp[i] over split points j &lt; i</dd><dt>Cost</dt><dd>O(n²)</dd></dl></div>
 <div class="dsa-pattern"><h4><span class="pnum">6</span>State-machine DP</h4><dl><dt>Signal</dt><dd>constrained transactions/modes (hold, cooldown, fee)</dd><dt>Move</dt><dd>track a fixed set of states per step</dd><dt>Cost</dt><dd>O(n·states)</dd></dl></div>
 </div>
-<h2 id="ladder">3 · Problem ladder — 28</h2>
+<h2 id="ladder">3 · Problem ladder - 28</h2>
 <p>Grouped into <strong>Easy → Medium → Hard</strong> tiers: rolling recurrences and take-or-skip, then Kadane, coin-change/knapsack, string DP and LIS, then the stock state machines and valid-parentheses DP. Every solution is complete and tested in LeetCode's <code>class Solution</code> format. Expand a row for the full write-up; use <span class="dsa-kbd">🙈 Practice mode</span> to hide solutions and rebuild from the recurrence.</p>
 <div class="dsa-ladder">
-<div class="dsa-tier"><span class="tdot easy"></span>Tier 1 · Easy — rolling recurrences, take-or-skip <span class="cnt">(6)</span></div>
+<div class="dsa-tier"><span class="tdot easy"></span>Tier 1 · Easy - rolling recurrences, take-or-skip <span class="cnt">(6)</span></div>
 <details class="dsa-prob" id="lc-509" data-pid="lc-509">
 <summary>
 <span class="p-idx">1</span>
@@ -127,8 +128,8 @@ print(rob([2, 7, 9, 3, 1]))      # 12  (rob houses 2, 9, 1)</code></pre>
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Return the n-th Fibonacci number, where F(0)=0, F(1)=1, F(n)=F(n−1)+F(n−2). <a href="https://leetcode.com/problems/fibonacci-number/" target="_blank" rel="noopener">LeetCode 509 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> 0-indexed? (Yes.) Iterative to avoid exponential recursion? (Yes.)</p>
-<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Naive recursion recomputes the same values exponentially — the signature DP problem.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Each value depends only on the previous two, so keep just those two.</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> The canonical introduction to DP: the recurrence <code>F(n)=F(n−1)+F(n−2)</code> has overlapping subproblems, so naive recursion is exponential. Since each term needs only the two before it, roll two variables forward — O(n) time, O(1) space. This 'keep the last k states' idea powers most of the chapter.</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Naive recursion recomputes the same values exponentially - the signature DP problem.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Each value depends only on the previous two, so keep just those two.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> The canonical introduction to DP: the recurrence <code>F(n)=F(n−1)+F(n−2)</code> has overlapping subproblems, so naive recursion is exponential. Since each term needs only the two before it, roll two variables forward - O(n) time, O(1) space. This 'keep the last k states' idea powers most of the chapter.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>fibonacci.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>class Solution:
@@ -170,7 +171,7 @@ print(rob([2, 7, 9, 3, 1]))      # 12  (rob houses 2, 9, 1)</code></pre>
         return c
 </code></pre>
 </div>
-<p><strong>Time</strong> O(n) · <strong>Space</strong> O(1). The recurrence's depth sets your state width — three terms back means three variables.</p>
+<p><strong>Time</strong> O(n) · <strong>Space</strong> O(1). The recurrence's depth sets your state width - three terms back means three variables.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-70" data-pid="lc-70">
@@ -184,7 +185,7 @@ print(rob([2, 7, 9, 3, 1]))      # 12  (rob houses 2, 9, 1)</code></pre>
 <p class="wu-clarify"><strong>Problem.</strong> You can climb 1 or 2 steps at a time. Count the distinct ways to reach the top of n steps. <a href="https://leetcode.com/problems/climbing-stairs/" target="_blank" rel="noopener">LeetCode 70 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Steps of size 1 or 2 only? (Yes.) Count distinct ordered sequences? (Yes.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Ways to reach step n = ways to reach n−1 (then +1) plus ways to reach n−2 (then +2).</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">That's exactly the Fibonacci recurrence.</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> The number of ways to reach step <code>n</code> is the ways to reach <code>n−1</code> plus the ways to reach <code>n−2</code> (the last move is +1 or +2) — the Fibonacci recurrence in disguise. Roll two counters forward. This is the archetypal 'count the paths' 1D DP.</p>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> The number of ways to reach step <code>n</code> is the ways to reach <code>n−1</code> plus the ways to reach <code>n−2</code> (the last move is +1 or +2) - the Fibonacci recurrence in disguise. Roll two counters forward. This is the archetypal 'count the paths' 1D DP.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>climbing_stairs.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>class Solution:
@@ -195,7 +196,7 @@ print(rob([2, 7, 9, 3, 1]))      # 12  (rob houses 2, 9, 1)</code></pre>
         return a
 </code></pre>
 </div>
-<p><strong>Time</strong> O(n) · <strong>Space</strong> O(1). Many counting problems reduce to a familiar recurrence — spotting it saves you from reinventing the DP.</p>
+<p><strong>Time</strong> O(n) · <strong>Space</strong> O(1). Many counting problems reduce to a familiar recurrence - spotting it saves you from reinventing the DP.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-746" data-pid="lc-746">
@@ -223,7 +224,7 @@ class Solution:
         return dp[n]
 </code></pre>
 </div>
-<p><strong>Time</strong> O(n) · <strong>Space</strong> O(n). Turning 'count' into 'minimise cost' keeps the same transition shape — just swap sum for min.</p>
+<p><strong>Time</strong> O(n) · <strong>Space</strong> O(n). Turning 'count' into 'minimise cost' keeps the same transition shape - just swap sum for min.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-198" data-pid="lc-198">
@@ -237,7 +238,7 @@ class Solution:
 <p class="wu-clarify"><strong>Problem.</strong> You can't rob two adjacent houses. Return the maximum amount you can rob along a street. <a href="https://leetcode.com/problems/house-robber/" target="_blank" rel="noopener">LeetCode 198 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Adjacent houses can't both be robbed? (Yes.) Maximise the total? (Yes.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">At each house, either skip it (keep the best so far) or rob it (best from two houses back + this).</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">dp[i] = max(dp[i−1], dp[i−2] + nums[i]).</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> The foundational take-or-skip DP. At each house you either skip it — keeping the best through the previous house — or rob it, adding its value to the best through <em>two</em> houses back (since neighbours are off-limits). So <code>dp[i] = max(dp[i−1], dp[i−2]+nums[i])</code>, rolled with two variables.</p>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> The foundational take-or-skip DP. At each house you either skip it - keeping the best through the previous house - or rob it, adding its value to the best through <em>two</em> houses back (since neighbours are off-limits). So <code>dp[i] = max(dp[i−1], dp[i−2]+nums[i])</code>, rolled with two variables.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>house_robber.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from typing import List
@@ -250,7 +251,7 @@ class Solution:
         return curr
 </code></pre>
 </div>
-<p><strong>Time</strong> O(n) · <strong>Space</strong> O(1). 'Include-this vs exclude-this' is one of the most transferable DP transitions — House Robber II and Delete-and-Earn are the same engine.</p>
+<p><strong>Time</strong> O(n) · <strong>Space</strong> O(1). 'Include-this vs exclude-this' is one of the most transferable DP transitions - House Robber II and Delete-and-Earn are the same engine.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-121" data-pid="lc-121">
@@ -264,7 +265,7 @@ class Solution:
 <p class="wu-clarify"><strong>Problem.</strong> With one buy and one sell allowed, return the maximum profit (0 if none). <a href="https://leetcode.com/problems/best-time-to-buy-and-sell-stock/" target="_blank" rel="noopener">LeetCode 121 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Exactly one transaction? (Yes.) Sell must come after buy? (Yes.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Track the cheapest price seen so far as you scan.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">The best profit is the largest (today's price − cheapest so far).</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> A minimal DP: carry one piece of state — the cheapest price seen so far. At each day, the best sell-today profit is <code>price − min_so_far</code>; keep the maximum. It's the two-state stock DP collapsed to a single running minimum, and the gateway to the harder stock problems later in the chapter.</p>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> A minimal DP: carry one piece of state - the cheapest price seen so far. At each day, the best sell-today profit is <code>price − min_so_far</code>; keep the maximum. It's the two-state stock DP collapsed to a single running minimum, and the gateway to the harder stock problems later in the chapter.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>stock_i.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from typing import List
@@ -282,7 +283,7 @@ class Solution:
 <p><strong>Time</strong> O(n) · <strong>Space</strong> O(1). Carrying the best 'buy state' forward is the seed of the multi-state stock DPs (III, IV, cooldown, fee).</p>
 </div>
 </details>
-<div class="dsa-tier"><span class="tdot medium"></span>Tier 2 · Medium — Kadane, knapsack/coin change, string DP, LIS <span class="cnt">(17)</span></div>
+<div class="dsa-tier"><span class="tdot medium"></span>Tier 2 · Medium - Kadane, knapsack/coin change, string DP, LIS <span class="cnt">(17)</span></div>
 <details class="dsa-prob" id="lc-213" data-pid="lc-213">
 <summary>
 <span class="p-idx">7</span>
@@ -293,8 +294,8 @@ class Solution:
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Houses are arranged in a circle, so the first and last are adjacent. Return the maximum robbery amount. <a href="https://leetcode.com/problems/house-robber-ii/" target="_blank" rel="noopener">LeetCode 213 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> First and last houses can't both be robbed? (Yes.) Single house ⇒ rob it? (Yes.)</p>
-<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">The circle means you can't take both the first and last house.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Run linear House Robber twice — once excluding the first house, once excluding the last — and take the max.</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> The circular adjacency splits into two linear cases: either the first house is off the table or the last one is. Run the standard linear House Robber on <code>nums[1:]</code> and on <code>nums[:-1]</code> and take the better — this cleanly enforces 'not both ends' without extra state.</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">The circle means you can't take both the first and last house.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Run linear House Robber twice - once excluding the first house, once excluding the last - and take the max.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> The circular adjacency splits into two linear cases: either the first house is off the table or the last one is. Run the standard linear House Robber on <code>nums[1:]</code> and on <code>nums[:-1]</code> and take the better - this cleanly enforces 'not both ends' without extra state.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>house_robber_ii.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from typing import List
@@ -327,8 +328,8 @@ class Solution:
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Taking a value earns all its copies but deletes every value±1. Maximise total points. <a href="https://leetcode.com/problems/delete-and-earn/" target="_blank" rel="noopener">LeetCode 740 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Taking value v removes all v−1 and v+1? (Yes.) You earn v times its count? (Yes.)</p>
-<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Sum the points contributed by each distinct value.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Taking value v forbids v−1 and v+1 — exactly House Robber over the value axis.</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> Reframe onto the value axis: let <code>points[v]</code> be <code>v ×</code> (count of v). Because taking <code>v</code> deletes <code>v−1</code> and <code>v+1</code>, no two adjacent values can both be taken — the House Robber constraint. Run the take-or-skip DP over values <code>1..max</code>.</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Sum the points contributed by each distinct value.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Taking value v forbids v−1 and v+1 - exactly House Robber over the value axis.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Reframe onto the value axis: let <code>points[v]</code> be <code>v ×</code> (count of v). Because taking <code>v</code> deletes <code>v−1</code> and <code>v+1</code>, no two adjacent values can both be taken - the House Robber constraint. Run the take-or-skip DP over values <code>1..max</code>.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>delete_and_earn.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from collections import Counter
@@ -373,7 +374,7 @@ class Solution:
         return best
 </code></pre>
 </div>
-<p><strong>Time</strong> O(n) · <strong>Space</strong> O(1). 'Extend or restart' is the essence of Kadane — the base for product and circular variants.</p>
+<p><strong>Time</strong> O(n) · <strong>Space</strong> O(1). 'Extend or restart' is the essence of Kadane - the base for product and circular variants.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-918" data-pid="lc-918">
@@ -387,7 +388,7 @@ class Solution:
 <p class="wu-clarify"><strong>Problem.</strong> Like Maximum Subarray, but the array is circular (the subarray may wrap around). <a href="https://leetcode.com/problems/maximum-sum-circular-subarray/" target="_blank" rel="noopener">LeetCode 918 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> A wrapping subarray is allowed? (Yes.) The subarray must be non-empty? (Yes.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">The answer is either a normal (non-wrapping) max subarray, or a wrapping one.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">A wrapping max = total − (minimum subarray). Guard the all-negative case.</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> Two cases. A non-wrapping best is plain Kadane (<code>best_max</code>). A wrapping best leaves out a middle chunk, so it equals <code>total − (minimum subarray)</code> — found with a Kadane for the minimum. Return the larger, but if every element is negative the 'total − min' case degenerates to empty, so fall back to <code>best_max</code>.</p>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Two cases. A non-wrapping best is plain Kadane (<code>best_max</code>). A wrapping best leaves out a middle chunk, so it equals <code>total − (minimum subarray)</code> - found with a Kadane for the minimum. Return the larger, but if every element is negative the 'total − min' case degenerates to empty, so fall back to <code>best_max</code>.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>circular_subarray.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from typing import List
@@ -419,7 +420,7 @@ class Solution:
 <p class="wu-clarify"><strong>Problem.</strong> Return the largest product of any contiguous subarray. <a href="https://leetcode.com/problems/maximum-product-subarray/" target="_blank" rel="noopener">LeetCode 152 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Values may be negative or zero? (Yes.) Non-empty subarray? (Yes.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">A negative number flips the sign, so the smallest (most negative) product can become the largest.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Track BOTH the running max and running min product at each index.</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> Unlike sums, a negative factor turns a large negative product into a large positive one — so you must track both the running maximum and minimum product ending here. Each step, the new max/min come from <code>{n, cur_max·n, cur_min·n}</code>. Zeros naturally reset both. The global maximum is the answer.</p>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Unlike sums, a negative factor turns a large negative product into a large positive one - so you must track both the running maximum and minimum product ending here. Each step, the new max/min come from <code>{n, cur_max·n, cur_min·n}</code>. Zeros naturally reset both. The global maximum is the answer.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>max_product_subarray.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from typing import List
@@ -463,7 +464,7 @@ class Solution:
         return dp[amount] if dp[amount] != float("inf") else -1
 </code></pre>
 </div>
-<p><strong>Time</strong> O(amount·coins) · <strong>Space</strong> O(amount). The unbounded-knapsack template — build every amount from smaller ones.</p>
+<p><strong>Time</strong> O(amount·coins) · <strong>Space</strong> O(amount). The unbounded-knapsack template - build every amount from smaller ones.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-518" data-pid="lc-518">
@@ -477,7 +478,7 @@ class Solution:
 <p class="wu-clarify"><strong>Problem.</strong> Return the number of distinct combinations of coins that sum to the amount. <a href="https://leetcode.com/problems/coin-change-ii/" target="_blank" rel="noopener">LeetCode 518 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Order doesn't matter (combinations, not permutations)? (Yes.) Unlimited coins? (Yes.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">dp[a] = number of ways to make amount a; start dp[0] = 1.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Loop coins on the OUTSIDE so each combination is counted once regardless of order.</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> Count ways with <code>dp[a] += dp[a−c]</code>, seeding <code>dp[0]=1</code>. The crucial detail: iterate <strong>coins on the outer loop</strong> and amounts inside. This considers each coin type once, so <code>{1,2}</code> and <code>{2,1}</code> aren't counted separately — you get combinations, not permutations.</p>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Count ways with <code>dp[a] += dp[a−c]</code>, seeding <code>dp[0]=1</code>. The crucial detail: iterate <strong>coins on the outer loop</strong> and amounts inside. This considers each coin type once, so <code>{1,2}</code> and <code>{2,1}</code> aren't counted separately - you get combinations, not permutations.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>coin_change_ii.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from typing import List
@@ -491,7 +492,7 @@ class Solution:
         return dp[amount]
 </code></pre>
 </div>
-<p><strong>Time</strong> O(amount·coins) · <strong>Space</strong> O(amount). Loop order decides combinations vs permutations — contrast with Combination Sum IV next.</p>
+<p><strong>Time</strong> O(amount·coins) · <strong>Space</strong> O(amount). Loop order decides combinations vs permutations - contrast with Combination Sum IV next.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-377" data-pid="lc-377">
@@ -505,7 +506,7 @@ class Solution:
 <p class="wu-clarify"><strong>Problem.</strong> Return the number of ordered sequences of numbers that sum to the target. <a href="https://leetcode.com/problems/combination-sum-iv/" target="_blank" rel="noopener">LeetCode 377 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Different orderings count as different (permutations)? (Yes.) Numbers reusable? (Yes.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Same ways-counting DP as Coin Change II, but order matters here.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Loop the TARGET on the outside so each ordering is counted.</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> Also <code>dp[a] += dp[a−n]</code> with <code>dp[0]=1</code>, but here <strong>order matters</strong>, so loop <strong>amounts on the outer loop</strong> and numbers inside. Every arrival at amount <code>a</code> considers all possible last elements, so <code>{1,2}</code> and <code>{2,1}</code> are counted separately — permutations.</p>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Also <code>dp[a] += dp[a−n]</code> with <code>dp[0]=1</code>, but here <strong>order matters</strong>, so loop <strong>amounts on the outer loop</strong> and numbers inside. Every arrival at amount <code>a</code> considers all possible last elements, so <code>{1,2}</code> and <code>{2,1}</code> are counted separately - permutations.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>combination_sum_iv.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from typing import List
@@ -624,7 +625,7 @@ class Solution:
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Return the length of the longest strictly increasing subsequence. <a href="https://leetcode.com/problems/longest-increasing-subsequence/" target="_blank" rel="noopener">LeetCode 300 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Strictly increasing? (Yes.) Subsequence (not contiguous)? (Yes.)</p>
-<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">The O(n²) DP is dp[i] = 1 + max(dp[j]) for j < i with nums[j] < nums[i].</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">The O(n log n) trick keeps 'tails' — the smallest possible tail for each LIS length — and binary-searches each number in.</div></details></div>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">The O(n²) DP is dp[i] = 1 + max(dp[j]) for j < i with nums[j] < nums[i].</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">The O(n log n) trick keeps 'tails' - the smallest possible tail for each LIS length - and binary-searches each number in.</div></details></div>
 <p class="wu-approach"><span class="wu-section">How to think about it</span> The fast solution maintains <code>tails</code>, where <code>tails[k]</code> is the smallest possible tail value of an increasing subsequence of length <code>k+1</code>. For each number, binary-search its insertion point: if it extends all tails, append it; otherwise overwrite the first tail ≥ it, keeping tails minimal. The LIS length is <code>len(tails)</code>.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lis.py</span><button class="copy-btn">Copy</button></div>
@@ -693,7 +694,7 @@ class Solution:
 <p class="wu-clarify"><strong>Problem.</strong> Return the number of structurally distinct BSTs storing values 1..n. <a href="https://leetcode.com/problems/unique-binary-search-trees/" target="_blank" rel="noopener">LeetCode 96 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Count structurally unique BST shapes? (Yes.) Values are 1..n? (Yes.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Fix each value as the root; the left subtree uses the smaller values, the right the larger.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">dp[n] = Σ dp[i−1]·dp[n−i] over each choice of root i (Catalan recurrence).</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> Choose each value <code>i</code> as the root: the <code>i−1</code> smaller values form the left subtree and the <code>n−i</code> larger ones the right, independently. So <code>dp[n] = Σ dp[i−1]·dp[n−i]</code> — the Catalan number recurrence. Build <code>dp</code> up from <code>dp[0]=dp[1]=1</code>.</p>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Choose each value <code>i</code> as the root: the <code>i−1</code> smaller values form the left subtree and the <code>n−i</code> larger ones the right, independently. So <code>dp[n] = Σ dp[i−1]·dp[n−i]</code> - the Catalan number recurrence. Build <code>dp</code> up from <code>dp[0]=dp[1]=1</code>.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>unique_bst.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>class Solution:
@@ -749,7 +750,7 @@ class Solution:
 <p class="wu-clarify"><strong>Problem.</strong> Return whether the array can be split into two subsets of equal sum. <a href="https://leetcode.com/problems/partition-equal-subset-sum/" target="_blank" rel="noopener">LeetCode 416 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Each number used in exactly one subset? (Yes.) Equal halves? (Yes.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Feasible only if the total is even; target is total / 2.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Boolean 0/1 knapsack: can we reach exactly target? Iterate the capacity DOWNWARD per item.</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> If the total is odd, no split exists. Otherwise it's a subset-sum: can some subset reach <code>total/2</code>? Use a boolean <code>dp</code> over sums, and for each number update capacities <strong>downward</strong> (<code>target … num</code>) so each item is used at most once — the 0/1 knapsack space optimisation.</p>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> If the total is odd, no split exists. Otherwise it's a subset-sum: can some subset reach <code>total/2</code>? Use a boolean <code>dp</code> over sums, and for each number update capacities <strong>downward</strong> (<code>target … num</code>) so each item is used at most once - the 0/1 knapsack space optimisation.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>partition_subset_sum.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from typing import List
@@ -803,7 +804,7 @@ class Solution:
 <p><strong>Time</strong> O(n) · <strong>Space</strong> O(n). Merging multiple monotonic streams with pointers is a neat DP-flavoured technique.</p>
 </div>
 </details>
-<div class="dsa-tier"><span class="tdot hard"></span>Tier 3 · Hard — stock state machines, valid parentheses <span class="cnt">(5)</span></div>
+<div class="dsa-tier"><span class="tdot hard"></span>Tier 3 · Hard - stock state machines, valid parentheses <span class="cnt">(5)</span></div>
 <details class="dsa-prob" id="lc-309" data-pid="lc-309">
 <summary>
 <span class="p-idx">24</span>
@@ -905,8 +906,8 @@ class Solution:
 </summary>
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> With at most k transactions, return the maximum profit. <a href="https://leetcode.com/problems/best-time-to-buy-and-sell-stock-iv/" target="_blank" rel="noopener">LeetCode 188 ↗</a></p>
-<p class="wu-clarify"><strong>Clarify:</strong> k can exceed the useful maximum (n/2)? (Yes — then it's unlimited.)</p>
-<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">If k ≥ n/2, transactions are effectively unlimited — sum every uptick.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Otherwise keep buy[j], sell[j] for j = 1..k and update all j each day.</div></details></div>
+<p class="wu-clarify"><strong>Clarify:</strong> k can exceed the useful maximum (n/2)? (Yes - then it's unlimited.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">If k ≥ n/2, transactions are effectively unlimited - sum every uptick.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Otherwise keep buy[j], sell[j] for j = 1..k and update all j each day.</div></details></div>
 <p class="wu-approach"><span class="wu-section">How to think about it</span> Generalise Stock III to arrays. If <code>k ≥ n/2</code> you can take every profitable day (unlimited case), so short-circuit to summing upticks. Otherwise maintain <code>buy[j]</code> and <code>sell[j]</code> for each transaction count <code>j = 1..k</code>; each day update every <code>j</code> so <code>buy[j]</code> uses <code>sell[j−1]</code> as its funding. The answer is <code>sell[k]</code>.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>stock_iv.py</span><button class="copy-btn">Copy</button></div>
@@ -926,7 +927,7 @@ class Solution:
         return sell[k]
 </code></pre>
 </div>
-<p><strong>Time</strong> O(n·k) · <strong>Space</strong> O(k). The unlimited-case short-circuit avoids blowing up when k is large — a common DP guard.</p>
+<p><strong>Time</strong> O(n·k) · <strong>Space</strong> O(k). The unlimited-case short-circuit avoids blowing up when k is large - a common DP guard.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-32" data-pid="lc-32">
@@ -963,9 +964,9 @@ class Solution:
 </div>
 <h2 id="playbook">4 · Interview playbook</h2>
 <ul>
-<li><strong>Say the state out loud.</strong> "<code>dp[i]</code> = the fewest coins to make amount <code>i</code>" — a precise state makes the recurrence almost write itself.</li>
+<li><strong>Say the state out loud.</strong> "<code>dp[i]</code> = the fewest coins to make amount <code>i</code>" - a precise state makes the recurrence almost write itself.</li>
 <li><strong>Name the family.</strong> Adjacency/exclusion → House Robber; contiguous best → Kadane; reach/count/minimise a target → knapsack; constrained transactions → state machine.</li>
-<li><strong>Get the base cases and loop order right</strong> — <code>dp[0]=1</code> for counting, downward capacity for 0/1 knapsack, and coins-outer vs target-outer for combinations vs permutations.</li>
+<li><strong>Get the base cases and loop order right</strong> - <code>dp[0]=1</code> for counting, downward capacity for 0/1 knapsack, and coins-outer vs target-outer for combinations vs permutations.</li>
 <li><strong>Optimise space last.</strong> Write the array DP for clarity, then collapse to a few variables once the dependency depth is clear.</li>
 <li><strong>If greedy felt tempting but unprovable</strong> (previous chapter), DP is usually the correct, safe tool.</li>
 </ul>
@@ -997,11 +998,11 @@ class Solution:
 <div class="opt" data-correct="true">Coins-outer considers each coin type only once for all amounts, so an order like {1,2} is built the same way as {2,1}; target-outer reconsiders every coin at each amount, counting each ordering separately</div>
 <div class="opt" data-correct="false">Because Combination Sum IV uses larger numbers</div>
 <div class="opt" data-correct="false">Because one uses addition and the other uses minimum</div>
-<div class="explain">With coins on the outer loop, once you finish processing a coin you never revisit it, so each unordered combination is counted exactly once. With the target on the outer loop, every amount reconsiders all coins as the possible last element, so {1,2} and {2,1} are both counted — permutations. Same recurrence, different loop nesting.</div>
+<div class="explain">With coins on the outer loop, once you finish processing a coin you never revisit it, so each unordered combination is counted exactly once. With the target on the outer loop, every amount reconsiders all coins as the possible last element, so {1,2} and {2,1} are both counted - permutations. Same recurrence, different loop nesting.</div>
 </div>
 <div class="quiz">
 <div class="q">When can you reduce a 1D DP from O(n) space to O(1)?</div>
-<div class="opt" data-correct="true">When dp[i] depends only on a fixed, small number of the most recent states (e.g. dp[i−1] and dp[i−2]) — you keep just those in rolling variables instead of the whole array</div>
+<div class="opt" data-correct="true">When dp[i] depends only on a fixed, small number of the most recent states (e.g. dp[i−1] and dp[i−2]) - you keep just those in rolling variables instead of the whole array</div>
 <div class="opt" data-correct="false">Only when the array is sorted</div>
 <div class="opt" data-correct="false">Whenever the answer is a single number</div>
 <div class="explain">The space optimisation is valid exactly when the recurrence reaches back a bounded distance. Fibonacci and House Robber reach two steps back, so two variables suffice; the stock DPs keep a fixed handful. If a transition needs an arbitrary earlier state (like LIS's O(n²) form), you can't collapse it that way.</div>
@@ -1021,5 +1022,5 @@ class Solution:
 <a class="prev" href="17-greedy.html"><div class="dir">← Previous</div><div class="ttl">17 · Greedy</div></a>
 <a class="next" href="19-dynamic-programming-2d.html"><div class="dir">Next →</div><div class="ttl">19 · Dynamic Programming (2D)</div></a>
 </div>
-</main><div class="toc-rail"><nav class="toc"></nav></div></div></div></div><script src="../assets/app.js?v=20260731b"></script><script src="../assets/sitenav.js?v=20260804b"></script><script src="../assets/enhance.js?v=20260804a"></script><script src="../assets/dsa-question-bank.js?v=20260727c"></script><script src="../assets/dsa-prep.js?v=20260727c"></script></body></html>
+</main><div class="toc-rail"><nav class="toc"></nav></div></div></div></div><script src="../assets/app.js?v=20260925c"></script><script src="../assets/sitenav.js?v=20260925a"></script><script src="../assets/enhance.js?v=20260925c"></script><script src="../assets/dsa-question-bank.js?v=20260727c"></script><script src="../assets/dsa-prep.js?v=20260727c"></script></body></html>
 <script src="../assets/genai-motion.js?v=20260728a"></script>

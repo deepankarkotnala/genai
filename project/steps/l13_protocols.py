@@ -26,7 +26,7 @@ BAR = "=" * 78
 
 
 def show_mcp() -> None:
-    print(BAR); print("  MCP — host, client, server"); print(BAR)
+    print(BAR); print("  MCP - host, client, server"); print(BAR)
     client = Client(Server())
 
     init = client.initialize()["result"]
@@ -45,11 +45,11 @@ def show_mcp() -> None:
     print(f"      exposed     : {sorted(EXPOSED_TOOLS)}")
     print(f"      WITHHELD    : {sorted(set(REGISTRY) - EXPOSED_TOOLS)}")
 
-    print(f"\n  4 · tools/call — permitted")
+    print(f"\n  4 · tools/call - permitted")
     ok = client.call_tool("read_ticket", {"ticket_id": "TCK-1001"})["result"]
     print(f"      isError={ok['isError']}  {ok['content'][0]['text'][:62]}...")
 
-    print(f"\n  5 · tools/call — withheld")
+    print(f"\n  5 · tools/call - withheld")
     bad = client.call_tool("issue_refund",
                            {"order_id": "ORD-5581", "amount": 120.0,
                             "reason": "duplicate charge"})["error"]
@@ -61,7 +61,7 @@ def show_mcp() -> None:
 
 def show_a2a() -> None:
     reset_state()
-    print(BAR); print("  A2A — delegating to a peer agent"); print(BAR)
+    print(BAR); print("  A2A - delegating to a peer agent"); print(BAR)
     triage = TriageAgent(RefundSpecialist())
 
     card = triage.discover()
@@ -94,7 +94,7 @@ def show_a2a() -> None:
 
 def show_boundary() -> None:
     reset_state()
-    print(BAR); print("  THE BOUNDARY — delegation moves work, never authority"); print(BAR)
+    print(BAR); print("  THE BOUNDARY - delegation moves work, never authority"); print(BAR)
     triage = TriageAgent(RefundSpecialist())
     task, _ = triage.delegate_refund("ORD-5590", "returned annual plan", amount=480.00)
     content = task.artifacts[0].content
@@ -115,7 +115,7 @@ def show_boundary() -> None:
 
 
 def show_compare() -> None:
-    print(BAR); print("  MULTI-AGENT vs SINGLE — the measurement, not the opinion"); print(BAR)
+    print(BAR); print("  MULTI-AGENT vs SINGLE - the measurement, not the opinion"); print(BAR)
     print(f"\n  specialist tool sets:")
     for route, tools in SPECIALISTS.items():
         print(f"      {route:10} {len(tools)} tools  {tools}")

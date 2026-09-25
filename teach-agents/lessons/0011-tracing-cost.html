@@ -4,21 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f4f5f8">
-<title>Lesson 11 · Tracing, latency and cost — Understanding AI Agents</title>
+<title>Lesson 11 · Tracing, latency and cost | Understanding AI Agents</title>
 <meta name="description" content="Structured traces with correlation ids, token and cost accounting, why agent cost is quadratic in steps, prompt caching, model routing, and debugging a broken run from its span tree.">
-<link rel="icon" href="../../assets/brand/favicon.svg?v=20260727c" type="image/svg+xml">
-<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260727c" sizes="32x32" type="image/png">
-<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260727c">
-<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260727c" sizes="180x180">
-<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260727c">
-<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260727c" color="#6f47f5">
+<link rel="icon" href="../../assets/brand/favicon.svg?v=20260925b" type="image/svg+xml">
+<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260925b" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260925b">
+<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260925b" sizes="180x180">
+<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260925b">
+<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260925b" color="#6f47f5">
 <meta name="application-name" content="Interview Preparation">
 <meta name="apple-mobile-web-app-title" content="Interview Prep">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var mob=!!(window.matchMedia&&window.matchMedia("(max-width:860px)").matches);var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(mob?"s":"xs");var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);}catch(e){}})();</script>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);}catch(e){}})();</script>
 <link rel="stylesheet" href="../../assets/styles.css?v=20260805a">
-<link href="../../assets/office-theme.css?v=20260805c" rel="stylesheet"/>
+<link href="../../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="../../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <link href="../../assets/glossary.css?v=20260802b" rel="stylesheet"/>
 <!-- Release 2 runtime. The manifest loads first, the renderer second; classic
@@ -28,14 +28,15 @@
      page, route and fragment have all resolved. -->
 <script defer src="../../assets/curriculum.js?v=20260804c"></script>
 <script defer src="../../assets/page-nav.js?v=20260804c"></script>
+<link href="../../assets/ir-theme.css?v=20260925c" rel="stylesheet"/>
 </head>
 <body data-curriculum-id="ta-l11" data-page="ta-l11">
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
-<a class="brand-link" href="../../index.html" aria-label="Switch job home">
-<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260727c" alt=""/></span>
-<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+<a class="brand-link" href="../../index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
 </a>
 </div>
     <div class="search-wrap">
@@ -76,7 +77,7 @@
             <li>Explain what a trace gives you that logs cannot.</li>
             <li>Debug a broken run from its span tree alone.</li>
             <li>State your agent's cost per run, and explain why it is <strong>quadratic in steps</strong>.</li>
-            <li>Answer "your agent costs $0.40 a ticket — get it under $0.10."</li>
+            <li>Answer "your agent costs $0.40 a ticket - get it under $0.10."</li>
             <li>Explain prompt caching and model routing, and when each pays.</li>
             <li>Say why traces need redaction before they are written.</li>
           </ul></div>
@@ -84,80 +85,95 @@
 
         <h2 id="why">1 · What a trace gives you that logs do not</h2>
 
+<svg class="bd-svg" viewBox="0 0 900 306" role="img" aria-labelledby="l11-vs-t l11-vs-d">
+<title id="l11-vs-t">Why a trace answers what logs cannot</title>
+<desc id="l11-vs-d">Log lines are independent, so reconstructing one run means guessing which lines belong together. A trace records the parent of every span, so the run reassembles into a tree with timings attached.</desc>
+<defs><marker id="ah-l11-vs" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="layer b1" x="150" y="16" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="37">log lines, interleaved from every run</text>
+<text class="lbl" x="450" y="55">which ones belong together?</text>
+<rect class="layer b2" x="150" y="82" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="103">one correlation id per run</text>
+<text class="lbl" x="450" y="121">now they group</text>
+<path class="arw" d="M450 66 V79" marker-end="url(#ah-l11-vs)"></path>
+<rect class="layer b3" x="150" y="148" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="169">a parent id per span</text>
+<text class="lbl" x="450" y="187">now they nest, with durations</text>
+<path class="arw" d="M450 132 V145" marker-end="url(#ah-l11-vs)"></path>
+<rect class="layer b4" x="150" y="214" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="244">the question you actually asked: where did the time go?</text>
+<path class="arw" d="M450 198 V211" marker-end="url(#ah-l11-vs)"></path>
+<text class="cap" x="450" y="300">grouping gives you the run; nesting gives you the shape of it</text>
+</svg>
+
         <p>Four questions logs answer badly and a trace answers directly: <strong>what happened</strong> (the ordered sequence), <strong>how long</strong> (per span, so you see where time actually went), <strong>what it cost</strong> (tokens priced per model), and <strong>why it broke</strong> (an error class attached to the span that failed, not to the run).</p>
 
         <p>One correlation id ties a run together. That is the difference between <em>"an agent misbehaved yesterday"</em> and <em>"run <code>r_9c577a</code> spent 179ms in <code>search_kb</code>, got <code>unavailable</code>, and escalated"</em>.</p>
 
         <h2 id="shape">2 · The shape</h2>
 
-<pre><code>@dataclass
-class Span:
-    span_id: str
-    run_id: str          # the correlation id, on every span
-    name: str
-    kind: str            # "model" | "tool" | "control"
-    parent_id: str | None
-    duration_ms: int
-    ok: bool
-    error_class: str | None
-    model: str | None
-    prompt_tokens: int
-    completion_tokens: int
-    cost_usd: float
-</code></pre>
+        <p>Spans nest, but the store is <strong>flat with a <code>parent_id</code></strong> - easier to write, easier to query, and what every real tracing backend does. Tracing is opt-in: pass a <code>Trace</code> and the same loop produces a tree; omit it and Lessons 2–9 stay readable.</p>
 
-        <p>Spans nest, but the store is <strong>flat with a <code>parent_id</code></strong> — easier to write, easier to query, and what every real tracing backend does. Tracing is opt-in: pass a <code>Trace</code> and the same loop produces a tree; omit it and Lessons 2–9 stay readable.</p>
+<svg class="bd-svg" viewBox="0 0 900 260" role="img" aria-labelledby="l11-spans-t l11-spans-d">
+<title id="l11-spans-t">Four spans from one run</title>
+<desc id="l11-spans-d">Every span carries the same run id, which is what makes the tree reassemblable. Each records its own parent, kind, duration and cost, so you can see where the time and the money went.</desc>
+<text class="cap" x="315" y="24">run</text>
+<text class="cap" x="545" y="24">decide</text>
+<text class="cap" x="775" y="24">read_ticket</text>
+<text class="mono" x="12" y="64" style="text-anchor:start">span</text>
+<rect class="snap s1" x="206" y="46" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="315" y="64">run-7f</text>
+<rect class="snap s2" x="436" y="46" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="545" y="64">sp-1</text>
+<rect class="snap s3" x="666" y="46" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="775" y="64">sp-2</text>
+<text class="mono" x="12" y="98" style="text-anchor:start">kind</text>
+<rect class="snap s1" x="206" y="80" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="315" y="98">control</text>
+<rect class="snap s2" x="436" y="80" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="545" y="98">model</text>
+<rect class="snap s3" x="666" y="80" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="775" y="98">tool</text>
+<text class="mono" x="12" y="132" style="text-anchor:start">parent</text>
+<rect class="snap s1" x="206" y="114" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="315" y="132">none</text>
+<rect class="snap s2" x="436" y="114" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="545" y="132">run-7f</text>
+<rect class="snap s3" x="666" y="114" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="775" y="132">run-7f</text>
+<text class="mono" x="12" y="166" style="text-anchor:start">duration</text>
+<rect class="snap s1" x="206" y="148" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="315" y="166">3,240 ms</text>
+<rect class="snap s2" x="436" y="148" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="545" y="166">820 ms</text>
+<rect class="snap s3" x="666" y="148" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="775" y="166">40 ms</text>
+<text class="mono" x="12" y="200" style="text-anchor:start">cost</text>
+<rect class="snap s1" x="206" y="182" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="315" y="200">$0.0042</text>
+<rect class="snap s2" x="436" y="182" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="545" y="200">$0.0011</text>
+<rect class="snap s3" x="666" y="182" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="775" y="200">$0</text>
+<text class="cap" x="450" y="252">one correlation id on every span is the whole trick</text>
+</svg>
 
         <h2 id="read">3 · Read a healthy run</h2>
-
-<pre><code>cd teach-agents/project
-python steps/l10_evaluated.py --trace
-</code></pre>
-
-<pre><code>run r_3518de4651  Triage ticket TCK-1001
-  model   decide:1                   0ms  100+2tok
-  tool    tool:read_ticket           4ms
-  model   decide:2                   0ms  142+2tok
-  tool    tool:lookup_order          0ms
-  model   decide:3                   0ms  165+4tok
-  tool    tool:search_kb             3ms
-  model   decide:4                   0ms  267+24tok
-  tool    tool:draft_reply           2ms
-  model   decide:5                   0ms  326+48tok
-  total: 9 spans, 1080 tokens, $0.00000, 9ms, 0 error(s)
-</code></pre>
 
         <div class="callout danger">
           <div class="c-ico">📈</div>
           <div class="c-body"><div class="c-title">Look at the prompt tokens: 100 → 142 → 165 → 267 → 326</div>
-          <p>Every step re-sends the entire transcript. So the cost of a run is <strong>quadratic in the number of steps</strong>, not linear — step 5 costs three times step 1 for the same model.</p>
+          <p>Every step re-sends the entire transcript. So the cost of a run is <strong>quadratic in the number of steps</strong>, not linear - step 5 costs three times step 1 for the same model.</p>
           <p>This is the real argument for fewer, coarser tools, and for routing. Halving the steps does much better than halving the price per token. There is a test pinning this growth, so it cannot silently stop being true.</p></div>
         </div>
 
         <h2 id="debug">4 · Debug a broken run from the trace alone</h2>
 
-<pre><code>python steps/l10_evaluated.py --debug
-</code></pre>
-
-<pre><code>  model   decide:1                   0ms  100+2tok
-  tool    tool:read_ticket           0ms
-  model   decide:2                   0ms  142+2tok
-  tool    tool:lookup_order        154ms
-  model   decide:3                   0ms  165+4tok
-  tool    tool:search_kb           179ms  !! unavailable
-  model   decide:4                   0ms  181+11tok
-  tool    tool:escalate              0ms
-  total: 8 spans, 607 tokens, 333ms, 1 error(s)
-
-  slowest spans: [('tool:search_kb', '179ms'), ('tool:lookup_order', '154ms')]
-  failed spans : [('tool:search_kb', 'unavailable')]
-</code></pre>
-
         <p>Read it in this order, and practise saying it out loud:</p>
 
         <div class="steps">
           <p><strong>Which span failed?</strong> <code>search_kb</code>, error class <code>unavailable</code>.</p>
-          <p><strong>What did it cost in time?</strong> 179ms — and that includes the retries, which is why a failing tool can be slower than a working one.</p>
+          <p><strong>What did it cost in time?</strong> 179ms - and that includes the retries, which is why a failing tool can be slower than a working one.</p>
           <p><strong>What did the agent do next?</strong> One more model call, then <code>escalate</code>. Correct behaviour, visible in the trace rather than inferred.</p>
           <p><strong>What is the second-order signal?</strong> <code>lookup_order</code> took 154ms when it normally takes 0. Two slow tools in one run is a dependency problem, not an agent problem.</p>
         </div>
@@ -166,56 +182,61 @@ python steps/l10_evaluated.py --trace
 
         <h2 id="cost">5 · Cost, stated as a number</h2>
 
-<pre><code>python steps/l10_evaluated.py --cost
-</code></pre>
-
-<pre><code>  This run: 5 model calls, 1000 in + 80 out
-
-  model          $/run     $/10k tickets
-  ----------------------------------------
-  small        0.00019              1.98
-  large        0.00420             42.00
-
-  large is 22x the price of small.
-</code></pre>
-
         <div class="callout key">
           <div class="c-ico">🔑</div>
           <div class="c-body"><div class="c-title">"What does your agent cost?" is a fair question and most people cannot answer it</div>
-          <p>You can only answer it if the numbers were captured. That is why <code>BrainResult</code> has carried <code>prompt_tokens</code>, <code>completion_tokens</code> and <code>latency_ms</code> since Lesson 1 — not decoration, groundwork.</p>
+          <p>You can only answer it if the numbers were captured. That is why <code>BrainResult</code> has carried <code>prompt_tokens</code>, <code>completion_tokens</code> and <code>latency_ms</code> since Lesson 1 - not decoration, groundwork.</p>
           <p>Unknown models cost <code>0.0</code> and say so, rather than guessing. A cost figure you cannot source is worse than none.</p></div>
         </div>
 
         <h2 id="reduce">6 · The four levers</h2>
 
+<svg class="bd-svg" viewBox="0 0 900 376" role="img" aria-labelledby="l11-cost-t l11-cost-d">
+<title id="l11-cost-t">Where the money actually goes</title>
+<desc id="l11-cost-d">Cost is dominated by tokens sent times calls made. The levers are fewer steps, a smaller prompt, a cheaper model for easy work, and caching what repeats.</desc>
+<defs><marker id="ah-l11-cost" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="169" width="239.9" height="56" rx="12"></rect>
+<text class="lbl" x="131.95" y="193">cost is too</text>
+<text class="lbl" x="131.95" y="211">high</text>
+<rect class="box b2" x="295.9" y="169" width="257.9" height="56" rx="12"></rect>
+<text class="lbl" x="424.85" y="193">which lever</text>
+<text class="lbl" x="424.85" y="211">applies?</text>
+<path class="arw" d="M256.9 197 H291.9" marker-end="url(#ah-l11-cost)"></path>
+<rect class="box b3" x="605.8" y="58" width="282.2" height="56" rx="12"></rect>
+<text class="lbl" x="746.9" y="91">too many steps -- cap them, route earlier</text>
+<path class="arw" d="M556.8 197 C579.8 197, 579.8 86, 601.8 86" marker-end="url(#ah-l11-cost)"></path>
+<rect class="box b4" x="605.8" y="132" width="282.2" height="56" rx="12"></rect>
+<text class="lbl" x="746.9" y="165">prompt too large -- trim, cap tool results</text>
+<path class="arw" d="M556.8 197 C579.8 197, 579.8 160, 601.8 160" marker-end="url(#ah-l11-cost)"></path>
+<rect class="box b5" x="605.8" y="206" width="282.2" height="56" rx="12"></rect>
+<text class="lbl" x="746.9" y="239">model too dear -- route easy work to small</text>
+<path class="arw" d="M556.8 197 C579.8 197, 579.8 234, 601.8 234" marker-end="url(#ah-l11-cost)"></path>
+<rect class="box b5" x="605.8" y="280" width="282.2" height="56" rx="12"></rect>
+<text class="lbl" x="746.9" y="313">same call repeats -- cache it</text>
+<path class="arw" d="M556.8 197 C579.8 197, 579.8 308, 601.8 308" marker-end="url(#ah-l11-cost)"></path>
+<text class="cap" x="450" y="370">large costs 22x small here: routing is usually the biggest single win</text>
+</svg>
+
         <table>
           <thead><tr><th>Lever</th><th>Mechanism</th><th>Typical win</th></tr></thead>
           <tbody>
-            <tr><td><strong>Fewer steps</strong></td><td>coarser tools, routing</td><td>largest — cost is quadratic in steps</td></tr>
+            <tr><td><strong>Fewer steps</strong></td><td>coarser tools, routing</td><td>largest - cost is quadratic in steps</td></tr>
             <tr><td><strong>Model routing</strong></td><td>cheap model gathers, strong model judges</td><td>large, if one step needs the judgement</td></tr>
             <tr><td><strong>Prompt caching</strong></td><td>reuse the stable prefix across calls</td><td>large for long system prompts</td></tr>
             <tr><td><strong>Smaller results</strong></td><td>Lesson 6's caps</td><td>compounds, because every step re-sends them</td></tr>
           </tbody>
         </table>
 
-        <p><strong>Prompt caching</strong> works because the front of your prompt barely changes: system prompt, tool declarations, the goal. Providers can cache that prefix and charge less for it — but only if it is genuinely stable, which means <em>put the volatile parts last</em>. A timestamp near the top of your system prompt silently disables caching for the whole run.</p>
+        <p><strong>Prompt caching</strong> works because the front of your prompt barely changes: system prompt, tool declarations, the goal. Providers can cache that prefix and charge less for it - but only if it is genuinely stable, which means <em>put the volatile parts last</em>. A timestamp near the top of your system prompt silently disables caching for the whole run.</p>
 
         <p><strong>Model routing</strong> exploits the 22× gap above. Gather facts with the cheap model; spend the expensive one on the step where judgement matters. Lesson 4's router is the mechanism.</p>
 
         <h2 id="privacy">7 · Traces are a data-retention surface</h2>
 
-<pre><code>def _clean(attributes):
-    for key, value in attributes.items():
-        if isinstance(value, str):
-            cleaned, found = redact_secrets(value)
-            out[key] = cleaned
-            if found: out[f"{key}_redacted"] = found
-</code></pre>
-
         <div class="callout warn">
           <div class="c-ico">⚠️</div>
           <div class="c-body"><div class="c-title">Redact on the way in, not on the way out</div>
-          <p>A trace holding a card number is a retention problem wearing a debugging hat. Traces get copied into dashboards, tickets, screenshots and third-party tools that production data is not supposed to reach — and unlike a database, nobody thinks of them as a data store subject to deletion requests.</p>
+          <p>A trace holding a card number is a retention problem wearing a debugging hat. Traces get copied into dashboards, tickets, screenshots and third-party tools that production data is not supposed to reach - and unlike a database, nobody thinks of them as a data store subject to deletion requests.</p>
           <p>Note it also records <em>that</em> something was redacted. Silent redaction makes a future engineer think the field was always empty.</p></div>
         </div>
 
@@ -223,7 +244,7 @@ python steps/l10_evaluated.py --trace
 
         <div class="steps">
           <p><strong>1 · Find the quadratic.</strong> Run <code>--trace</code>, note prompt tokens per step, then raise <code>max_steps</code> and add a fault so the run takes longer. Plot them. The curve is the argument for coarser tools, and you will remember it better for having drawn it.</p>
-          <p><strong>2 · Break caching.</strong> Add <code>f"Current time: {time.time()}"</code> to the top of <code>SYSTEM_PROMPT</code>. Nothing fails, no test goes red — and in production you have just disabled prefix caching for every run. This is a cost regression invisible to every check you have. What would catch it?</p>
+          <p><strong>2 · Break caching.</strong> Add <code>f"Current time: {time.time()}"</code> to the top of <code>SYSTEM_PROMPT</code>. Nothing fails, no test goes red - and in production you have just disabled prefix caching for every run. This is a cost regression invisible to every check you have. What would catch it?</p>
           <p><strong>3 · Remove redaction</strong> from <code>_clean()</code>, then trace a run whose attributes contain an approval token. Look at the saved JSON in <code>traces/</code>. That file is now a credential.</p>
           <p><strong>4 · Attribute the time.</strong> Inject <code>slow={"search_kb": 2.0}</code> and confirm the span tree points at the right culprit. Then inject slowness into <em>two</em> tools and check you can still tell which dominated.</p>
         </div>
@@ -234,7 +255,7 @@ python steps/l10_evaluated.py --trace
 
         <p><strong>Alert on ratios, not counts.</strong> Escalation rate, retry rate, cost per resolved ticket. Absolute error counts move with traffic; ratios move with health.</p>
 
-        <p><strong>Latency is p99, not mean.</strong> An agent with a 3s mean and a 40s p99 feels broken, because the slow runs are the complicated ones — the tickets that mattered most.</p>
+        <p><strong>Latency is p99, not mean.</strong> An agent with a 3s mean and a 40s p99 feels broken, because the slow runs are the complicated ones - the tickets that mattered most.</p>
 
         <p><strong>Use a real backend when you outgrow this.</strong> Our tracer is ~150 lines to make the shape legible. <a href="../../langfuse.html">Langfuse</a> and OpenTelemetry give you retention, search, dashboards and sampling. The concepts transfer exactly; span, parent, attributes and correlation id are the same everywhere.</p>
 
@@ -246,24 +267,24 @@ python steps/l10_evaluated.py --trace
 
         <h2 id="interview">10 · Interview practice</h2>
 
-        <h3>Two-minute answer — "Your agent costs $0.40 a ticket. Get it under $0.10."</h3>
+        <h3>Two-minute answer - "Your agent costs $0.40 a ticket. Get it under $0.10."</h3>
         <div class="callout note"><div class="c-ico">🎤</div><div class="c-body">
-        <p>"First I'd get the breakdown per run — tokens in and out per model call — because the fix depends entirely on where the money goes. Assume it's mostly input tokens, which it usually is.</p>
-        <p>The biggest lever is <strong>fewer steps</strong>, because cost is quadratic in steps: every step re-sends the whole transcript. In our trace the prompt grew 100 → 326 tokens across five calls. So I'd route first — one cheap classification call, then a narrowed tool set — and merge fine-grained tools into coarser ones. Going from six steps to three is roughly a quarter of the cost, not half.</p>
+        <p>"First I'd get the breakdown per run - tokens in and out per model call - because the fix depends entirely on where the money goes. Assume it's mostly input tokens, which it usually is.</p>
+        <p>The biggest lever is <strong>fewer steps</strong>, because cost is quadratic in steps: every step re-sends the whole transcript. In our trace the prompt grew 100 → 326 tokens across five calls. So I'd route first - one cheap classification call, then a narrowed tool set - and merge fine-grained tools into coarser ones. Going from six steps to three is roughly a quarter of the cost, not half.</p>
         <p>Then <strong>model routing</strong>: gather facts with the cheap model and spend the expensive one only where judgement matters. In our price table that's a 22× gap, so it matters more than most micro-optimisations.</p>
-        <p>Then <strong>prompt caching</strong> on the stable prefix — system prompt and tool declarations — which means keeping volatile content out of the front of the prompt. A timestamp near the top silently disables caching for the whole run.</p>
+        <p>Then <strong>prompt caching</strong> on the stable prefix - system prompt and tool declarations - which means keeping volatile content out of the front of the prompt. A timestamp near the top silently disables caching for the whole run.</p>
         <p>Then <strong>smaller tool results</strong>, which compounds because every step re-sends them.</p>
-        <p>And I'd set a cost ceiling per run with alerting, so this doesn't drift back. The thing I'd say last is that I'd measure quality alongside cost on the golden set — a cheaper agent that escalates twice as often hasn't saved anything, it's moved the cost to the support team."</p></div></div>
+        <p>And I'd set a cost ceiling per run with alerting, so this doesn't drift back. The thing I'd say last is that I'd measure quality alongside cost on the golden set - a cheaper agent that escalates twice as often hasn't saved anything, it's moved the cost to the support team."</p></div></div>
 
         <details class="recall"><summary><span class="q-ico">Q</span> System design · Design observability for an agent platform running several agents. <span class="chev">›</span></summary><div class="a">
-        <p>One trace per run, correlation id propagated to every downstream call so an agent's tool call can be joined to the service that served it. Spans typed — model, tool, retrieval, control — because you want to slice latency by kind, and "where does the time go" is usually answered by span kind before span name.</p>
+        <p>One trace per run, correlation id propagated to every downstream call so an agent's tool call can be joined to the service that served it. Spans typed - model, tool, retrieval, control - because you want to slice latency by kind, and "where does the time go" is usually answered by span kind before span name.</p>
         <p>Attributes: agent name and version, prompt version, model and model version, tenant, ticket category. Version fields are what let you answer "did the change I shipped on Tuesday do this".</p>
         <p><strong>Sampling:</strong> a few percent of successes, 100% of failures, 100% of anything touching money. <strong>Retention:</strong> shorter for successes than failures, with redaction at write time.</p>
-        <p>Then the dashboards that matter, which are ratios: resolution rate, escalation rate, retry rate, cost per resolved ticket, p99 latency — sliced by agent, model version and tenant, because aggregates hide the broken segment.</p>
+        <p>Then the dashboards that matter, which are ratios: resolution rate, escalation rate, retry rate, cost per resolved ticket, p99 latency - sliced by agent, model version and tenant, because aggregates hide the broken segment.</p>
         <p>And a cost budget per agent with alerting, since the failure mode of a multi-agent platform is one agent quietly looping and spending.</p></div></details>
 
         <details class="recall"><summary><span class="q-ico">Q</span> Debugging · p99 latency is 40s, mean is 3s. Where does the time go? <span class="chev">›</span></summary><div class="a">
-        <p>The mean tells you nothing here — the distribution is bimodal, so I'd look only at the slow tail and compare it against a fast run.</p>
+        <p>The mean tells you nothing here - the distribution is bimodal, so I'd look only at the slow tail and compare it against a fast run.</p>
         <p>Most likely: <strong>step count</strong>, since the slow runs are the complicated tickets that take eight steps instead of three, and each step is a round trip. Check whether p99 runs correlate with step count before anything else.</p>
         <p>Then: <strong>a slow dependency</strong> visible as one dominant span; <strong>retries</strong>, which multiply a step's latency invisibly unless the trace records the attempt count; <strong>large prompts</strong>, since time-to-first-token grows with input length, so the same quadratic that drives cost also drives latency; and <strong>queueing</strong> if the tool pool is saturated, which shows as slow spans with fast underlying services.</p>
         <p>Fixes in order: cap steps harder for the slow segment, parallelise independent tool calls, stream partial output so the user sees progress, and set a total wall-clock budget that escalates rather than continues.</p></div></details>
@@ -273,11 +294,11 @@ python steps/l10_evaluated.py --trace
         <p>Details that signal experience: make it opt-in so the loop stays readable without it; flat storage with <code>parent_id</code> rather than nesting; redact attributes on write; capture the error <em>class</em> on the span rather than a stringified exception; and make sure the span still closes when the body raises.</p></div></details>
 
         <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · What would you alert on? <span class="chev">›</span></summary><div class="a">
-        <p>Ratios and budgets, not error counts. <strong>Escalation rate</strong> rising is the earliest quality signal and it is free. <strong>Human override rate</strong> on drafted replies — if reviewers rewrite 60% of drafts, the agent is not helping. <strong>Cost per resolved ticket</strong>, which catches loops and prompt bloat that no error surfaces. <strong>p99 latency.</strong> <strong>Retry rate per tool</strong>, which finds a degrading dependency before it fails outright. And <strong>refund volume</strong>, because that is the blast radius.</p>
+        <p>Ratios and budgets, not error counts. <strong>Escalation rate</strong> rising is the earliest quality signal and it is free. <strong>Human override rate</strong> on drafted replies - if reviewers rewrite 60% of drafts, the agent is not helping. <strong>Cost per resolved ticket</strong>, which catches loops and prompt bloat that no error surfaces. <strong>p99 latency.</strong> <strong>Retry rate per tool</strong>, which finds a degrading dependency before it fails outright. And <strong>refund volume</strong>, because that is the blast radius.</p>
         <p>What I would not alert on: raw error counts, which track traffic; and individual run failures, which are normal and will train people to ignore the channel.</p></div></details>
 
         <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · A cost regression shipped and no test caught it. What now? <span class="chev">›</span></summary><div class="a">
-        <p>Expected — correctness tests do not measure cost. The fix is to make cost a first-class assertion: record tokens and cost per case in the golden set and fail the build when a case exceeds its budget by more than a threshold. That is how a timestamp added to a system prompt, which breaks prefix caching without changing a single answer, becomes visible.</p>
+        <p>Expected - correctness tests do not measure cost. The fix is to make cost a first-class assertion: record tokens and cost per case in the golden set and fail the build when a case exceeds its budget by more than a threshold. That is how a timestamp added to a system prompt, which breaks prefix caching without changing a single answer, becomes visible.</p>
         <p>Then two operational additions: a cost dashboard per prompt version so a regression is attributable to a change, and a canary that runs the golden set nightly against production configuration, since cost can regress from a provider-side change you did not make.</p>
         <p>The general principle: <strong>anything you care about and do not assert will regress.</strong> Cost, latency and escalation rate all deserve budgets in the eval suite, not just correctness.</p></div></details>
 
@@ -286,7 +307,7 @@ python steps/l10_evaluated.py --trace
         <ul>
           <li>A trace answers what happened, how long, what it cost and why it broke. Logs answer the first, badly.</li>
           <li>One correlation id per run, on every span. Flat storage with <code>parent_id</code>.</li>
-          <li><strong>Cost is quadratic in steps</strong> — every step re-sends the transcript. Fewer steps beats cheaper tokens.</li>
+          <li><strong>Cost is quadratic in steps</strong> - every step re-sends the transcript. Fewer steps beats cheaper tokens.</li>
           <li>Levers in order: fewer steps, model routing, prompt caching, smaller tool results.</li>
           <li>Keep volatile content out of the prompt prefix or you disable caching silently.</li>
           <li>Redact on write. A trace is a data store nobody remembers to include in a deletion request.</li>
@@ -296,12 +317,12 @@ python steps/l10_evaluated.py --trace
         </div>
 
         <div class="callout key"><div class="c-ico">🚀</div><div class="c-body"><div class="c-title">Next</div>
-        <p>Lesson 12 exposes the read-only tools over MCP — and deliberately withholds <code>issue_refund</code>, which is the whole lesson about trust boundaries.</p></div></div>
+        <p>Lesson 12 exposes the read-only tools over MCP - and deliberately withholds <code>issue_refund</code>, which is the whole lesson about trust boundaries.</p></div></div>
 
         <h2 id="deeper">12 · Optional deep dives</h2>
         <ul>
-          <li><a href="../../langfuse.html">Langfuse</a> — traces, spans, scoring and dashboards in a real backend.</li>
-          <li><a href="../../modules/14_production_genai.html">Module 14 · Production GenAI</a> — observability, cost control and rate limiting.</li>
+          <li><a href="../../langfuse.html">Langfuse</a> - traces, spans, scoring and dashboards in a real backend.</li>
+          <li><a href="../../modules/14_production_genai.html">Module 14 · Production GenAI</a> - observability, cost control and rate limiting.</li>
         </ul>
 
         <div class="page-nav" data-page-nav>
@@ -336,9 +357,9 @@ window.PORTAL = {
   ]
 };
 </script>
-<script src="../../assets/sitenav.js?v=20260804b"></script>
-<script src="../../assets/portal-page.js?v=20260727c"></script>
-<script src="../../assets/enhance.js?v=20260804a"></script>
+<script src="../../assets/sitenav.js?v=20260925a"></script>
+<script src="../../assets/portal-page.js?v=20260925c"></script>
+<script src="../../assets/enhance.js?v=20260925c"></script>
 <script src="../../assets/genai-motion.js?v=20260728a"></script>
 <script src="../../assets/glossary.js?v=20260802b"></script>
 </body>

@@ -1,0 +1,411 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>14 · Deployment | Understanding AI Agents</title>
+<meta name="description" content="Wrapping the agent in a service forces concurrency, timeouts, health and versioning. Why a prompt change is a deploy, and what a version lets you refuse.">
+<link rel="icon" href="../../assets/brand/favicon.svg?v=20260925b" type="image/svg+xml">
+<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260925b" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260925b">
+<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260925b" sizes="180x180">
+<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260925b">
+<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260925b" color="#6f47f5">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="../../assets/styles.css?v=20260805a">
+<link href="../../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
+<link href="../../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
+<link href="../../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+<link href="../../assets/ir-theme.css?v=20260925c" rel="stylesheet"/>
+</head>
+<body data-curriculum-id="cx-14" data-page="cx-14">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="../../index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search this section…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Understanding AI Agents · CampusX / <b>14 · Deployment</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> 14 · Scale</div>
+        <h1>Deployment: four decisions a script never forced</h1>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~17 min read</span>
+          <span class="pill purple">Pairs with · <a href="../lessons/0014-deployment.html">Lesson 14 · Deployment & operations</a></span>
+        </div>
+
+<!-- ================= 1 ================= -->
+<h2 id="known">1 · What you already know</h2>
+<p>You have an agent with retrieval, reliability controls, an approval gate,
+security scoping, an evaluation suite and tracing.</p>
+<p><b>All of it runs when you type a command.</b> This page is about the difference between
+that and something other systems can call.</p>
+
+<!-- ================= 2 ================= -->
+<h2 id="breaks">2 · What breaks now</h2>
+<p>Wrap the loop in the smallest possible HTTP handler and deploy it.</p>
+
+<p>Four problems appear on the first busy day, and none of them is about agents.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>What happens</th><th>Why</th></tr></thead>
+<tbody>
+<tr><td>Memory grows until the process dies</td><td>Nothing bounds how many runs are in flight</td></tr>
+<tr><td>A caller sees a 504 after 60 seconds</td><td>No timeout of your own, so theirs fires first</td></tr>
+<tr><td>The orchestrator keeps sending traffic</td><td>The health check reports the web server, not the agent</td></tr>
+<tr><td>A regression cannot be attributed</td><td>Nothing records which prompt version answered</td></tr>
+</tbody>
+</table>
+</div>
+<p>The second row hides the worst case. <b>A 504 does not tell the caller whether the refund
+happened</b>, and the caller's natural response is to retry.</p>
+
+<!-- ================= 3 ================= -->
+<h2 id="breakdown">3 · Simple breakdown - A long-lived service vs a batch script</h2>
+<section class="breakdown">
+
+<h3 class="bd-tech"><span class="bd-tag">A</span> A long-lived service</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> A long-lived service accepts requests over HTTP, runs an agent per request, and stays running between them.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It makes the agent available to other systems and to users, with a defined contract for latency, failure and versioning.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 306" role="img" aria-labelledby="cx14-exec-t cx14-exec-d">
+<title id="cx14-exec-t">What the service layer forces you to decide</title>
+<desc id="cx14-exec-d">A caller sends a request with a timeout they can observe. The service decides concurrency, health and versioning, none of which a script ever forced. Below that, the agent loop is unchanged from page 2.</desc>
+<defs><marker id="ah-cx14-exec" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="layer b1" x="150" y="16" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="37">HTTP request from a caller</text>
+<text class="lbl" x="450" y="55">with a timeout they can see</text>
+<rect class="layer b2" x="150" y="82" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="103">the service: concurrency, versioning, health</text>
+<text class="lbl" x="450" y="121">decisions a script never forced</text>
+<path class="arw" d="M420 66 V79" marker-end="url(#ah-cx14-exec)"></path>
+<path class="arw" d="M480 79 V66" marker-end="url(#ah-cx14-exec)"></path>
+<rect class="layer b3" x="150" y="148" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="169">the agent loop, unchanged</text>
+<text class="lbl" x="450" y="187">from page 2</text>
+<path class="arw" d="M420 132 V145" marker-end="url(#ah-cx14-exec)"></path>
+<path class="arw" d="M480 145 V132" marker-end="url(#ah-cx14-exec)"></path>
+<rect class="layer b4" x="150" y="214" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="235">model and tools</text>
+<text class="lbl" x="450" y="253">the slow, failing parts</text>
+<path class="arw" d="M420 198 V211" marker-end="url(#ah-cx14-exec)"></path>
+<path class="arw" d="M480 211 V198" marker-end="url(#ah-cx14-exec)"></path>
+<text class="cap" x="450" y="300">none of this is agent-specific -- it is the part you already know</text>
+</svg>
+
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> An HTTP layer, a bounded worker pool, per-request timeouts, a health endpoint, and version metadata attached to every response.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> Nothing per request beyond the run itself. Shared state is the tool clients, the index, and the caches.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> Concurrency is bounded by memory and by provider rate limits. A long run holds a worker, so a slow dependency reduces capacity for everything else.</p>
+
+<h3 class="bd-tech"><span class="bd-tag">B</span> A batch script</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> A batch script runs the agent over a list of inputs, writes its results, and exits.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It processes work that does not need an immediate answer, such as an overnight queue of tickets.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b> One process, started on a schedule or by hand, iterating over inputs until they are finished.</p>
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> The agent, a source of inputs, and somewhere to write results.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> Whatever it writes. A crash loses everything not yet written.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> There is no caller waiting, so failures are discovered later. Restarting means deciding what was already processed.</p>
+
+<h3 class="bd-diff">The core differences</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>A long-lived service</th><th>A batch script</th></tr></thead>
+<tbody>
+<tr><th>Caller waiting</th><td>Yes, with a timeout they can see</td><td>No</td></tr>
+<tr><th>Concurrency</th><td>Bounded pool, explicitly chosen</td><td>One, unless you build more</td></tr>
+<tr><th>Failure discovered</th><td>Immediately, by the caller</td><td>Later, by whoever reads the output</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 class="bd-short">In short - which one to choose</h3>
+<ul>
+<li>Use a <b>service</b> when something is waiting for the answer, and the contract matters.</li>
+<li>Use a <b>batch script</b> when the work is queued and nothing is blocked on it. It is simpler, and restartability is the only hard part.</li>
+<li>Both need <b>versioning and idempotency</b>. Neither is a reason to skip them.</li>
+</ul>
+</section>
+
+<!-- ================= 4 ================= -->
+<h2 id="without">4 · Without the technology</h2>
+<p>Before a service, this ran as a script over a queue.</p>
+
+<p>This is genuinely fine for overnight work, and it is often the right answer. What it does
+not force you to decide:</p>
+<ul>
+<li><b>How many at once.</b> One, and nobody is waiting, so it does not matter.</li>
+<li><b>What a slow run costs.</b> Wall-clock time nobody is watching.</li>
+<li><b>What healthy means.</b> The script either finished or it did not.</li>
+<li><b>Which version produced which line.</b> Whatever was checked out at the time.</li>
+</ul>
+<p>The fourth is the one that hurts either way. <b>A batch script needs versioning as much as
+a service does</b>, and is more likely to skip it.</p>
+
+<!-- ================= 5 ================= -->
+<h2 id="mechanics">5 · Runtime mechanics</h2>
+<p>One request, end to end:</p>
+<ol>
+<li><b>Authenticate</b> and establish the caller, before anything else runs (page 9).</li>
+<li><b>Admit or reject.</b> If the worker pool is full, reject immediately rather than
+queueing without bound.</li>
+<li><b>Run</b> the agent with a deadline shorter than the caller's timeout.</li>
+<li><b>Respond</b> with the answer, the run id, the versions, and what stopped the run.</li>
+<li><b>Flush</b> the trace, whichever way the run ended.</li>
+</ol>
+<p>Step 2 is the one people omit. <b>Unbounded queueing turns a slow dependency into an
+outage</b>, because every waiting request holds memory and none of them completes.</p>
+
+<!-- ================= 7 ================= -->
+<h2 id="components">6 · The components, one at a time</h2>
+<h3>Concurrency</h3>
+<p>A bounded pool, sized against memory and the provider's rate limit. Reject beyond it
+rather than queueing.</p>
+
+<h3>The deadline</h3>
+
+<p>Yours must be shorter, or the caller gives up first and you cannot tell them what
+happened.</p>
+
+<h3>Health</h3>
+
+<p><b>A readiness check that only reports the web server is worse than none</b>, because the
+orchestrator keeps routing traffic to a broken instance.</p>
+
+<h3>Versioning</h3>
+
+<p>Returned in every response and recorded on every trace. This is what makes a regression
+attributable and a result refusable.</p>
+
+<h3>Graceful shutdown</h3>
+<p>Stop accepting, let in-flight runs finish within the deadline, flush traces, then exit.
+Killing mid-run loses the trace of exactly the runs you want.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 228" role="img" aria-labelledby="cx14-version-t cx14-version-d">
+<title id="cx14-version-t">What a version lets you refuse</title>
+<desc id="cx14-version-d">If every run records the code commit and prompt version that produced it, a result from a withdrawn version can be identified and rejected instead of being trusted silently.</desc>
+<defs><marker id="ah-cx14-version" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="95" width="258.2" height="56" rx="12"></rect>
+<text class="lbl" x="141.1" y="119">a result</text>
+<text class="lbl" x="141.1" y="137">arrives</text>
+<rect class="box b2" x="314.2" y="95" width="276.2" height="56" rx="12"></rect>
+<text class="lbl" x="452.3" y="119">which version</text>
+<text class="lbl" x="452.3" y="137">produced it?</text>
+<path class="arw" d="M275.2 123 H310.2" marker-end="url(#ah-cx14-version)"></path>
+<rect class="box b3" x="642.4" y="58" width="245.6" height="56" rx="12"></rect>
+<text class="lbl" x="765.2" y="91">the current one -- accept it</text>
+<path class="arw" d="M593.4 123 C616.4 123, 616.4 86, 638.4 86" marker-end="url(#ah-cx14-version)"></path>
+<rect class="box b4" x="642.4" y="132" width="245.6" height="56" rx="12"></rect>
+<text class="lbl" x="765.2" y="156">a withdrawn one -- refuse and re-run</text>
+<text class="lbl" x="765.2" y="174">the refusal is the point</text>
+<path class="arw" d="M593.4 123 C616.4 123, 616.4 160, 638.4 160" marker-end="url(#ah-cx14-version)"></path>
+<text class="cap" x="450" y="222">you cannot refuse what you cannot identify</text>
+</svg>
+
+<!-- ================= 8 ================= -->
+<h2 id="state">7 · State and data flow</h2>
+<ol>
+<li><b>What data is state?</b> The worker pool count, the tool clients, the index, and the
+caches.</li>
+<li><b>Who writes each field?</b> The service on startup; each request only borrows.</li>
+<li><b>Who reads it?</b> Every request.</li>
+<li><b>Replaced, appended or merged?</b> Shared resources are replaced on deploy, never
+mutated per request.</li>
+<li><b>What reducer controls merging?</b> None. Per-request state must not leak between
+requests.</li>
+<li><b>Only in process memory?</b> The pool and caches, yes. Traces and the idempotency
+ledger, no.</li>
+<li><b>Is it checkpointed?</b> Runs are not resumable here. A restart loses in-flight runs.</li>
+<li><b>Is it in a database?</b> The ledger from page 8 and the traces from page 11.</li>
+<li><b>How long does it survive?</b> Process state until deploy; durable state per its own
+retention.</li>
+<li><b>What retrieves it again?</b> The run id, returned to the caller in every response.</li>
+</ol>
+<p>Row 5 is a real bug class. <b>A cache keyed without the tenant is a cross-tenant read</b>,
+and a service is where that first becomes possible.</p>
+
+<!-- ================= 10 ================= -->
+<h2 id="trace">8 · Trace</h2>
+<p>Shipping a prompt change, using the suite from page 10.</p>
+
+<p>And the response afterwards.</p>
+
+<p><b>Every result now names what produced it.</b> If v5 turns out to be worse in production,
+every affected run is identifiable by that field.</p>
+
+<!-- ================= 11 ================= -->
+<h2 id="break">9 · Break it</h2>
+<p>Deploy while eleven runs are in flight, without draining.</p>
+
+<p>Three different problems. The first lost its trace, so <b>a refund happened and there is
+no record of the run that caused it.</b> The third was retried from the beginning.</p>
+<p>The retry is only safe because of page 8: the idempotency key is derived from the request,
+so the second attempt was recognised. <b>Without that, the restart would have refunded
+twice.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 174" role="img" aria-labelledby="cx14-restart-t cx14-restart-d">
+<title id="cx14-restart-t">A restart without draining</title>
+<desc id="cx14-restart-d">Eleven runs are in flight when the process is killed. One had already executed a refund and lost its trace before it could be flushed, so the effect happened and no record of the run that caused it survives.</desc>
+<defs><marker id="ah-cx14-restart" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="52" width="202.5" height="56" rx="12"></rect>
+<rect class="box b2" x="236.5" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M217.5 80 H232.5" marker-end="url(#ah-cx14-restart)"></path>
+<rect class="box fail" x="461" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M442 80 H457" marker-end="url(#ah-cx14-restart)"></path>
+<rect class="box after b4" x="685.5" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M666.5 80 H681.5" marker-end="url(#ah-cx14-restart)"></path>
+<text class="lbl" x="113.25" y="76">11 runs</text>
+<text class="lbl" x="113.25" y="94">in flight</text>
+<text class="lbl" x="337.75" y="76">process killed</text>
+<text class="lbl" x="337.75" y="94">no drain</text>
+<text class="lbl" x="562.25" y="76">refund executed</text>
+<text class="lbl" x="562.25" y="94">trace lost</text>
+<text class="lbl" x="786.75" y="76">caller retries</text>
+<text class="lbl" x="786.75" y="94">whole request</text>
+<path class="xmark" d="M544.25 122 L580.25 150 M580.25 122 L544.25 150"></path>
+<text class="cap rescue" x="450" y="166">the retry was only safe because the idempotency key came from the request</text>
+</svg>
+
+<!-- ================= 12 ================= -->
+<h2 id="fix">10 · Fix it</h2>
+<p><b>1 · Drain on shutdown</b>, rather than dropping in-flight work.</p>
+
+<p><b>2 · Flush the trace per span</b>, not at the end, so a killed process still leaves
+evidence (page 11).</p>
+<p><b>3 · Keep the idempotency ledger durable and shared</b>, so a retry after a restart is
+recognised by a different worker.</p>
+<p><b>4 · Make the timeout response informative</b>, so a caller can decide whether retrying
+is safe.</p>
+
+<p><b>A bare 504 forces the caller to guess</b>, and the safe guess and the useful guess are
+different.</p>
+
+<!-- ================= 13 ================= -->
+<h2 id="production">11 · Production version</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Concern</th><th>What you do</th></tr></thead>
+<tbody>
+<tr><td>Bounded concurrency</td><td>A pool sized to memory and rate limits. Reject at capacity rather than queueing</td></tr>
+<tr><td>Your deadline first</td><td>Shorter than the caller's timeout, so you control the response they see</td></tr>
+<tr><td>Informative timeouts</td><td>Run id and side-effect status. Never a bare 504</td></tr>
+<tr><td>Readiness vs liveness</td><td>Readiness probes the model, the index and the database. Liveness probes the process</td></tr>
+<tr><td>Versioning</td><td>Code and prompt versions in every response and on every trace</td></tr>
+<tr><td>Prompt as code</td><td>Versioned, evaluated, reviewed and rollback-able. Never edited in place</td></tr>
+<tr><td>Graceful shutdown</td><td>Drain in-flight runs and flush traces before exiting</td></tr>
+<tr><td>Idempotency</td><td>Durable and shared, so a retry after a restart is still recognised</td></tr>
+<tr><td>Rate limits</td><td>Per tenant, or one caller consumes the pool everyone shares</td></tr>
+<tr><td>Rollback</td><td>The previous prompt version stays deployable, and you have tested that path</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ================= 14 ================= -->
+<h2 id="comparison">12 · Comparison</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Long-lived service</th><th>Batch script</th><th>Queue worker</th></tr></thead>
+<tbody>
+<tr><th>Caller waiting</th><td><b>Yes</b></td><td>No</td><td>No</td></tr>
+<tr><th>Backpressure</th><td>Reject at capacity</td><td>Not applicable</td><td><b>The queue absorbs it</b></td></tr>
+<tr><th>Retry semantics</th><td>The caller retries</td><td>Rerun the script</td><td><b>The queue redelivers</b></td></tr>
+<tr><th>Long runs</th><td>Holds a worker</td><td>Fine</td><td><b>Fine</b></td></tr>
+<tr><th>Failure noticed</th><td><b>Immediately</b></td><td>Later</td><td>By dead-letter</td></tr>
+<tr><th>Use it for</th><td>Interactive requests</td><td>Overnight work</td><td>Long or bursty work</td></tr>
+</tbody>
+</table>
+</div>
+<p>The fourth row often decides it. <b>An agent run of 30 seconds is a poor fit for a request
+someone is waiting on</b>, and a good fit for a queue with a status endpoint.</p>
+
+<!-- ================= 15 ================= -->
+<div class="carry"><b>New questions</b> written for this page: it is new, so there was nothing to carry over.</div>
+<h2 id="interview">13 &middot; Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  Why is a prompt change a deploy? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Because it changes behaviour in production, exactly as a code change does. It gets a version, it runs through the evaluation suite, and it must be possible to roll it back. Editing a prompt in place with no version is deploying untested code.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What does a health check need to actually check? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>That the service can do its job, not that the process is running. A check that returns 200 whenever the web server is up will report healthy while every model call is failing.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  What four things does wrapping an agent in a service force you to decide? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Concurrency: how many runs at once, and what happens beyond that. Timeouts: what the caller sees when a run exceeds one. Health: what healthy means. Versioning: which code and prompt produced a given result.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  Why must an agent service report its versions in the response? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>So a result can be attributed. Without the code commit and prompt version attached, you cannot say which change caused a regression, and you cannot refuse a result produced by a version you have since withdrawn.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  How do you ship a prompt change safely? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Version it, run the evaluation suite against the new version, compare the metrics against the current one, and ship only if they hold. Keep the previous version deployable. If the change is risky, run both and compare on a sample of live traffic before switching.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  An agent request times out at 30 seconds. What should the caller receive? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>A response that says the run did not complete, carries the run id, and states whether any side effect occurred. The dangerous answer is a generic 504, because the caller cannot tell whether the refund happened. This is why execution sits behind idempotency and approval rather than inside the request.</p></div></details>
+
+<!-- ================= 16 ================= -->
+<h2 id="short">14 · In short, and what comes next</h2>
+<p class="bd-choose">Remember these six:</p>
+<ul>
+<li>A service forces four decisions: concurrency, timeouts, health and versioning.</li>
+<li>Your deadline must fire before the caller's, or you cannot tell them what happened.</li>
+<li>A timeout response carries the run id and what side effects occurred.</li>
+<li>Readiness checks the model, the index and the database - not the web server.</li>
+<li>A prompt change is a deploy: version it, evaluate it, and keep the old one deployable.</li>
+<li>Drain on shutdown and flush traces per span, or restarts lose the runs you need.</li>
+</ul>
+<div class="callout key">
+<div class="c-ico">🔑</div>
+<div class="c-body"><div class="c-title">The one idea to remember</div>
+<p><b>Almost none of this is agent-specific.</b> It is ordinary service engineering, applied
+to a workload that is slow, non-deterministic, and occasionally moves money.</p></div>
+</div>
+<p><b>Next:</b> page 15 puts the fifteen pages together and turns them into answers you can
+give out loud.</p>
+
+<div class="page-nav" data-page-nav>
+<a href="13-multi-agent.html"><div class="dir">← Previous</div><div class="ttl">13 · Multi-agent</div></a>
+          <a class="next" href="15-capstone.html"><div class="dir">Next →</div><div class="ttl">15 · Capstone</div></a>
+</div>
+
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script>
+window.__pageNav = {
+  navLabel: "Understanding AI Agents · CampusX",
+  here: "campusx/14-deployment.html",
+  base: "../",
+  pages: [
+    { file: "campusx/index.html", title: "Section index", num: "✦", kw: "campusx agents index" }
+  ]
+};
+</script>
+<script src="../../assets/app.js?v=20260925c"></script>
+<script src="../../assets/sitenav.js?v=20260925a"></script>
+<script src="../../assets/enhance.js?v=20260925c"></script>
+<script src="../../assets/genai-motion.js?v=20260728a"></script>
+<script src="../../assets/glossary.js?v=20260802b"></script>
+</body>
+</html>

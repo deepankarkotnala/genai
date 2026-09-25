@@ -25,13 +25,13 @@
       icon: "✦",
       blurb: "The source hub overview and recommended entry point.",
       pages: [
-        { path: "index.html", title: "GenAI Interview Hub — Home", desc: "Interview-first preparation for senior GenAI, Applied AI, LLM and architecture roles." }
+        { path: "index.html", title: "GenAI Interview Hub - Home", desc: "Interview-first preparation for senior GenAI, Applied AI, LLM and architecture roles." }
       ]
     },
     {
       /* Pages that live in THIS site, not in the mirrored repository. The
          workspace "Interview" tab lands here, so the local question bank has to
-         be findable from this catalogue too — otherwise searching for a topic
+         be findable from this catalogue too - otherwise searching for a topic
          such as "neural networks" reports no matching interview content even
          though the page exists one section above. These entries link straight
          to the local file instead of being fetched and re-rendered. */
@@ -133,7 +133,7 @@
       icon: "Q",
       blurb: "The complete metadata-tagged bank of model and senior-level answers.",
       pages: [
-        { path: "qbank/index.html", title: "Question Bank — All Categories", desc: "Browse the complete question bank by topic, seniority and interview round." },
+        { path: "qbank/index.html", title: "Question Bank - All Categories", desc: "Browse the complete question bank by topic, seniority and interview round." },
         { path: "qbank/llm-basics.html", title: "LLM Basics", desc: "Tokens, transformers, context windows, inference, decoding and limitations." },
         { path: "qbank/prompt-engineering.html", title: "Prompt Engineering", desc: "Prompt structure, few-shot patterns, structured output and reliability." },
         { path: "qbank/embeddings-vector-db.html", title: "Embeddings & Vector Databases", desc: "Similarity, ANN/HNSW, metadata filtering, hybrid retrieval and reranking." },
@@ -164,7 +164,7 @@
     },
     agent: {
       title: "Bounded agent loop",
-      note: "A senior answer includes stop conditions, tool validation and recovery—not only planning.",
+      note: "A senior answer includes stop conditions, tool validation and recovery - not only planning.",
       nodes: [
         ["Goal", "task + constraints"],
         ["Plan", "choose next action"],
@@ -287,7 +287,7 @@
       return out;
     }, []);
   }
-  /* Only mirrored pages can be discovered, fetched or cached — local ones are
+  /* Only mirrored pages can be discovered, fetched or cached - local ones are
      plain links, so they must stay out of every source-page count. */
   function remotePages() { return allPages().filter(function (page) { return !page.local; }); }
   function pageForPath(path) { return remotePages().find(function (page) { return page.path === path; }); }
@@ -381,7 +381,7 @@
     els.catalog.hidden = false;
     els.hero.hidden = false;
     els.crumb.textContent = "Complete Interview Hub";
-    document.title = "Complete GenAI Interview Hub — GenAI Learning Hub";
+    document.title = "Complete GenAI Interview Hub - GenAI Learning Hub";
     if (options.push !== false) history.pushState({ page: "" }, "", location.pathname);
     renderCatalog();
     if (options.scroll !== false) window.scrollTo({ top: 0, behavior: "smooth" });
@@ -646,7 +646,7 @@
       var titleNode = $("h1", els.imported);
       var title = titleNode ? titleNode.textContent.trim() : fallbackPage.title;
       els.crumb.textContent = (fallbackPage.groupLabel || groupForPath(path).label) + " / " + title;
-      document.title = title + " — GenAI Learning Hub";
+      document.title = title + " - GenAI Learning Hub";
       setStatus((result.cached ? "Offline cache loaded" : "Live source loaded") + " · complete page · " + path, result.cached ? "working" : "ok");
       els.loading.hidden = true;
 

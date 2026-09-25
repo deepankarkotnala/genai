@@ -1,5 +1,5 @@
 /* =========================================================================
-   Machine Learning Interview Portal — site navigation
+   Machine Learning Interview Portal - site navigation
    STANDALONE portal. This file is the ML portal's own navigation and is
    completely independent of the GenAI portal: it contains only the Machine
    Learning curriculum groups, and nothing outside this folder.
@@ -11,7 +11,7 @@
    is this folder and the whole directory can be moved or deployed anywhere.
 
    app.js still handles theme, right-rail TOC, copy buttons and the mobile
-   drawer — it defers sidebar building to this file via window.SiteNav.
+   drawer - it defers sidebar building to this file via window.SiteNav.
    Pure vanilla JS, no deps, offline-safe.
    ========================================================================= */
 (function () {
@@ -221,7 +221,7 @@
 
     var intro = document.createElement("section");
     intro.className = "mobile-nav-intro";
-    var currentLabel = currentGroup ? currentGroup.label : "Switch job Learning Platform";
+    var currentLabel = currentGroup ? currentGroup.label : "Learn GenAI Learning Platform";
     var currentCount = currentGroup ? currentGroup.pages.length : GROUPS.length;
     var countLabel = currentGroup ? (currentCount + (currentCount === 1 ? " page" : " pages") + " in this path") : (currentCount + " learning paths");
     intro.innerHTML =
@@ -233,21 +233,50 @@
   }
 
   /* ---------- Cross-site search (searches ALL groups) ---------- */
+  /* Matched to interview_prep: the results replace the nav rather than
+     stacking above it (a result list on top of sixteen sections puts the
+     answer below the fold on a laptop), grouped under the same uppercase
+     labels the nav uses, with a clear control inside the pill. */
+  function escapeHTML(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
   function setupSearch() {
     var input = document.querySelector("[data-search]") || document.querySelector("[data-secsearch]");
     var out = document.querySelector(".search-results") || document.querySelector("[data-secresults]");
     if (!input || !out) return;
-    input.placeholder = "Find chapter or topic…  ( / )";
-    input.setAttribute("aria-label", "Find a chapter or topic");
+    var sidebar = input.closest(".sidebar");
+    input.type = "search";
+    input.placeholder = "Search all topics";
+    input.setAttribute("aria-label", "Search every page in this portal");
+    input.setAttribute("autocomplete", "off");
+    input.setAttribute("spellcheck", "false");
+    out.setAttribute("role", "listbox");
+    out.setAttribute("aria-label", "Search results");
+
+    var clear = document.createElement("button");
+    clear.type = "button";
+    clear.className = "sb-clear";
+    clear.hidden = true;
+    clear.setAttribute("aria-label", "Clear search");
+    clear.innerHTML = "&times;";
+    input.insertAdjacentElement("afterend", clear);
+
     // flatten registry for searching, remembering each page's group label
     var index = [];
     GROUPS.forEach(function (g) {
       g.pages.forEach(function (p) { index.push({ p: p, group: g.label }); });
     });
-    function esc(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
-    function render(q) {
-      q = q.trim().toLowerCase();
-      if (!q) { out.innerHTML = ""; return; }
+    function setOpen(on) {
+      clear.hidden = !on;
+      if (sidebar) sidebar.classList.toggle("is-searching", on);
+      if (!on) out.innerHTML = "";
+    }
+    function render(raw) {
+      var q = raw.trim().toLowerCase();
+      if (!q) { setOpen(false); return; }
+      setOpen(true);
       var hits = index.map(function (rec) {
         var hay = (rec.p.title + " " + rec.group + " " + (rec.p.kw || "")).toLowerCase();
         var score = 0;
@@ -255,21 +284,38 @@
         q.split(/\s+/).forEach(function (w) { if (w && hay.indexOf(w) > -1) score += 1; });
         return { rec: rec, score: score };
       }).filter(function (x) { return x.score > 0; })
-        .sort(function (a, b) { return b.score - a.score; }).slice(0, 8);
-      if (!hits.length) { out.innerHTML = '<div class="search-empty">No results for "' + q + '"</div>'; return; }
-      out.innerHTML = hits.map(function (h) {
-        var p = h.rec.p;
-        var t = p.title.replace(new RegExp("(" + esc(q) + ")", "i"), "<b>$1</b>");
-        return '<a class="search-result" href="' + href(p.path) + '">' +
-               '<span class="sr-group">' + h.rec.group + '</span>' + t + "</a>";
+        .sort(function (a, b) { return b.score - a.score; }).slice(0, 15);
+      if (!hits.length) {
+        out.innerHTML = '<p class="sb-empty">No match for <strong>' + escapeHTML(raw.trim()) +
+          '</strong>.<br>Try a shorter phrase or a single term.</p>';
+        return;
+      }
+      // Grouped by section, sections in order of their best hit.
+      var order = [], byGroup = {};
+      hits.forEach(function (h) {
+        if (!byGroup[h.rec.group]) { byGroup[h.rec.group] = []; order.push(h.rec.group); }
+        byGroup[h.rec.group].push(h.rec.p);
+      });
+      out.innerHTML = order.map(function (group) {
+        return '<div class="sb-sec">' + escapeHTML(group) + '</div>' +
+          byGroup[group].map(function (p) {
+            var at = p.title.toLowerCase().indexOf(q), t = escapeHTML(p.title);
+            if (at > -1) t = escapeHTML(p.title.slice(0, at)) + "<b>" + escapeHTML(p.title.slice(at, at + q.length)) +
+                             "</b>" + escapeHTML(p.title.slice(at + q.length));
+            return '<a class="search-result sb-hit" href="' + href(p.path) + '">' +
+                   '<span class="sr-num">' + p.num + '</span><span class="sr-t">' + t + '</span></a>';
+          }).join("");
       }).join("");
     }
     input.addEventListener("input", function (e) { render(e.target.value); });
+    clear.addEventListener("click", function () { input.value = ""; setOpen(false); input.focus(); });
     document.addEventListener("keydown", function (e) {
       if (e.key === "/" && document.activeElement !== input && !/input|textarea/i.test(document.activeElement.tagName)) {
         e.preventDefault(); input.focus();
       }
-      if (e.key === "Escape") { input.blur(); out.innerHTML = ""; }
+      if (e.key === "Escape" && (input.value || document.activeElement === input)) {
+        input.value = ""; setOpen(false); input.blur();
+      }
     });
   }
 
@@ -287,7 +333,7 @@
     var f = document.createElement("footer");
     f.className = "site-footer";
     f.innerHTML =
-      '<span>© ' + year + ' Switch job</span>' +
+      '<span>© ' + year + ' Learn GenAI</span>' +
       '<span class="sep">·</span>' +
       '<span>Developed by Deepankar Kotnala</span>';
     content.appendChild(f);
@@ -380,8 +426,43 @@
     handle.tabIndex = 0;
     app.appendChild(handle);
 
+    /* The shell renders the desktop sidebar at `--density` (0.9) via `zoom`, so
+       a layout width of W is only 0.9W on screen. The handle is `position:
+       fixed` and therefore outside the zoomed subtree - it moves 1:1 with the
+       pointer while the edge it is dragging moves at 0.9. Dividing the pointer
+       delta by the factor makes the visible edge track the cursor exactly.
+       Read from the computed value rather than hard-coded so the stylesheet
+       stays the single source of truth (and mobile, where it is 1, needs no
+       special case). */
+    function density() {
+      var raw = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--density"));
+      return raw > 0 ? raw : 1;
+    }
+
+    /* Read once, here, before apply() ever writes an inline --sidebar-w on
+       <html>: after that the computed value is whatever the reader last dragged
+       to, and a minimum derived from it would rise to meet the current width and
+       make the panel impossible to shrink.
+
+       The old comment said this "mirrors the compact desktop --sidebar-w token
+       in styles.css" and mirrored clamp(220px, 15vw, 252px) - one of five
+       competing declarations, and not the one that actually won. There is a
+       single token now, so take the floor from it and keep the literals only for
+       the case where it is missing entirely. */
+    /* The token is declared in rem (17.5rem), and ir-theme.css widens it with
+       the reading size (a min()/calc() expression). A custom property's
+       computed value is its declared text, so parseFloat read "17.5rem" as
+       17.5 and wrote `--sidebar-w: 17.5px` back - the rail collapsed to a
+       sliver on any browser with no saved width. The floor is now measured off
+       the rail as rendered, falling back to the base token in px. */
+    var STYLESHEET_DESKTOP_W = (function () {
+      var rootPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      var rendered = isMobile() ? 0 : sidebar.getBoundingClientRect().width / density();
+      return Math.round(rendered > 120 ? rendered : 17.5 * rootPx);
+    })();
+
     function desktopMinimum() {
-      // Mirrors the compact desktop --sidebar-w token in styles.css.
+      if (STYLESHEET_DESKTOP_W) return STYLESHEET_DESKTOP_W;
       return Math.round(Math.max(220, Math.min(252, window.innerWidth * 0.15)));
     }
 
@@ -403,8 +484,12 @@
     function activeMaximum() {
       var minimum = activeMinimum();
       if (isMobile()) return Math.max(minimum, Math.floor(window.innerWidth * 0.98));
-      // Keep a useful reading area even on smaller desktop windows.
-      return Math.max(minimum, Math.min(SIDEBAR_MAX_WIDTH, window.innerWidth - 560));
+      /* Keep a useful reading area even on smaller desktop windows. The 560px
+         budget is screen space but the value returned is a layout width, so it
+         has to be divided back out by the density factor - otherwise the cap
+         reserves 10% less for the article than it reads as. */
+      var budget = (window.innerWidth - 560) / density();
+      return Math.max(minimum, Math.min(SIDEBAR_MAX_WIDTH, Math.floor(budget)));
     }
 
     function activeCurrent() {
@@ -415,17 +500,25 @@
       return Math.max(activeMinimum(), Math.min(activeMaximum(), Math.round(value)));
     }
 
+    /* As in interview_prep, the stylesheet owns the width until the reader
+       drags: only a custom width is written inline on <html>. Writing one on
+       every load pinned the rail and stopped it growing with the text size. */
+    var desktopCustom = false;
+    var mobileCustom = false;
+
     function apply(value, persist) {
       var next = clamp(value);
       if (isMobile()) {
         mobileCurrent = next;
-        document.documentElement.style.setProperty("--mobile-sidebar-w", next + "px");
+        if (persist) mobileCustom = true;
+        if (mobileCustom) document.documentElement.style.setProperty("--mobile-sidebar-w", next + "px");
         if (persist) {
           try { localStorage.setItem(LS_MOBILE_SIDEBAR_WIDTH, String(next)); } catch (e) {}
         }
       } else {
         desktopCurrent = next;
-        document.documentElement.style.setProperty("--sidebar-w", next + "px");
+        if (persist) desktopCustom = true;
+        if (desktopCustom) document.documentElement.style.setProperty("--sidebar-w", next + "px");
         if (persist) {
           try { localStorage.setItem(LS_SIDEBAR_WIDTH, String(next)); } catch (e) {}
         }
@@ -436,11 +529,27 @@
       handle.setAttribute("aria-valuetext", next + " pixels wide");
     }
 
+    // Back to the stylesheet's width, forgetting the dragged one.
+    function reset() {
+      if (isMobile()) {
+        mobileCustom = false;
+        mobileCurrent = mobileMinimum();
+        document.documentElement.style.removeProperty("--mobile-sidebar-w");
+        try { localStorage.removeItem(LS_MOBILE_SIDEBAR_WIDTH); } catch (e) {}
+      } else {
+        desktopCustom = false;
+        desktopCurrent = desktopMinimum();
+        document.documentElement.style.removeProperty("--sidebar-w");
+        try { localStorage.removeItem(LS_SIDEBAR_WIDTH); } catch (e) {}
+      }
+      apply(activeCurrent(), false);
+    }
+
     try {
       var savedDesktop = parseInt(localStorage.getItem(LS_SIDEBAR_WIDTH), 10);
       var savedMobile = parseInt(localStorage.getItem(LS_MOBILE_SIDEBAR_WIDTH), 10);
-      if (Number.isFinite(savedDesktop)) desktopCurrent = savedDesktop;
-      if (Number.isFinite(savedMobile)) mobileCurrent = savedMobile;
+      if (Number.isFinite(savedDesktop)) { desktopCurrent = savedDesktop; desktopCustom = true; }
+      if (Number.isFinite(savedMobile)) { mobileCurrent = savedMobile; mobileCustom = true; }
     } catch (e) {}
     apply(activeCurrent(), false);
 
@@ -448,7 +557,12 @@
       if (event.button !== 0) return;
       dragging = true;
       startX = event.clientX;
-      startWidth = activeCurrent();
+      // Start from the rail as drawn: without a custom width the stylesheet's
+      // (text-size dependent) width is the one on screen.
+      var customNow = isMobile() ? mobileCustom : desktopCustom;
+      var drawn = sidebar.getBoundingClientRect().width / (isMobile() ? 1 : density());
+      startWidth = customNow || !(drawn > 0) ? activeCurrent() : drawn;
+      if (isMobile()) mobileCustom = true; else desktopCustom = true;
       handle.setPointerCapture(event.pointerId);
       document.body.classList.add("sidebar-resizing");
       event.preventDefault();
@@ -456,7 +570,10 @@
 
     handle.addEventListener("pointermove", function (event) {
       if (!dragging) return;
-      apply(startWidth + event.clientX - startX, false);
+      // Pointer travel is in screen pixels; --sidebar-w is a layout width that
+      // the shell then scales by --density. Divide so the edge follows the
+      // cursor 1:1 instead of lagging it by the factor.
+      apply(startWidth + (event.clientX - startX) / density(), false);
     });
 
     function finishResize(event) {
@@ -469,7 +586,7 @@
 
     handle.addEventListener("pointerup", finishResize);
     handle.addEventListener("pointercancel", finishResize);
-    handle.addEventListener("dblclick", function () { apply(activeMinimum(), true); });
+    handle.addEventListener("dblclick", reset);
     handle.addEventListener("keydown", function (event) {
       var next = activeCurrent();
       if (event.key === "ArrowLeft") next -= SIDEBAR_KEY_STEP;
@@ -573,7 +690,7 @@
        navigation-adjacent: arming the loading ring.
 
        No click is intercepted any more. The old code called preventDefault(),
-       added `.is-leaving`, waited for a fade and then set location.href — that
+       added `.is-leaving`, waited for a fade and then set location.href - that
        wait was pure latency in front of every navigation, on top of an animation
        that read as jitter. Now the browser navigates on the click, immediately,
        and the ring appears only if the new document takes longer than GRACE. */

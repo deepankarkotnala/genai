@@ -1,4 +1,4 @@
-# DSA Interview Preparation — Master Implementation Plan
+# DSA Interview Preparation: Master Implementation Plan
 
 ## 1. Purpose
 
@@ -365,7 +365,7 @@ Use this order in the new top-level navigation group.
 
 # 9. Detailed chapter plans
 
-## Chapter 00 — DSA Roadmap
+## Chapter 00: DSA Roadmap
 
 ### Goal
 
@@ -396,7 +396,7 @@ Give learners a clear study path and prevent random problem grinding.
 
 ---
 
-## Chapter 01 — Python DSA Foundations
+## Chapter 01: Python DSA Foundations
 
 ### Goal
 
@@ -430,7 +430,7 @@ Teach the Python behaviors that directly affect algorithm correctness, complexit
 
 ---
 
-## Chapter 02 — Arrays & Hashing
+## Chapter 02: Arrays & Hashing
 
 ### Foundations
 
@@ -460,21 +460,21 @@ Teach the Python behaviors that directly affect algorithm correctness, complexit
 
 ### Core problem ladder
 
-1. LeetCode 1 — Two Sum
-2. LeetCode 217 — Contains Duplicate
-3. LeetCode 242 — Valid Anagram
-4. LeetCode 49 — Group Anagrams
-5. LeetCode 347 — Top K Frequent Elements
-6. LeetCode 238 — Product of Array Except Self
-7. LeetCode 36 — Valid Sudoku
-8. LeetCode 128 — Longest Consecutive Sequence
-9. LeetCode 121 — Best Time to Buy and Sell Stock
-10. LeetCode 53 — Maximum Subarray
-11. LeetCode 169 — Majority Element
-12. LeetCode 189 — Rotate Array
-13. LeetCode 560 — Subarray Sum Equals K
-14. LeetCode 41 — First Missing Positive
-15. LeetCode 88 — Merge Sorted Array
+1. LeetCode 1 - Two Sum
+2. LeetCode 217 - Contains Duplicate
+3. LeetCode 242 - Valid Anagram
+4. LeetCode 49 - Group Anagrams
+5. LeetCode 347 - Top K Frequent Elements
+6. LeetCode 238 - Product of Array Except Self
+7. LeetCode 36 - Valid Sudoku
+8. LeetCode 128 - Longest Consecutive Sequence
+9. LeetCode 121 - Best Time to Buy and Sell Stock
+10. LeetCode 53 - Maximum Subarray
+11. LeetCode 169 - Majority Element
+12. LeetCode 189 - Rotate Array
+13. LeetCode 560 - Subarray Sum Equals K
+14. LeetCode 41 - First Missing Positive
+15. LeetCode 88 - Merge Sorted Array
 
 ### Interview playbook
 
@@ -487,7 +487,7 @@ Teach the Python behaviors that directly affect algorithm correctness, complexit
 
 ---
 
-## Chapter 03 — Linked Lists
+## Chapter 03: Linked Lists
 
 ### Foundations
 
@@ -517,21 +517,21 @@ Teach the Python behaviors that directly affect algorithm correctness, complexit
 
 ### Core problem ladder
 
-1. LeetCode 206 — Reverse Linked List
-2. LeetCode 21 — Merge Two Sorted Lists
-3. LeetCode 141 — Linked List Cycle
-4. LeetCode 142 — Linked List Cycle II
-5. LeetCode 19 — Remove Nth Node From End of List
-6. LeetCode 143 — Reorder List
-7. LeetCode 2 — Add Two Numbers
-8. LeetCode 138 — Copy List with Random Pointer
-9. LeetCode 160 — Intersection of Two Linked Lists
-10. LeetCode 234 — Palindrome Linked List
-11. LeetCode 82 — Remove Duplicates from Sorted List II
-12. LeetCode 148 — Sort List
-13. LeetCode 23 — Merge k Sorted Lists
-14. LeetCode 25 — Reverse Nodes in k-Group
-15. LeetCode 146 — LRU Cache, cross-linked with Data Structure Design
+1. LeetCode 206 - Reverse Linked List
+2. LeetCode 21 - Merge Two Sorted Lists
+3. LeetCode 141 - Linked List Cycle
+4. LeetCode 142 - Linked List Cycle II
+5. LeetCode 19 - Remove Nth Node From End of List
+6. LeetCode 143 - Reorder List
+7. LeetCode 2 - Add Two Numbers
+8. LeetCode 138 - Copy List with Random Pointer
+9. LeetCode 160 - Intersection of Two Linked Lists
+10. LeetCode 234 - Palindrome Linked List
+11. LeetCode 82 - Remove Duplicates from Sorted List II
+12. LeetCode 148 - Sort List
+13. LeetCode 23 - Merge k Sorted Lists
+14. LeetCode 25 - Reverse Nodes in k-Group
+15. LeetCode 146 - LRU Cache, cross-linked with Data Structure Design
 
 ### Interview playbook
 
@@ -543,7 +543,7 @@ Teach the Python behaviors that directly affect algorithm correctness, complexit
 
 ---
 
-## Chapter 04 — Strings
+## Chapter 04: Strings
 
 ### Foundations
 
@@ -570,25 +570,25 @@ Teach the Python behaviors that directly affect algorithm correctness, complexit
 
 ### Core problem ladder
 
-1. LeetCode 125 — Valid Palindrome
-2. LeetCode 14 — Longest Common Prefix
-3. LeetCode 242 — Valid Anagram
-4. LeetCode 3 — Longest Substring Without Repeating Characters
-5. LeetCode 424 — Longest Repeating Character Replacement
-6. LeetCode 567 — Permutation in String
-7. LeetCode 438 — Find All Anagrams in a String
-8. LeetCode 76 — Minimum Window Substring
-9. LeetCode 5 — Longest Palindromic Substring
-10. LeetCode 647 — Palindromic Substrings
-11. LeetCode 151 — Reverse Words in a String
-12. LeetCode 394 — Decode String
-13. LeetCode 8 — String to Integer (atoi)
-14. LeetCode 28 — Find the Index of the First Occurrence in a String
-15. LeetCode 49 — Group Anagrams, cross-linked with Arrays & Hashing
+1. LeetCode 125 - Valid Palindrome
+2. LeetCode 14 - Longest Common Prefix
+3. LeetCode 242 - Valid Anagram
+4. LeetCode 3 - Longest Substring Without Repeating Characters
+5. LeetCode 424 - Longest Repeating Character Replacement
+6. LeetCode 567 - Permutation in String
+7. LeetCode 438 - Find All Anagrams in a String
+8. LeetCode 76 - Minimum Window Substring
+9. LeetCode 5 - Longest Palindromic Substring
+10. LeetCode 647 - Palindromic Substrings
+11. LeetCode 151 - Reverse Words in a String
+12. LeetCode 394 - Decode String
+13. LeetCode 8 - String to Integer (atoi)
+14. LeetCode 28 - Find the Index of the First Occurrence in a String
+15. LeetCode 49 - Group Anagrams, cross-linked with Arrays & Hashing
 
 ---
 
-## Chapter 05 — Two Pointers
+## Chapter 05: Two Pointers
 
 ### Foundations and signals
 
@@ -611,25 +611,25 @@ Teach the Python behaviors that directly affect algorithm correctness, complexit
 
 ### Core problem ladder
 
-1. LeetCode 125 — Valid Palindrome
-2. LeetCode 167 — Two Sum II — Input Array Is Sorted
-3. LeetCode 283 — Move Zeroes
-4. LeetCode 26 — Remove Duplicates from Sorted Array
-5. LeetCode 27 — Remove Element
-6. LeetCode 977 — Squares of a Sorted Array
-7. LeetCode 344 — Reverse String
-8. LeetCode 392 — Is Subsequence
-9. LeetCode 680 — Valid Palindrome II
-10. LeetCode 15 — 3Sum
-11. LeetCode 16 — 3Sum Closest
-12. LeetCode 11 — Container With Most Water
-13. LeetCode 75 — Sort Colors
-14. LeetCode 88 — Merge Sorted Array
-15. LeetCode 42 — Trapping Rain Water
+1. LeetCode 125 - Valid Palindrome
+2. LeetCode 167 - Two Sum II - Input Array Is Sorted
+3. LeetCode 283 - Move Zeroes
+4. LeetCode 26 - Remove Duplicates from Sorted Array
+5. LeetCode 27 - Remove Element
+6. LeetCode 977 - Squares of a Sorted Array
+7. LeetCode 344 - Reverse String
+8. LeetCode 392 - Is Subsequence
+9. LeetCode 680 - Valid Palindrome II
+10. LeetCode 15 - 3Sum
+11. LeetCode 16 - 3Sum Closest
+12. LeetCode 11 - Container With Most Water
+13. LeetCode 75 - Sort Colors
+14. LeetCode 88 - Merge Sorted Array
+15. LeetCode 42 - Trapping Rain Water
 
 ---
 
-## Chapter 06 — Sliding Window
+## Chapter 06: Sliding Window
 
 ### Foundations and signals
 
@@ -649,25 +649,25 @@ Teach the Python behaviors that directly affect algorithm correctness, complexit
 
 ### Core problem ladder
 
-1. LeetCode 643 — Maximum Average Subarray I
-2. LeetCode 121 — Best Time to Buy and Sell Stock
-3. LeetCode 3 — Longest Substring Without Repeating Characters
-4. LeetCode 209 — Minimum Size Subarray Sum
-5. LeetCode 567 — Permutation in String
-6. LeetCode 438 — Find All Anagrams in a String
-7. LeetCode 424 — Longest Repeating Character Replacement
-8. LeetCode 1004 — Max Consecutive Ones III
-9. LeetCode 904 — Fruit Into Baskets
-10. LeetCode 713 — Subarray Product Less Than K
-11. LeetCode 1456 — Maximum Number of Vowels in a Substring of Given Length
-12. LeetCode 1208 — Get Equal Substrings Within Budget
-13. LeetCode 76 — Minimum Window Substring
-14. LeetCode 239 — Sliding Window Maximum
-15. LeetCode 30 — Substring with Concatenation of All Words
+1. LeetCode 643 - Maximum Average Subarray I
+2. LeetCode 121 - Best Time to Buy and Sell Stock
+3. LeetCode 3 - Longest Substring Without Repeating Characters
+4. LeetCode 209 - Minimum Size Subarray Sum
+5. LeetCode 567 - Permutation in String
+6. LeetCode 438 - Find All Anagrams in a String
+7. LeetCode 424 - Longest Repeating Character Replacement
+8. LeetCode 1004 - Max Consecutive Ones III
+9. LeetCode 904 - Fruit Into Baskets
+10. LeetCode 713 - Subarray Product Less Than K
+11. LeetCode 1456 - Maximum Number of Vowels in a Substring of Given Length
+12. LeetCode 1208 - Get Equal Substrings Within Budget
+13. LeetCode 76 - Minimum Window Substring
+14. LeetCode 239 - Sliding Window Maximum
+15. LeetCode 30 - Substring with Concatenation of All Words
 
 ---
 
-## Chapter 07 — Prefix Sums, Difference Arrays & Kadane
+## Chapter 07: Prefix Sums, Difference Arrays & Kadane
 
 ### Foundations
 
@@ -682,25 +682,25 @@ Teach the Python behaviors that directly affect algorithm correctness, complexit
 
 ### Core problem ladder
 
-1. LeetCode 303 — Range Sum Query — Immutable
-2. LeetCode 724 — Find Pivot Index
-3. LeetCode 560 — Subarray Sum Equals K
-4. LeetCode 525 — Contiguous Array
-5. LeetCode 974 — Subarray Sums Divisible by K
-6. LeetCode 53 — Maximum Subarray
-7. LeetCode 152 — Maximum Product Subarray
-8. LeetCode 918 — Maximum Sum Circular Subarray
-9. LeetCode 304 — Range Sum Query 2D — Immutable
-10. LeetCode 1074 — Number of Submatrices That Sum to Target
-11. LeetCode 1109 — Corporate Flight Bookings
-12. LeetCode 1094 — Car Pooling
-13. LeetCode 1310 — XOR Queries of a Subarray
-14. LeetCode 2270 — Number of Ways to Split Array
-15. LeetCode 238 — Product of Array Except Self
+1. LeetCode 303 - Range Sum Query - Immutable
+2. LeetCode 724 - Find Pivot Index
+3. LeetCode 560 - Subarray Sum Equals K
+4. LeetCode 525 - Contiguous Array
+5. LeetCode 974 - Subarray Sums Divisible by K
+6. LeetCode 53 - Maximum Subarray
+7. LeetCode 152 - Maximum Product Subarray
+8. LeetCode 918 - Maximum Sum Circular Subarray
+9. LeetCode 304 - Range Sum Query 2D - Immutable
+10. LeetCode 1074 - Number of Submatrices That Sum to Target
+11. LeetCode 1109 - Corporate Flight Bookings
+12. LeetCode 1094 - Car Pooling
+13. LeetCode 1310 - XOR Queries of a Subarray
+14. LeetCode 2270 - Number of Ways to Split Array
+15. LeetCode 238 - Product of Array Except Self
 
 ---
 
-## Chapter 08 — Sorting & Intervals
+## Chapter 08: Sorting & Intervals
 
 ### Foundations
 
@@ -715,25 +715,25 @@ Teach the Python behaviors that directly affect algorithm correctness, complexit
 
 ### Core problem ladder
 
-1. LeetCode 88 — Merge Sorted Array
-2. LeetCode 75 — Sort Colors
-3. LeetCode 56 — Merge Intervals
-4. LeetCode 57 — Insert Interval
-5. LeetCode 435 — Non-overlapping Intervals
-6. LeetCode 452 — Minimum Number of Arrows to Burst Balloons
-7. LeetCode 986 — Interval List Intersections
-8. LeetCode 1288 — Remove Covered Intervals
-9. LeetCode 729 — My Calendar I
-10. LeetCode 1094 — Car Pooling
-11. LeetCode 215 — Kth Largest Element in an Array
-12. LeetCode 148 — Sort List
-13. LeetCode 179 — Largest Number
-14. LeetCode 252 — Meeting Rooms
-15. LeetCode 253 — Meeting Rooms II
+1. LeetCode 88 - Merge Sorted Array
+2. LeetCode 75 - Sort Colors
+3. LeetCode 56 - Merge Intervals
+4. LeetCode 57 - Insert Interval
+5. LeetCode 435 - Non-overlapping Intervals
+6. LeetCode 452 - Minimum Number of Arrows to Burst Balloons
+7. LeetCode 986 - Interval List Intersections
+8. LeetCode 1288 - Remove Covered Intervals
+9. LeetCode 729 - My Calendar I
+10. LeetCode 1094 - Car Pooling
+11. LeetCode 215 - Kth Largest Element in an Array
+12. LeetCode 148 - Sort List
+13. LeetCode 179 - Largest Number
+14. LeetCode 252 - Meeting Rooms
+15. LeetCode 253 - Meeting Rooms II
 
 ---
 
-## Chapter 09 — Binary Search
+## Chapter 09: Binary Search
 
 ### Foundations
 
@@ -748,25 +748,25 @@ Teach the Python behaviors that directly affect algorithm correctness, complexit
 
 ### Core problem ladder
 
-1. LeetCode 704 — Binary Search
-2. LeetCode 35 — Search Insert Position
-3. LeetCode 69 — Sqrt(x)
-4. LeetCode 34 — Find First and Last Position of Element in Sorted Array
-5. LeetCode 74 — Search a 2D Matrix
-6. LeetCode 153 — Find Minimum in Rotated Sorted Array
-7. LeetCode 33 — Search in Rotated Sorted Array
-8. LeetCode 81 — Search in Rotated Sorted Array II
-9. LeetCode 162 — Find Peak Element
-10. LeetCode 875 — Koko Eating Bananas
-11. LeetCode 1011 — Capacity to Ship Packages Within D Days
-12. LeetCode 410 — Split Array Largest Sum
-13. LeetCode 981 — Time Based Key-Value Store
-14. LeetCode 378 — Kth Smallest Element in a Sorted Matrix
-15. LeetCode 4 — Median of Two Sorted Arrays
+1. LeetCode 704 - Binary Search
+2. LeetCode 35 - Search Insert Position
+3. LeetCode 69 - Sqrt(x)
+4. LeetCode 34 - Find First and Last Position of Element in Sorted Array
+5. LeetCode 74 - Search a 2D Matrix
+6. LeetCode 153 - Find Minimum in Rotated Sorted Array
+7. LeetCode 33 - Search in Rotated Sorted Array
+8. LeetCode 81 - Search in Rotated Sorted Array II
+9. LeetCode 162 - Find Peak Element
+10. LeetCode 875 - Koko Eating Bananas
+11. LeetCode 1011 - Capacity to Ship Packages Within D Days
+12. LeetCode 410 - Split Array Largest Sum
+13. LeetCode 981 - Time Based Key-Value Store
+14. LeetCode 378 - Kth Smallest Element in a Sorted Matrix
+15. LeetCode 4 - Median of Two Sorted Arrays
 
 ---
 
-## Chapter 10 — Stacks & Monotonic Stacks
+## Chapter 10: Stacks & Monotonic Stacks
 
 ### Foundations
 
@@ -780,25 +780,25 @@ Teach the Python behaviors that directly affect algorithm correctness, complexit
 
 ### Core problem ladder
 
-1. LeetCode 20 — Valid Parentheses
-2. LeetCode 155 — Min Stack
-3. LeetCode 150 — Evaluate Reverse Polish Notation
-4. LeetCode 71 — Simplify Path
-5. LeetCode 394 — Decode String
-6. LeetCode 496 — Next Greater Element I
-7. LeetCode 503 — Next Greater Element II
-8. LeetCode 739 — Daily Temperatures
-9. LeetCode 901 — Online Stock Span
-10. LeetCode 853 — Car Fleet
-11. LeetCode 402 — Remove K Digits
-12. LeetCode 316 — Remove Duplicate Letters
-13. LeetCode 84 — Largest Rectangle in Histogram
-14. LeetCode 224 — Basic Calculator
-15. LeetCode 22 — Generate Parentheses, cross-linked with Backtracking
+1. LeetCode 20 - Valid Parentheses
+2. LeetCode 155 - Min Stack
+3. LeetCode 150 - Evaluate Reverse Polish Notation
+4. LeetCode 71 - Simplify Path
+5. LeetCode 394 - Decode String
+6. LeetCode 496 - Next Greater Element I
+7. LeetCode 503 - Next Greater Element II
+8. LeetCode 739 - Daily Temperatures
+9. LeetCode 901 - Online Stock Span
+10. LeetCode 853 - Car Fleet
+11. LeetCode 402 - Remove K Digits
+12. LeetCode 316 - Remove Duplicate Letters
+13. LeetCode 84 - Largest Rectangle in Histogram
+14. LeetCode 224 - Basic Calculator
+15. LeetCode 22 - Generate Parentheses, cross-linked with Backtracking
 
 ---
 
-## Chapter 11 — Queues & Deques
+## Chapter 11: Queues & Deques
 
 ### Foundations
 
@@ -812,25 +812,25 @@ Teach the Python behaviors that directly affect algorithm correctness, complexit
 
 ### Core problem ladder
 
-1. LeetCode 232 — Implement Queue using Stacks
-2. LeetCode 225 — Implement Stack using Queues
-3. LeetCode 933 — Number of Recent Calls
-4. LeetCode 622 — Design Circular Queue
-5. LeetCode 641 — Design Circular Deque
-6. LeetCode 1700 — Number of Students Unable to Eat Lunch
-7. LeetCode 2073 — Time Needed to Buy Tickets
-8. LeetCode 649 — Dota2 Senate
-9. LeetCode 950 — Reveal Cards In Increasing Order
-10. LeetCode 239 — Sliding Window Maximum
-11. LeetCode 1438 — Longest Continuous Subarray With Absolute Diff Less Than or Equal to Limit
-12. LeetCode 862 — Shortest Subarray with Sum at Least K
-13. LeetCode 1670 — Design Front Middle Back Queue
-14. LeetCode 346 — Moving Average from Data Stream
-15. LeetCode 281 — Zigzag Iterator
+1. LeetCode 232 - Implement Queue using Stacks
+2. LeetCode 225 - Implement Stack using Queues
+3. LeetCode 933 - Number of Recent Calls
+4. LeetCode 622 - Design Circular Queue
+5. LeetCode 641 - Design Circular Deque
+6. LeetCode 1700 - Number of Students Unable to Eat Lunch
+7. LeetCode 2073 - Time Needed to Buy Tickets
+8. LeetCode 649 - Dota2 Senate
+9. LeetCode 950 - Reveal Cards In Increasing Order
+10. LeetCode 239 - Sliding Window Maximum
+11. LeetCode 1438 - Longest Continuous Subarray With Absolute Diff Less Than or Equal to Limit
+12. LeetCode 862 - Shortest Subarray with Sum at Least K
+13. LeetCode 1670 - Design Front Middle Back Queue
+14. LeetCode 346 - Moving Average from Data Stream
+15. LeetCode 281 - Zigzag Iterator
 
 ---
 
-## Chapter 12 — Heaps & Priority Queues
+## Chapter 12: Heaps & Priority Queues
 
 ### Foundations
 
@@ -845,25 +845,25 @@ Teach the Python behaviors that directly affect algorithm correctness, complexit
 
 ### Core problem ladder
 
-1. LeetCode 1046 — Last Stone Weight
-2. LeetCode 703 — Kth Largest Element in a Stream
-3. LeetCode 215 — Kth Largest Element in an Array
-4. LeetCode 973 — K Closest Points to Origin
-5. LeetCode 347 — Top K Frequent Elements
-6. LeetCode 373 — Find K Pairs with Smallest Sums
-7. LeetCode 23 — Merge k Sorted Lists
-8. LeetCode 621 — Task Scheduler
-9. LeetCode 767 — Reorganize String
-10. LeetCode 295 — Find Median from Data Stream
-11. LeetCode 378 — Kth Smallest Element in a Sorted Matrix
-12. LeetCode 1834 — Single-Threaded CPU
-13. LeetCode 502 — IPO
-14. LeetCode 857 — Minimum Cost to Hire K Workers
-15. LeetCode 355 — Design Twitter
+1. LeetCode 1046 - Last Stone Weight
+2. LeetCode 703 - Kth Largest Element in a Stream
+3. LeetCode 215 - Kth Largest Element in an Array
+4. LeetCode 973 - K Closest Points to Origin
+5. LeetCode 347 - Top K Frequent Elements
+6. LeetCode 373 - Find K Pairs with Smallest Sums
+7. LeetCode 23 - Merge k Sorted Lists
+8. LeetCode 621 - Task Scheduler
+9. LeetCode 767 - Reorganize String
+10. LeetCode 295 - Find Median from Data Stream
+11. LeetCode 378 - Kth Smallest Element in a Sorted Matrix
+12. LeetCode 1834 - Single-Threaded CPU
+13. LeetCode 502 - IPO
+14. LeetCode 857 - Minimum Cost to Hire K Workers
+15. LeetCode 355 - Design Twitter
 
 ---
 
-## Chapter 13 — Recursion & Backtracking
+## Chapter 13: Recursion & Backtracking
 
 ### Foundations
 
@@ -878,25 +878,25 @@ Teach the Python behaviors that directly affect algorithm correctness, complexit
 
 ### Core problem ladder
 
-1. LeetCode 78 — Subsets
-2. LeetCode 90 — Subsets II
-3. LeetCode 46 — Permutations
-4. LeetCode 47 — Permutations II
-5. LeetCode 77 — Combinations
-6. LeetCode 39 — Combination Sum
-7. LeetCode 40 — Combination Sum II
-8. LeetCode 17 — Letter Combinations of a Phone Number
-9. LeetCode 22 — Generate Parentheses
-10. LeetCode 79 — Word Search
-11. LeetCode 131 — Palindrome Partitioning
-12. LeetCode 93 — Restore IP Addresses
-13. LeetCode 51 — N-Queens
-14. LeetCode 37 — Sudoku Solver
-15. LeetCode 698 — Partition to K Equal Sum Subsets
+1. LeetCode 78 - Subsets
+2. LeetCode 90 - Subsets II
+3. LeetCode 46 - Permutations
+4. LeetCode 47 - Permutations II
+5. LeetCode 77 - Combinations
+6. LeetCode 39 - Combination Sum
+7. LeetCode 40 - Combination Sum II
+8. LeetCode 17 - Letter Combinations of a Phone Number
+9. LeetCode 22 - Generate Parentheses
+10. LeetCode 79 - Word Search
+11. LeetCode 131 - Palindrome Partitioning
+12. LeetCode 93 - Restore IP Addresses
+13. LeetCode 51 - N-Queens
+14. LeetCode 37 - Sudoku Solver
+15. LeetCode 698 - Partition to K Equal Sum Subsets
 
 ---
 
-## Chapter 14 — Trees & Binary Search Trees
+## Chapter 14: Trees & Binary Search Trees
 
 ### Foundations
 
@@ -913,28 +913,28 @@ Teach the Python behaviors that directly affect algorithm correctness, complexit
 
 ### Core problem ladder
 
-1. LeetCode 226 — Invert Binary Tree
-2. LeetCode 104 — Maximum Depth of Binary Tree
-3. LeetCode 100 — Same Tree
-4. LeetCode 110 — Balanced Binary Tree
-5. LeetCode 543 — Diameter of Binary Tree
-6. LeetCode 572 — Subtree of Another Tree
-7. LeetCode 102 — Binary Tree Level Order Traversal
-8. LeetCode 199 — Binary Tree Right Side View
-9. LeetCode 1448 — Count Good Nodes in Binary Tree
-10. LeetCode 98 — Validate Binary Search Tree
-11. LeetCode 230 — Kth Smallest Element in a BST
-12. LeetCode 235 — Lowest Common Ancestor of a BST
-13. LeetCode 236 — Lowest Common Ancestor of a Binary Tree
-14. LeetCode 105 — Construct Binary Tree from Preorder and Inorder Traversal
-15. LeetCode 124 — Binary Tree Maximum Path Sum
-16. LeetCode 297 — Serialize and Deserialize Binary Tree
+1. LeetCode 226 - Invert Binary Tree
+2. LeetCode 104 - Maximum Depth of Binary Tree
+3. LeetCode 100 - Same Tree
+4. LeetCode 110 - Balanced Binary Tree
+5. LeetCode 543 - Diameter of Binary Tree
+6. LeetCode 572 - Subtree of Another Tree
+7. LeetCode 102 - Binary Tree Level Order Traversal
+8. LeetCode 199 - Binary Tree Right Side View
+9. LeetCode 1448 - Count Good Nodes in Binary Tree
+10. LeetCode 98 - Validate Binary Search Tree
+11. LeetCode 230 - Kth Smallest Element in a BST
+12. LeetCode 235 - Lowest Common Ancestor of a BST
+13. LeetCode 236 - Lowest Common Ancestor of a Binary Tree
+14. LeetCode 105 - Construct Binary Tree from Preorder and Inorder Traversal
+15. LeetCode 124 - Binary Tree Maximum Path Sum
+16. LeetCode 297 - Serialize and Deserialize Binary Tree
 
 Use 15 primary cards and make the remaining item an advanced bonus if page density requires it.
 
 ---
 
-## Chapter 15 — Tries
+## Chapter 15: Tries
 
 ### Foundations
 
@@ -949,25 +949,25 @@ Use 15 primary cards and make the remaining item an advanced bonus if page densi
 
 ### Core problem ladder
 
-1. LeetCode 208 — Implement Trie (Prefix Tree)
-2. LeetCode 211 — Design Add and Search Words Data Structure
-3. LeetCode 648 — Replace Words
-4. LeetCode 677 — Map Sum Pairs
-5. LeetCode 720 — Longest Word in Dictionary
-6. LeetCode 1268 — Search Suggestions System
-7. LeetCode 212 — Word Search II
-8. LeetCode 421 — Maximum XOR of Two Numbers in an Array
-9. LeetCode 472 — Concatenated Words
-10. LeetCode 1032 — Stream of Characters
-11. LeetCode 745 — Prefix and Suffix Search
-12. LeetCode 1804 — Implement Trie II (Prefix Tree)
-13. LeetCode 2416 — Sum of Prefix Scores of Strings
-14. LeetCode 3043 — Find the Length of the Longest Common Prefix
-15. LeetCode 3093 — Longest Common Suffix Queries
+1. LeetCode 208 - Implement Trie (Prefix Tree)
+2. LeetCode 211 - Design Add and Search Words Data Structure
+3. LeetCode 648 - Replace Words
+4. LeetCode 677 - Map Sum Pairs
+5. LeetCode 720 - Longest Word in Dictionary
+6. LeetCode 1268 - Search Suggestions System
+7. LeetCode 212 - Word Search II
+8. LeetCode 421 - Maximum XOR of Two Numbers in an Array
+9. LeetCode 472 - Concatenated Words
+10. LeetCode 1032 - Stream of Characters
+11. LeetCode 745 - Prefix and Suffix Search
+12. LeetCode 1804 - Implement Trie II (Prefix Tree)
+13. LeetCode 2416 - Sum of Prefix Scores of Strings
+14. LeetCode 3043 - Find the Length of the Longest Common Prefix
+15. LeetCode 3093 - Longest Common Suffix Queries
 
 ---
 
-## Chapter 16 — Graphs & Grid Traversal
+## Chapter 16: Graphs & Grid Traversal
 
 ### Foundations
 
@@ -984,25 +984,25 @@ Use 15 primary cards and make the remaining item an advanced bonus if page densi
 
 ### Core problem ladder
 
-1. LeetCode 733 — Flood Fill
-2. LeetCode 200 — Number of Islands
-3. LeetCode 695 — Max Area of Island
-4. LeetCode 133 — Clone Graph
-5. LeetCode 1971 — Find if Path Exists in Graph
-6. LeetCode 547 — Number of Provinces
-7. LeetCode 130 — Surrounded Regions
-8. LeetCode 417 — Pacific Atlantic Water Flow
-9. LeetCode 994 — Rotting Oranges
-10. LeetCode 542 — 01 Matrix
-11. LeetCode 752 — Open the Lock
-12. LeetCode 127 — Word Ladder
-13. LeetCode 785 — Is Graph Bipartite?
-14. LeetCode 399 — Evaluate Division
-15. LeetCode 286 — Walls and Gates
+1. LeetCode 733 - Flood Fill
+2. LeetCode 200 - Number of Islands
+3. LeetCode 695 - Max Area of Island
+4. LeetCode 133 - Clone Graph
+5. LeetCode 1971 - Find if Path Exists in Graph
+6. LeetCode 547 - Number of Provinces
+7. LeetCode 130 - Surrounded Regions
+8. LeetCode 417 - Pacific Atlantic Water Flow
+9. LeetCode 994 - Rotting Oranges
+10. LeetCode 542 - 01 Matrix
+11. LeetCode 752 - Open the Lock
+12. LeetCode 127 - Word Ladder
+13. LeetCode 785 - Is Graph Bipartite?
+14. LeetCode 399 - Evaluate Division
+15. LeetCode 286 - Walls and Gates
 
 ---
 
-## Chapter 17 — Topological Sort, Union-Find & Shortest Paths
+## Chapter 17: Topological Sort, Union-Find & Shortest Paths
 
 ### Foundations
 
@@ -1019,25 +1019,25 @@ Use 15 primary cards and make the remaining item an advanced bonus if page densi
 
 ### Core problem ladder
 
-1. LeetCode 207 — Course Schedule
-2. LeetCode 210 — Course Schedule II
-3. LeetCode 684 — Redundant Connection
-4. LeetCode 261 — Graph Valid Tree
-5. LeetCode 323 — Number of Connected Components in an Undirected Graph
-6. LeetCode 721 — Accounts Merge
-7. LeetCode 990 — Satisfiability of Equality Equations
-8. LeetCode 743 — Network Delay Time
-9. LeetCode 787 — Cheapest Flights Within K Stops
-10. LeetCode 1514 — Path with Maximum Probability
-11. LeetCode 1631 — Path With Minimum Effort
-12. LeetCode 1584 — Min Cost to Connect All Points
-13. LeetCode 778 — Swim in Rising Water
-14. LeetCode 332 — Reconstruct Itinerary
-15. LeetCode 269 — Alien Dictionary
+1. LeetCode 207 - Course Schedule
+2. LeetCode 210 - Course Schedule II
+3. LeetCode 684 - Redundant Connection
+4. LeetCode 261 - Graph Valid Tree
+5. LeetCode 323 - Number of Connected Components in an Undirected Graph
+6. LeetCode 721 - Accounts Merge
+7. LeetCode 990 - Satisfiability of Equality Equations
+8. LeetCode 743 - Network Delay Time
+9. LeetCode 787 - Cheapest Flights Within K Stops
+10. LeetCode 1514 - Path with Maximum Probability
+11. LeetCode 1631 - Path With Minimum Effort
+12. LeetCode 1584 - Min Cost to Connect All Points
+13. LeetCode 778 - Swim in Rising Water
+14. LeetCode 332 - Reconstruct Itinerary
+15. LeetCode 269 - Alien Dictionary
 
 ---
 
-## Chapter 18 — Greedy Algorithms
+## Chapter 18: Greedy Algorithms
 
 ### Foundations
 
@@ -1052,25 +1052,25 @@ Use 15 primary cards and make the remaining item an advanced bonus if page densi
 
 ### Core problem ladder
 
-1. LeetCode 122 — Best Time to Buy and Sell Stock II
-2. LeetCode 55 — Jump Game
-3. LeetCode 45 — Jump Game II
-4. LeetCode 134 — Gas Station
-5. LeetCode 846 — Hand of Straights
-6. LeetCode 1899 — Merge Triplets to Form Target Triplet
-7. LeetCode 763 — Partition Labels
-8. LeetCode 678 — Valid Parenthesis String
-9. LeetCode 435 — Non-overlapping Intervals
-10. LeetCode 452 — Minimum Number of Arrows to Burst Balloons
-11. LeetCode 621 — Task Scheduler
-12. LeetCode 881 — Boats to Save People
-13. LeetCode 1029 — Two City Scheduling
-14. LeetCode 406 — Queue Reconstruction by Height
-15. LeetCode 135 — Candy
+1. LeetCode 122 - Best Time to Buy and Sell Stock II
+2. LeetCode 55 - Jump Game
+3. LeetCode 45 - Jump Game II
+4. LeetCode 134 - Gas Station
+5. LeetCode 846 - Hand of Straights
+6. LeetCode 1899 - Merge Triplets to Form Target Triplet
+7. LeetCode 763 - Partition Labels
+8. LeetCode 678 - Valid Parenthesis String
+9. LeetCode 435 - Non-overlapping Intervals
+10. LeetCode 452 - Minimum Number of Arrows to Burst Balloons
+11. LeetCode 621 - Task Scheduler
+12. LeetCode 881 - Boats to Save People
+13. LeetCode 1029 - Two City Scheduling
+14. LeetCode 406 - Queue Reconstruction by Height
+15. LeetCode 135 - Candy
 
 ---
 
-## Chapter 19 — Dynamic Programming I: One-Dimensional
+## Chapter 19: Dynamic Programming I: One-Dimensional
 
 ### Foundations
 
@@ -1084,25 +1084,25 @@ Use 15 primary cards and make the remaining item an advanced bonus if page densi
 
 ### Core problem ladder
 
-1. LeetCode 70 — Climbing Stairs
-2. LeetCode 746 — Min Cost Climbing Stairs
-3. LeetCode 198 — House Robber
-4. LeetCode 213 — House Robber II
-5. LeetCode 91 — Decode Ways
-6. LeetCode 139 — Word Break
-7. LeetCode 322 — Coin Change
-8. LeetCode 377 — Combination Sum IV
-9. LeetCode 279 — Perfect Squares
-10. LeetCode 300 — Longest Increasing Subsequence
-11. LeetCode 416 — Partition Equal Subset Sum
-12. LeetCode 152 — Maximum Product Subarray
-13. LeetCode 309 — Best Time to Buy and Sell Stock with Cooldown
-14. LeetCode 5 — Longest Palindromic Substring
-15. LeetCode 647 — Palindromic Substrings
+1. LeetCode 70 - Climbing Stairs
+2. LeetCode 746 - Min Cost Climbing Stairs
+3. LeetCode 198 - House Robber
+4. LeetCode 213 - House Robber II
+5. LeetCode 91 - Decode Ways
+6. LeetCode 139 - Word Break
+7. LeetCode 322 - Coin Change
+8. LeetCode 377 - Combination Sum IV
+9. LeetCode 279 - Perfect Squares
+10. LeetCode 300 - Longest Increasing Subsequence
+11. LeetCode 416 - Partition Equal Subset Sum
+12. LeetCode 152 - Maximum Product Subarray
+13. LeetCode 309 - Best Time to Buy and Sell Stock with Cooldown
+14. LeetCode 5 - Longest Palindromic Substring
+15. LeetCode 647 - Palindromic Substrings
 
 ---
 
-## Chapter 20 — Dynamic Programming II: Two-Dimensional & Sequence DP
+## Chapter 20: Dynamic Programming II: Two-Dimensional & Sequence DP
 
 ### Foundations
 
@@ -1117,25 +1117,25 @@ Use 15 primary cards and make the remaining item an advanced bonus if page densi
 
 ### Core problem ladder
 
-1. LeetCode 62 — Unique Paths
-2. LeetCode 64 — Minimum Path Sum
-3. LeetCode 931 — Minimum Falling Path Sum
-4. LeetCode 221 — Maximal Square
-5. LeetCode 1143 — Longest Common Subsequence
-6. LeetCode 72 — Edit Distance
-7. LeetCode 97 — Interleaving String
-8. LeetCode 115 — Distinct Subsequences
-9. LeetCode 494 — Target Sum
-10. LeetCode 518 — Coin Change II
-11. LeetCode 10 — Regular Expression Matching
-12. LeetCode 44 — Wildcard Matching
-13. LeetCode 312 — Burst Balloons
-14. LeetCode 329 — Longest Increasing Path in a Matrix
-15. LeetCode 1463 — Cherry Pickup II
+1. LeetCode 62 - Unique Paths
+2. LeetCode 64 - Minimum Path Sum
+3. LeetCode 931 - Minimum Falling Path Sum
+4. LeetCode 221 - Maximal Square
+5. LeetCode 1143 - Longest Common Subsequence
+6. LeetCode 72 - Edit Distance
+7. LeetCode 97 - Interleaving String
+8. LeetCode 115 - Distinct Subsequences
+9. LeetCode 494 - Target Sum
+10. LeetCode 518 - Coin Change II
+11. LeetCode 10 - Regular Expression Matching
+12. LeetCode 44 - Wildcard Matching
+13. LeetCode 312 - Burst Balloons
+14. LeetCode 329 - Longest Increasing Path in a Matrix
+15. LeetCode 1463 - Cherry Pickup II
 
 ---
 
-## Chapter 21 — Bit Manipulation
+## Chapter 21: Bit Manipulation
 
 ### Foundations
 
@@ -1152,25 +1152,25 @@ Use 15 primary cards and make the remaining item an advanced bonus if page densi
 
 ### Core problem ladder
 
-1. LeetCode 136 — Single Number
-2. LeetCode 191 — Number of 1 Bits
-3. LeetCode 338 — Counting Bits
-4. LeetCode 190 — Reverse Bits
-5. LeetCode 268 — Missing Number
-6. LeetCode 371 — Sum of Two Integers
-7. LeetCode 201 — Bitwise AND of Numbers Range
-8. LeetCode 137 — Single Number II
-9. LeetCode 260 — Single Number III
-10. LeetCode 89 — Gray Code
-11. LeetCode 1310 — XOR Queries of a Subarray
-12. LeetCode 421 — Maximum XOR of Two Numbers in an Array
-13. LeetCode 78 — Subsets using a bitmask
-14. LeetCode 1863 — Sum of All Subset XOR Totals
-15. LeetCode 7 — Reverse Integer as an overflow-awareness companion problem
+1. LeetCode 136 - Single Number
+2. LeetCode 191 - Number of 1 Bits
+3. LeetCode 338 - Counting Bits
+4. LeetCode 190 - Reverse Bits
+5. LeetCode 268 - Missing Number
+6. LeetCode 371 - Sum of Two Integers
+7. LeetCode 201 - Bitwise AND of Numbers Range
+8. LeetCode 137 - Single Number II
+9. LeetCode 260 - Single Number III
+10. LeetCode 89 - Gray Code
+11. LeetCode 1310 - XOR Queries of a Subarray
+12. LeetCode 421 - Maximum XOR of Two Numbers in an Array
+13. LeetCode 78 - Subsets using a bitmask
+14. LeetCode 1863 - Sum of All Subset XOR Totals
+15. LeetCode 7 - Reverse Integer as an overflow-awareness companion problem
 
 ---
 
-## Chapter 22 — Math, Matrix & Geometry
+## Chapter 22: Math, Matrix & Geometry
 
 ### Foundations
 
@@ -1187,25 +1187,25 @@ Use 15 primary cards and make the remaining item an advanced bonus if page densi
 
 ### Core problem ladder
 
-1. LeetCode 66 — Plus One
-2. LeetCode 202 — Happy Number
-3. LeetCode 9 — Palindrome Number
-4. LeetCode 13 — Roman to Integer
-5. LeetCode 12 — Integer to Roman
-6. LeetCode 48 — Rotate Image
-7. LeetCode 54 — Spiral Matrix
-8. LeetCode 73 — Set Matrix Zeroes
-9. LeetCode 50 — Pow(x, n)
-10. LeetCode 43 — Multiply Strings
-11. LeetCode 29 — Divide Two Integers
-12. LeetCode 204 — Count Primes
-13. LeetCode 149 — Max Points on a Line
-14. LeetCode 593 — Valid Square
-15. LeetCode 1232 — Check If It Is a Straight Line
+1. LeetCode 66 - Plus One
+2. LeetCode 202 - Happy Number
+3. LeetCode 9 - Palindrome Number
+4. LeetCode 13 - Roman to Integer
+5. LeetCode 12 - Integer to Roman
+6. LeetCode 48 - Rotate Image
+7. LeetCode 54 - Spiral Matrix
+8. LeetCode 73 - Set Matrix Zeroes
+9. LeetCode 50 - Pow(x, n)
+10. LeetCode 43 - Multiply Strings
+11. LeetCode 29 - Divide Two Integers
+12. LeetCode 204 - Count Primes
+13. LeetCode 149 - Max Points on a Line
+14. LeetCode 593 - Valid Square
+15. LeetCode 1232 - Check If It Is a Straight Line
 
 ---
 
-## Chapter 23 — Data Structure Design
+## Chapter 23: Data Structure Design
 
 ### Foundations
 
@@ -1220,25 +1220,25 @@ Use 15 primary cards and make the remaining item an advanced bonus if page densi
 
 ### Core problem ladder
 
-1. LeetCode 155 — Min Stack
-2. LeetCode 225 — Implement Stack using Queues
-3. LeetCode 232 — Implement Queue using Stacks
-4. LeetCode 622 — Design Circular Queue
-5. LeetCode 641 — Design Circular Deque
-6. LeetCode 380 — Insert Delete GetRandom O(1)
-7. LeetCode 981 — Time Based Key-Value Store
-8. LeetCode 146 — LRU Cache
-9. LeetCode 460 — LFU Cache
-10. LeetCode 295 — Find Median from Data Stream
-11. LeetCode 355 — Design Twitter
-12. LeetCode 729 — My Calendar I
-13. LeetCode 1146 — Snapshot Array
-14. LeetCode 1396 — Design Underground System
-15. LeetCode 2034 — Stock Price Fluctuation
+1. LeetCode 155 - Min Stack
+2. LeetCode 225 - Implement Stack using Queues
+3. LeetCode 232 - Implement Queue using Stacks
+4. LeetCode 622 - Design Circular Queue
+5. LeetCode 641 - Design Circular Deque
+6. LeetCode 380 - Insert Delete GetRandom O(1)
+7. LeetCode 981 - Time Based Key-Value Store
+8. LeetCode 146 - LRU Cache
+9. LeetCode 460 - LFU Cache
+10. LeetCode 295 - Find Median from Data Stream
+11. LeetCode 355 - Design Twitter
+12. LeetCode 729 - My Calendar I
+13. LeetCode 1146 - Snapshot Array
+14. LeetCode 1396 - Design Underground System
+15. LeetCode 2034 - Stock Price Fluctuation
 
 ---
 
-## Chapter 24 — Advanced DSA
+## Chapter 24: Advanced DSA
 
 ### Foundations
 
@@ -1255,27 +1255,27 @@ Use 15 primary cards and make the remaining item an advanced bonus if page densi
 
 ### Core problem ladder
 
-1. LeetCode 307 — Range Sum Query — Mutable
-2. LeetCode 315 — Count of Smaller Numbers After Self
-3. LeetCode 327 — Count of Range Sum
-4. LeetCode 493 — Reverse Pairs
-5. LeetCode 218 — The Skyline Problem
-6. LeetCode 699 — Falling Squares
-7. LeetCode 715 — Range Module
-8. LeetCode 732 — My Calendar III
-9. LeetCode 850 — Rectangle Area II
-10. LeetCode 480 — Sliding Window Median
-11. LeetCode 239 — Sliding Window Maximum
-12. LeetCode 76 — Minimum Window Substring as an advanced invariant review
-13. LeetCode 214 — Shortest Palindrome
-14. LeetCode 912 — Sort an Array with multiple implementations
-15. LeetCode 528 — Random Pick with Weight
+1. LeetCode 307 - Range Sum Query - Mutable
+2. LeetCode 315 - Count of Smaller Numbers After Self
+3. LeetCode 327 - Count of Range Sum
+4. LeetCode 493 - Reverse Pairs
+5. LeetCode 218 - The Skyline Problem
+6. LeetCode 699 - Falling Squares
+7. LeetCode 715 - Range Module
+8. LeetCode 732 - My Calendar III
+9. LeetCode 850 - Rectangle Area II
+10. LeetCode 480 - Sliding Window Median
+11. LeetCode 239 - Sliding Window Maximum
+12. LeetCode 76 - Minimum Window Substring as an advanced invariant review
+13. LeetCode 214 - Shortest Palindrome
+14. LeetCode 912 - Sort an Array with multiple implementations
+15. LeetCode 528 - Random Pick with Weight
 
 ---
 
-## Chapter 25 — Role-Based Interview Tracks
+## Chapter 25: Role-Based Interview Tracks
 
-### Track A — Data Science
+### Track A: Data Science
 
 Prioritize:
 
@@ -1290,7 +1290,7 @@ Prioritize:
 
 Create 30-question, 60-question, and 90-question tracks.
 
-### Track B — ML / AI / GenAI Engineer
+### Track B: ML / AI / GenAI Engineer
 
 Prioritize:
 
@@ -1304,7 +1304,7 @@ Prioritize:
 
 Include realistic wrappers such as token streams, embeddings, document chunks, ranking results, model outputs, and graph-based workflows while keeping the underlying DSA problem recognizable.
 
-### Track C — Python Backend Engineer
+### Track C: Python Backend Engineer
 
 Prioritize:
 
@@ -1318,7 +1318,7 @@ Prioritize:
 - Graph dependency resolution
 - Data structure design
 
-### Track D — Software Development Engineer
+### Track D: Software Development Engineer
 
 Cover the complete curriculum with progressive mixed sets.
 
@@ -1333,7 +1333,7 @@ Cover the complete curriculum with progressive mixed sets.
 
 ---
 
-## Chapter 26 — Mock Interviews & Revision
+## Chapter 26: Mock Interviews & Revision
 
 ### Subsections
 
@@ -1363,7 +1363,7 @@ Cover the complete curriculum with progressive mixed sets.
 
 ---
 
-# 10. Arrays page — detailed first-build specification
+# 10. Arrays page: detailed first-build specification
 
 The Arrays & Hashing page should be the first full topic page implemented after the shell and landing page.
 
@@ -1400,7 +1400,7 @@ The Arrays & Hashing page should be the first full topic page implemented after 
 
 ---
 
-# 11. Linked-list page — detailed second-build specification
+# 11. Linked-list page: detailed second-build specification
 
 Implement Linked Lists after Arrays & Hashing.
 
@@ -1437,7 +1437,7 @@ Implement Linked Lists after Arrays & Hashing.
 
 Follow this sequence and stop after each requested milestone.
 
-## Milestone 0 — Infrastructure only
+## Milestone 0: Infrastructure only
 
 - Add the top-level DSA navigation group.
 - Add `dsa-prep/index.html` as a compact contents page.
@@ -1446,14 +1446,14 @@ Follow this sequence and stop after each requested milestone.
 - Add progress storage and filtering primitives.
 - Do not create full topic content yet.
 
-## Milestone 1 — Arrays & Hashing
+## Milestone 1: Arrays & Hashing
 
 - Create the complete Arrays & Hashing page.
 - Add all 15 problem records.
 - Implement progressive hints and solution expansion.
 - Test every code example.
 
-## Milestone 2 — Linked Lists
+## Milestone 2: Linked Lists
 
 - Create the complete Linked Lists page.
 - Add all 15 problem records.

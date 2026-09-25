@@ -1,5 +1,5 @@
 """
-mcp_server/server.py — the tool boundary, made explicit.
+mcp_server/server.py - the tool boundary, made explicit.
 
 Lesson 12. MCP (Model Context Protocol) standardises how a host application
 offers tools to a model. Before it, every host invented its own tool format, so

@@ -1,38 +1,39 @@
-<!DOCTYPE html><html data-theme="light" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1" name="viewport"/><meta content="#f4f5f8" name="theme-color"/><title>19 · Dynamic Programming — 2D — DSA Interview Preparation</title><link href="../assets/brand/favicon.svg?v=20260727c" rel="icon" type="image/svg+xml"/>
+<!DOCTYPE html><html data-theme="light" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1" name="viewport"/><meta content="#f4f5f8" name="theme-color"/><title>19 · Dynamic Programming | 2D | DSA Interview Preparation</title><link href="../assets/brand/favicon.svg?v=20260925b" rel="icon" type="image/svg+xml"/>
 <!-- Theme before first paint. Without this the document paints with the light
      tokens and only flips when app.js runs at the end of <body>, which is a
      white flash on every navigation in dark mode. Mirrors app.js's getTheme()
-     exactly — same key, same "light" default — so the pre-paint value can never
+     exactly - same key, same "light" default - so the pre-paint value can never
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "s" on phones and "xs" above 860px, unknown width -> "wide", unknown align -> "left". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var mob=!!(window.matchMedia&&window.matchMedia("(max-width:860px)").matches);var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(mob?"s":"xs");var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition — CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20260805a" rel="stylesheet"/><link href="../assets/office-theme.css?v=20260805c" rel="stylesheet"/><link href="../assets/dsa-prep.css?v=20260804a" rel="stylesheet"/>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260805a" rel="stylesheet"/><link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/><link href="../assets/dsa-prep.css?v=20260804a" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
-<link href="../assets/brand/favicon-32.png?v=20260727c" rel="icon" sizes="32x32" type="image/png"/>
-<link href="../assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
-<link href="../assets/brand/favicon.ico?v=20260727c" rel="shortcut icon"/>
-<link href="../assets/brand/apple-touch-icon.png?v=20260727c" rel="apple-touch-icon" sizes="180x180"/>
-<link href="../assets/brand/site.webmanifest?v=20260727c" rel="manifest"/>
-<link color="#6f47f5" href="../assets/brand/safari-pinned-tab.svg?v=20260727c" rel="mask-icon"/>
-<meta content="../assets/brand/browserconfig.xml?v=20260727c" name="msapplication-config"/>
+<link href="../assets/brand/favicon-32.png?v=20260925b" rel="icon" sizes="32x32" type="image/png"/>
+<link href="../assets/brand/favicon-16.png?v=20260925b" rel="icon" sizes="16x16" type="image/png"/>
+<link href="../assets/brand/favicon.ico?v=20260925b" rel="shortcut icon"/>
+<link href="../assets/brand/apple-touch-icon.png?v=20260925b" rel="apple-touch-icon" sizes="180x180"/>
+<link href="../assets/brand/site.webmanifest?v=20260925b" rel="manifest"/>
+<link color="#6f47f5" href="../assets/brand/safari-pinned-tab.svg?v=20260925b" rel="mask-icon"/>
+<meta content="../assets/brand/browserconfig.xml?v=20260925b" name="msapplication-config"/>
 <meta content="#2563eb" name="msapplication-TileColor"/>
-<meta content="Switch job" name="application-name"/>
-<meta content="Switch job" name="apple-mobile-web-app-title"/><!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+<meta content="Learn GenAI" name="application-name"/>
+<meta content="Learn GenAI" name="apple-mobile-web-app-title"/><!-- Release 2 runtime. The manifest loads first, the renderer second; classic
      deferred scripts execute in document order after parsing, so the nav slot
      exists and the manifest is defined before the renderer runs. The authored
      links inside [data-page-nav] stay in the source and are replaced only after
      page, route and fragment have all resolved. -->
 <script defer src="../assets/curriculum.js?v=20260804c"></script>
 <script defer src="../assets/page-nav.js?v=20260804c"></script>
+<link href="../assets/ir-theme.css?v=20260925c" rel="stylesheet"/>
 </head><body data-curriculum-id="dsa-19" data-page="dsa-chapter"><div class="app"><aside class="sidebar"><div class="brand">
-<a class="brand-link" href="../index.html" aria-label="Switch job home">
-<span class="brand-mark" aria-hidden="true"><img src="../assets/brand/switch-job-logo.png?v=20260727c" alt=""/></span>
-<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+<a class="brand-link" href="../index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
 </a>
-</div><div class="search-wrap"><div class="search-box"><input data-search="" placeholder="Search everything…  ( / )" type="text"/></div><div class="search-results"></div></div><nav class="nav"></nav></aside><div class="backdrop"></div><div class="main"><header class="topbar"><button aria-label="Menu" class="icon-btn menu-btn">☰</button><div class="crumbs">DSA Interview Preparation / 19 · Dynamic Programming — 2D</div><button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button></header><div class="content-wrap"><main class="content">
+</div><div class="search-wrap"><div class="search-box"><input data-search="" placeholder="Search everything…  ( / )" type="text"/></div><div class="search-results"></div></div><nav class="nav"></nav></aside><div class="backdrop"></div><div class="main"><header class="topbar"><button aria-label="Menu" class="icon-btn menu-btn">☰</button><div class="crumbs">DSA Interview Preparation / 19 · Dynamic Programming - 2D</div><button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button></header><div class="content-wrap"><main class="content">
 <div class="eyebrow"><span class="dot"></span> Chapter 19 · Optimization</div>
-<h1>Dynamic Programming — 2D</h1>
-<p class="lead">When one index isn't enough to describe a subproblem, the state grows a second dimension — a full table. This chapter covers the big 2D families: grid paths, two-sequence DP (LCS, edit distance), palindrome and interval DP, 2D knapsack, and pattern matching. The 1D discipline still applies — define the state, write the recurrence, pick a fill order — there's just one more axis. Every problem has a full, tested solution in LeetCode's <code>class Solution</code> format.</p>
+<h1>Dynamic Programming - 2D</h1>
+<p class="lead">When one index isn't enough to describe a subproblem, the state grows a second dimension - a full table. This chapter covers the big 2D families: grid paths, two-sequence DP (LCS, edit distance), palindrome and interval DP, 2D knapsack, and pattern matching. The 1D discipline still applies - define the state, write the recurrence, pick a fill order - there's just one more axis. Every problem has a full, tested solution in LeetCode's <code>class Solution</code> format.</p>
 <div class="dsa-chead">
 <span class="dsa-chapter-no">Outcome</span>
 <p class="dsa-outcome">Design 2D DP states and recurrences for grids, pairs of sequences, substrings/intervals, and multi-capacity knapsacks; pick the correct fill order (row-major, by interval length, or bottom-up); and reduce a table to one or two rows when the recurrence allows.</p>
@@ -52,7 +53,7 @@
 <span class="dsa-progress-line" data-dsa-progress="">0 / 26 solved</span>
 </div>
 <h2 id="foundations">1 · Foundations</h2>
-<p class="dsa-note-sm" style="margin-bottom:6px">This chapter builds directly on <a href="18-dynamic-programming-1d.html">Chapter 18</a> — same state/recurrence/order discipline, one more dimension. Read top to bottom. Already fluent? Skip to <a href="#patterns">§2 Pattern library</a>.</p>
+<p class="dsa-note-sm" style="margin-bottom:6px">This chapter builds directly on <a href="18-dynamic-programming-1d.html">Chapter 18</a> - same state/recurrence/order discipline, one more dimension. Read top to bottom. Already fluent? Skip to <a href="#patterns">§2 Pattern library</a>.</p>
 
 <h3 id="why-2d">When you need a second dimension</h3>
 <p>You reach for a 2D state when a subproblem needs <em>two</em> indices to describe it: a position in a <strong>grid</strong> (row, column), a pair of prefixes across <strong>two sequences</strong> (<code>i</code> in one, <code>j</code> in the other), or the two endpoints of a <strong>substring/interval</strong> (<code>i..j</code>). The table <code>dp[i][j]</code> stores the answer to each such subproblem, filled so every cell's dependencies are ready before it.</p>
@@ -60,7 +61,7 @@
 
 <h3 id="grid-example">Grid DP: paths through a matrix</h3>
 <p>The simplest 2D DP counts paths in a grid: the ways to reach a cell equal the ways from the cell above plus the ways from the cell to the left. Because each cell needs only the row above and the cell to its left, one rolling row suffices.</p>
-<div class="dsa-eg">Example — count paths, full table then one row</div>
+<div class="dsa-eg">Example - count paths, full table then one row</div>
 <div class="code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>unique_paths.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>def unique_paths(m, n):
@@ -82,8 +83,8 @@ print(unique_paths(3, 7), unique_paths_1row(3, 7))   # 28 28</code></pre>
 <div class="dsa-result"><span class="rk">Output</span>28 28</div>
 
 <h3 id="two-seq">Two-sequence DP: the LCS grid</h3>
-<p>A huge family compares two strings/arrays with <code>dp[i][j]</code> over their prefixes. The template — matching characters extend the diagonal, mismatches take the best of the two neighbours — solves longest common subsequence, and with small tweaks edit distance, uncrossed lines, interleaving, and distinct subsequences.</p>
-<div class="dsa-eg">Example — longest common subsequence</div>
+<p>A huge family compares two strings/arrays with <code>dp[i][j]</code> over their prefixes. The template - matching characters extend the diagonal, mismatches take the best of the two neighbours - solves longest common subsequence, and with small tweaks edit distance, uncrossed lines, interleaving, and distinct subsequences.</p>
+<div class="dsa-eg">Example - longest common subsequence</div>
 <div class="code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>lcs.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>def lcs(a, b):
@@ -100,11 +101,11 @@ print(unique_paths(3, 7), unique_paths_1row(3, 7))   # 28 28</code></pre>
 print(lcs("abcde", "ace"))                  # 3</code></pre>
 </div>
 <div class="dsa-result"><span class="rk">Output</span>3</div>
-<p class="dsa-note-sm">The extra row and column of zeros represent an empty prefix — they remove base-case special-casing inside the loop.</p>
+<p class="dsa-note-sm">The extra row and column of zeros represent an empty prefix - they remove base-case special-casing inside the loop.</p>
 
 <h3 id="interval">Interval DP: fill by increasing length</h3>
-<p>Some problems are defined over a <em>range</em> <code>s[i..j]</code> and split at an internal point <code>k</code> — palindromes, burst balloons, matrix-chain, polygon triangulation. The key is the <strong>fill order</strong>: a range depends on strictly shorter ranges, so iterate by increasing interval length (or <code>i</code> downward, <code>j</code> upward).</p>
-<div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">2D DP pitfalls</div><p>Get the <strong>fill order</strong> right — grid DP is row-major, interval DP is by length; filling in the wrong order reads uninitialised cells. Use the extra 0-row/0-column for empty prefixes to avoid off-by-one base cases. For 0/1 knapsack over a capacity, still iterate the capacity <em>downward</em>. And for interval problems like Burst Balloons, fix the <em>last</em> action (not the first) so the subproblems become independent.</p></div></div>
+<p>Some problems are defined over a <em>range</em> <code>s[i..j]</code> and split at an internal point <code>k</code> - palindromes, burst balloons, matrix-chain, polygon triangulation. The key is the <strong>fill order</strong>: a range depends on strictly shorter ranges, so iterate by increasing interval length (or <code>i</code> downward, <code>j</code> upward).</p>
+<div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">2D DP pitfalls</div><p>Get the <strong>fill order</strong> right - grid DP is row-major, interval DP is by length; filling in the wrong order reads uninitialised cells. Use the extra 0-row/0-column for empty prefixes to avoid off-by-one base cases. For 0/1 knapsack over a capacity, still iterate the capacity <em>downward</em>. And for interval problems like Burst Balloons, fix the <em>last</em> action (not the first) so the subproblems become independent.</p></div></div>
 <h2 id="patterns">2 · Pattern library</h2>
 <p>Almost every 2D DP is one of these six. Identify the shape of the state and the recurrence follows.</p>
 <div class="dsa-patterns">
@@ -115,10 +116,10 @@ print(lcs("abcde", "ace"))                  # 3</code></pre>
 <div class="dsa-pattern"><h4><span class="pnum">5</span>Square / region DP</h4><dl><dt>Signal</dt><dd>largest/count squares in a binary matrix</dd><dt>Move</dt><dd>dp = min(top, left, top-left) + 1</dd><dt>Cost</dt><dd>O(m·n)</dd></dl></div>
 <div class="dsa-pattern"><h4><span class="pnum">6</span>Interval DP</h4><dl><dt>Signal</dt><dd>range i..j split at k; matching; matrix-chain</dd><dt>Move</dt><dd>fix the last action; fill by interval length</dd><dt>Cost</dt><dd>O(n³)</dd></dl></div>
 </div>
-<h2 id="ladder">3 · Problem ladder — 26</h2>
+<h2 id="ladder">3 · Problem ladder - 26</h2>
 <p>Grouped into <strong>Foundation → Medium → Hard</strong> tiers: grid-path basics, then the two-sequence, palindrome, and 2D-knapsack workhorses, then pattern matching and interval DP. Every solution is complete and tested in LeetCode's <code>class Solution</code> format. Expand a row for the full write-up; use <span class="dsa-kbd">🙈 Practice mode</span> to hide solutions and rebuild from the recurrence.</p>
 <div class="dsa-ladder">
-<div class="dsa-tier"><span class="tdot easy"></span>Tier 1 · Foundation — grid paths, row-from-previous <span class="cnt">(5)</span></div>
+<div class="dsa-tier"><span class="tdot easy"></span>Tier 1 · Foundation - grid paths, row-from-previous <span class="cnt">(5)</span></div>
 <details class="dsa-prob" id="lc-118" data-pid="lc-118">
 <summary>
 <span class="p-idx">1</span>
@@ -145,7 +146,7 @@ class Solution:
         return res
 </code></pre>
 </div>
-<p><strong>Time</strong> O(rows²) · <strong>Space</strong> O(rows²). A row-from-previous-row recurrence — the simplest possible 2D table.</p>
+<p><strong>Time</strong> O(rows²) · <strong>Space</strong> O(rows²). A row-from-previous-row recurrence - the simplest possible 2D table.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-62" data-pid="lc-62">
@@ -183,8 +184,8 @@ class Solution:
 </summary>
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Same as Unique Paths, but some cells contain obstacles that can't be entered. Count the valid paths. <a href="https://leetcode.com/problems/unique-paths-ii/" target="_blank" rel="noopener">LeetCode 63 ↗</a></p>
-<p class="wu-clarify"><strong>Clarify:</strong> An obstacle cell contributes zero paths? (Yes.) Start or end could be blocked? (Yes — then 0.)</p>
-<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">An obstacle cell has 0 paths through it — zero out its DP value.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Otherwise use the same from-above + from-left accumulation.</div></details></div>
+<p class="wu-clarify"><strong>Clarify:</strong> An obstacle cell contributes zero paths? (Yes.) Start or end could be blocked? (Yes - then 0.)</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">An obstacle cell has 0 paths through it - zero out its DP value.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Otherwise use the same from-above + from-left accumulation.</div></details></div>
 <p class="wu-approach"><span class="wu-section">How to think about it</span> Identical to Unique Paths with one rule: an obstacle cell is unreachable, so its DP value is 0 regardless of neighbours. Sweep the grid accumulating <code>dp[j] += dp[j−1]</code> for open cells and forcing <code>dp[j] = 0</code> at obstacles. A blocked start yields 0 everywhere.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>unique_paths_ii.py</span><button class="copy-btn">Copy</button></div>
@@ -237,7 +238,7 @@ class Solution:
         return dp[-1]
 </code></pre>
 </div>
-<p><strong>Time</strong> O(m·n) · <strong>Space</strong> O(n). Counting and optimising share the same grid transition — swap sum for min.</p>
+<p><strong>Time</strong> O(m·n) · <strong>Space</strong> O(n). Counting and optimising share the same grid transition - swap sum for min.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-120" data-pid="lc-120">
@@ -268,7 +269,7 @@ class Solution:
 <p><strong>Time</strong> O(n²) · <strong>Space</strong> O(n). Choosing the sweep direction (here bottom-up) can eliminate boundary handling entirely.</p>
 </div>
 </details>
-<div class="dsa-tier"><span class="tdot medium"></span>Tier 2 · Medium — two-sequence DP, palindromes, 2D knapsack, squares <span class="cnt">(14)</span></div>
+<div class="dsa-tier"><span class="tdot medium"></span>Tier 2 · Medium - two-sequence DP, palindromes, 2D knapsack, squares <span class="cnt">(14)</span></div>
 <details class="dsa-prob" id="lc-931" data-pid="lc-931">
 <summary>
 <span class="p-idx">6</span>
@@ -332,7 +333,7 @@ class Solution:
         return dp[m][n]
 </code></pre>
 </div>
-<p><strong>Time</strong> O(m·n) · <strong>Space</strong> O(m·n). This grid — match ⇒ diagonal, else ⇒ max of neighbours — underlies edit distance, uncrossed lines, and more.</p>
+<p><strong>Time</strong> O(m·n) · <strong>Space</strong> O(m·n). This grid - match ⇒ diagonal, else ⇒ max of neighbours - underlies edit distance, uncrossed lines, and more.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-583" data-pid="lc-583">
@@ -377,7 +378,7 @@ class Solution:
 <p class="wu-clarify"><strong>Problem.</strong> Connect equal values in two rows with straight lines that don't cross; return the maximum number of such lines. <a href="https://leetcode.com/problems/uncrossed-lines/" target="_blank" rel="noopener">LeetCode 1035 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Lines connect equal values and mustn't intersect? (Yes.) Each value used once? (Yes.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Non-crossing connections must preserve order in both arrays.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">That's exactly the longest common subsequence of the two arrays.</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> Two connecting lines cross unless the matched values keep the same relative order in both arrays — which is precisely the definition of a common subsequence. So the maximum number of non-crossing lines is the LCS length of the two arrays. Reuse the LCS grid verbatim.</p>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Two connecting lines cross unless the matched values keep the same relative order in both arrays - which is precisely the definition of a common subsequence. So the maximum number of non-crossing lines is the LCS length of the two arrays. Reuse the LCS grid verbatim.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>uncrossed_lines.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from typing import List
@@ -395,7 +396,7 @@ class Solution:
         return dp[m][n]
 </code></pre>
 </div>
-<p><strong>Time</strong> O(m·n) · <strong>Space</strong> O(m·n). Recognising a disguised LCS is the whole battle — the code is the template.</p>
+<p><strong>Time</strong> O(m·n) · <strong>Space</strong> O(m·n). Recognising a disguised LCS is the whole battle - the code is the template.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-718" data-pid="lc-718">
@@ -494,7 +495,7 @@ class Solution:
         return dp[m][n]
 </code></pre>
 </div>
-<p><strong>Time</strong> O(m·n) · <strong>Space</strong> O(m·n). Edit distance is the two-sequence DP everyone should know cold — three operations, three predecessors.</p>
+<p><strong>Time</strong> O(m·n) · <strong>Space</strong> O(m·n). Edit distance is the two-sequence DP everyone should know cold - three operations, three predecessors.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-516" data-pid="lc-516">
@@ -525,7 +526,7 @@ class Solution:
         return dp[0][n - 1]
 </code></pre>
 </div>
-<p><strong>Time</strong> O(n²) · <strong>Space</strong> O(n²). Interval DP — a table indexed by substring endpoints, filled shortest-interval-first.</p>
+<p><strong>Time</strong> O(n²) · <strong>Space</strong> O(n²). Interval DP - a table indexed by substring endpoints, filled shortest-interval-first.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-5" data-pid="lc-5">
@@ -604,8 +605,8 @@ class Solution:
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Assign + or − to each number so the expression equals a target; count the ways. <a href="https://leetcode.com/problems/target-sum/" target="_blank" rel="noopener">LeetCode 494 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Every number gets exactly one sign? (Yes.) Count distinct sign assignments? (Yes.)</p>
-<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Let P be the positive subset, N the negative. P − N = target and P + N = total.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">So P = (total + target)/2 — count subsets summing to P (0/1 knapsack).</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> Split the numbers into a positive subset <code>P</code> and a negative subset <code>N</code>. From <code>P − N = target</code> and <code>P + N = total</code>, the positive subset must sum to <code>(total + target)/2</code>. So the answer is the number of subsets hitting that sum — a 0/1 subset-count knapsack with capacity iterated downward.</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Let P be the positive subset, N the negative. P − N = target and P + N = total.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">So P = (total + target)/2 - count subsets summing to P (0/1 knapsack).</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Split the numbers into a positive subset <code>P</code> and a negative subset <code>N</code>. From <code>P − N = target</code> and <code>P + N = total</code>, the positive subset must sum to <code>(total + target)/2</code>. So the answer is the number of subsets hitting that sum - a 0/1 subset-count knapsack with capacity iterated downward.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>target_sum.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from typing import List
@@ -702,7 +703,7 @@ class Solution:
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Count all square submatrices (of any size) that contain only 1s. <a href="https://leetcode.com/problems/count-square-submatrices-with-all-ones/" target="_blank" rel="noopener">LeetCode 1277 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Count squares of every size, at every position? (Yes.)</p>
-<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Use the same dp[i][j] = largest square side ending at (i,j).</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">That value also counts the squares ending there — sum them all.</div></details></div>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Use the same dp[i][j] = largest square side ending at (i,j).</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">That value also counts the squares ending there - sum them all.</div></details></div>
 <p class="wu-approach"><span class="wu-section">How to think about it</span> The same square-side DP as Maximal Square, with a neat twist: if the largest square ending at <code>(i, j)</code> has side <code>k</code>, then there are exactly <code>k</code> all-ones squares ending there (sides 1..k). So instead of tracking the maximum, sum every <code>dp[i][j]</code> to count all squares.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>count_squares.py</span><button class="copy-btn">Copy</button></div>
@@ -724,7 +725,7 @@ class Solution:
 <p><strong>Time</strong> O(m·n) · <strong>Space</strong> O(m·n). The same recurrence answers 'largest' or 'how many' depending on whether you max or sum.</p>
 </div>
 </details>
-<div class="dsa-tier"><span class="tdot hard"></span>Tier 3 · Hard — regex/wildcard matching, interval DP <span class="cnt">(7)</span></div>
+<div class="dsa-tier"><span class="tdot hard"></span>Tier 3 · Hard - regex/wildcard matching, interval DP <span class="cnt">(7)</span></div>
 <details class="dsa-prob" id="lc-10" data-pid="lc-10">
 <summary>
 <span class="p-idx">20</span>
@@ -758,7 +759,7 @@ class Solution:
         return dp[m][n]
 </code></pre>
 </div>
-<p><strong>Time</strong> O(m·n) · <strong>Space</strong> O(m·n). The '*' transition (zero-or-more) is the crux — get its two branches right and the rest is standard grid DP.</p>
+<p><strong>Time</strong> O(m·n) · <strong>Space</strong> O(m·n). The '*' transition (zero-or-more) is the crux - get its two branches right and the rest is standard grid DP.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-44" data-pid="lc-44">
@@ -823,7 +824,7 @@ class Solution:
         return dp[m][n]
 </code></pre>
 </div>
-<p><strong>Time</strong> O(m·n) · <strong>Space</strong> O(m·n). A counting version of subsequence matching — 'skip, or skip-and-match' sums the ways.</p>
+<p><strong>Time</strong> O(m·n) · <strong>Space</strong> O(m·n). A counting version of subsequence matching - 'skip, or skip-and-match' sums the ways.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-312" data-pid="lc-312">
@@ -871,7 +872,7 @@ class Solution:
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> A printer prints one contiguous run of the same character per turn (over-printing existing chars). Return the fewest turns to print the string. <a href="https://leetcode.com/problems/strange-printer/" target="_blank" rel="noopener">LeetCode 664 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Each turn prints one run of a single character? (Yes.) Later prints overwrite earlier ones? (Yes.)</p>
-<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Collapse consecutive duplicates first — they never cost extra.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">dp[i][j]: print s[j] alone (dp[i][j−1]+1), or if some s[k]==s[j], merge that print to save a turn.</div></details></div>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Collapse consecutive duplicates first - they never cost extra.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">dp[i][j]: print s[j] alone (dp[i][j−1]+1), or if some s[k]==s[j], merge that print to save a turn.</div></details></div>
 <p class="wu-approach"><span class="wu-section">How to think about it</span> After collapsing runs, define <code>dp[i][j]</code> as the fewest turns to print <code>s[i..j]</code>. Baseline: print <code>s[j]</code> in its own turn (<code>dp[i][j−1]+1</code>). But if some earlier <code>s[k] == s[j]</code>, that print can be extended to cover <code>s[j]</code> for free, splitting the interval at <code>k</code>. Take the minimum over all such <code>k</code>.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>strange_printer.py</span><button class="copy-btn">Copy</button></div>
@@ -976,7 +977,7 @@ class Solution:
 </div>
 <h2 id="playbook">4 · Interview playbook</h2>
 <ul>
-<li><strong>Name the two indices.</strong> "<code>dp[i][j]</code> = LCS of the first <code>i</code> and first <code>j</code> characters" — pin down what each axis means before writing the recurrence.</li>
+<li><strong>Name the two indices.</strong> "<code>dp[i][j]</code> = LCS of the first <code>i</code> and first <code>j</code> characters" - pin down what each axis means before writing the recurrence.</li>
 <li><strong>Match the shape:</strong> grid (from above/left), two-sequence (match ⇒ diagonal), palindrome/interval (ends + inner range), knapsack (item × capacity).</li>
 <li><strong>Fill order matters:</strong> grid DP row-major, interval DP by increasing length. Filling wrong reads uninitialised cells.</li>
 <li><strong>Use the 0-row/0-column</strong> for empty prefixes to kill off-by-one base cases.</li>
@@ -1010,14 +1011,14 @@ class Solution:
 <div class="opt" data-correct="true">They represent an empty prefix of each string, giving correct base cases so the match/mismatch recurrence works uniformly without special-casing i=0 or j=0 inside the loop</div>
 <div class="opt" data-correct="false">To make the table square</div>
 <div class="opt" data-correct="false">To leave room for the answer</div>
-<div class="explain">dp[0][j] and dp[i][0] mean 'one string is empty', whose LCS is 0. Seeding those to zero lets every real cell reference dp[i−1][j−1], dp[i−1][j], dp[i][j−1] without bounds checks — the padding <em>is</em> the base case.</div>
+<div class="explain">dp[0][j] and dp[i][0] mean 'one string is empty', whose LCS is 0. Seeding those to zero lets every real cell reference dp[i−1][j−1], dp[i−1][j], dp[i][j−1] without bounds checks - the padding <em>is</em> the base case.</div>
 </div>
 <div class="quiz">
 <div class="q">In Burst Balloons, why is it easier to fix the LAST balloon burst in an interval rather than the first?</div>
 <div class="opt" data-correct="true">If k is burst last in (left, right), its neighbours are exactly the fixed interval boundaries, so the two sub-intervals become independent; choosing the first balloon leaves changing, interdependent neighbours</div>
 <div class="opt" data-correct="false">Because the first balloon always earns the fewest coins</div>
 <div class="opt" data-correct="false">Because it lets you use a greedy instead of DP</div>
-<div class="explain">The difficulty is that bursting changes neighbours. By declaring k the <em>last</em> burst in the open interval, everything else inside is already gone, so k's neighbours are the boundaries left and right — and the left and right sub-intervals no longer interact, giving a clean dp[left][k] + dp[k][right] + product split.</div>
+<div class="explain">The difficulty is that bursting changes neighbours. By declaring k the <em>last</em> burst in the open interval, everything else inside is already gone, so k's neighbours are the boundaries left and right - and the left and right sub-intervals no longer interact, giving a clean dp[left][k] + dp[k][right] + product split.</div>
 </div>
 
 <h3 id="mastery">Mastery checklist</h3>
@@ -1034,5 +1035,5 @@ class Solution:
 <a class="prev" href="18-dynamic-programming-1d.html"><div class="dir">← Previous</div><div class="ttl">18 · Dynamic Programming (1D)</div></a>
 <a class="next" href="20-bit-math-matrix.html"><div class="dir">Next →</div><div class="ttl">20 · Bit / Math / Matrix</div></a>
 </div>
-</main><div class="toc-rail"><nav class="toc"></nav></div></div></div></div><script src="../assets/app.js?v=20260731b"></script><script src="../assets/sitenav.js?v=20260804b"></script><script src="../assets/enhance.js?v=20260804a"></script><script src="../assets/dsa-question-bank.js?v=20260727c"></script><script src="../assets/dsa-prep.js?v=20260727c"></script></body></html>
+</main><div class="toc-rail"><nav class="toc"></nav></div></div></div></div><script src="../assets/app.js?v=20260925c"></script><script src="../assets/sitenav.js?v=20260925a"></script><script src="../assets/enhance.js?v=20260925c"></script><script src="../assets/dsa-question-bank.js?v=20260727c"></script><script src="../assets/dsa-prep.js?v=20260727c"></script></body></html>
 <script src="../assets/genai-motion.js?v=20260728a"></script>

@@ -1,5 +1,5 @@
 """
-Tool tests — the deterministic half of the system.
+Tool tests - the deterministic half of the system.
 
 Gemma decides *what* analysis to run; these functions decide *what the numbers
 are*. So these tests pin numbers, not shapes: an assertion that a dict has a

@@ -1,7 +1,7 @@
-# Python & AI/ML Interview Section — Build Plan
+# Python & AI/ML Interview Section: Build Plan
 
 **Source:** `python_ai_ml_interview_questions_2026.md` (1448 questions, no answers)
-**Target:** a new "Python & AI/ML Interviews" section inside the Switch job portal
+**Target:** a new "Python & AI/ML Interviews" section inside the Learn GenAI portal
 **Created:** 27 July 2026
 
 ---
@@ -23,7 +23,7 @@ Three rules drive every decision:
 ## 2. Where it lives
 
 New folder `python-interview/`, sitting beside the existing `interview-prep/` and
-`machine-learning/` sections. It reuses the shared assets — no new CSS or JS.
+`machine-learning/` sections. It reuses the shared assets - no new CSS or JS.
 
 ```
 python-interview/
@@ -94,10 +94,10 @@ A question is **kept** when at least one holds:
 A question is **cut** when:
 
 - It only appears in pre-2024 material and nowhere recent.
-- It is a near-duplicate of a question already kept — the clearer phrasing wins.
+- It is a near-duplicate of a question already kept - the clearer phrasing wins.
 - It tests a deprecated or vanishing detail (Python 2 behaviour, `%` formatting minutiae).
 
-Each page records its check date and what the check found, in one line — not a source dump.
+Each page records its check date and what the check found, in one line - not a source dump.
 
 ---
 
@@ -131,16 +131,16 @@ Built 27 July 2026. **319 questions** across 14 pages, cut from the 1448 in the 
 | 07 | Exceptions, Modules & Packaging | 18 | 14 | Coding Round & Project Discussion | 23 |
 
 Final counts run below the per-page targets in section 3 because deduplication was more aggressive
-than planned — many questions in the research file were rephrasings of one another, and only the
+than planned - many questions in the research file were rephrasings of one another, and only the
 clearest wording of each was kept.
 
 **What the recency checks changed.** Four searches were run, one per phase. They confirmed the
 existing shape of the bank and added three things that were not adequately covered:
 
-- **Free-threaded Python (PEP 703, 3.13+)** — now a live senior-level GIL follow-up, added to page 09.
-- **RAG versus fine-tuning** — reported as standard now even at fresher level, so it leads page 13's
+- **Free-threaded Python (PEP 703, 3.13+)** - now a live senior-level GIL follow-up, added to page 09.
+- **RAG versus fine-tuning** - reported as standard now even at fresher level, so it leads page 13's
   LLM section rather than sitting mid-page.
-- **Scenario framing over definitions** — 2026 reports consistently describe interviews moving from
+- **Scenario framing over definitions** - 2026 reports consistently describe interviews moving from
   "what is X" to "what would you do when X breaks", which is why every answer carries a production
   consequence rather than only a definition.
 

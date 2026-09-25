@@ -1,5 +1,5 @@
 """
-patterns.py — the four named reasoning patterns, as control flow.
+patterns.py - the four named reasoning patterns, as control flow.
 
 The single most useful thing to understand here: **a reasoning pattern is not a
 different API.** Every pattern below calls the same `brain.decide()` and the same
@@ -67,7 +67,7 @@ class PatternResult:
 
 
 # --------------------------------------------------------------------------
-# 1 · ReAct — the Wave 1 loop, named
+# 1 · ReAct: the Wave 1 loop, named
 # --------------------------------------------------------------------------
 def run_react(goal: str, brain: Brain, *, max_steps: int = 6, **kw) -> PatternResult:
     """

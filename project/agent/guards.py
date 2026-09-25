@@ -1,5 +1,5 @@
 """
-guards.py — defence in depth, and an honest account of what each layer is worth.
+guards.py - defence in depth, and an honest account of what each layer is worth.
 
 Lesson 9. The single most important sentence in this file:
 

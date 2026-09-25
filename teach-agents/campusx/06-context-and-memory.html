@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>06 · Context and memory | Understanding AI Agents</title>
+<meta name="description" content="State belongs to one run; memory outlives it. Token budgets, capping tool results at the source, and compaction that knows when it would not help.">
+<link rel="icon" href="../../assets/brand/favicon.svg?v=20260925b" type="image/svg+xml">
+<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260925b" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260925b">
+<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260925b" sizes="180x180">
+<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260925b">
+<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260925b" color="#6f47f5">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="../../assets/styles.css?v=20260805a">
+<link href="../../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
+<link href="../../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
+<link href="../../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+<link href="../../assets/ir-theme.css?v=20260925c" rel="stylesheet"/>
+</head>
+<body data-curriculum-id="cx-06" data-page="cx-06">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="../../index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search this section…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Understanding AI Agents · CampusX / <b>06 · Context and memory</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> 06 · Knowledge</div>
+        <h1>Context and memory, which are not the same thing</h1>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~17 min read</span>
+          <span class="pill purple">Pairs with · <a href="../lessons/0006-context-memory.html">Lesson 6 · Context & memory</a></span>
+        </div>
+
+<!-- ================= 1 ================= -->
+<h2 id="known">1 · What you already know</h2>
+<p>From page 1: the context window is one finite budget shared by the system
+prompt, tool declarations, history, tool results and the answer.</p>
+<p>From page 5: retrieval puts more text into that budget on purpose.</p>
+<p><b>This page is about what happens when the text accumulates faster than the budget
+allows</b>, and about the distinction that stops two opposite bugs.</p>
+
+<!-- ================= 2 ================= -->
+<h2 id="breaks">2 · What breaks now</h2>
+<p>Run an agent on a ticket that needs eight tool calls. Watch the prompt
+grow.</p>
+
+<p>The run does not fail gradually. It works, works, works, then the eleventh call is
+rejected outright and the whole run is lost.</p>
+<p>Before that, something quieter goes wrong. At step 8 the goal is 60 tokens out of 6,860 - 
+<b>under one percent of what the model is reading</b>. The instruction that should drive the
+next decision is buried in eight tool results.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Problem</th><th>Symptom</th></tr></thead>
+<tbody>
+<tr><td>The window is exceeded</td><td>A hard error, and the run is lost</td></tr>
+<tr><td>The goal is diluted</td><td>Later steps drift from what was asked</td></tr>
+<tr><td>One result is enormous</td><td>A single tool call consumes the whole budget</td></tr>
+<tr><td>Nothing survives the run</td><td>The next ticket starts from zero</td></tr>
+</tbody>
+</table>
+</div>
+
+<svg class="bd-svg" viewBox="0 0 900 226" role="img" aria-labelledby="cx6-dilute-t cx6-dilute-d">
+<title id="cx6-dilute-t">The goal shrinking as a share of the prompt</title>
+<desc id="cx6-dilute-d">The system prompt and the goal stay the same size. Each step appends a tool result, so the used budget grows while the window does not, and the goal becomes a smaller share of what the model reads on every pass.</desc>
+<text class="cap" x="315" y="24">step 1</text>
+<text class="cap" x="545" y="24">step 4</text>
+<text class="cap" x="775" y="24">step 8</text>
+<text class="mono" x="12" y="64" style="text-anchor:start">system prompt</text>
+<rect class="snap s1" x="206" y="46" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="315" y="64">400</text>
+<rect class="snap s2" x="436" y="46" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="545" y="64">400</text>
+<rect class="snap s3" x="666" y="46" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="775" y="64">400</text>
+<text class="mono" x="12" y="98" style="text-anchor:start">the goal</text>
+<rect class="snap s1" x="206" y="80" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="315" y="98">60</text>
+<rect class="snap s2" x="436" y="80" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="545" y="98">60</text>
+<rect class="snap s3" x="666" y="80" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="775" y="98">60</text>
+<text class="mono" x="12" y="132" style="text-anchor:start">tool results</text>
+<rect class="snap s1" x="206" y="114" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="315" y="132">180</text>
+<rect class="snap s2" x="436" y="114" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="545" y="132">1,720</text>
+<rect class="snap s3" x="666" y="114" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="775" y="132">6,400</text>
+<text class="mono" x="12" y="166" style="text-anchor:start">goal as a share</text>
+<rect class="snap s1" x="206" y="148" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="315" y="166">9.4%</text>
+<rect class="snap s2" x="436" y="148" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="545" y="166">2.8%</text>
+<rect class="snap s3" x="666" y="148" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="775" y="166">0.9%</text>
+<text class="cap" x="450" y="218">nothing failed at step 8 -- the instruction is simply outnumbered</text>
+</svg>
+
+<!-- ================= 3 ================= -->
+<h2 id="breakdown">3 · Simple breakdown - Compaction vs a larger context window</h2>
+<section class="breakdown">
+
+<h3 class="bd-tech"><span class="bd-tag">A</span> Compaction</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> Compaction replaces the oldest messages in a run with a short summary, keeping the goal and the most recent messages unchanged.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It lets a run continue past the point where the accumulated messages would exceed the context window.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 138" role="img" aria-labelledby="cx6-exec-t cx6-exec-d">
+<title id="cx6-exec-t">Compaction, once the budget is reached</title>
+<desc id="cx6-exec-d">When the message list approaches the token budget, the oldest turns are summarised into a short block. The goal and the most recent turns are kept verbatim, because those are what the next decision depends on.</desc>
+<defs><marker id="ah-cx6-exec" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="40" width="202.5" height="56" rx="12"></rect>
+<rect class="box b2" x="236.5" y="40" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M217.5 68 H232.5" marker-end="url(#ah-cx6-exec)"></path>
+<rect class="box b3" x="461" y="40" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M442 68 H457" marker-end="url(#ah-cx6-exec)"></path>
+<rect class="box b4" x="685.5" y="40" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M666.5 68 H681.5" marker-end="url(#ah-cx6-exec)"></path>
+<text class="lbl" x="113.25" y="64">messages near</text>
+<text class="lbl" x="113.25" y="82">the budget</text>
+<text class="lbl" x="337.75" y="64">summarise the</text>
+<text class="lbl" x="337.75" y="82">oldest turns</text>
+<text class="lbl" x="562.25" y="64">keep goal +</text>
+<text class="lbl" x="562.25" y="82">recent turns</text>
+<text class="lbl" x="786.75" y="64">smaller list</text>
+<text class="lbl" x="786.75" y="82">same thread</text>
+<circle class="pkt" cx="113.25" cy="18" r="7"></circle>
+<text class="cap" x="450" y="130">whatever the summary omits is gone for the rest of the run</text>
+</svg>
+
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> A trigger threshold measured in tokens, a summariser call, and a rule for which messages are always kept verbatim.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> The message list is rewritten in place. What the summary omits is gone for the rest of the run.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> The summary is lossy and irreversible. Summarising too early loses detail that was still needed. Recursive compaction degrades a run's memory of itself.</p>
+
+<h3 class="bd-tech"><span class="bd-tag">B</span> A larger context window</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> A larger context window is a model with a higher token limit, so more text fits into one call without any summarising.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It removes the need to compact until much later, and keeps every message verbatim until then.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b> The same call, with more tokens permitted. Nothing about the application changes.</p>
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> Nothing to build. It is a model choice and a price.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> The whole message list stays verbatim, and is re-sent in full on every call.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> You pay for every token on every call. Attention quality degrades over very long inputs, so more context is not uniformly better.</p>
+
+<h3 class="bd-diff">The core differences</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Compaction</th><th>A larger context window</th></tr></thead>
+<tbody>
+<tr><th>Cost per call as a run grows</th><td>Bounded by the trigger threshold</td><td>Grows with every appended message</td></tr>
+<tr><th>Detail preserved</th><td>Only what the summary kept</td><td>Everything, verbatim</td></tr>
+<tr><th>Work to implement</th><td>A summariser and a policy</td><td>Change the model name</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 class="bd-short">In short - which one to choose</h3>
+<ul>
+<li>Use a <b>larger window</b> first. It is free engineering time, and it is correct until the cost per call matters.</li>
+<li>Use <b>compaction</b> when runs are long enough that re-sending everything dominates cost, or when the window is genuinely reached.</li>
+<li>Do both only when you must, and <b>cap tool results at the source</b> either way - that is cheaper than both.</li>
+</ul>
+</section>
+
+<!-- ================= 4 ================= -->
+<h2 id="without">4 · Without the technology</h2>
+<p>The simplest thing that works: keep the last N messages and drop the rest.</p>
+
+<p>This bounds the prompt, and it is what many production systems actually do. It has one
+failure mode, and it is severe.</p>
+
+<p><b>The agent re-runs work it already did</b>, because the result was dropped while the
+task that needed it was not. Dropping by position is cheap and knows nothing about what
+matters.</p>
+
+<!-- ================= 5 ================= -->
+<h2 id="mechanics">5 · Runtime mechanics</h2>
+<p>Four mechanisms, applied in this order. Each one is cheaper than the next.</p>
+<ol>
+<li><b>Cap at the source.</b> A tool truncates its own result before returning it, so an
+oversized result never enters the list.</li>
+<li><b>Keep structurally.</b> Always keep the system prompt, the goal and the most recent
+exchange, whatever else goes.</li>
+<li><b>Compact.</b> When a threshold is crossed, summarise the oldest turns into one
+message and replace them.</li>
+<li><b>Persist deliberately.</b> Anything that must outlive the run is written to a store
+with a key you can retrieve it by.</li>
+</ol>
+<p>Step 1 removes most of the problem for a fraction of the effort of step 3. <b>Do it
+first.</b></p>
+
+<!-- ================= 7 ================= -->
+<h2 id="components">6 · The components, one at a time</h2>
+<h3>The token counter</h3>
+<p>Count before sending, not after failing. Provider libraries expose the tokenizer.</p>
+
+<h3>The result cap</h3>
+<p>Applied inside the tool, and reported honestly. A truncated result that does not say it
+was truncated is worse than a large one.</p>
+
+<h3>The keep set</h3>
+<p>System prompt, goal, and the last two exchanges. These are never summarised, because they
+are what the next decision reads most closely.</p>
+
+<h3>The store</h3>
+<p>Memory needs a key you can look up later, a source, and a timestamp.</p>
+
+<p><b>Without <code>customer_id</code> the fact is unreachable</b> from the next
+conversation, which is the most common reason an agent appears to forget.</p>
+
+<!-- ================= 8 ================= -->
+<h2 id="state">7 · State and data flow</h2>
+<ol>
+<li><b>What data is state?</b> The message list, the step count, and the token budget used.</li>
+<li><b>Who writes each field?</b> The loop appends; compaction rewrites.</li>
+<li><b>Who reads it?</b> The model, in full, on every call.</li>
+<li><b>Replaced, appended or merged?</b> Appended, then replaced when compaction runs.</li>
+<li><b>What reducer controls merging?</b> The compaction policy. It is the reducer.</li>
+<li><b>Only in process memory?</b> The messages, yes. The memory store, no.</li>
+<li><b>Is it checkpointed?</b> Only if you persist the list yourself.</li>
+<li><b>Is it in a database?</b> Long-term memory is. State is not.</li>
+<li><b>How long does it survive?</b> State: the run. Memory: until superseded or deleted.</li>
+<li><b>What retrieves it again?</b> A customer id or a thread id that you assigned.</li>
+</ol>
+<p>Rows 9 and 10 are the whole distinction. <b>If it would be wrong to still have this
+tomorrow, it is state</b>, and it must not be written to the store.</p>
+
+<!-- ================= 10 ================= -->
+<h2 id="trace">8 · Trace</h2>
+<p>The same eight-step run, with capping and compaction:</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Step</th><th>Prompt tokens</th><th>What happened</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>640</td><td> - </td></tr>
+<tr><td>4</td><td>1,910</td><td>one result capped at 2,000 chars</td></tr>
+<tr><td>7</td><td>6,120</td><td> - </td></tr>
+<tr><td>8</td><td>2,740</td><td><b>compaction ran</b>: 5 older turns became 1 summary</td></tr>
+<tr><td>11</td><td>4,020</td><td>answered</td></tr>
+</tbody>
+</table>
+</div>
+<p>Compare with the earlier trace, where step 11 failed at 8,900 tokens. <b>The run completed
+and cost 41% fewer tokens</b>, at the price of one summariser call and whatever the summary
+omitted.</p>
+
+<!-- ================= 11 ================= -->
+<h2 id="break">9 · Break it</h2>
+<p>Give one tool a large result and remove the cap.</p>
+
+<p>One tool call ended the run. The goal, the retrieved policy and three earlier results
+were all still there, and all of them were pushed out of a window that one log dump
+filled.</p>
+<p><b>Compaction cannot save this.</b> It runs before the model call, sees a list that is
+already over budget, and summarising a 41,800-character log dump costs a call that also
+exceeds the window.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 174" role="img" aria-labelledby="cx6-flood-t cx6-flood-d">
+<title id="cx6-flood-t">One oversized result ends the run</title>
+<desc id="cx6-flood-d">A tool returns 41,800 characters. Nothing caps it, so it is appended whole and the next call exceeds the context window. The goal and every earlier finding are still in the list, and all of them are lost with the run.</desc>
+<defs><marker id="ah-cx6-flood" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="52" width="202.5" height="56" rx="12"></rect>
+<rect class="box fail" x="236.5" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M217.5 80 H232.5" marker-end="url(#ah-cx6-flood)"></path>
+<rect class="box after b3" x="461" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M442 80 H457" marker-end="url(#ah-cx6-flood)"></path>
+<rect class="box after b4" x="685.5" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M666.5 80 H681.5" marker-end="url(#ah-cx6-flood)"></path>
+<text class="lbl" x="113.25" y="85">step runs</text>
+<text class="lbl" x="337.75" y="76">tool returns</text>
+<text class="lbl" x="337.75" y="94">41,800 chars</text>
+<text class="lbl" x="562.25" y="76">appended</text>
+<text class="lbl" x="562.25" y="94">whole</text>
+<text class="lbl" x="786.75" y="76">next call</text>
+<text class="lbl" x="786.75" y="94">rejected</text>
+<path class="xmark" d="M319.75 122 L355.75 150 M355.75 122 L319.75 150"></path>
+<text class="cap rescue" x="450" y="166">cap it in the tool -- trimming the prompt afterwards is already too late</text>
+</svg>
+
+<!-- ================= 12 ================= -->
+<h2 id="fix">10 · Fix it</h2>
+<p><b>1 · Cap at the source</b>, which is the only fix that works here.</p>
+
+<p><b>2 · Return a summary, not the data</b>, when the caller needs a conclusion rather than
+the rows.</p>
+
+<p><b>3 · Paginate</b> when the agent genuinely may need more, so it asks for the next page
+as a separate decision.</p>
+
+<p><b>4 · Count before sending</b>, and refuse rather than failing at the provider.</p>
+
+<!-- ================= 13 ================= -->
+<h2 id="production">11 · Production version</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Concern</th><th>What you do</th></tr></thead>
+<tbody>
+<tr><td>Result caps</td><td>Every tool caps its own output. This is the highest-value line in this page</td></tr>
+<tr><td>Token budget</td><td>Counted before every call, with room reserved for the answer</td></tr>
+<tr><td>Compaction trigger</td><td>A threshold, plus a guard that refuses when there is little to compact</td></tr>
+<tr><td>Never summarised</td><td>System prompt, goal, and the last two exchanges</td></tr>
+<tr><td>Memory writes</td><td>Only durable facts, with a source and a timestamp</td></tr>
+<tr><td>Memory key</td><td>Customer or tenant, never session. A session-keyed fact is unreachable next time</td></tr>
+<tr><td>Conflicts</td><td>A newer fact supersedes an older one explicitly; never keep both silently</td></tr>
+<tr><td>Deletion</td><td>A customer can ask for their facts to be removed, so store them where that is possible</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ================= 14 ================= -->
+<h2 id="comparison">12 · Comparison</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Compaction</th><th>Larger window</th><th>Result caps</th><th>Long-term memory</th></tr></thead>
+<tbody>
+<tr><th>Bounds cost per call</th><td>Yes</td><td>No</td><td><b>Yes</b></td><td>Not applicable</td></tr>
+<tr><th>Loses detail</th><td><b>Yes, permanently</b></td><td>No</td><td>Yes, but stated</td><td>No</td></tr>
+<tr><th>Work to implement</th><td>A summariser and a policy</td><td>None</td><td><b>A few lines per tool</b></td><td>A store and a key</td></tr>
+<tr><th>Survives the run</th><td>No</td><td>No</td><td>No</td><td><b>Yes</b></td></tr>
+<tr><th>Use it for</th><td>Genuinely long runs</td><td>Buying time</td><td>Every tool, always</td><td>Facts about a customer</td></tr>
+</tbody>
+</table>
+</div>
+<p>Read the third row. <b>Result caps cost a few lines per tool and remove most of the
+problem</b>, which is why they belong in every agent before compaction is considered.</p>
+
+<!-- ================= 15 ================= -->
+<div class="carry"><b>New questions</b> written for this page: it is new, so there was nothing to carry over.</div>
+<h2 id="interview">13 &middot; Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What is the difference between state and memory? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>State belongs to one run: where the agent is, what it has gathered, what budget remains. It is discarded when the run ends. Memory outlives the run - what you know about this customer from last month. The test: if it would be wrong to still have this tomorrow, it is state.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  Why do long agent runs get worse rather than failing cleanly? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Each step appends a tool result to the same finite window. Twenty steps in, the original goal is a small fraction of what the model reads, so the signal that should drive the next decision is diluted by earlier output.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  What does it mean to cap a tool result at the source? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>The tool truncates, paginates or summarises before returning, so an oversized result never enters the message list. Trimming the prompt afterwards is too late: the budget was already spent and earlier findings were already crowded out.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  What is compaction, and what does it cost? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Replacing the oldest turns with a short summary, keeping the goal and the most recent turns verbatim. It costs a model call, and whatever the summary omits is gone permanently. Compact only when the alternative is exceeding the window.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  How would you decide what belongs in long-term memory? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Only facts that are still true and still useful after the run ends, and that would change a future answer. A customer's stated preference qualifies. A half-finished investigation does not. Write with a source and a timestamp, and have a rule for superseding a fact that later contradicts it.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  A customer says your agent 'forgot' something from last week. How do you diagnose it? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Establish first whether it was ever written. Most reported memory failures are writes that never happened, not reads that failed. Then check the retrieval key: memory keyed by session rather than by customer is unreachable from a new conversation. Then check whether compaction summarised it away.</p></div></details>
+
+<!-- ================= 16 ================= -->
+<h2 id="short">14 · In short, and what comes next</h2>
+<p class="bd-choose">Remember these six:</p>
+<ul>
+<li>State belongs to one run. Memory outlives it. Conflating them causes two opposite bugs.</li>
+<li>If it would be wrong to still have this tomorrow, it is state.</li>
+<li>Cap every tool result at the source. It is the cheapest fix and the most effective.</li>
+<li>Compaction is lossy and irreversible. Guard it so it refuses when it would not help.</li>
+<li>Never summarise the system prompt, the goal, or the last two exchanges.</li>
+<li>Key memory by customer, never by session, or it is unreachable next time.</li>
+</ul>
+<div class="callout key">
+<div class="c-ico">🔑</div>
+<div class="c-body"><div class="c-title">The one idea to remember</div>
+<p><b>The context window is a budget, and every step spends it.</b> Deciding what to spend
+it on is your job, because nothing in the model will decide it for you.</p></div>
+</div>
+<p><b>Next:</b> page 7 is about what happens when a tool call is slow, flaky or returns
+half an answer.</p>
+
+<div class="page-nav" data-page-nav>
+<a href="05-retrieval.html"><div class="dir">← Previous</div><div class="ttl">05 · Retrieval</div></a>
+          <a class="next" href="07-reliability.html"><div class="dir">Next →</div><div class="ttl">07 · Reliability</div></a>
+</div>
+
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script>
+window.__pageNav = {
+  navLabel: "Understanding AI Agents · CampusX",
+  here: "campusx/06-context-and-memory.html",
+  base: "../",
+  pages: [
+    { file: "campusx/index.html", title: "Section index", num: "✦", kw: "campusx agents index" }
+  ]
+};
+</script>
+<script src="../../assets/app.js?v=20260925c"></script>
+<script src="../../assets/sitenav.js?v=20260925a"></script>
+<script src="../../assets/enhance.js?v=20260925c"></script>
+<script src="../../assets/genai-motion.js?v=20260728a"></script>
+<script src="../../assets/glossary.js?v=20260802b"></script>
+</body>
+</html>

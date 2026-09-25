@@ -1,5 +1,5 @@
 """
-config.py — every knob, read from the environment, in one place.
+config.py - every knob, read from the environment, in one place.
 
 The model name is never hardcoded anywhere else. That is not tidiness: this lab
 runs on whatever Gemma variant fits your machine, and a hardcoded tag would send

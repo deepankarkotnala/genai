@@ -1,0 +1,430 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>11 · Tracing and cost | Understanding AI Agents</title>
+<meta name="description" content="What a trace gives you that logs do not, the span shape that makes a run reassemblable, the four levers on cost, and why traces are a data-retention surface.">
+<link rel="icon" href="../../assets/brand/favicon.svg?v=20260925b" type="image/svg+xml">
+<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260925b" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260925b">
+<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260925b" sizes="180x180">
+<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260925b">
+<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260925b" color="#6f47f5">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="../../assets/styles.css?v=20260805a">
+<link href="../../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
+<link href="../../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
+<link href="../../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+<link href="../../assets/ir-theme.css?v=20260925c" rel="stylesheet"/>
+</head>
+<body data-curriculum-id="cx-11" data-page="cx-11">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="../../index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search this section…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Understanding AI Agents · CampusX / <b>11 · Tracing and cost</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> 11 · Operations</div>
+        <h1>Tracing, and answering what your agent costs</h1>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~17 min read</span>
+          <span class="pill purple">Pairs with · <a href="../lessons/0011-tracing-cost.html">Lesson 11 · Tracing, latency & cost</a></span>
+        </div>
+
+<!-- ================= 1 ================= -->
+<h2 id="known">1 · What you already know</h2>
+<p>From page 10 you can measure quality across a golden set. From page 2 the
+loop records its steps.</p>
+<p><b>Neither tells you what one run did in production yesterday.</b> This page is about
+seeing inside a single run, and about answering the cost question you will be asked.</p>
+
+<!-- ================= 2 ================= -->
+<h2 id="breaks">2 · What breaks now</h2>
+<p>A user reports that a ticket took 40 seconds. You open the logs.</p>
+
+<p>Two runs are interleaved. <b>You cannot tell which lines belong to the slow one</b>, which
+call took 27 seconds, or whether the error belongs to the run that was slow or the one that
+was not.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Question you were asked</th><th>What the logs can answer</th></tr></thead>
+<tbody>
+<tr><td>Which run was slow?</td><td>Not without a correlation id</td></tr>
+<tr><td>Which step dominated the 40 seconds?</td><td>Only by subtracting timestamps, if the lines are the right ones</td></tr>
+<tr><td>What did it cost?</td><td>Nothing recorded token counts</td></tr>
+<tr><td>Did the error affect the answer?</td><td>Unknown; the error is not attached to a run</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ================= 3 ================= -->
+<h2 id="breakdown">3 · Simple breakdown - Tracing vs logging</h2>
+<section class="breakdown">
+
+<h3 class="bd-tech"><span class="bd-tag">A</span> Tracing</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> Tracing records each unit of work in a run as a span, carrying a shared run id, a parent, a duration, and an outcome.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It lets you reconstruct one run completely, and say where its time and money went.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 306" role="img" aria-labelledby="cx11-exec-t cx11-exec-d">
+<title id="cx11-exec-t">Why a trace answers what logs cannot</title>
+<desc id="cx11-exec-d">Log lines are independent, so reconstructing one run means guessing which lines belong together. A correlation id groups them. A parent id nests them, and once they nest, durations show where the time went.</desc>
+<defs><marker id="ah-cx11-exec" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="layer b1" x="150" y="16" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="37">log lines, interleaved from every run</text>
+<text class="lbl" x="450" y="55">which ones belong together?</text>
+<rect class="layer b2" x="150" y="82" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="103">one correlation id per run</text>
+<text class="lbl" x="450" y="121">now they group</text>
+<path class="arw" d="M450 66 V79" marker-end="url(#ah-cx11-exec)"></path>
+<rect class="layer b3" x="150" y="148" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="169">a parent id per span</text>
+<text class="lbl" x="450" y="187">now they nest, with durations</text>
+<path class="arw" d="M450 132 V145" marker-end="url(#ah-cx11-exec)"></path>
+<rect class="layer b4" x="150" y="214" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="244">the question you asked: where did the time go?</text>
+<path class="arw" d="M450 198 V211" marker-end="url(#ah-cx11-exec)"></path>
+<text class="cap" x="450" y="300">grouping gives you the run; nesting gives you its shape</text>
+</svg>
+
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> A span type, a store keyed by run id, and instrumentation at each boundary: model calls, tool calls, and control steps.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> Spans are durable and outlive the run. The tree is reconstructed at read time from parent ids.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> It adds a write per span and holds prompt and result content unless you redact. Sampling reduces volume at the cost of missing the run you needed.</p>
+
+<h3 class="bd-tech"><span class="bd-tag">B</span> Logging</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> Logging writes independent lines describing events, usually at a severity level, with whatever fields the call site included.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It records that something happened, and is the fastest way to get any visibility at all.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b> Each call site writes a line when it is reached. Nothing relates one line to another unless a field does.</p>
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> A logger and a sink. No structure is imposed beyond what each line carries.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> Whatever each line holds. There is no run-level object.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> Reconstructing one run means filtering and guessing. Durations must be computed from timestamps, and concurrent runs interleave.</p>
+
+<h3 class="bd-diff">The core differences</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Tracing</th><th>Logging</th></tr></thead>
+<tbody>
+<tr><th>Reassembles one run</th><td>Yes, by run id and parent</td><td>Only if every line carries a correlation id</td></tr>
+<tr><th>Answers where the time went</th><td>Yes, durations per span</td><td>Only by subtracting timestamps by hand</td></tr>
+<tr><th>Cost to add</th><td>Instrument each boundary once</td><td>One line, anywhere</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 class="bd-short">In short - which one to choose</h3>
+<ul>
+<li>Use <b>tracing</b> for anything you will need to debug as a whole run: agents, pipelines, anything with steps.</li>
+<li>Use <b>logging</b> for events that stand alone, and for the cases where a trace has not been set up yet.</li>
+<li>They are not exclusive. <b>A log line with the run id on it</b> is findable from the trace, which is most of the benefit for very little work.</li>
+</ul>
+</section>
+
+<!-- ================= 4 ================= -->
+<h2 id="without">4 · Without the technology</h2>
+<p>The cheapest improvement, and it is genuinely large: put a correlation id on
+every line.</p>
+
+<p>Now you can filter to one run. Two things are still missing:</p>
+<ul>
+<li><b>Durations must be computed by hand</b>, by subtracting adjacent timestamps, which
+breaks the moment anything runs concurrently.</li>
+<li><b>Nothing records cost.</b> Token counts were available on every model response and
+were not captured.</li>
+</ul>
+<p><b>Correlation ids get you most of the way for one keyword argument.</b> Spans get you the
+rest.</p>
+
+<!-- ================= 5 ================= -->
+<h2 id="mechanics">5 · Runtime mechanics</h2>
+<p>A trace is built in four steps.</p>
+<ol>
+<li><b>Open a root span</b> when the run starts, and generate the run id there.</li>
+<li><b>Open a child span</b> at every boundary: each model call, each tool call, each
+control decision.</li>
+<li><b>Close each span</b> with its duration, its outcome, and for model calls the token
+counts and computed cost.</li>
+<li><b>Write flat</b>, one row per span, each carrying the run id and its parent id. The
+tree is reconstructed when you read it.</li>
+</ol>
+<p><b>Tracing is opt-in in a well-built loop.</b> Pass a trace and the same loop produces a
+tree; omit it and the loop stays readable.</p>
+
+<!-- ================= 7 ================= -->
+<h2 id="components">6 · The components, one at a time</h2>
+<h3>The run id</h3>
+<p>Generated once, carried by every span and every log line. It is the single field that
+makes everything else findable.</p>
+
+<h3>The parent id</h3>
+<p>What turns a list into a tree. A tool call's parent is the control step that dispatched
+it, so the tree shows what caused what.</p>
+
+<h3>Token counts and cost</h3>
+
+<p><b>An unknown model returns 0.0 rather than a guess</b>, and the report says how many spans
+had no price.</p>
+
+<h3>Redaction at capture</h3>
+
+<p>Shape, not payload. <b>Redacting in the viewer means the raw value was still written.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 260" role="img" aria-labelledby="cx11-spans-t cx11-spans-d">
+<title id="cx11-spans-t">Four spans from one run</title>
+<desc id="cx11-spans-d">Every span carries the same run id, which is what makes the tree reassemblable. Each records its own parent, kind, duration and cost, so you can see where the time and the money went.</desc>
+<text class="cap" x="315" y="24">run</text>
+<text class="cap" x="545" y="24">decide</text>
+<text class="cap" x="775" y="24">read_ticket</text>
+<text class="mono" x="12" y="64" style="text-anchor:start">span id</text>
+<rect class="snap s1" x="206" y="46" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="315" y="64">run-7f2a</text>
+<rect class="snap s2" x="436" y="46" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="545" y="64">sp-1c</text>
+<rect class="snap s3" x="666" y="46" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="775" y="64">sp-2d</text>
+<text class="mono" x="12" y="98" style="text-anchor:start">kind</text>
+<rect class="snap s1" x="206" y="80" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="315" y="98">control</text>
+<rect class="snap s2" x="436" y="80" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="545" y="98">model</text>
+<rect class="snap s3" x="666" y="80" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="775" y="98">tool</text>
+<text class="mono" x="12" y="132" style="text-anchor:start">parent</text>
+<rect class="snap s1" x="206" y="114" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="315" y="132">none</text>
+<rect class="snap s2" x="436" y="114" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="545" y="132">run-7f2a</text>
+<rect class="snap s3" x="666" y="114" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="775" y="132">run-7f2a</text>
+<text class="mono" x="12" y="166" style="text-anchor:start">duration</text>
+<rect class="snap s1" x="206" y="148" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="315" y="166">3,240 ms</text>
+<rect class="snap s2" x="436" y="148" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="545" y="166">820 ms</text>
+<rect class="snap s3" x="666" y="148" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="775" y="166">41 ms</text>
+<text class="mono" x="12" y="200" style="text-anchor:start">cost</text>
+<rect class="snap s1" x="206" y="182" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="315" y="200">$0.0042</text>
+<rect class="snap s2" x="436" y="182" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="545" y="200">$0.0011</text>
+<rect class="snap s3" x="666" y="182" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="775" y="200">$0</text>
+<text class="cap" x="450" y="252">one correlation id on every span is the whole trick</text>
+</svg>
+
+<!-- ================= 8 ================= -->
+<h2 id="state">7 · State and data flow</h2>
+<ol>
+<li><b>What data is state?</b> The span list for the current run, then the durable trace.</li>
+<li><b>Who writes each field?</b> Each span context, on entry and exit.</li>
+<li><b>Who reads it?</b> You, afterwards. Nothing in the run reads its own trace.</li>
+<li><b>Replaced, appended or merged?</b> Appended. A closed span is never edited.</li>
+<li><b>What reducer controls merging?</b> None. Parent id defines the structure at read
+time.</li>
+<li><b>Only in process memory?</b> During the run, yes. It must be flushed to be useful.</li>
+<li><b>Is it checkpointed?</b> Flush per span for long runs; a crash otherwise loses the
+trace of the run you most want.</li>
+<li><b>Is it in a database?</b> Yes, and it is the one holding prompt and result content.</li>
+<li><b>How long does it survive?</b> Your retention period, which must be a decision rather
+than a default.</li>
+<li><b>What retrieves it again?</b> The run id, which is why it appears in the user-facing
+error message.</li>
+</ol>
+<p>Row 7 matters more than it looks. <b>Buffering the whole trace until the run ends loses
+it exactly when the run crashes.</b></p>
+
+<!-- ================= 10 ================= -->
+<h2 id="trace">8 · Trace</h2>
+<p>One healthy run, read as a tree.</p>
+
+<p>Three model calls dominate: 3,020 ms of the 3,240. <b>The tools are not the problem</b>,
+and no amount of database tuning would have helped.</p>
+<p>Now the 40-second run from section 2.</p>
+
+<p><b>One tool, two timeouts, 37.5 of the 39.9 seconds.</b> That is answerable in ten seconds
+from a trace, and not answerable at all from the logs in section 2.</p>
+
+<!-- ================= 11 ================= -->
+<h2 id="break">9 · Break it</h2>
+<p>Now read a trace that holds the answer and the problem at once.</p>
+
+<p>This run cost ten times the healthy one and answered correctly, so nothing alerted.</p>
+<p>Three compounding problems are visible: <b>the large model is doing simple work</b>, the
+tool results are uncapped, and each uncapped result inflates the prompt of every subsequent
+call.</p>
+
+<!-- ================= 12 ================= -->
+<h2 id="fix">10 · Fix it</h2>
+<p>Apply the four levers, cheapest first.</p>
+<p><b>1 · Cap the tool results</b>, which is page 6's fix and removes most of the prompt
+growth.</p>
+
+<p><b>2 · Route to a cheaper model</b> for work that does not need the expensive one.</p>
+
+<p><b>3 · Cache identical calls</b>, keyed including the tenant.</p>
+
+<p><b>4 · Alert on cost per run</b>, not just on errors.</p>
+
+<p>After the first two.</p>
+
+<p><b>A 21-fold reduction, and the answer is unchanged.</b> The evaluation suite from page 10
+is what proves that second claim.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 376" role="img" aria-labelledby="cx11-levers-t cx11-levers-d">
+<title id="cx11-levers-t">Where the money actually goes</title>
+<desc id="cx11-levers-d">Cost is tokens sent multiplied by calls made. The levers are fewer steps, a smaller prompt, a cheaper model for easy work, and caching what repeats. Routing is usually the largest single win.</desc>
+<defs><marker id="ah-cx11-levers" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="169" width="239.9" height="56" rx="12"></rect>
+<text class="lbl" x="131.95" y="193">cost is too</text>
+<text class="lbl" x="131.95" y="211">high</text>
+<rect class="box b2" x="295.9" y="169" width="257.9" height="56" rx="12"></rect>
+<text class="lbl" x="424.85" y="193">which lever</text>
+<text class="lbl" x="424.85" y="211">applies?</text>
+<path class="arw" d="M256.9 197 H291.9" marker-end="url(#ah-cx11-levers)"></path>
+<rect class="box b3" x="605.8" y="58" width="282.2" height="56" rx="12"></rect>
+<text class="lbl" x="746.9" y="91">too many steps -- cap them, route earlier</text>
+<path class="arw" d="M556.8 197 C579.8 197, 579.8 86, 601.8 86" marker-end="url(#ah-cx11-levers)"></path>
+<rect class="box b4" x="605.8" y="132" width="282.2" height="56" rx="12"></rect>
+<text class="lbl" x="746.9" y="165">prompt too large -- trim, cap tool results</text>
+<path class="arw" d="M556.8 197 C579.8 197, 579.8 160, 601.8 160" marker-end="url(#ah-cx11-levers)"></path>
+<rect class="box b5" x="605.8" y="206" width="282.2" height="56" rx="12"></rect>
+<text class="lbl" x="746.9" y="239">model too dear -- route easy work to small</text>
+<path class="arw" d="M556.8 197 C579.8 197, 579.8 234, 601.8 234" marker-end="url(#ah-cx11-levers)"></path>
+<rect class="box b5" x="605.8" y="280" width="282.2" height="56" rx="12"></rect>
+<text class="lbl" x="746.9" y="313">same call repeats -- cache it</text>
+<path class="arw" d="M556.8 197 C579.8 197, 579.8 308, 601.8 308" marker-end="url(#ah-cx11-levers)"></path>
+<text class="cap" x="450" y="370">the large model costs about 20x the small one for the same tokens</text>
+</svg>
+
+<!-- ================= 13 ================= -->
+<h2 id="production">11 · Production version</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Concern</th><th>What you do</th></tr></thead>
+<tbody>
+<tr><td>Run id everywhere</td><td>On every span, every log line, and in the user-facing error message</td></tr>
+<tr><td>Flush per span</td><td>Not at the end. A crashed run is the one whose trace you need</td></tr>
+<tr><td>Token capture</td><td>From the first day. Cost cannot be reconstructed after the fact</td></tr>
+<tr><td>Unknown models</td><td>Cost 0.0, and the report says how many spans were unpriced</td></tr>
+<tr><td>Shape not payload</td><td>Argument keys, result sizes, token counts. Redact at capture</td></tr>
+<tr><td>Retention</td><td>An explicit period, enforced. Traces hold prompts and customer data</td></tr>
+<tr><td>Sampling</td><td>Sample healthy runs; keep every error and every expensive run</td></tr>
+<tr><td>Cost alerts</td><td>Per run and per tenant. A loop shows up as cost before it shows up as an error</td></tr>
+<tr><td>Latency budget</td><td>Per span kind, so a regression names the layer that caused it</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ================= 14 ================= -->
+<h2 id="comparison">12 · Comparison</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Tracing</th><th>Logging</th><th>Metrics</th></tr></thead>
+<tbody>
+<tr><th>One run, end to end</th><td><b>Yes</b></td><td>Only with a correlation id</td><td>No</td></tr>
+<tr><th>Aggregate trend</th><td>By query</td><td>Poorly</td><td><b>Yes, cheaply</b></td></tr>
+<tr><th>Where the time went</th><td><b>Yes, per span</b></td><td>By subtraction</td><td>Only in aggregate</td></tr>
+<tr><th>Storage cost</th><td>High</td><td>Medium</td><td><b>Low</b></td></tr>
+<tr><th>Holds sensitive data</th><td><b>Yes, by default</b></td><td>Often</td><td>No</td></tr>
+<tr><th>Use it for</th><td>Debugging one run</td><td>Standalone events</td><td>Alerts and dashboards</td></tr>
+</tbody>
+</table>
+</div>
+<p>The last row is the division of labour. <b>Metrics tell you something is wrong; the trace
+tells you what.</b> Running only one of the three leaves a question you cannot answer.</p>
+
+<!-- ================= 15 ================= -->
+<div class="carry"><b>New questions</b> written for this page: it is new, so there was nothing to carry over.</div>
+<h2 id="interview">13 &middot; Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What does a trace give you that log lines do not? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Structure. Log lines are independent, so reconstructing one run means guessing which lines belong together. A trace records a run id on every span and a parent on each, so the run reassembles into a tree with durations attached.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What is a span? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>One timed unit of work inside a run: a model call, a tool call, or a control step. It records its own id, its parent, a duration, whether it succeeded, and for model calls the token counts and cost.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  Why store spans flat with a parent id rather than nested? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Spans nest logically, but a flat store with a parent_id is easier to write incrementally, easier to query, and is what every real tracing backend does. The tree is reconstructed at read time.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  What are the levers on agent cost? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Fewer steps, a smaller prompt, a cheaper model for easy work, and caching what repeats. Routing is usually the largest single win, because most requests never needed the full tool set or the expensive model.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  You are told an agent run 'was slow yesterday'. What do you need to answer that? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>A trace with a correlation id, durations per span, and enough retention to reach yesterday. From that you can say which span dominated: a slow tool, a long generation, or too many steps. Without per-span durations you can only say the run was slow, which is what you were already told.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  Traces contain prompts and tool results. How do you handle that? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Treat the trace as a data-retention surface. Record the shape rather than the payload: tool name, argument keys, result size, token counts, latency and decision. Redact at capture, not in the viewer, because a value redacted downstream was still written upstream. Set a retention period and enforce it.</p></div></details>
+
+<!-- ================= 16 ================= -->
+<h2 id="short">14 · In short, and what comes next</h2>
+<p class="bd-choose">Remember these six:</p>
+<ul>
+<li>One correlation id on every span and every log line is most of the benefit.</li>
+<li>A parent id turns a list of spans into a tree that shows what caused what.</li>
+<li>Capture tokens from day one. Cost cannot be reconstructed later.</li>
+<li>The four levers: fewer steps, smaller prompt, cheaper model, cache.</li>
+<li>Record shape, not payload, and redact at capture rather than in the viewer.</li>
+<li>Flush per span, because the run you most need to see is the one that crashed.</li>
+</ul>
+<div class="callout key">
+<div class="c-ico">🔑</div>
+<div class="c-body"><div class="c-title">The one idea to remember</div>
+<p><b>"What does your agent cost?" is a fair question, and you can only answer it if the
+numbers were captured.</b> That instrumentation is groundwork, not decoration.</p></div>
+</div>
+<p><b>Next:</b> page 12 is about sharing tools between agents without writing the same
+integration four times.</p>
+
+<div class="page-nav" data-page-nav>
+<a href="10-evaluation.html"><div class="dir">← Previous</div><div class="ttl">10 · Evaluation</div></a>
+          <a class="next" href="12-mcp.html"><div class="dir">Next →</div><div class="ttl">12 · MCP</div></a>
+</div>
+
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script>
+window.__pageNav = {
+  navLabel: "Understanding AI Agents · CampusX",
+  here: "campusx/11-tracing-and-cost.html",
+  base: "../",
+  pages: [
+    { file: "campusx/index.html", title: "Section index", num: "✦", kw: "campusx agents index" }
+  ]
+};
+</script>
+<script src="../../assets/app.js?v=20260925c"></script>
+<script src="../../assets/sitenav.js?v=20260925a"></script>
+<script src="../../assets/enhance.js?v=20260925c"></script>
+<script src="../../assets/genai-motion.js?v=20260728a"></script>
+<script src="../../assets/glossary.js?v=20260802b"></script>
+</body>
+</html>

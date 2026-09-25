@@ -1,4 +1,4 @@
-# Glass Learning UI — July 2026
+# Glass Learning UI: July 2026
 
 The full GenAI learning portal has been redesigned as a neutral, modern glass interface with a focused purple action system. The update remains dependency-free and works offline.
 
@@ -18,9 +18,9 @@ The full GenAI learning portal has been redesigned as a neutral, modern glass in
 
 ## Main implementation files
 
-- `genai-portal/assets/styles.css` — design system, responsive layout and animation layer
-- `genai-portal/assets/enhance.js` — topic-aware SVG diagrams, reader tools and motion behavior
-- `genai-portal/assets/sitenav.js` — shared grouped navigation
+- `genai-portal/assets/styles.css` - design system, responsive layout and animation layer
+- `genai-portal/assets/enhance.js` - topic-aware SVG diagrams, reader tools and motion behavior
+- `genai-portal/assets/sitenav.js` - shared grouped navigation
 
 ## Existing source references
 

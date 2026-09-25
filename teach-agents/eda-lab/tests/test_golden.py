@@ -1,5 +1,5 @@
 """
-Golden-set tests — the evaluation harness, run as part of the suite.
+Golden-set tests - the evaluation harness, run as part of the suite.
 
 Two separate jobs here, and conflating them is a common mistake:
 

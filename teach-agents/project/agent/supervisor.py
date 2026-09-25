@@ -1,5 +1,5 @@
 """
-supervisor.py — multi-agent, and the measurement that decides whether to use it.
+supervisor.py - multi-agent, and the measurement that decides whether to use it.
 
 Lesson 13. A supervisor routes a ticket to a specialist, each specialist having
 a narrow tool set. This is the pattern people reach for first and justify least.

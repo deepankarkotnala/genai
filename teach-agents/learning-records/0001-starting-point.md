@@ -3,7 +3,7 @@
 The learner is comfortable in Python and wants deep agent literacy *before* committing to building
 the EnM systems. EnM Agents.xlsx (8 multi-agent business outcomes) is the recurring concrete example.
 
-Prior knowledge: strong Python; **no confirmed prior knowledge of LLM agents yet** — start from the
+Prior knowledge: strong Python; **no confirmed prior knowledge of LLM agents yet** - start from the
 agent loop (Lesson 1 covers this). First agent (mini anomaly detector) is built and verified running
 via an offline fallback brain; live Gemini path is wired but not yet exercised by the learner.
 

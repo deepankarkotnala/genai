@@ -1,4 +1,4 @@
-# Foundations of LLMs — inference-loop precision update
+# Foundations of LLMs: inference-loop precision update
 
 ## What changed
 

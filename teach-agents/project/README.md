@@ -31,7 +31,7 @@ cd teach-agents/project
 python -m pytest
 ```
 
-190 tests, fully offline and deterministic — no key, no network, no model.
+190 tests, fully offline and deterministic - no key, no network, no model.
 
 The `live_model` marker is configured and excluded by default (`addopts` in
 `pyproject.toml`), but nothing here currently carries it: every claim this course
@@ -83,7 +83,7 @@ set AGENT_BRAIN=ollama
 
 The stub is chosen deliberately, never as a silent fallback after a failure. If
 you ask for `ollama` and it is not there, you get an error telling you to run
-`ollama serve` — not a quiet downgrade that makes you think you tested something
+`ollama serve` - not a quiet downgrade that makes you think you tested something
 you did not.
 
 ## What the stub backend is and is not
@@ -96,7 +96,7 @@ changes, edit a fixture and the path changes.
 What it gives you: reproducible runs, tests with no network, a loop you can
 single-step in a debugger, and no bill.
 
-What it cannot show you — read this before claiming the agent "works":
+What it cannot show you - read this before claiming the agent "works":
 
 - **No language understanding.** It finds `TCK-` and `ORD-` tokens with string
   matching. Rephrase the goal and a real model would cope; the stub may not.

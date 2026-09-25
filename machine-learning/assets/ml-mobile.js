@@ -1,5 +1,5 @@
 /* =========================================================================
-   ml-mobile.js — the one piece of mobile behaviour CSS cannot express
+   ml-mobile.js - the one piece of mobile behaviour CSS cannot express
    =========================================================================
 
    Toggles `body.ml-scrolled` once the page has moved off the top, which
@@ -9,7 +9,7 @@
    A CSS-only version is not possible here: `animation-timeline: scroll()` can
    drive a shadow, but the property is not animatable on the compositor and
    Safari does not support scroll-driven animations, so the header would stay
-   flat on iOS — the platform this matters most on.
+   flat on iOS - the platform this matters most on.
 
    Passive listener, rAF-coalesced, one class write per state change.
    ========================================================================= */

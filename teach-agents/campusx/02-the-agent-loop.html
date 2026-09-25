@@ -1,0 +1,417 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>02 · The agent loop | Understanding AI Agents</title>
+<meta name="description" content="An agent is a loop: the model chooses one action, your code runs it, the result goes back in. Why the step limit is the only real bound, and when a workflow is the better answer.">
+<link rel="icon" href="../../assets/brand/favicon.svg?v=20260925b" type="image/svg+xml">
+<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260925b" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260925b">
+<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260925b" sizes="180x180">
+<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260925b">
+<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260925b" color="#6f47f5">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="../../assets/styles.css?v=20260805a">
+<link href="../../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
+<link href="../../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
+<link href="../../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+<link href="../../assets/ir-theme.css?v=20260925c" rel="stylesheet"/>
+</head>
+<body data-curriculum-id="cx-02" data-page="cx-02">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="../../index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search this section…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Understanding AI Agents · CampusX / <b>02 · The agent loop</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> 02 · Foundations</div>
+        <h1>The agent loop, and when not to build one</h1>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~20 min read</span>
+          <span class="pill purple">Pairs with · <a href="../lessons/0002-agent-loop.html">Lesson 2 · The agent loop</a></span>
+        </div>
+
+<!-- ================= 1 ================= -->
+<h2 id="known">1 · What you already know</h2>
+<p>From page 1: a model call takes text and returns text. It has no memory, it
+cannot act, and it answers confidently when it does not know.</p>
+<p><b>This page removes two of those three limits.</b> Not by changing the model, which you
+cannot change, but by putting the call inside a loop that your code controls.</p>
+
+<!-- ================= 2 ================= -->
+<h2 id="breaks">2 · What breaks now</h2>
+<p>A support ticket says: <i>my order arrived broken, I want a refund.</i> To
+answer it you need the ticket, then the order the ticket refers to, then the refund policy
+for that order's age.</p>
+<p>You cannot write that as one call, because <b>you do not know the order id until you
+have read the ticket</b>.</p>
+
+<p>You could read the ticket yourself, extract the id, and call the model again. That works
+for this ticket. The next one references two orders, or none, or an order that does not
+exist.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>What the task needs</th><th>Why a single call cannot do it</th></tr></thead>
+<tbody>
+<tr><td>Decide what to look up</td><td>The decision depends on text it has not read yet</td></tr>
+<tr><td>Use the result of a lookup</td><td>One call returns once, and then it is over</td></tr>
+<tr><td>Stop when it has enough</td><td>Nothing is counting, so nothing can stop</td></tr>
+</tbody>
+</table>
+</div>
+<p>All three are the same missing thing. <b>There is no second pass.</b> Add one, and all
+three become possible.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 376" role="img" aria-labelledby="cx2-four-t cx2-four-d">
+<title id="cx2-four-t">Who decides the next step</title>
+<desc id="cx2-four-d">A prompt has no next step. A chain runs a fixed sequence you wrote. A workflow branches on results, in code you wrote. Only an agent lets the model choose the next step while the run is happening.</desc>
+<defs><marker id="ah-cx2-four" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="169" width="267.35" height="56" rx="12"></rect>
+<text class="lbl" x="145.675" y="193">a task</text>
+<text class="lbl" x="145.675" y="211">arrives</text>
+<rect class="box b2" x="323.35" y="169" width="285.35" height="56" rx="12"></rect>
+<text class="lbl" x="466.025" y="193">who picks the</text>
+<text class="lbl" x="466.025" y="211">next step?</text>
+<path class="arw" d="M284.35 197 H319.35" marker-end="url(#ah-cx2-four)"></path>
+<rect class="box b3" x="660.7" y="58" width="227.3" height="56" rx="12"></rect>
+<text class="lbl" x="774.35" y="82">nobody -- one call in, one out</text>
+<text class="lbl" x="774.35" y="100">PROMPT</text>
+<path class="arw" d="M611.7 197 C634.7 197, 634.7 86, 656.7 86" marker-end="url(#ah-cx2-four)"></path>
+<rect class="box b4" x="660.7" y="132" width="227.3" height="56" rx="12"></rect>
+<text class="lbl" x="774.35" y="156">you, at build time -- fixed order</text>
+<text class="lbl" x="774.35" y="174">CHAIN</text>
+<path class="arw" d="M611.7 197 C634.7 197, 634.7 160, 656.7 160" marker-end="url(#ah-cx2-four)"></path>
+<rect class="box b5" x="660.7" y="206" width="227.3" height="56" rx="12"></rect>
+<text class="lbl" x="774.35" y="230">you, with branches in code</text>
+<text class="lbl" x="774.35" y="248">WORKFLOW</text>
+<path class="arw" d="M611.7 197 C634.7 197, 634.7 234, 656.7 234" marker-end="url(#ah-cx2-four)"></path>
+<rect class="box b5" x="660.7" y="280" width="227.3" height="56" rx="12"></rect>
+<text class="lbl" x="774.35" y="304">the model, at run time</text>
+<text class="lbl" x="774.35" y="322">AGENT</text>
+<path class="arw" d="M611.7 197 C634.7 197, 634.7 308, 656.7 308" marker-end="url(#ah-cx2-four)"></path>
+<text class="cap" x="450" y="370">the first three are cheaper and reproducible; only pay for the fourth when you need it</text>
+</svg>
+
+<!-- ================= 3 ================= -->
+<h2 id="breakdown">3 · Simple breakdown - An agent vs a fixed workflow</h2>
+<section class="breakdown">
+
+<h3 class="bd-tech"><span class="bd-tag">A</span> An agent</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> An agent is a loop in your code. Each pass shows a language model the goal and everything gathered so far, and the model chooses one action to take next.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It handles tasks where you cannot list the steps in advance, because which step is needed depends on what earlier steps returned.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 168" role="img" aria-labelledby="cx2-exec-t cx2-exec-d">
+<title id="cx2-exec-t">The agent loop</title>
+<desc id="cx2-exec-d">The model is shown the goal and everything gathered so far. It chooses one action. Your code runs that action and appends the result. The model decides again, until it answers or a limit stops the run.</desc>
+<defs><marker id="ah-cx2-exec" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker><marker id="ah-cx2-execp" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--accent)"></path></marker></defs>
+<path class="loop" d="M629.6 62 C629.6 16, 270.4 16, 270.4 54" marker-end="url(#ah-cx2-execp)"></path>
+<text class="loop-lbl" x="450" y="14">until it answers, or the limit stops it</text>
+<rect class="box b1" x="12" y="62" width="157.6" height="56" rx="12"></rect>
+<rect class="box b2" x="191.6" y="62" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M172.6 90 H187.6" marker-end="url(#ah-cx2-exec)"></path>
+<rect class="box b3" x="371.2" y="62" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M352.2 90 H367.2" marker-end="url(#ah-cx2-exec)"></path>
+<rect class="box b4" x="550.8" y="62" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M531.8 90 H546.8" marker-end="url(#ah-cx2-exec)"></path>
+<rect class="box b5" x="730.4" y="62" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M711.4 90 H726.4" marker-end="url(#ah-cx2-exec)"></path>
+<text class="lbl" x="90.8" y="95">goal</text>
+<text class="lbl" x="270.4" y="86">decide</text>
+<text class="lbl" x="270.4" y="104">(the model)</text>
+<text class="lbl" x="450" y="86">act</text>
+<text class="lbl" x="450" y="104">(your code)</text>
+<text class="lbl" x="629.6" y="86">observe</text>
+<text class="lbl" x="629.6" y="104">append result</text>
+<text class="lbl" x="809.2" y="95">answer</text>
+<text class="cap" x="450" y="160">the model decides and your code acts -- that split is the whole design</text>
+</svg>
+
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> A message list, a set of tool declarations, a dispatch function that runs the requested tool, and a bound on how many passes may run.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> The message list, held by your code and re-sent in full on every pass. It is discarded when the run ends unless you persist it.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> Every pass costs a model call, so latency and cost grow with the number of steps. Termination must be enforced by your code. Planning, reflection and routing are variations on the same loop.</p>
+
+<h3 class="bd-tech"><span class="bd-tag">B</span> A fixed workflow</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> A fixed workflow is code that runs a sequence of steps you wrote, branching on results with ordinary conditionals.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It performs a task whose paths you can enumerate before the run starts.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b> Each step runs in the order written. A branch chooses between paths that were all written in advance.</p>
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> Functions, conditionals and loops. A model may be one step inside it, but it never chooses the next step.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> Local variables, and whatever you persist. The path taken is determined by the code and the input.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> It cannot handle a case nobody wrote a branch for. Adding cases means editing code, which is slower to change but fully auditable.</p>
+
+<h3 class="bd-diff">The core differences</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>An agent</th><th>A fixed workflow</th></tr></thead>
+<tbody>
+<tr><th>Who chooses the next step</th><td>The model, at run time</td><td>You, at build time</td></tr>
+<tr><th>Same input, same path</th><td>Not guaranteed</td><td>Always</td></tr>
+<tr><th>Cost of one run</th><td>One model call per step</td><td>One model call per model step, if any</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 class="bd-short">In short - which one to choose</h3>
+<ul>
+<li>Use an <b>agent</b> when you genuinely cannot enumerate the paths, and the next step depends on what the last one returned.</li>
+<li>Use a <b>workflow</b> when you can draw the flowchart. It is cheaper, faster, reproducible, and debuggable with a stack trace.</li>
+<li>If you can draw it, write it. Handing a flowchart to a model buys nothing and costs you determinism.</li>
+</ul>
+</section>
+
+<!-- ================= 4 ================= -->
+<h2 id="without">4 · Without the technology</h2>
+<p>Write it by hand first, with no loop and no model deciding anything.</p>
+
+<p>This is a <b>fixed workflow</b>, and for this exact ticket shape it is better than an
+agent: it is faster, it costs nothing per run, and you can read it.</p>
+<p>What it cannot do:</p>
+<ul>
+<li>Handle a ticket that mentions two orders, unless you write that branch.</li>
+<li>Handle a ticket that asks a question instead of requesting a refund.</li>
+<li>Decide that it needs the knowledge base rather than the order table.</li>
+</ul>
+<p><b>Every new case is a new branch you write.</b> When the cases stop being enumerable,
+that is the moment an agent earns its cost.</p>
+
+<!-- ================= 5 ================= -->
+<h2 id="mechanics">5 · Runtime mechanics</h2>
+<p>One pass of the loop, in order:</p>
+<ol>
+<li><b>Perceive.</b> The model is sent the goal plus every message gathered so far.</li>
+<li><b>Decide.</b> It returns either a final answer, or the name of one tool and its
+arguments.</li>
+<li><b>Act.</b> Your code validates the arguments and runs that tool. The model runs
+nothing.</li>
+<li><b>Observe.</b> The result is appended to the message list as a tool message.</li>
+<li><b>Repeat.</b> Back to step 1, with the list now one exchange longer.</li>
+</ol>
+<p>The run ends when the model returns a final answer, or when your step limit is reached.
+<b>Only the second of those is under your control.</b></p>
+
+<!-- ================= 7 ================= -->
+<h2 id="components">6 · The components, one at a time</h2>
+<h3>The message list</h3>
+<p>The whole state of the run. It is re-sent in full on every pass, which is why a long run
+costs more per step than a short one.</p>
+
+<h3>The decide function</h3>
+<p>The only place a model is consulted. It returns either a final answer or a requested
+tool call - never both, and never a side effect.</p>
+
+<h3>Dispatch</h3>
+<p>Your code looks the name up in a registry and calls it. An unknown name is an error you
+return to the model, not an exception that ends the run.</p>
+
+<h3>The step limit</h3>
+<p>The bound. It is the only exit condition your code owns, and the returned status must say
+which exit was taken.</p>
+
+<p><b>Return the reason, not just the answer.</b> A truncated run reported as a finished one
+is how a silent failure reaches production.</p>
+
+<!-- ================= 8 ================= -->
+<h2 id="state">7 · State and data flow</h2>
+<ol>
+<li><b>What data is state?</b> The message list, and the step count.</li>
+<li><b>Who writes each field?</b> Your loop appends after every tool call.</li>
+<li><b>Who reads it?</b> The model, on every pass, in full.</li>
+<li><b>Replaced, appended or merged?</b> Appended. Nothing is removed unless you remove it.</li>
+<li><b>What reducer controls merging?</b> None here. Page 6 adds one.</li>
+<li><b>Only in process memory?</b> Yes. A crash loses the run.</li>
+<li><b>Is it checkpointed?</b> Not in this version.</li>
+<li><b>Is it in a database?</b> No.</li>
+<li><b>How long does it survive?</b> Until <code>run()</code> returns.</li>
+<li><b>What retrieves it again?</b> Nothing. There is no thread id yet.</li>
+</ol>
+<p>Rows 6 to 10 are why frameworks exist. Everything before them you have already
+written.</p>
+
+<!-- ================= 10 ================= -->
+<h2 id="trace">8 · Trace</h2>
+<p>Real output from that run.</p>
+
+<p>Read step 2 carefully. <b>The model could not have issued that call on step 1</b>, because
+<code>ORD-5581</code> only appeared in step 1's result. That dependency is the reason this
+is a loop and not two calls.</p>
+
+<!-- ================= 11 ================= -->
+<h2 id="break">9 · Break it</h2>
+<p>Give the same agent a goal it cannot complete, and remove the step limit.</p>
+
+<p><code>ORD-9999</code> does not exist. <code>lookup_order</code> returns an error. The model
+tries again with the same id, then with a different id, then reads the ticket again.</p>
+
+<p><b>Eighty-seven model calls and no answer.</b> Nothing crashed. The loop is doing exactly
+what it was told to do, which is to keep going until the model decides to stop.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 174" role="img" aria-labelledby="cx2-loop-t cx2-loop-d">
+<title id="cx2-loop-t">A run with no step limit</title>
+<desc id="cx2-loop-d">The tool keeps returning the same error. The model keeps trying. With no step limit the only exit is the model choosing to stop, and it never does, so the run spends money until something outside it intervenes.</desc>
+<defs><marker id="ah-cx2-loop" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="52" width="157.6" height="56" rx="12"></rect>
+<rect class="box b2" x="191.6" y="52" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M172.6 80 H187.6" marker-end="url(#ah-cx2-loop)"></path>
+<rect class="box b3" x="371.2" y="52" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M352.2 80 H367.2" marker-end="url(#ah-cx2-loop)"></path>
+<rect class="box b4" x="550.8" y="52" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M531.8 80 H546.8" marker-end="url(#ah-cx2-loop)"></path>
+<rect class="box fail" x="730.4" y="52" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M711.4 80 H726.4" marker-end="url(#ah-cx2-loop)"></path>
+<text class="lbl" x="90.8" y="85">goal</text>
+<text class="lbl" x="270.4" y="85">call fails</text>
+<text class="lbl" x="450" y="76">model retries</text>
+<text class="lbl" x="450" y="94">same call</text>
+<text class="lbl" x="629.6" y="85">and again</text>
+<text class="lbl" x="809.2" y="76">no exit</text>
+<text class="lbl" x="809.2" y="94">87 calls</text>
+<path class="xmark" d="M791.2 122 L827.2 150 M827.2 122 L791.2 150"></path>
+<text class="cap rescue" x="450" y="166">nothing crashed -- the loop did exactly what it was told to do</text>
+</svg>
+
+<!-- ================= 12 ================= -->
+<h2 id="fix">10 · Fix it</h2>
+<p><b>1 · The step limit, which is not optional.</b> It is the only bound your code
+owns.</p>
+
+<p><b>2 · Detect the repeat.</b> The same call with the same arguments, three times, is a
+loop rather than progress.</p>
+
+<p><b>3 · Give it a way to give up.</b> An agent with no escalation path has two options:
+guess, or loop. Both are worse than handing over.</p>
+
+<p><code>escalate</code> does no lookups and touches no external system. It is the fallback
+for every other failure, and a fallback that can fail is not a fallback.</p>
+
+<!-- ================= 13 ================= -->
+<h2 id="production">11 · Production version</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Concern</th><th>What you do</th></tr></thead>
+<tbody>
+<tr><td>Step limit</td><td>Always set. Return the reason the run ended, and exit non-zero on truncation</td></tr>
+<tr><td>Token budget</td><td>Bound tokens as well as steps. One long step can cost more than five short ones</td></tr>
+<tr><td>Repeat detection</td><td>Same tool and arguments three times ends the run</td></tr>
+<tr><td>Oscillation</td><td>A, B, A, B needs a window of four; comparing with the last call alone never fires</td></tr>
+<tr><td>Tool errors</td><td>Returned to the model as results. Only unrecoverable errors raise</td></tr>
+<tr><td>Escalation</td><td>A real tool, that cannot fail, recorded as a normal outcome</td></tr>
+<tr><td>Every step recorded</td><td>Tool, arguments, result, duration and tokens, against one run id</td></tr>
+<tr><td>Idempotency</td><td>Any tool with an effect must be safe to retry. Page 8 covers this</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ================= 14 ================= -->
+<h2 id="comparison">12 · Comparison</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Agent</th><th>Fixed workflow</th><th>Single prompt</th></tr></thead>
+<tbody>
+<tr><th>Who picks the next step</th><td><b>The model, at run time</b></td><td>You, at build time</td><td>Nobody</td></tr>
+<tr><th>Handles unforeseen paths</th><td>Yes</td><td>No</td><td>No</td></tr>
+<tr><th>Reproducible</th><td>No</td><td><b>Yes</b></td><td>At temperature 0</td></tr>
+<tr><th>Cost per run</th><td>One call per step</td><td>Zero or one call</td><td>One call</td></tr>
+<tr><th>Debuggable with a stack trace</th><td>No, you need a trace</td><td><b>Yes</b></td><td>Yes</td></tr>
+<tr><th>Use it for</th><td>Paths you cannot enumerate</td><td>Paths you can draw</td><td>One transformation</td></tr>
+</tbody>
+</table>
+</div>
+<p>The honest reading of this table: <b>most tasks that people build agents for are
+workflows.</b> An agent trades predictability for flexibility, and you should only pay that
+when you need the flexibility.</p>
+
+<!-- ================= 15 ================= -->
+<div class="carry"><b>New questions</b> written for this page: it is new, so there was nothing to carry over.</div>
+<h2 id="interview">13 &middot; Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What is an agent, mechanically? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>A loop. The model is shown the goal and everything gathered so far, and it chooses one action. Your code runs that action and appends the result. The loop repeats until the model answers or a limit stops it.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What is the difference between a workflow and an agent? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>In a workflow you decide the order of steps at build time. In an agent the model decides the next step at run time. The trade is predictability for flexibility.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  When would you not build an agent? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>When you can draw the flowchart. If the paths are known and finite, write the workflow: it is cheaper, faster, reproducible, and debuggable with a stack trace. Also avoid one when every run must take the identical path for audit, or when the latency budget cannot absorb a model call per step.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  Name every way an agent run can end. <span class="chev">›</span></summary>
+<div class="collapse-body"><p>The model returns a final answer. A step limit is reached. A token or cost budget is exhausted. A tool returns an unrecoverable error. A guard stops it, such as a repeat or oscillation check. Escalation hands the run to a person.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  Why is a step limit not optional? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Without it the only exit is the model choosing to stop, and that is the part you do not control. A run that never chooses keeps calling the model and spending money. The limit is the only bound owned by your code.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  Your agent finished but the answer looks wrong. Where do you look first? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>At the recorded steps, not the answer. Read which tools ran, with which arguments, and what each returned. Most wrong answers are a wrong tool choice or a tool that returned nothing useful, and both are visible in the trace. Check `stopped_because` first: a run truncated by the step limit and reported as finished is a different bug.</p></div></details>
+
+<!-- ================= 16 ================= -->
+<h2 id="short">14 · In short, and what comes next</h2>
+<p class="bd-choose">Remember these six:</p>
+<ul>
+<li>An agent is a loop: perceive, decide, act, observe, repeat.</li>
+<li>The model decides. Your code acts. Nothing crosses that line.</li>
+<li>The step limit is the only bound you control, so it is never optional.</li>
+<li>Return why the run ended, not just what it produced.</li>
+<li>Tool errors are information; feed them back rather than raising.</li>
+<li>If you can draw the flowchart, write the workflow instead.</li>
+</ul>
+<div class="callout key">
+<div class="c-ico">🔑</div>
+<div class="c-body"><div class="c-title">The one idea to remember</div>
+<p><b>An agent trades predictability for flexibility.</b> Everything that makes an agent
+safe is a mechanism for buying some of that predictability back.</p></div>
+</div>
+<p><b>Next:</b> page 3 looks at the tools themselves - what the model actually sees of them,
+and why a tool you trust can deliver text you must not.</p>
+
+<div class="page-nav" data-page-nav>
+<a href="01-what-a-model-does.html"><div class="dir">← Previous</div><div class="ttl">01 · What a model does</div></a>
+          <a class="next" href="03-tools-and-the-boundary.html"><div class="dir">Next →</div><div class="ttl">03 · Tools and the boundary</div></a>
+</div>
+
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script>
+window.__pageNav = {
+  navLabel: "Understanding AI Agents · CampusX",
+  here: "campusx/02-the-agent-loop.html",
+  base: "../",
+  pages: [
+    { file: "campusx/index.html", title: "Section index", num: "✦", kw: "campusx agents index" }
+  ]
+};
+</script>
+<script src="../../assets/app.js?v=20260925c"></script>
+<script src="../../assets/sitenav.js?v=20260925a"></script>
+<script src="../../assets/enhance.js?v=20260925c"></script>
+<script src="../../assets/genai-motion.js?v=20260728a"></script>
+<script src="../../assets/glossary.js?v=20260802b"></script>
+</body>
+</html>

@@ -18,7 +18,7 @@ cannot swap models, and cannot reproduce a bug.
 features (prompt caching, extended thinking). Mitigated by keeping the interface
 thin and letting adapters carry their own extras.
 
-**Not chosen.** LangChain's model abstraction — more capable, and it would have
+**Not chosen.** LangChain's model abstraction - more capable, and it would have
 hidden the mechanics this course exists to show.
 
 ---
@@ -45,7 +45,7 @@ which requires a real-model run.
 **Why.** A missing ticket is information the agent can act on. An exception ends
 the run.
 
-**Trade-off.** The agent can loop on a persistently failing tool — which is
+**Trade-off.** The agent can loop on a persistently failing tool - which is
 exactly the bug found in Lesson 2 and fixed by tracking *attempted* separately
 from *successful* (Lesson 6's `RunState`).
 
@@ -70,7 +70,7 @@ at thirty.
 **Decision.** No tool executes code, spawns a shell, reads arbitrary paths or
 opens a socket. The keyword screen is defence in depth only.
 
-**Why.** There is no parameterised query for natural language — no way to
+**Why.** There is no parameterised query for natural language - no way to
 separate instruction from data. Any text-layer defence is heuristic. What *is*
 solvable is the consequence.
 
@@ -95,7 +95,7 @@ poisoned knowledge base, and the attack works.
 
 **Decision.** `sha256(order|amount|reason)`.
 
-**Why.** A UUID per attempt gives every retry a fresh key — implementing the
+**Why.** A UUID per attempt gives every retry a fresh key - implementing the
 mechanism and disabling it in the same line.
 
 **Trade-off.** Two legitimately identical refunds for different purposes need
@@ -135,7 +135,7 @@ way the control is implemented wrongly.
 decided". An overwritten status column cannot answer it, and a log of only
 successes cannot tell you an agent tried forty times.
 
-**Trade-off.** Append-only by convention, not enforcement — a file anyone can
+**Trade-off.** Append-only by convention, not enforcement - a file anyone can
 edit is not an audit trail.
 
 ---
@@ -161,8 +161,8 @@ every query. Choosing it properly needs the eval set.
 **Why.** A suite of happy paths measures whether the demo still works. Refusals
 regress *silently*.
 
-**How we know it works.** Two deliberate regressions. The first — removing the
-`dry_run` default — was **not caught**, which exposed a real coverage hole in a
+**How we know it works.** Two deliberate regressions. The first - removing the
+`dry_run` default - was **not caught**, which exposed a real coverage hole in a
 file with complete line coverage. A case was added; it is caught now.
 
 ---
@@ -190,7 +190,7 @@ client to honour it.
 **Asymmetry.** Exposing it saves a little integration work; the downside is an
 unapproved payment.
 
-**Implementation.** An allowlist, not a deny-list — deny-lists fail open. And the
+**Implementation.** An allowlist, not a deny-list - deny-lists fail open. And the
 error for a withheld tool is identical to the error for a nonexistent one, so it
 cannot become a discovery oracle.
 
@@ -228,7 +228,7 @@ on the card, the security model is backwards.
 
 **Decision.** A resumed run reloads established facts and continues.
 
-**Why.** Replaying would re-execute anything with a side effect — the
+**Why.** Replaying would re-execute anything with a side effect - the
 double-payment problem again.
 
 **Corollary.** A run that cannot be restored safely escalates rather than
@@ -265,10 +265,10 @@ poor trade. The architecture note and the tests make the point.
 2. **Approval tokens are in-memory and never expire.** A leaked token is a
    standing credential.
 3. **No reconciliation** against a payment provider, so drift is invisible.
-4. **No aggregate caps** — nothing stops a hundred individually valid refunds.
+4. **No aggregate caps** - nothing stops a hundred individually valid refunds.
 5. **The audit log is append-only by convention.**
 6. **A timeout still leaks a thread**, because a wait limit is not cancellation.
-7. **The A2A demo is in-process** — no HTTP, no auth exchange, no streaming.
+7. **The A2A demo is in-process** - no HTTP, no auth exchange, no streaming.
 8. **`RunStore` is a directory of files**, not a database sharing a transaction
    boundary with side effects.
 

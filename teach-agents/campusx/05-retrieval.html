@@ -1,0 +1,412 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>05 · Retrieval | Understanding AI Agents</title>
+<meta name="description" content="How an agent finds information it was never given: chunking, ranking, reranking, and the relevance floor that lets retrieval return nothing instead of the least bad paragraph.">
+<link rel="icon" href="../../assets/brand/favicon.svg?v=20260925b" type="image/svg+xml">
+<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260925b" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260925b">
+<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260925b" sizes="180x180">
+<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260925b">
+<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260925b" color="#6f47f5">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="../../assets/styles.css?v=20260805a">
+<link href="../../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
+<link href="../../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
+<link href="../../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+<link href="../../assets/ir-theme.css?v=20260925c" rel="stylesheet"/>
+</head>
+<body data-curriculum-id="cx-05" data-page="cx-05">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="../../index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search this section…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Understanding AI Agents · CampusX / <b>05 · Retrieval</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> 05 · Knowledge</div>
+        <h1>Retrieval, and why returning nothing matters</h1>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~20 min read</span>
+          <span class="pill purple">Pairs with · <a href="../lessons/0005-retrieval.html">Lesson 5 · Retrieval as a tool</a></span>
+        </div>
+
+<!-- ================= 1 ================= -->
+<h2 id="known">1 · What you already know</h2>
+<p>From page 3 the agent has tools, and one of them can be a search function.
+From page 1 you know the model answers confidently when it does not know.</p>
+<p><b>This page is about making search good enough to rely on</b>, and about the one
+mechanism that decides whether a wrong answer reaches the user.</p>
+
+<!-- ================= 2 ================= -->
+<h2 id="breaks">2 · What breaks now</h2>
+<p>Your agent has a <code>search_kb</code> tool that scores documents by
+keyword overlap. Ask it a question phrased differently from the document.</p>
+
+<p>Now ask something the corpus does not cover at all.</p>
+
+<p><b>Three chunks came back because three always come back.</b> None is relevant. The scores
+say so, and nothing looked at the scores.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Problem</th><th>Where it lives</th></tr></thead>
+<tbody>
+<tr><td>Right answer, different words, not found</td><td>Ranking: overlap cannot match meaning</td></tr>
+<tr><td>No answer exists, chunks returned anyway</td><td>No floor: the limit is always filled</td></tr>
+<tr><td>Relevant document too long to send</td><td>No chunking: relevance is local, documents are not</td></tr>
+</tbody>
+</table>
+</div>
+<p>The second row is the dangerous one. <b>It produces a confident answer with a citation
+attached</b>, and the citation makes it look verified.</p>
+
+<!-- ================= 3 ================= -->
+<h2 id="breakdown">3 · Simple breakdown - Retrieval vs fine-tuning</h2>
+<section class="breakdown">
+
+<h3 class="bd-tech"><span class="bd-tag">A</span> Retrieval</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> Retrieval is selecting a small number of stored text chunks that are likely to answer a question, and placing them in the prompt before the model runs.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It gives a model access to information that was not in its training data, and that can change after the model was trained.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 138" role="img" aria-labelledby="cx5-exec-t cx5-exec-d">
+<title id="cx5-exec-t">One retrieval, end to end</title>
+<desc id="cx5-exec-d">The question is turned into a query. A cheap ranker scores every chunk and returns a shortlist. A slower reranker reorders that shortlist. The floor then decides whether anything scored highly enough to return at all.</desc>
+<defs><marker id="ah-cx5-exec" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="40" width="157.6" height="56" rx="12"></rect>
+<rect class="box b2" x="191.6" y="40" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M172.6 68 H187.6" marker-end="url(#ah-cx5-exec)"></path>
+<rect class="box b3" x="371.2" y="40" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M352.2 68 H367.2" marker-end="url(#ah-cx5-exec)"></path>
+<rect class="box b4" x="550.8" y="40" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M531.8 68 H546.8" marker-end="url(#ah-cx5-exec)"></path>
+<rect class="box b5" x="730.4" y="40" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M711.4 68 H726.4" marker-end="url(#ah-cx5-exec)"></path>
+<text class="lbl" x="90.8" y="73">question</text>
+<text class="lbl" x="270.4" y="64">rank every</text>
+<text class="lbl" x="270.4" y="82">chunk</text>
+<text class="lbl" x="450" y="64">shortlist</text>
+<text class="lbl" x="450" y="82">of 20</text>
+<text class="lbl" x="629.6" y="64">rerank</text>
+<text class="lbl" x="629.6" y="82">the 20</text>
+<text class="lbl" x="809.2" y="64">floor</text>
+<text class="lbl" x="809.2" y="82">check</text>
+<circle class="pkt" cx="90.8" cy="18" r="7"></circle>
+<text class="cap" x="450" y="130">cheap and broad first; expensive and accurate on the few that survive</text>
+</svg>
+
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> A chunked corpus, an index over those chunks, a ranking function, an optional reranker, and a score floor that decides whether anything is returned.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> The index persists between runs. Nothing about a single query is remembered unless you store it yourself.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> It fails silently when the answer is absent from the corpus, unless a floor is enforced. Reranking, hybrid search and query rewriting all improve recall at the cost of latency.</p>
+
+<h3 class="bd-tech"><span class="bd-tag">B</span> Fine-tuning</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> Fine-tuning continues training a model on your examples, changing its weights so it behaves differently on your task.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It teaches a model a format, a style or a task shape that prompting alone does not reliably produce.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b> Examples are collected, the model is trained on them, and the resulting weights are deployed as a new model version.</p>
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> A labelled dataset, a training run, evaluation against a held-out set, and a deployment path for the new weights.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> Everything learned is in the weights. Changing a fact means training again.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> It cannot add facts that change. LoRA reduces the cost of a run but not the cost of keeping the data current.</p>
+
+<h3 class="bd-diff">The core differences</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Retrieval</th><th>Fine-tuning</th></tr></thead>
+<tbody>
+<tr><th>Adding a new fact</th><td>Index one document, immediately</td><td>Collect examples and train again</td></tr>
+<tr><th>Says where the answer came from</th><td>Yes, the retrieved chunk ids</td><td>No, the weights do not record sources</td></tr>
+<tr><th>Changes how the model writes</th><td>No, only what it is told</td><td>Yes, that is what it is for</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 class="bd-short">In short - which one to choose</h3>
+<ul>
+<li>Use <b>retrieval</b> when the answer depends on facts that change, or that must be cited.</li>
+<li>Use <b>fine-tuning</b> when the model must learn a format or a task shape that prompting does not reliably produce.</li>
+<li>They are not alternatives. A fine-tuned model that must state current facts still needs retrieval to supply them.</li>
+</ul>
+</section>
+
+<!-- ================= 4 ================= -->
+<h2 id="without">4 · Without the technology</h2>
+<p>Keyword search in nine lines, which is what the course project starts with.</p>
+
+<p>It works when the question uses the document's words. It fails on synonyms, on plurals,
+and on any question phrased as a question.</p>
+<p><b>And it always returns three documents</b>, because <code>[:limit]</code> does not care
+what the scores were. That single line is the bug that produces most hallucinated answers
+in production RAG systems.</p>
+
+<!-- ================= 5 ================= -->
+<h2 id="mechanics">5 · Runtime mechanics</h2>
+<p>Retrieval runs in five stages. Only the last one decides whether the agent
+is allowed to answer.</p>
+<ol>
+<li><b>Chunk.</b> Documents are split into passages of a few hundred tokens, with a small
+overlap so a sentence spanning a boundary is not lost.</li>
+<li><b>Index.</b> Each chunk is stored with whatever the ranker needs: term statistics
+for BM25, a vector for embeddings, or both.</li>
+<li><b>Rank.</b> Every chunk is scored against the query, cheaply. The top twenty become
+the shortlist.</li>
+<li><b>Rerank.</b> A slower model scores the query and each shortlisted chunk together,
+and reorders them.</li>
+<li><b>Apply the floor.</b> Chunks below the minimum score are discarded. If none
+survives, the result is empty, and empty is a valid answer.</li>
+</ol>
+
+<svg class="bd-svg" viewBox="0 0 900 228" role="img" aria-labelledby="cx5-floor-t cx5-floor-d">
+<title id="cx5-floor-t">The relevance floor</title>
+<desc id="cx5-floor-d">Ranked chunks are compared against a minimum score. Anything above it is returned. If nothing clears the floor the result is empty, which lets the agent say that no document covers the question instead of grounding an answer in noise.</desc>
+<defs><marker id="ah-cx5-floor" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="95" width="267.35" height="56" rx="12"></rect>
+<text class="lbl" x="145.675" y="119">ranked</text>
+<text class="lbl" x="145.675" y="137">candidates</text>
+<rect class="box b2" x="323.35" y="95" width="285.35" height="56" rx="12"></rect>
+<text class="lbl" x="466.025" y="119">any score above</text>
+<text class="lbl" x="466.025" y="137">the floor?</text>
+<path class="arw" d="M284.35 123 H319.35" marker-end="url(#ah-cx5-floor)"></path>
+<rect class="box b3" x="660.7" y="58" width="227.3" height="56" rx="12"></rect>
+<text class="lbl" x="774.35" y="82">yes -- return those chunks</text>
+<text class="lbl" x="774.35" y="100">the agent answers, grounded</text>
+<path class="arw" d="M611.7 123 C634.7 123, 634.7 86, 656.7 86" marker-end="url(#ah-cx5-floor)"></path>
+<rect class="box b4" x="660.7" y="132" width="227.3" height="56" rx="12"></rect>
+<text class="lbl" x="774.35" y="156">no -- return nothing, with a note</text>
+<text class="lbl" x="774.35" y="174">the agent refuses honestly</text>
+<path class="arw" d="M611.7 123 C634.7 123, 634.7 160, 656.7 160" marker-end="url(#ah-cx5-floor)"></path>
+<text class="cap" x="450" y="222">an empty result is a useful result</text>
+</svg>
+
+<!-- ================= 7 ================= -->
+<h2 id="components">6 · The components, one at a time</h2>
+<h3>Chunking</h3>
+<p>Chunk size trades recall against precision. Too small and a chunk lacks the context to be
+understood; too large and one relevant sentence arrives with 900 irrelevant ones.</p>
+
+<p>Overlap exists so a fact spanning a boundary appears whole in at least one chunk.</p>
+
+<h3>BM25</h3>
+<div class="def"><strong>BM25</strong> - a ranking function that scores term overlap, weighting
+rare terms more heavily, saturating on repetition, and normalising for document length.</div>
+<p>It is fast, needs no model, and is a strong baseline. It cannot match meaning across
+different words.</p>
+
+<h3>Embeddings</h3>
+<div class="def"><strong>Embedding</strong> - a vector representation of text, positioned so
+that texts with similar meaning are near one another.</div>
+<p>Embeddings match "can I get my money back?" to a passage about refunds. They also match
+things that are merely on-topic, which is why a floor still matters.</p>
+
+<h3>The reranker</h3>
+<p>A cross-encoder reads the query and one chunk together and scores the pair. Far more
+accurate than either ranker, and far too slow to run over a whole corpus.</p>
+
+<h3>The floor</h3>
+<p>Calibrated from labelled questions, not chosen by feel.</p>
+
+<!-- ================= 8 ================= -->
+<h2 id="state">7 · State and data flow</h2>
+<ol>
+<li><b>What data is state?</b> The index, which is durable, and the current query's hits,
+which are not.</li>
+<li><b>Who writes each field?</b> Ingestion writes the index; the query path writes nothing.</li>
+<li><b>Who reads it?</b> The ranker reads the index; the loop reads the hits.</li>
+<li><b>Replaced, appended or merged?</b> The index is appended to as documents arrive.</li>
+<li><b>What reducer controls merging?</b> None. Document id is the key, and re-indexing
+replaces.</li>
+<li><b>Only in process memory?</b> No. The index is on disk or in a vector database.</li>
+<li><b>Is it checkpointed?</b> The index is durable; a query is not.</li>
+<li><b>Is it in a database?</b> Yes, that is what a vector store is.</li>
+<li><b>How long does it survive?</b> The index outlives every run. The hits die with the step.</li>
+<li><b>What retrieves it again?</b> The chunk ids, which is why you return them with the
+answer.</li>
+</ol>
+<p>Row 10 is what makes an answer auditable. <b>Return chunk ids with every answer</b>, or you
+cannot explain that answer next month.</p>
+
+<!-- ================= 10 ================= -->
+<h2 id="trace">8 · Trace</h2>
+
+<p>The second call is the important one. Top score was 0.11, the floor is 0.35, so nothing
+was returned.</p>
+
+<p><b>Two steps, no invented policy.</b> The empty result is what made the honest answer
+possible.</p>
+
+<!-- ================= 11 ================= -->
+<h2 id="break">9 · Break it</h2>
+<p>Remove the floor and run the same question.</p>
+
+<p>There is no such policy. Three irrelevant chunks were retrieved, the model wrote the most
+plausible thing consistent with them, and it attached a citation.</p>
+<p><b>The citation is the most dangerous part of that output.</b> It is well-formed, it
+points at a real chunk id, and it makes an invented policy look verified.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 174" role="img" aria-labelledby="cx5-silent-t cx5-silent-d">
+<title id="cx5-silent-t">A silent retrieval failure</title>
+<desc id="cx5-silent-d">No relevant chunk exists, but three are returned anyway with low scores. No floor is checked, the prompt is built from irrelevant text, and the model produces a confident cited answer that is entirely invented.</desc>
+<defs><marker id="ah-cx5-silent" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="52" width="202.5" height="56" rx="12"></rect>
+<rect class="box b2" x="236.5" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M217.5 80 H232.5" marker-end="url(#ah-cx5-silent)"></path>
+<rect class="box fail" x="461" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M442 80 H457" marker-end="url(#ah-cx5-silent)"></path>
+<rect class="box after b4" x="685.5" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M666.5 80 H681.5" marker-end="url(#ah-cx5-silent)"></path>
+<text class="lbl" x="113.25" y="76">off-corpus</text>
+<text class="lbl" x="113.25" y="94">question</text>
+<text class="lbl" x="337.75" y="76">3 chunks</text>
+<text class="lbl" x="337.75" y="94">best 0.11</text>
+<text class="lbl" x="562.25" y="76">no floor</text>
+<text class="lbl" x="562.25" y="94">checked</text>
+<text class="lbl" x="786.75" y="76">invented policy</text>
+<text class="lbl" x="786.75" y="94">cited</text>
+<path class="xmark" d="M544.25 122 L580.25 150 M580.25 122 L544.25 150"></path>
+<text class="cap rescue" x="450" y="166">the citation makes it look verified -- that is the most dangerous part</text>
+</svg>
+
+<!-- ================= 12 ================= -->
+<h2 id="fix">10 · Fix it</h2>
+<p><b>1 · The floor, which is the fix.</b> Filter by score before taking the
+limit.</p>
+
+<p><b>2 · Calibrate it from labelled data</b>, not by feel. Twenty questions you can answer
+and twenty you cannot are enough to separate the distributions.</p>
+<p><b>3 · Make refusal a status, not a sentence.</b> Your code checks for it; the user never
+sees the token.</p>
+
+<p><b>4 · Verify the citations</b> rather than trusting them.</p>
+
+<p>Those four turn a silent failure into a refusal you can measure.</p>
+
+<!-- ================= 13 ================= -->
+<h2 id="production">11 · Production version</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Concern</th><th>What you do</th></tr></thead>
+<tbody>
+<tr><td>Two metrics</td><td>Retrieval recall and groundedness, tracked separately. One number hides which half broke</td></tr>
+<tr><td>Score floor</td><td>Calibrated on labelled data, enforced in code, alerted on when the refusal rate moves</td></tr>
+<tr><td>Refusal path</td><td>A distinct status with its own response. Never a string that looks like an answer</td></tr>
+<tr><td>Authorisation</td><td>Filter by the caller's permissions at query time, never after retrieval</td></tr>
+<tr><td>Freshness</td><td>Re-index on change, and delete chunks when a document is removed</td></tr>
+<tr><td>Citations</td><td>Return chunk ids with every answer, and verify the cited ids exist</td></tr>
+<tr><td>Chunk size</td><td>Tuned against your own corpus and measured, not copied from a blog post</td></tr>
+<tr><td>Latency</td><td>Budget per stage. Reranking costs 100-300 ms and is usually worth it; measure before removing it</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ================= 14 ================= -->
+<h2 id="comparison">12 · Comparison</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Retrieval</th><th>Fine-tuning</th><th>Long context</th></tr></thead>
+<tbody>
+<tr><th>Add a fact today</th><td><b>Index one document</b></td><td>Train again</td><td>Paste it in</td></tr>
+<tr><th>Cites its source</th><td><b>Yes</b></td><td>No</td><td>Sometimes</td></tr>
+<tr><th>Cost per query</th><td>Retrieval plus a small prompt</td><td>Prompt only</td><td><b>Every token, every call</b></td></tr>
+<tr><th>Scales to a large corpus</th><td><b>Yes</b></td><td>Yes, at training cost</td><td>No</td></tr>
+<tr><th>Changes writing style</th><td>No</td><td><b>Yes</b></td><td>No</td></tr>
+<tr><th>Use it for</th><td>Facts that change and must be cited</td><td>Format and task shape</td><td>Small, fixed reference text</td></tr>
+</tbody>
+</table>
+</div>
+<p>The third row is why long context does not replace retrieval. <b>A 200,000-token window
+means you pay for 200,000 tokens on every call</b>, and the relevant paragraph is still one
+paragraph.</p>
+
+<!-- ================= 15 ================= -->
+<div class="carry"><b>New questions</b> written for this page: it is new, so there was nothing to carry over.</div>
+<h2 id="interview">13 &middot; Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What is retrieval, in one sentence? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Finding the few documents most likely to answer a question, and putting their text into the prompt so the model summarises rather than invents.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  Why chunk documents instead of sending whole ones? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>The context window is finite, and relevance is local. A 40-page policy document has one relevant paragraph. Sending all forty pages wastes budget and dilutes the signal the model needs.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  What is a relevance floor, and why does it matter more than the ranking? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>A minimum score a chunk must clear to be returned at all. Without it, retrieval always returns its limit of chunks however bad they are, and the agent grounds an answer in the least bad one. An empty result lets the agent say no document covers this.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  Explain BM25 in one sentence, and say what it cannot do. <span class="chev">›</span></summary>
+<div class="collapse-body"><p>It scores a document by term overlap with the query, weighting rare terms more and saturating on repetition, normalised for length. It cannot match a question to a passage that answers it in different words, because it only sees the words themselves.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  Why rerank only a shortlist rather than everything? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>A reranker scores the query and a chunk together, so it is far more accurate and far slower than a first-pass ranker. Running it over the whole corpus is not affordable. Cheap and broad first, expensive and accurate on the twenty that survive: that is the economic argument, and interviewers look for it.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  Your RAG system gives a confident wrong answer. How do you find which stage failed? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Four failures share that symptom, and they need different fixes. Grep the corpus: if the fact is absent, the floor should have refused. If present but not retrieved, retrieval failed. If retrieved but ranked below the cut, raise k and re-check. If it was in the prompt and the answer contradicts it, generation failed. Check the top score first, because it separates the first case from the rest.</p></div></details>
+
+<!-- ================= 16 ================= -->
+<h2 id="short">14 · In short, and what comes next</h2>
+<p class="bd-choose">Remember these six:</p>
+<ul>
+<li>Chunk because relevance is local, and overlap so a fact is never split.</li>
+<li>Rank cheaply over everything; rerank expensively over twenty.</li>
+<li>The floor is the mechanism that prevents the confident wrong answer.</li>
+<li>Filter by score, then take the limit. Never the other way round.</li>
+<li>An empty result is a useful result. It lets the agent refuse honestly.</li>
+<li>Return chunk ids, and verify that cited ids exist.</li>
+</ul>
+<div class="callout key">
+<div class="c-ico">🔑</div>
+<div class="c-body"><div class="c-title">The one idea to remember</div>
+<p><b>Retrieval that always returns something will eventually ground a confident answer in
+noise.</b> The floor is what makes "I do not know" reachable.</p></div>
+</div>
+<p><b>Next:</b> page 6 is about what happens to all this retrieved text once it accumulates,
+and why state and memory are not the same thing.</p>
+
+<div class="page-nav" data-page-nav>
+<a href="04-reasoning-patterns.html"><div class="dir">← Previous</div><div class="ttl">04 · Reasoning patterns</div></a>
+          <a class="next" href="06-context-and-memory.html"><div class="dir">Next →</div><div class="ttl">06 · Context and memory</div></a>
+</div>
+
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script>
+window.__pageNav = {
+  navLabel: "Understanding AI Agents · CampusX",
+  here: "campusx/05-retrieval.html",
+  base: "../",
+  pages: [
+    { file: "campusx/index.html", title: "Section index", num: "✦", kw: "campusx agents index" }
+  ]
+};
+</script>
+<script src="../../assets/app.js?v=20260925c"></script>
+<script src="../../assets/sitenav.js?v=20260925a"></script>
+<script src="../../assets/enhance.js?v=20260925c"></script>
+<script src="../../assets/genai-motion.js?v=20260728a"></script>
+<script src="../../assets/glossary.js?v=20260802b"></script>
+</body>
+</html>

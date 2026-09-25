@@ -1,0 +1,407 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>04 · Reasoning patterns | Understanding AI Agents</title>
+<meta name="description" content="ReAct, plan-and-execute, reflection and routing are four arrangements of the same loop. What each one changes about cost, latency and failure.">
+<link rel="icon" href="../../assets/brand/favicon.svg?v=20260925b" type="image/svg+xml">
+<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260925b" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260925b">
+<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260925b" sizes="180x180">
+<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260925b">
+<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260925b" color="#6f47f5">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="../../assets/styles.css?v=20260805a">
+<link href="../../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
+<link href="../../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
+<link href="../../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+<link href="../../assets/ir-theme.css?v=20260925c" rel="stylesheet"/>
+</head>
+<body data-curriculum-id="cx-04" data-page="cx-04">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="../../index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search this section…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Understanding AI Agents · CampusX / <b>04 · Reasoning patterns</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> 04 · Foundations</div>
+        <h1>Four reasoning patterns, and what each one costs</h1>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~18 min read</span>
+          <span class="pill purple">Pairs with · <a href="../lessons/0004-reasoning-patterns.html">Lesson 4 · Reasoning patterns</a></span>
+        </div>
+
+<!-- ================= 1 ================= -->
+<h2 id="known">1 · What you already know</h2>
+<p>From page 2 you have a loop, and from page 3 you have tools with validated
+arguments. The model chooses one action per pass and your code runs it.</p>
+<p><b>That loop is already ReAct.</b> This page names the four common arrangements of it,
+and gives you the numbers to choose between them.</p>
+
+<!-- ================= 2 ================= -->
+<h2 id="breaks">2 · What breaks now</h2>
+<p>Your agent handles a refund ticket in three steps and costs $0.004. Then
+volume grows, and two problems appear at once.</p>
+<p><b>Some tickets take twelve steps.</b> They are simple questions, but the agent explores.
+Cost per ticket is now unpredictable, and unpredictable cost cannot be budgeted.</p>
+<p><b>Some tickets need no agent at all.</b> "What are your opening hours?" takes one lookup,
+but it still pays for a full loop with every tool declared in the prompt.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Symptom</th><th>What it means</th></tr></thead>
+<tbody>
+<tr><td>Step count varies from 2 to 12</td><td>Nothing decides the shape of the run in advance</td></tr>
+<tr><td>Every request pays for every tool</td><td>The prompt carries schemas the request will never use</td></tr>
+<tr><td>Answers are right but poorly written</td><td>Nothing checks the answer against a quality bar</td></tr>
+</tbody>
+</table>
+</div>
+<p>Three different problems, three different patterns. <b>None of them changes the loop.</b>
+They change what happens before it, or how many times it runs.</p>
+
+<!-- ================= 3 ================= -->
+<h2 id="breakdown">3 · Simple breakdown - ReAct vs plan-and-execute</h2>
+<section class="breakdown">
+
+<h3 class="bd-tech"><span class="bd-tag">A</span> ReAct</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> ReAct is an arrangement of the agent loop where the model reasons and acts in alternation, seeing each result before choosing the next action.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It handles tasks where the next step cannot be known until the previous step has returned.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 168" role="img" aria-labelledby="cx4-exec-t cx4-exec-d">
+<title id="cx4-exec-t">ReAct: reason, act, observe, repeat</title>
+<desc id="cx4-exec-d">The model reasons about the goal, chooses one action, and your code runs it. The result is appended and the model reasons again, now knowing what that action returned. Nothing beyond the next step is decided in advance.</desc>
+<defs><marker id="ah-cx4-exec" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker><marker id="ah-cx4-execp" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--accent)"></path></marker></defs>
+<path class="loop" d="M629.6 62 C629.6 16, 270.4 16, 270.4 54" marker-end="url(#ah-cx4-execp)"></path>
+<text class="loop-lbl" x="450" y="14">each result informs the next decision</text>
+<rect class="box b1" x="12" y="62" width="157.6" height="56" rx="12"></rect>
+<rect class="box b2" x="191.6" y="62" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M172.6 90 H187.6" marker-end="url(#ah-cx4-exec)"></path>
+<rect class="box b3" x="371.2" y="62" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M352.2 90 H367.2" marker-end="url(#ah-cx4-exec)"></path>
+<rect class="box b4" x="550.8" y="62" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M531.8 90 H546.8" marker-end="url(#ah-cx4-exec)"></path>
+<rect class="box b5" x="730.4" y="62" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M711.4 90 H726.4" marker-end="url(#ah-cx4-exec)"></path>
+<text class="lbl" x="90.8" y="95">goal</text>
+<text class="lbl" x="270.4" y="95">reason</text>
+<text class="lbl" x="450" y="95">act</text>
+<text class="lbl" x="629.6" y="95">observe</text>
+<text class="lbl" x="809.2" y="95">answer</text>
+<text class="cap" x="450" y="160">adapts at every step, and commits to nothing in advance</text>
+</svg>
+
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> The loop from page 2, unchanged. The pattern is a property of the prompt and the message ordering, not a different runtime.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> The message list, which grows by two messages per step: the requested call and its result.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> Cost and latency grow with the number of steps. It can wander without a step limit. It cannot tell you in advance how many calls a run will take.</p>
+
+<h3 class="bd-tech"><span class="bd-tag">B</span> Plan-and-execute</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> Plan-and-execute is an arrangement where one model call produces an ordered list of steps, and the steps then run without further model decisions.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It performs tasks whose steps can be determined before any of them run.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b> One planning call, then execution of each step in order, with no re-planning between them.</p>
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> A planner prompt, a plan structure your code can validate, and an executor that runs each step.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> The plan itself, plus the results collected so far. The plan is fixed once written.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> It cannot react to a result that invalidates the plan. Re-planning on failure adds that back, and with it most of ReAct's cost.</p>
+
+<h3 class="bd-diff">The core differences</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>ReAct</th><th>Plan-and-execute</th></tr></thead>
+<tbody>
+<tr><th>Model calls per run</th><td>One per step</td><td>One, plus one per re-plan</td></tr>
+<tr><th>Reacts to a surprising result</th><td>Yes, at every step</td><td>No, unless you add re-planning</td></tr>
+<tr><th>Knowable cost before running</th><td>No</td><td>Yes, once the plan exists</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 class="bd-short">In short - which one to choose</h3>
+<ul>
+<li>Use <b>ReAct</b> when the next step depends on what the last step returned.</li>
+<li>Use <b>plan-and-execute</b> when the steps are knowable up front and you want the plan reviewable before anything runs.</li>
+<li>Use <b>routing</b> before either when requests fall into known categories, and add <b>reflection</b> only for a quality bar no rule can express.</li>
+</ul>
+</section>
+
+<!-- ================= 4 ================= -->
+<h2 id="without">4 · Without the technology</h2>
+<p>Without a named pattern you get the default: one loop, every tool declared,
+no plan and no check. That is ReAct, and for many tasks it is correct.</p>
+
+<p>Measured over 40 tickets in the course project.</p>
+
+<p>The p95 is more than twice the median. <b>The tail is where the money goes</b>, and no
+amount of prompt wording removes it, because the loop has no opinion about how long a run
+should be.</p>
+
+<!-- ================= 5 ================= -->
+<h2 id="mechanics">5 · Runtime mechanics</h2>
+<p>Four arrangements, same loop underneath.</p>
+<ol>
+<li><b>ReAct.</b> Reason, act, observe, repeat. One model call per step.</li>
+<li><b>Plan-and-execute.</b> One planning call produces N steps. Execute them in order.
+One model call, plus the steps.</li>
+<li><b>Reflection.</b> Produce an answer, critique it against criteria, revise. Three
+model calls where there was one.</li>
+<li><b>Routing.</b> One cheap classification call selects a path. That path then runs any
+of the above, with a smaller prompt and fewer tools.</li>
+</ol>
+<p><b>Routing composes with the other three.</b> The other three are alternatives to one
+another.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 138" role="img" aria-labelledby="cx4-plan-t cx4-plan-d">
+<title id="cx4-plan-t">Plan-and-execute decides everything first</title>
+<desc id="cx4-plan-d">One planning call produces the whole ordered list of steps. Each step then runs in order, with no opportunity to re-plan when a step returns something the plan did not anticipate.</desc>
+<defs><marker id="ah-cx4-plan" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="40" width="157.6" height="56" rx="12"></rect>
+<rect class="box b2" x="191.6" y="40" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M172.6 68 H187.6" marker-end="url(#ah-cx4-plan)"></path>
+<rect class="box b3" x="371.2" y="40" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M352.2 68 H367.2" marker-end="url(#ah-cx4-plan)"></path>
+<rect class="box b4" x="550.8" y="40" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M531.8 68 H546.8" marker-end="url(#ah-cx4-plan)"></path>
+<rect class="box b5" x="730.4" y="40" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M711.4 68 H726.4" marker-end="url(#ah-cx4-plan)"></path>
+<text class="lbl" x="90.8" y="73">goal</text>
+<text class="lbl" x="270.4" y="64">plan every</text>
+<text class="lbl" x="270.4" y="82">step now</text>
+<text class="lbl" x="450" y="73">step 1</text>
+<text class="lbl" x="629.6" y="73">step 2</text>
+<text class="lbl" x="809.2" y="73">answer</text>
+<circle class="pkt" cx="90.8" cy="18" r="7"></circle>
+<text class="cap" x="450" y="130">cheaper and reviewable, and blind to whatever the plan did not foresee</text>
+</svg>
+
+<!-- ================= 7 ================= -->
+<h2 id="components">6 · The components, one at a time</h2>
+<h3>The planner</h3>
+<p>One call that returns a structured plan. Validate it before executing: a plan with
+fourteen steps for a two-step task is a signal to stop, not to run.</p>
+
+<h3>The critic</h3>
+<p>Reflection needs written criteria. "Is this good?" produces agreement; a rubric produces
+findings.</p>
+
+<h3>The router</h3>
+<p>A classification call with a closed set of labels, and a default that escalates rather
+than guesses.</p>
+
+<h3>The step budget</h3>
+<p>Unchanged from page 2, and still the only bound your code owns. Every pattern here needs
+it.</p>
+
+<!-- ================= 8 ================= -->
+<h2 id="state">7 · State and data flow</h2>
+<ol>
+<li><b>What data is state?</b> The message list, plus the plan when one exists.</li>
+<li><b>Who writes each field?</b> The planner writes the plan once; the loop appends results.</li>
+<li><b>Who reads it?</b> The executor reads the plan; the model reads the messages.</li>
+<li><b>Replaced, appended or merged?</b> The plan is replaced only on a re-plan. Results append.</li>
+<li><b>What reducer controls merging?</b> None. Your executor decides.</li>
+<li><b>Only in process memory?</b> Yes.</li>
+<li><b>Is it checkpointed?</b> Not here. A plan is a natural checkpoint boundary if you add one.</li>
+<li><b>Is it in a database?</b> Only the trace, if you write one.</li>
+<li><b>How long does it survive?</b> The run.</li>
+<li><b>What retrieves it again?</b> The run id.</li>
+</ol>
+<p>Row 7 is worth noticing. <b>A plan is the one artefact in this page worth persisting</b>,
+because it lets a human review the intended steps before any of them run.</p>
+
+<!-- ================= 10 ================= -->
+<h2 id="trace">8 · Trace</h2>
+<p>The same 40 tickets, run four ways:</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Pattern</th><th>Model calls</th><th>Mean cost</th><th>p95 cost</th><th>Correct</th></tr></thead>
+<tbody>
+<tr><td>ReAct</td><td>5.2</td><td>$0.0041</td><td>$0.0092</td><td>36 / 40</td></tr>
+<tr><td>Plan-and-execute</td><td>4.1</td><td>$0.0034</td><td>$0.0048</td><td>32 / 40</td></tr>
+<tr><td>Reflection on ReAct</td><td>7.2</td><td>$0.0119</td><td>$0.0204</td><td>37 / 40</td></tr>
+<tr><td>Routing then ReAct</td><td>3.8</td><td>$0.0021</td><td>$0.0051</td><td>36 / 40</td></tr>
+</tbody>
+</table>
+</div>
+<p>Read the p95 column, not the mean. <b>Plan-and-execute is the most predictable and the
+least accurate</b>; routing is cheapest because most requests never needed the full tool
+set; reflection buys one more correct answer for roughly three times the cost.</p>
+
+<!-- ================= 11 ================= -->
+<h2 id="break">9 · Break it</h2>
+<p>Give plan-and-execute a ticket whose first step invalidates the plan.</p>
+
+<p>Step 2 returns <code>{'error': 'not found'}</code>. Order ORD-9999 does not exist.</p>
+
+<p><b>Steps 3 and 4 ran anyway.</b> They were written before step 2 returned, and nothing in
+the pattern re-reads the plan. The run reports success, and the answer says a refund was
+issued.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 174" role="img" aria-labelledby="cx4-blind-t cx4-blind-d">
+<title id="cx4-blind-t">The planning blind spot</title>
+<desc id="cx4-blind-d">Step 2 fails, but steps 3 and 4 were written before it ran. Nothing re-reads the plan, so the remaining steps execute against a premise that is no longer true and the run reports success.</desc>
+<defs><marker id="ah-cx4-blind" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="52" width="157.6" height="56" rx="12"></rect>
+<rect class="box b2" x="191.6" y="52" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M172.6 80 H187.6" marker-end="url(#ah-cx4-blind)"></path>
+<rect class="box fail" x="371.2" y="52" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M352.2 80 H367.2" marker-end="url(#ah-cx4-blind)"></path>
+<rect class="box after b4" x="550.8" y="52" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M531.8 80 H546.8" marker-end="url(#ah-cx4-blind)"></path>
+<rect class="box after b5" x="730.4" y="52" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M711.4 80 H726.4" marker-end="url(#ah-cx4-blind)"></path>
+<text class="lbl" x="90.8" y="85">plan written</text>
+<text class="lbl" x="270.4" y="85">step 1 ok</text>
+<text class="lbl" x="450" y="76">step 2 fails</text>
+<text class="lbl" x="450" y="94">order not found</text>
+<text class="lbl" x="629.6" y="76">step 3 runs</text>
+<text class="lbl" x="629.6" y="94">anyway</text>
+<text class="lbl" x="809.2" y="76">reports</text>
+<text class="lbl" x="809.2" y="94">success</text>
+<path class="xmark" d="M432 122 L468 150 M468 122 L432 150"></path>
+<text class="cap rescue" x="450" y="166">the plan was correct when it was written -- that is the whole problem</text>
+</svg>
+
+<!-- ================= 12 ================= -->
+<h2 id="fix">10 · Fix it</h2>
+<p><b>1 · Check each step's result before the next one runs.</b> This is the
+smallest fix, and it is not re-planning.</p>
+
+<p><b>2 · Re-plan on failure</b>, if stopping is too blunt. Cap the re-plans, or you have
+rebuilt ReAct with extra steps.</p>
+
+<p><b>3 · Choose ReAct instead</b> when failures like this are normal rather than
+exceptional. That is the honest fix: the pattern was the wrong one for the task, and
+adding re-planning to plan-and-execute converges on ReAct anyway.</p>
+
+<!-- ================= 13 ================= -->
+<h2 id="production">11 · Production version</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Concern</th><th>What you do</th></tr></thead>
+<tbody>
+<tr><td>Plan validation</td><td>Cap the step count and reject plans that name unknown tools</td></tr>
+<tr><td>Re-plan budget</td><td>Bounded and counted. Unbounded re-planning is ReAct with worse latency</td></tr>
+<tr><td>Router default</td><td>An explicit unknown label that escalates. Never a fallback to the largest path</td></tr>
+<tr><td>Router model</td><td>Use a small model. Classification does not need the expensive one</td></tr>
+<tr><td>Reflection cost</td><td>Measure it. If it does not move a metric you track, remove it</td></tr>
+<tr><td>Per-pattern metrics</td><td>Step count, cost and correctness per pattern, or you cannot defend the choice</td></tr>
+<tr><td>Prompt size</td><td>Declare only the tools the routed path needs. Every schema costs tokens on every call</td></tr>
+<tr><td>Fallback</td><td>Decide what happens when the router is wrong. Usually: escalate, never silently reroute</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ================= 14 ================= -->
+<h2 id="comparison">12 · Comparison</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>ReAct</th><th>Plan-and-execute</th><th>Reflection</th><th>Routing</th></tr></thead>
+<tbody>
+<tr><th>Model calls</th><td>One per step</td><td>One plus steps</td><td><b>Three per answer</b></td><td>One, plus the path</td></tr>
+<tr><th>Reacts to surprises</th><td><b>Yes</b></td><td>No</td><td>After the fact</td><td>Not applicable</td></tr>
+<tr><th>Cost predictable</th><td>No</td><td><b>Yes</b></td><td>Yes</td><td>Yes</td></tr>
+<tr><th>Reviewable before running</th><td>No</td><td><b>Yes, the plan</b></td><td>No</td><td>The label</td></tr>
+<tr><th>Composes with the others</th><td>No</td><td>No</td><td>Yes</td><td><b>Yes</b></td></tr>
+<tr><th>Use it for</th><td>Unknown paths</td><td>Known steps, audit</td><td>A quality bar</td><td>Known categories</td></tr>
+</tbody>
+</table>
+</div>
+<p>The last row is the practical one. <b>Routing and reflection are layers; ReAct and
+plan-and-execute are a choice.</b> Most production systems route first, then run ReAct
+inside the chosen path.</p>
+
+<!-- ================= 15 ================= -->
+<div class="carry"><b>New questions</b> written for this page: it is new, so there was nothing to carry over.</div>
+<h2 id="interview">13 &middot; Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What is ReAct? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Reason and act, interleaved. The model reasons, takes one action, sees the result, and reasons again with that result in hand. Nothing beyond the next step is planned.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  How is plan-and-execute different? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>One planning call produces the whole list of steps up front. The steps then run in order. There is no re-planning when a step returns something the plan did not anticipate.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  When is routing the right pattern? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>When requests fall into a few known categories that need different tools or different instructions. One cheap classification call selects the path, and each path then carries a smaller prompt and fewer tools. The win is cost and accuracy, not cleverness.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  What does reflection actually add, and what does it cost? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>A second model call that critiques the first answer against stated criteria, then a third that revises it. It catches format and completeness errors well. It roughly triples cost and latency, and it cannot catch an error that requires information the run never retrieved.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  Your plan-and-execute agent produces a confident wrong answer. What is the likely cause? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>The plan was made before the data was seen. If step 1 returns something that invalidates steps 2 to 5, nothing re-plans, and the remaining steps execute against a premise that is no longer true. That is the structural blind spot of the pattern, and it is why ReAct handles messy inputs better.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  How do you choose between these four in a design round? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Start from the shape of the task. Known categories, different tools, route. Steps knowable up front and auditability wanted, plan-and-execute. The next step depends on the last result, ReAct. A quality bar that a rule cannot express, add reflection on top of whichever you chose. Name the cost of the one you pick.</p></div></details>
+
+<!-- ================= 16 ================= -->
+<h2 id="short">14 · In short, and what comes next</h2>
+<p class="bd-choose">Remember these six:</p>
+<ul>
+<li>All four patterns are the same loop, arranged differently.</li>
+<li>ReAct adapts at every step and cannot tell you its cost in advance.</li>
+<li>Plan-and-execute is predictable and blind to anything the plan did not foresee.</li>
+<li>Reflection roughly triples cost; measure whether it moves a metric you track.</li>
+<li>Routing is usually the largest single saving, because most requests need few tools.</li>
+<li>Check every step's result before running the next one, whichever pattern you chose.</li>
+</ul>
+<div class="callout key">
+<div class="c-ico">🔑</div>
+<div class="c-body"><div class="c-title">The one idea to remember</div>
+<p><b>The pattern decides when the model is allowed to change its mind.</b> ReAct: every
+step. Plan-and-execute: never. Everything else follows from that.</p></div>
+</div>
+<p><b>Next:</b> page 5 gives the loop a way to find information it was not given, and shows
+why retrieval that always returns something is worse than retrieval that can return
+nothing.</p>
+
+<div class="page-nav" data-page-nav>
+<a href="03-tools-and-the-boundary.html"><div class="dir">← Previous</div><div class="ttl">03 · Tools and the boundary</div></a>
+          <a class="next" href="05-retrieval.html"><div class="dir">Next →</div><div class="ttl">05 · Retrieval</div></a>
+</div>
+
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script>
+window.__pageNav = {
+  navLabel: "Understanding AI Agents · CampusX",
+  here: "campusx/04-reasoning-patterns.html",
+  base: "../",
+  pages: [
+    { file: "campusx/index.html", title: "Section index", num: "✦", kw: "campusx agents index" }
+  ]
+};
+</script>
+<script src="../../assets/app.js?v=20260925c"></script>
+<script src="../../assets/sitenav.js?v=20260925a"></script>
+<script src="../../assets/enhance.js?v=20260925c"></script>
+<script src="../../assets/genai-motion.js?v=20260728a"></script>
+<script src="../../assets/glossary.js?v=20260802b"></script>
+</body>
+</html>

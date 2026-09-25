@@ -1,5 +1,5 @@
 """
-approval.py — idempotency, approval tokens, and an append-only audit log.
+approval.py - idempotency, approval tokens, and an append-only audit log.
 
 Lesson 8, and the most transferable file in the course: none of it is
 AI-specific. It is what you already do for a payments endpoint. The only new

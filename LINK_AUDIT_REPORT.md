@@ -8,7 +8,7 @@ Final automated validation:
 - JavaScript navigation registry targets checked: **105**
 - Missing JavaScript navigation targets: **0**
 - JavaScript files passing syntax checks: **all**
-- Pages containing the **Switch job** brand block: **108 / 108**
+- Pages containing the **Learn GenAI** brand block: **108 / 108**
 
 The old `genai-portal` wrapper paths, Windows `file:///C:/...` paths, and hard-coded repository-root links were removed.
 

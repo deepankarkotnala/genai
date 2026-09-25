@@ -1,38 +1,39 @@
-<!DOCTYPE html><html data-theme="light" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1" name="viewport"/><meta content="#f4f5f8" name="theme-color"/><title>09 · Sorting, Intervals &amp; Selection — DSA Interview Preparation</title><link href="../assets/brand/favicon.svg?v=20260727c" rel="icon" type="image/svg+xml"/>
+<!DOCTYPE html><html data-theme="light" lang="en"><head><meta charset="utf-8"/><meta content="width=device-width, initial-scale=1" name="viewport"/><meta content="#f4f5f8" name="theme-color"/><title>09 · Sorting, Intervals &amp; Selection | DSA Interview Preparation</title><link href="../assets/brand/favicon.svg?v=20260925b" rel="icon" type="image/svg+xml"/>
 <!-- Theme before first paint. Without this the document paints with the light
      tokens and only flips when app.js runs at the end of <body>, which is a
      white flash on every navigation in dark mode. Mirrors app.js's getTheme()
-     exactly — same key, same "light" default — so the pre-paint value can never
+     exactly - same key, same "light" default - so the pre-paint value can never
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width"}; unknown size -> "s" on phones and "xs" above 860px, unknown width -> "wide", unknown align -> "left". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var mob=!!(window.matchMedia&&window.matchMedia("(max-width:860px)").matches);var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(mob?"s":"xs");var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition — CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20260805a" rel="stylesheet"/><link href="../assets/office-theme.css?v=20260805c" rel="stylesheet"/><link href="../assets/dsa-prep.css?v=20260804a" rel="stylesheet"/>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20260805a" rel="stylesheet"/><link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/><link href="../assets/dsa-prep.css?v=20260804a" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
-<link href="../assets/brand/favicon-32.png?v=20260727c" rel="icon" sizes="32x32" type="image/png"/>
-<link href="../assets/brand/favicon-16.png?v=20260727c" rel="icon" sizes="16x16" type="image/png"/>
-<link href="../assets/brand/favicon.ico?v=20260727c" rel="shortcut icon"/>
-<link href="../assets/brand/apple-touch-icon.png?v=20260727c" rel="apple-touch-icon" sizes="180x180"/>
-<link href="../assets/brand/site.webmanifest?v=20260727c" rel="manifest"/>
-<link color="#6f47f5" href="../assets/brand/safari-pinned-tab.svg?v=20260727c" rel="mask-icon"/>
-<meta content="../assets/brand/browserconfig.xml?v=20260727c" name="msapplication-config"/>
+<link href="../assets/brand/favicon-32.png?v=20260925b" rel="icon" sizes="32x32" type="image/png"/>
+<link href="../assets/brand/favicon-16.png?v=20260925b" rel="icon" sizes="16x16" type="image/png"/>
+<link href="../assets/brand/favicon.ico?v=20260925b" rel="shortcut icon"/>
+<link href="../assets/brand/apple-touch-icon.png?v=20260925b" rel="apple-touch-icon" sizes="180x180"/>
+<link href="../assets/brand/site.webmanifest?v=20260925b" rel="manifest"/>
+<link color="#6f47f5" href="../assets/brand/safari-pinned-tab.svg?v=20260925b" rel="mask-icon"/>
+<meta content="../assets/brand/browserconfig.xml?v=20260925b" name="msapplication-config"/>
 <meta content="#2563eb" name="msapplication-TileColor"/>
-<meta content="Switch job" name="application-name"/>
-<meta content="Switch job" name="apple-mobile-web-app-title"/><!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+<meta content="Learn GenAI" name="application-name"/>
+<meta content="Learn GenAI" name="apple-mobile-web-app-title"/><!-- Release 2 runtime. The manifest loads first, the renderer second; classic
      deferred scripts execute in document order after parsing, so the nav slot
      exists and the manifest is defined before the renderer runs. The authored
      links inside [data-page-nav] stay in the source and are replaced only after
      page, route and fragment have all resolved. -->
 <script defer src="../assets/curriculum.js?v=20260804c"></script>
 <script defer src="../assets/page-nav.js?v=20260804c"></script>
+<link href="../assets/ir-theme.css?v=20260925c" rel="stylesheet"/>
 </head><body data-curriculum-id="dsa-09" data-page="dsa-chapter"><div class="app"><aside class="sidebar"><div class="brand">
-<a class="brand-link" href="../index.html" aria-label="Switch job home">
-<span class="brand-mark" aria-hidden="true"><img src="../assets/brand/switch-job-logo.png?v=20260727c" alt=""/></span>
-<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+<a class="brand-link" href="../index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
 </a>
 </div><div class="search-wrap"><div class="search-box"><input data-search="" placeholder="Search everything…  ( / )" type="text"/></div><div class="search-results"></div></div><nav class="nav"></nav></aside><div class="backdrop"></div><div class="main"><header class="topbar"><button aria-label="Menu" class="icon-btn menu-btn">☰</button><div class="crumbs">DSA Interview Preparation / 09 · Sorting, Intervals &amp; Selection</div><button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button></header><div class="content-wrap"><main class="content">
 <div class="eyebrow"><span class="dot"></span> Chapter 09 · Core patterns</div>
 <h1>Sorting, Intervals &amp; Selection</h1>
-<p class="lead">Sorting is the pre-processing that unlocks a huge class of problems — but sometimes you should <em>not</em> fully sort. This chapter covers custom comparators, the sort-then-sweep interval template, and selection via heaps and quickselect — every problem has a full, tested solution in LeetCode's <code>class Solution</code> format.</p>
+<p class="lead">Sorting is the pre-processing that unlocks a huge class of problems - but sometimes you should <em>not</em> fully sort. This chapter covers custom comparators, the sort-then-sweep interval template, and selection via heaps and quickselect - every problem has a full, tested solution in LeetCode's <code>class Solution</code> format.</p>
 <div class="dsa-chead">
 <span class="dsa-chapter-no">Outcome</span>
 <p class="dsa-outcome">Write custom comparators and counting sorts, solve interval problems by sorting and sweeping, and pick the right selection tool (heap, quickselect, or a partial sort) instead of always sorting fully.</p>
@@ -52,11 +53,11 @@
 <span class="dsa-progress-line" data-dsa-progress="">0 / 34 solved</span>
 </div>
 <h2 id="foundations">1 · Foundations</h2>
-<p class="dsa-note-sm" style="margin-bottom:6px">New to these patterns? Read this section top to bottom — each idea builds on the one before it. Already fluent? Skip to <a href="#patterns">§2 Pattern library</a>.</p>
+<p class="dsa-note-sm" style="margin-bottom:6px">New to these patterns? Read this section top to bottom - each idea builds on the one before it. Already fluent? Skip to <a href="#patterns">§2 Pattern library</a>.</p>
 
 <h3 id="python-sort">Python's sort, and sorting by a key</h3>
-<p>Python's <code>sorted()</code> and <code>list.sort()</code> use <strong>Timsort</strong>: O(n log n), and <strong>stable</strong> (equal elements keep their original order — which matters more than people expect). The real power is the <code>key</code> argument: sort by any derived value, including a tuple for multi-level ordering.</p>
-<div class="dsa-eg">Example — key functions and tuple keys</div>
+<p>Python's <code>sorted()</code> and <code>list.sort()</code> use <strong>Timsort</strong>: O(n log n), and <strong>stable</strong> (equal elements keep their original order - which matters more than people expect). The real power is the <code>key</code> argument: sort by any derived value, including a tuple for multi-level ordering.</p>
+<div class="dsa-eg">Example - key functions and tuple keys</div>
 <div class="code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>sorting.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>words = ["banana", "kiwi", "apple", "fig"]
@@ -71,14 +72,14 @@ nums = [3, 1, 2]
 print(sorted(nums, reverse=True))      # [3, 2, 1]</code></pre>
 </div>
 <div class="dsa-result"><span class="rk">Output</span>['fig', 'kiwi', 'apple', 'banana']<br>[('Bob', 25), ('Ann', 30), ('Cid', 30)]<br>[3, 2, 1]</div>
-<div class="dsa-key"><span>A <b>tuple key</b> encodes multi-level ordering: <code>(-count, word)</code> means "highest count first, ties alphabetical". When the order can't be expressed as a key (it depends on <em>pairs</em> of elements), use a comparator with <code>functools.cmp_to_key</code> — as in Largest Number.</span></div>
+<div class="dsa-key"><span>A <b>tuple key</b> encodes multi-level ordering: <code>(-count, word)</code> means "highest count first, ties alphabetical". When the order can't be expressed as a key (it depends on <em>pairs</em> of elements), use a comparator with <code>functools.cmp_to_key</code> - as in Largest Number.</span></div>
 
 <h3 id="counting-sort">When comparison sort is overkill: counting sort</h3>
-<p>Comparison sorts can't beat O(n log n) in general. But if the values are integers in a small, known range, you can sort in <strong>O(n)</strong> by counting occurrences — no comparisons at all. Great for bounded data like ages, heights, or lowercase letters.</p>
+<p>Comparison sorts can't beat O(n log n) in general. But if the values are integers in a small, known range, you can sort in <strong>O(n)</strong> by counting occurrences - no comparisons at all. Great for bounded data like ages, heights, or lowercase letters.</p>
 
 <h3 id="intervals">Intervals: sort, then sweep</h3>
-<p>Nearly every interval problem starts the same way: <strong>sort by start time</strong> (sometimes by end), then make one pass. Once sorted, overlaps become local — you only compare each interval to the previous kept one.</p>
-<div class="dsa-eg">Example — merge overlapping intervals</div>
+<p>Nearly every interval problem starts the same way: <strong>sort by start time</strong> (sometimes by end), then make one pass. Once sorted, overlaps become local - you only compare each interval to the previous kept one.</p>
+<div class="dsa-eg">Example - merge overlapping intervals</div>
 <div class="code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>merge.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>def merge(intervals):
@@ -98,7 +99,7 @@ print(merge([[1,3],[2,6],[8,10],[15,18]]))   # [[1,6],[8,10],[15,18]]</code></pr
 
 <h3 id="selection">Selection: don't always sort</h3>
 <p>If you only need the <strong>k-th</strong> element or the <strong>top k</strong>, fully sorting (O(n log n)) is wasteful. Two better tools: a <strong>heap</strong> of size k gives top-k in O(n log k) and works on streams; <strong>quickselect</strong> finds the k-th element in O(n) average by partitioning and recursing into only one side.</p>
-<div class="dsa-eg">Example — a size-k heap for the k largest</div>
+<div class="dsa-eg">Example - a size-k heap for the k largest</div>
 <div class="code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>topk.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>import heapq
@@ -113,7 +114,7 @@ def k_largest(nums, k):
 
 print(k_largest([3, 1, 5, 12, 2, 11], 3))   # [12, 11, 5]</code></pre>
 </div>
-<div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">Sorting &amp; selection pitfalls</div><p>Python's <code>heapq</code> is a <strong>min</strong>-heap — negate values (or keys) for a max-heap. Rely on <em>stability</em> only when you mean to. For "top k", prefer a size-k heap or quickselect over a full sort. And for intervals, always ask: sort by start or by end? Getting that wrong quietly breaks the greedy.</p></div></div>
+<div class="callout warn"><div class="c-ico">⚠️</div><div class="c-body"><div class="c-title">Sorting &amp; selection pitfalls</div><p>Python's <code>heapq</code> is a <strong>min</strong>-heap - negate values (or keys) for a max-heap. Rely on <em>stability</em> only when you mean to. For "top k", prefer a size-k heap or quickselect over a full sort. And for intervals, always ask: sort by start or by end? Getting that wrong quietly breaks the greedy.</p></div></div>
 <h2 id="patterns">2 · Pattern library</h2>
 <p>Almost every problem here is one of these six. Learn the signal and the core move, and the code follows.</p>
 <div class="dsa-patterns">
@@ -124,10 +125,10 @@ print(k_largest([3, 1, 5, 12, 2, 11], 3))   # [12, 11, 5]</code></pre>
 <div class="dsa-pattern"><h4><span class="pnum">5</span>Heap for top-k / kth / streaming</h4><dl><dt>Signal</dt><dd>k largest/smallest, running median, k-way merge</dd><dt>Move</dt><dd>size-k heap, or two heaps at the median</dd><dt>Cost</dt><dd>O(n log k)</dd></dl></div>
 <div class="dsa-pattern"><h4><span class="pnum">6</span>Quickselect &amp; merge-sort counting</h4><dl><dt>Signal</dt><dd>k-th element; count inversions / cross-pairs</dd><dt>Move</dt><dd>partition and recurse one side; count during merge</dd><dt>Cost</dt><dd>O(n) avg / O(n log n)</dd></dl></div>
 </div>
-<h2 id="ladder">3 · Problem ladder — 34</h2>
+<h2 id="ladder">3 · Problem ladder - 34</h2>
 <p>Grouped into <strong>Easy → Medium → Hard</strong> tiers, and inside each tier ordered so patterns build on one another. Every solution is complete and tested in LeetCode's <code>class Solution</code> format. Expand a row for the full write-up; use <span class="dsa-kbd">🙈 Practice mode</span> to hide solutions and rebuild from the pattern.</p>
 <div class="dsa-ladder">
-<div class="dsa-tier"><span class="tdot easy"></span>Tier 1 · Easy — sort-and-compare, heaps, intervals <span class="cnt">(8)</span></div>
+<div class="dsa-tier"><span class="tdot easy"></span>Tier 1 · Easy - sort-and-compare, heaps, intervals <span class="cnt">(8)</span></div>
 <details class="dsa-prob" id="lc-1051" data-pid="lc-1051">
 <summary>
 <span class="p-idx">1</span>
@@ -150,7 +151,7 @@ class Solution:
         return sum(1 for a, b in zip(heights, expected) if a != b)
 </code></pre>
 </div>
-<p><strong>Time</strong> O(n log n) · <strong>Space</strong> O(n). A one-line intro to 'sort, then compare' — the backbone of the chapter.</p>
+<p><strong>Time</strong> O(n log n) · <strong>Space</strong> O(n). A one-line intro to 'sort, then compare' - the backbone of the chapter.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-561" data-pid="lc-561">
@@ -189,7 +190,7 @@ class Solution:
 <p class="wu-clarify"><strong>Problem.</strong> Sort <code>arr1</code> so elements appear in the order given by <code>arr2</code>; anything not in <code>arr2</code> goes last, ascending. <a href="https://leetcode.com/problems/relative-sort-array/" target="_blank" rel="noopener">LeetCode 1122 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Elements of arr2 are distinct and appear in arr1? (Yes.) The rest sorted ascending after? (Yes.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Give each arr2 value a rank; unknown values get a rank after all of them.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Sort by (rank, value).</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> Build a rank map from <code>arr2</code>. Sort <code>arr1</code> by the compound key <code>(rank, value)</code> — known values order by their arr2 rank, and unknown values fall to the end (given a sentinel rank) ordered by value.</p>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Build a rank map from <code>arr2</code>. Sort <code>arr1</code> by the compound key <code>(rank, value)</code> - known values order by their arr2 rank, and unknown values fall to the end (given a sentinel rank) ordered by value.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>relative_sort.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from typing import List
@@ -258,7 +259,7 @@ class Solution:
         return True
 </code></pre>
 </div>
-<p><strong>Time</strong> O(n log n) · <strong>Space</strong> O(1). The simplest interval problem — sorting makes overlaps local.</p>
+<p><strong>Time</strong> O(n log n) · <strong>Space</strong> O(1). The simplest interval problem - sorting makes overlaps local.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-414" data-pid="lc-414">
@@ -300,7 +301,7 @@ class Solution:
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Repeatedly smash the two heaviest stones; return the weight of the last remaining stone (or 0). <a href="https://leetcode.com/problems/last-stone-weight/" target="_blank" rel="noopener">LeetCode 1046 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Smash the two heaviest each round? (Yes.) Equal weights annihilate? (Yes.)</p>
-<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">You repeatedly need the two largest — that's a heap.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Python's heapq is a min-heap; negate values for a max-heap.</div></details></div>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">You repeatedly need the two largest - that's a heap.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Python's heapq is a min-heap; negate values for a max-heap.</div></details></div>
 <p class="wu-approach"><span class="wu-section">How to think about it</span> A max-heap gives the two heaviest stones in O(log n) each round. Pop two, and if they differ push back the difference. Since <code>heapq</code> is a min-heap, store negatives. Repeat until one or zero stones remain.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>last_stone.py</span><button class="copy-btn">Copy</button></div>
@@ -356,7 +357,7 @@ class KthLargest:
 <p><strong>add</strong> O(log k) · <strong>Space</strong> O(k). A size-capped min-heap is the canonical top-k-in-a-stream tool.</p>
 </div>
 </details>
-<div class="dsa-tier"><span class="tdot medium"></span>Tier 2 · Medium — custom sorts, interval greedy, selection <span class="cnt">(20)</span></div>
+<div class="dsa-tier"><span class="tdot medium"></span>Tier 2 · Medium - custom sorts, interval greedy, selection <span class="cnt">(20)</span></div>
 <details class="dsa-prob" id="lc-912" data-pid="lc-912">
 <summary>
 <span class="p-idx">9</span>
@@ -393,7 +394,7 @@ class Solution:
         return merge_sort(nums)
 </code></pre>
 </div>
-<p><strong>Time</strong> O(n log n) · <strong>Space</strong> O(n). Knowing how sort() works under the hood — and merge sort specifically — pays off in the divide-and-conquer hard problems below.</p>
+<p><strong>Time</strong> O(n log n) · <strong>Space</strong> O(n). Knowing how sort() works under the hood - and merge sort specifically - pays off in the divide-and-conquer hard problems below.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-969" data-pid="lc-969">
@@ -518,7 +519,7 @@ class Solution:
         return h
 </code></pre>
 </div>
-<p><strong>Time</strong> O(n log n) · <strong>Space</strong> O(1). Counting sort gives an O(n) version — worth mentioning as a follow-up.</p>
+<p><strong>Time</strong> O(n log n) · <strong>Space</strong> O(1). Counting sort gives an O(n) version - worth mentioning as a follow-up.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-324" data-pid="lc-324">
@@ -530,7 +531,7 @@ class Solution:
 </summary>
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Reorder so <code>nums[0] &lt; nums[1] &gt; nums[2] &lt; nums[3] …</code> (strict). <a href="https://leetcode.com/problems/wiggle-sort-ii/" target="_blank" rel="noopener">LeetCode 324 ↗</a></p>
-<p class="wu-clarify"><strong>Clarify:</strong> Strict inequalities? (Yes.) Duplicates possible? (Yes — interleave carefully.)</p>
+<p class="wu-clarify"><strong>Clarify:</strong> Strict inequalities? (Yes.) Duplicates possible? (Yes - interleave carefully.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Sort, then place the smaller half at even indices and the larger half at odd indices.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Fill each half from its largest end so equal values never touch.</div></details></div>
 <p class="wu-approach"><span class="wu-section">How to think about it</span> Sort, split into a smaller and larger half. Place the smaller half (reversed) at even indices and the larger half (reversed) at odd indices. Reversing each half separates equal values across the two groups, preserving the strict wiggle even with duplicates.</p>
 <div class="wu-solution code-block">
@@ -558,9 +559,9 @@ class Solution:
 </summary>
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Merge all overlapping intervals and return the non-overlapping result. <a href="https://leetcode.com/problems/merge-intervals/" target="_blank" rel="noopener">LeetCode 56 ↗</a></p>
-<p class="wu-clarify"><strong>Clarify:</strong> Sorted input? (No — sort first.) Touching intervals merge? (Yes.)</p>
+<p class="wu-clarify"><strong>Clarify:</strong> Sorted input? (No - sort first.) Touching intervals merge? (Yes.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Sort by start so overlaps are adjacent.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Extend the last kept interval's end if the next starts within it; else start a new one.</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> Sort by start. Sweep: if the current interval starts at or before the last kept interval's end, extend that end; otherwise it's disjoint, so append it. Sorting dominates the cost — the archetypal interval-merge pattern.</p>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Sort by start. Sweep: if the current interval starts at or before the last kept interval's end, extend that end; otherwise it's disjoint, so append it. Sorting dominates the cost - the archetypal interval-merge pattern.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>merge_intervals.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from typing import List
@@ -624,7 +625,7 @@ class Solution:
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Return the minimum number of intervals to remove so the rest don't overlap. <a href="https://leetcode.com/problems/non-overlapping-intervals/" target="_blank" rel="noopener">LeetCode 435 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Touching endpoints don't count as overlap? (Yes.) Minimise removals? (Yes.)</p>
-<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Keep as many intervals as possible — that's the activity-selection problem.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Sort by end time; always keep the interval that finishes earliest.</div></details></div>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Keep as many intervals as possible - that's the activity-selection problem.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Sort by end time; always keep the interval that finishes earliest.</div></details></div>
 <p class="wu-approach"><span class="wu-section">How to think about it</span> Greedy activity selection. Sort by end time and keep an interval whenever it starts at or after the last kept end; otherwise it overlaps and must be removed (count it). Finishing earliest leaves the most room, which is provably optimal.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>erase_overlap.py</span><button class="copy-btn">Copy</button></div>
@@ -656,7 +657,7 @@ class Solution:
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Balloons span horizontal intervals; an arrow at x bursts every balloon covering x. Return the minimum arrows. <a href="https://leetcode.com/problems/minimum-number-of-arrows-to-burst-balloons/" target="_blank" rel="noopener">LeetCode 452 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Touching intervals share an arrow? (Yes.) Minimise arrows? (Yes.)</p>
-<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">This is the complement of activity selection — count the groups you keep.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Sort by end; shoot at each end, skipping balloons it already bursts.</div></details></div>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">This is the complement of activity selection - count the groups you keep.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Sort by end; shoot at each end, skipping balloons it already bursts.</div></details></div>
 <p class="wu-approach"><span class="wu-section">How to think about it</span> Sort by end. Shoot an arrow at the earliest end; it bursts every balloon that starts at or before it. Move to the next balloon starting after that arrow, and repeat. The number of arrows equals the number of non-overlapping groups.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>min_arrows.py</span><button class="copy-btn">Copy</button></div>
@@ -688,7 +689,7 @@ class Solution:
 <p class="wu-clarify"><strong>Problem.</strong> Remove intervals covered by another and return how many remain. <a href="https://leetcode.com/problems/remove-covered-intervals/" target="_blank" rel="noopener">LeetCode 1288 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Covered means [a,b] ⊆ [c,d]? (Yes.) Count remaining after removal? (Yes.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Sort by start ascending; for equal starts, longer intervals first.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">An interval survives only if its end exceeds every previous end.</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> Sort by start ascending and, for ties, by end descending — so a covering interval always comes before the one it covers. Track the maximum end seen; an interval is <em>new</em> (not covered) only when its end exceeds that maximum.</p>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Sort by start ascending and, for ties, by end descending - so a covering interval always comes before the one it covers. Track the maximum end seen; an interval is <em>new</em> (not covered) only when its end exceeds that maximum.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>remove_covered.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from typing import List
@@ -719,7 +720,7 @@ class Solution:
 <p class="wu-clarify"><strong>Problem.</strong> Given pairs where (a,b) can follow (c,d) if b &lt; c, return the longest chain you can form. <a href="https://leetcode.com/problems/maximum-length-of-pair-chain/" target="_blank" rel="noopener">LeetCode 646 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Pairs can be used in any order? (Yes.) Strict b &lt; c to chain? (Yes.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Same greedy as activity selection: pick pairs that finish earliest.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Sort by second element; extend the chain when the next start exceeds the current end.</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> Sort by the second element. Greedily extend the chain: whenever the next pair's start exceeds the current chain end, add it and advance the end. Finishing earliest maximises the remaining options — the activity-selection argument again.</p>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Sort by the second element. Greedily extend the chain: whenever the next pair's start exceeds the current chain end, add it and advance the end. Finishing earliest maximises the remaining options - the activity-selection argument again.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>pair_chain.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from typing import List
@@ -750,7 +751,7 @@ class Solution:
 <p class="wu-clarify"><strong>Problem.</strong> Return the minimum number of conference rooms required for all meetings. <a href="https://leetcode.com/problems/meeting-rooms-ii/" target="_blank" rel="noopener">LeetCode 253 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Rooms reused once free? (Yes.) Answer is the peak concurrency? (Yes.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Process meetings by start time; track when rooms free up.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">A min-heap of end times: if the earliest end is ≤ the new start, reuse that room.</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> Sort by start. Keep a min-heap of room end times. For each meeting, if the earliest-ending room is free by its start, pop it (reuse); then push this meeting's end. The heap size at the end is the peak number of simultaneous meetings — the rooms needed.</p>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Sort by start. Keep a min-heap of room end times. For each meeting, if the earliest-ending room is free by its start, pop it (reuse); then push this meeting's end. The heap size at the end is the peak number of simultaneous meetings - the rooms needed.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>meeting_rooms_ii.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from typing import List
@@ -769,7 +770,7 @@ class Solution:
         return len(ends)                      # rooms in use = peak concurrency
 </code></pre>
 </div>
-<p><strong>Time</strong> O(n log n) · <strong>Space</strong> O(n). The heap tracks 'when does a room next free up' — a sweep-line in disguise.</p>
+<p><strong>Time</strong> O(n log n) · <strong>Space</strong> O(n). The heap tracks 'when does a room next free up' - a sweep-line in disguise.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-215" data-pid="lc-215">
@@ -823,8 +824,8 @@ class Solution:
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Return the <code>k</code> most frequent elements. <a href="https://leetcode.com/problems/top-k-frequent-elements/" target="_blank" rel="noopener">LeetCode 347 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> k is valid? (Yes.) Ties broken arbitrarily? (Yes.)</p>
-<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Count frequencies, then you only need the top k by count.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Bucket elements by frequency (0..n) and read from the highest bucket down — O(n).</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> Count with a frequency map, then bucket each value by its count into an array indexed 0..n. Reading buckets from the highest frequency down collects the top <code>k</code> in O(n) — beating the O(n log k) heap when you want the optimum.</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Count frequencies, then you only need the top k by count.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Bucket elements by frequency (0..n) and read from the highest bucket down - O(n).</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Count with a frequency map, then bucket each value by its count into an array indexed 0..n. Reading buckets from the highest frequency down collects the top <code>k</code> in O(n) - beating the O(n log k) heap when you want the optimum.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>top_k_frequent.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from typing import List
@@ -845,7 +846,7 @@ class Solution:
         return res
 </code></pre>
 </div>
-<p><strong>Time</strong> O(n) · <strong>Space</strong> O(n). Bucket sort works because counts are bounded by n — no comparison sort needed.</p>
+<p><strong>Time</strong> O(n) · <strong>Space</strong> O(n). Bucket sort works because counts are bounded by n - no comparison sort needed.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-973" data-pid="lc-973">
@@ -858,7 +859,7 @@ class Solution:
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Return the <code>k</code> points closest to the origin. <a href="https://leetcode.com/problems/k-closest-points-to-origin/" target="_blank" rel="noopener">LeetCode 973 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Euclidean distance (squared is fine for ordering)? (Yes.) Any order among the k? (Yes.)</p>
-<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Compare by squared distance — no need for the square root.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">A heap (or quickselect) finds the k smallest without full sorting.</div></details></div>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Compare by squared distance - no need for the square root.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">A heap (or quickselect) finds the k smallest without full sorting.</div></details></div>
 <p class="wu-approach"><span class="wu-section">How to think about it</span> Order by squared distance <code>x²+y²</code> (the square root is monotonic, so it's unnecessary). <code>heapq.nsmallest(k, …)</code> selects the closest <code>k</code> in O(n log k); quickselect on distance gives O(n) average.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>k_closest.py</span><button class="copy-btn">Copy</button></div>
@@ -946,8 +947,8 @@ class Solution:
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Assign each worker the most profitable job they can do (difficulty ≤ ability); return total profit. <a href="https://leetcode.com/problems/most-profit-assigning-work/" target="_blank" rel="noopener">LeetCode 826 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> A job can be done by many workers? (Yes.) Each worker does at most one job? (Yes.)</p>
-<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Sort jobs by difficulty and workers by ability.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">As ability rises, the set of doable jobs only grows — track the best profit so far.</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> Sort jobs by difficulty and workers by ability. Sweep workers in increasing ability, advancing a job pointer to include every newly-affordable job while tracking the best profit seen. Each worker takes that running best — a two-pointer merge over two sorted lists.</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Sort jobs by difficulty and workers by ability.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">As ability rises, the set of doable jobs only grows - track the best profit so far.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Sort jobs by difficulty and workers by ability. Sweep workers in increasing ability, advancing a job pointer to include every newly-affordable job while tracking the best profit seen. Each worker takes that running best - a two-pointer merge over two sorted lists.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>max_profit_work.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from typing import List
@@ -1004,10 +1005,10 @@ class Solution:
         return False
 </code></pre>
 </div>
-<p><strong>Time</strong> O(n) · <strong>Space</strong> O(min(n, indexDiff)). Bucketing turns a range query into O(1) neighbour checks — a sorting-adjacent idea.</p>
+<p><strong>Time</strong> O(n) · <strong>Space</strong> O(min(n, indexDiff)). Bucketing turns a range query into O(1) neighbour checks - a sorting-adjacent idea.</p>
 </div>
 </details>
-<div class="dsa-tier"><span class="tdot hard"></span>Tier 3 · Hard — heaps, sweep line, divide-and-conquer <span class="cnt">(6)</span></div>
+<div class="dsa-tier"><span class="tdot hard"></span>Tier 3 · Hard - heaps, sweep line, divide-and-conquer <span class="cnt">(6)</span></div>
 <details class="dsa-prob" id="lc-295" data-pid="lc-295">
 <summary>
 <span class="p-idx">29</span>
@@ -1026,8 +1027,8 @@ class Solution:
 
 class MedianFinder:
     def __init__(self):
-        self.small = []      # max-heap (negated) — lower half
-        self.large = []      # min-heap — upper half
+        self.small = []      # max-heap (negated) - lower half
+        self.large = []      # min-heap - upper half
     def addNum(self, num: int) -&gt; None:
         heapq.heappush(self.small, -num)
         heapq.heappush(self.large, -heapq.heappop(self.small))   # balance values
@@ -1067,7 +1068,7 @@ class Solution:
             events.append((r, 0, 0))          # end marker
         events.sort()
         res = []
-        live = [(0, float("inf"))]            # (neg height, end) — ground level
+        live = [(0, float("inf"))]            # (neg height, end) - ground level
         for x, neg_h, r in events:
             while live[0][1] &lt;= x:            # drop buildings that have ended
                 heapq.heappop(live)
@@ -1092,7 +1093,7 @@ class Solution:
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> Choose non-overlapping jobs (start, end, profit) to maximise total profit. <a href="https://leetcode.com/problems/maximum-profit-in-job-scheduling/" target="_blank" rel="noopener">LeetCode 1235 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Jobs can't overlap? (Yes.) A job starting at another's end time is OK? (Yes.)</p>
-<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Sort by start time; decide for each job to skip it or take it.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">If you take a job, jump to the next job starting at or after its end — find it with binary search.</div></details></div>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Sort by start time; decide for each job to skip it or take it.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">If you take a job, jump to the next job starting at or after its end - find it with binary search.</div></details></div>
 <p class="wu-approach"><span class="wu-section">How to think about it</span> Sort by start and compute suffix DP: <code>dp[i]</code> = best profit using jobs from <code>i</code> onward. For each job either skip it (<code>dp[i+1]</code>) or take it and add <code>dp[next]</code>, where <code>next</code> is the first job starting at or after this job's end (binary search over starts). The answer is <code>dp[0]</code>.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>job_scheduling.py</span><button class="copy-btn">Copy</button></div>
@@ -1112,7 +1113,7 @@ class Solution:
         return dp[0]
 </code></pre>
 </div>
-<p><strong>Time</strong> O(n log n) · <strong>Space</strong> O(n). Weighted interval scheduling — sorting plus binary search is what makes the DP efficient.</p>
+<p><strong>Time</strong> O(n log n) · <strong>Space</strong> O(n). Weighted interval scheduling - sorting plus binary search is what makes the DP efficient.</p>
 </div>
 </details>
 <details class="dsa-prob" id="lc-4" data-pid="lc-4">
@@ -1169,8 +1170,8 @@ class Solution:
 <div class="p-body">
 <p class="wu-clarify"><strong>Problem.</strong> For each element, count how many later elements are smaller. <a href="https://leetcode.com/problems/count-of-smaller-numbers-after-self/" target="_blank" rel="noopener">LeetCode 315 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Count strictly smaller elements to the right? (Yes.) O(n log n) expected? (Yes.)</p>
-<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">This is counting inversions — merge sort can tally them.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Sort indices; when a right element merges before a left one, it's smaller than all remaining left elements.</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> Merge sort over indices (to attribute counts back to original positions). During each merge, when an element from the right half is placed before elements still remaining in the left half, it is smaller than them — accumulate that running right-count for each left element as it is merged.</p>
+<div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">This is counting inversions - merge sort can tally them.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Sort indices; when a right element merges before a left one, it's smaller than all remaining left elements.</div></details></div>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Merge sort over indices (to attribute counts back to original positions). During each merge, when an element from the right half is placed before elements still remaining in the left half, it is smaller than them - accumulate that running right-count for each left element as it is merged.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>count_smaller.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from typing import List
@@ -1217,7 +1218,7 @@ class Solution:
 <p class="wu-clarify"><strong>Problem.</strong> Count pairs <code>i &lt; j</code> with <code>nums[i] &gt; 2·nums[j]</code>. <a href="https://leetcode.com/problems/reverse-pairs/" target="_blank" rel="noopener">LeetCode 493 ↗</a></p>
 <p class="wu-clarify"><strong>Clarify:</strong> Strictly greater than twice? (Yes.) O(n log n) expected? (Yes.)</p>
 <div class="dsa-hints"><details class="dsa-hint"><summary>Hint 1</summary><div class="hint-body">Count qualifying pairs across the split during merge sort.</div></details><details class="dsa-hint"><summary>Hint 2</summary><div class="hint-body">Before merging two sorted halves, count for each left element how many right elements it beats (> 2×).</div></details></div>
-<p class="wu-approach"><span class="wu-section">How to think about it</span> Merge sort. Before merging two sorted halves, use a two-pointer scan to count, for each left element, how many right-half elements satisfy <code>left &gt; 2·right</code> — both halves being sorted makes this linear. Then merge normally. Sum counts across all levels.</p>
+<p class="wu-approach"><span class="wu-section">How to think about it</span> Merge sort. Before merging two sorted halves, use a two-pointer scan to count, for each left element, how many right-half elements satisfy <code>left &gt; 2·right</code> - both halves being sorted makes this linear. Then merge normally. Sum counts across all levels.</p>
 <div class="wu-solution code-block">
 <div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>reverse_pairs.py</span><button class="copy-btn">Copy</button></div>
 <pre><code>from typing import List
@@ -1239,7 +1240,7 @@ class Solution:
         return sort(0, len(nums))
 </code></pre>
 </div>
-<p><strong>Time</strong> O(n log n) · <strong>Space</strong> O(n). The counting scan is separate from the merge — a clean variation on inversion counting.</p>
+<p><strong>Time</strong> O(n log n) · <strong>Space</strong> O(n). The counting scan is separate from the merge - a clean variation on inversion counting.</p>
 </div>
 </details>
 </div>
@@ -1249,7 +1250,7 @@ class Solution:
 <li><strong>Intervals: which sort?</strong> By start to merge/insert; by end for greedy "keep the most / fewest arrows". State it explicitly.</li>
 <li><strong>Don't over-sort.</strong> For top-k or the k-th element, use a size-k heap (O(n log k), stream-friendly) or quickselect (O(n) average).</li>
 <li><strong>Bounded values?</strong> Counting/bucket sort is O(n) and beats comparison sort.</li>
-<li><strong>heapq is a min-heap</strong> — negate for max-heaps; the streaming median uses two heaps meeting in the middle.</li>
+<li><strong>heapq is a min-heap</strong> - negate for max-heaps; the streaming median uses two heaps meeting in the middle.</li>
 </ul>
 
 <h2 id="role-notes">5 · Role notes</h2>
@@ -1276,14 +1277,14 @@ class Solution:
 <h3 id="concept-checks">Concept checks</h3>
 <div class="quiz">
 <div class="q">Why does Non-overlapping Intervals sort by <em>end</em> time rather than start?</div>
-<div class="opt" data-correct="true">Keeping the interval that finishes earliest leaves the most room for later intervals — the provably optimal greedy choice</div>
+<div class="opt" data-correct="true">Keeping the interval that finishes earliest leaves the most room for later intervals - the provably optimal greedy choice</div>
 <div class="opt" data-correct="false">Because end times are always larger than start times</div>
 <div class="opt" data-correct="false">Because sorting by start is O(n²)</div>
 <div class="explain">This is activity selection: among overlapping options, the one ending soonest maximises remaining capacity. Sorting by start can force you to keep a long interval that blocks several short ones, which isn't optimal.</div>
 </div>
 <div class="quiz">
 <div class="q">You need the 5th largest of a million numbers. Why prefer a size-5 heap or quickselect over sorting?</div>
-<div class="opt" data-correct="true">Sorting is O(n log n); a size-k heap is O(n log k) and quickselect is O(n) average — both avoid ordering elements you don't care about</div>
+<div class="opt" data-correct="true">Sorting is O(n log n); a size-k heap is O(n log k) and quickselect is O(n) average - both avoid ordering elements you don't care about</div>
 <div class="opt" data-correct="false">Sorting can't handle a million numbers</div>
 <div class="opt" data-correct="false">Heaps are always faster than sorting for every task</div>
 <div class="explain">You only need one element's rank, not the full order. A size-k heap keeps just the k largest (O(n log k)); quickselect partitions toward the target and recurses one side (O(n) average). Full sorting wastes work ordering the other ~999,995 numbers.</div>
@@ -1303,5 +1304,5 @@ class Solution:
 <a class="prev" href="08-stacks-queues-deques.html"><div class="dir">← Previous</div><div class="ttl">08 · Stacks, Queues &amp; Deques</div></a>
 <a class="next" href="10-binary-search.html"><div class="dir">Next →</div><div class="ttl">10 · Binary Search</div></a>
 </div>
-</main><div class="toc-rail"><nav class="toc"></nav></div></div></div></div><script src="../assets/app.js?v=20260731b"></script><script src="../assets/sitenav.js?v=20260804b"></script><script src="../assets/enhance.js?v=20260804a"></script><script src="../assets/dsa-question-bank.js?v=20260727c"></script><script src="../assets/dsa-prep.js?v=20260727c"></script></body></html>
+</main><div class="toc-rail"><nav class="toc"></nav></div></div></div></div><script src="../assets/app.js?v=20260925c"></script><script src="../assets/sitenav.js?v=20260925a"></script><script src="../assets/enhance.js?v=20260925c"></script><script src="../assets/dsa-question-bank.js?v=20260727c"></script><script src="../assets/dsa-prep.js?v=20260727c"></script></body></html>
 <script src="../assets/genai-motion.js?v=20260728a"></script>

@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>08 · Irreversible actions | Understanding AI Agents</title>
+<meta name="description" content="Recommend versus execute, policy in code rather than in the prompt, idempotency keys derived from the request, and why the order of the checks is the design.">
+<link rel="icon" href="../../assets/brand/favicon.svg?v=20260925b" type="image/svg+xml">
+<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260925b" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260925b">
+<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260925b" sizes="180x180">
+<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260925b">
+<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260925b" color="#6f47f5">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="../../assets/styles.css?v=20260805a">
+<link href="../../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
+<link href="../../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
+<link href="../../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+<link href="../../assets/ir-theme.css?v=20260925c" rel="stylesheet"/>
+</head>
+<body data-curriculum-id="cx-08" data-page="cx-08">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="../../index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search this section…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Understanding AI Agents · CampusX / <b>08 · Irreversible actions</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> 08 · Safety</div>
+        <h1>Actions you cannot take back</h1>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~18 min read</span>
+          <span class="pill purple">Pairs with · <a href="../lessons/0008-irreversible-actions.html">Lesson 8 · Irreversible actions</a></span>
+        </div>
+
+<!-- ================= 1 ================= -->
+<h2 id="known">1 · What you already know</h2>
+<p>From page 3 your dispatch layer validates arguments and checks authorisation.
+From page 7 it retries transient failures.</p>
+<p><b>Both assume the action can be attempted safely.</b> This page is about the actions
+where that assumption does not hold: issuing a refund, sending an email, deleting a
+record.</p>
+
+<!-- ================= 2 ================= -->
+<h2 id="breaks">2 · What breaks now</h2>
+<p>Add one tool to the agent from page 3.</p>
+
+<p>Everything that was previously harmless is now dangerous, and the code did not
+change.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>What was fine before</th><th>What it means now</th></tr></thead>
+<tbody>
+<tr><td>A retry after a timeout</td><td>Two refunds for one order</td></tr>
+<tr><td>An injected instruction in a ticket</td><td>A refund a customer wrote themselves</td></tr>
+<tr><td>A confidently wrong answer</td><td>A confidently wrong payment</td></tr>
+<tr><td>A step-limit truncation</td><td>A partial workflow with money already moved</td></tr>
+</tbody>
+</table>
+</div>
+<p>Recall the injected ticket from page 3, which was inert because there was no refund tool.
+<b>There is one now</b>, and the same fixture is no longer harmless.</p>
+
+<!-- ================= 3 ================= -->
+<h2 id="breakdown">3 · Simple breakdown - An approval gate vs full autonomy</h2>
+<section class="breakdown">
+
+<h3 class="bd-tech"><span class="bd-tag">A</span> An approval gate</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> An approval gate is a required step where a person authorises a specific action, with specific arguments, before your code performs it.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It stops an agent from performing an action whose cost, if wrong, is higher than the cost of waiting for a person.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 138" role="img" aria-labelledby="cx8-exec-t cx8-exec-d">
+<title id="cx8-exec-t">The order of the checks</title>
+<desc id="cx8-exec-d">Validation, policy and idempotency all run before a person is asked. A dry run stops and reports here. Only an approved, non-duplicate, policy-permitted action reaches execution, and every execution writes an audit entry.</desc>
+<defs><marker id="ah-cx8-exec" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="40" width="157.6" height="56" rx="12"></rect>
+<rect class="box b2" x="191.6" y="40" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M172.6 68 H187.6" marker-end="url(#ah-cx8-exec)"></path>
+<rect class="box b3" x="371.2" y="40" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M352.2 68 H367.2" marker-end="url(#ah-cx8-exec)"></path>
+<rect class="box b4" x="550.8" y="40" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M531.8 68 H546.8" marker-end="url(#ah-cx8-exec)"></path>
+<rect class="box b5" x="730.4" y="40" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M711.4 68 H726.4" marker-end="url(#ah-cx8-exec)"></path>
+<text class="lbl" x="90.8" y="64">exists?</text>
+<text class="lbl" x="90.8" y="82">validate</text>
+<text class="lbl" x="270.4" y="64">permitted?</text>
+<text class="lbl" x="270.4" y="82">policy code</text>
+<text class="lbl" x="450" y="64">already done?</text>
+<text class="lbl" x="450" y="82">idempotency</text>
+<text class="lbl" x="629.6" y="64">approved?</text>
+<text class="lbl" x="629.6" y="82">the gate</text>
+<text class="lbl" x="809.2" y="64">execute</text>
+<text class="lbl" x="809.2" y="82">and audit</text>
+<circle class="pkt" cx="90.8" cy="18" r="7"></circle>
+<text class="cap" x="450" y="130">cheap and certain checks first; the human is the most expensive step</text>
+</svg>
+
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> A pending-action record, a review interface, a token bound to the exact arguments, and a redemption step that marks the token used.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> The pending action and its token are durable, because the approval may arrive minutes or hours after the run that requested it.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> It adds latency measured in minutes, and it does not scale to high volume. Reviewers who see too many requests approve without reading, which removes the protection while keeping the cost.</p>
+
+<h3 class="bd-tech"><span class="bd-tag">B</span> Full autonomy</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> Full autonomy is letting the agent perform the action as soon as its own checks pass, with no human in the path.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It handles volume that no review process could absorb, and returns an answer in seconds rather than minutes.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b> Validation, policy and idempotency run in code, and the action executes immediately if all of them pass.</p>
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> The same checks as the gate, minus the pending record and the token.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> Only what the action itself writes, plus the audit entry.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> Every wrong action reaches the real system. Recovery depends entirely on the action being reversible, and some are not.</p>
+
+<h3 class="bd-diff">The core differences</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>An approval gate</th><th>Full autonomy</th></tr></thead>
+<tbody>
+<tr><th>Latency to effect</th><td>Minutes to hours</td><td>Seconds</td></tr>
+<tr><th>Cost of a wrong action</th><td>Caught before the effect</td><td>Applied, then must be undone</td></tr>
+<tr><th>Scales with volume</th><td>No, reviewers saturate</td><td>Yes</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 class="bd-short">In short - which one to choose</h3>
+<ul>
+<li>Use an <b>approval gate</b> when the action is irreversible and its cost when wrong exceeds the cost of a delay.</li>
+<li>Use <b>full autonomy</b> when the action is reversible, or its cost is low enough that catching it afterwards is acceptable.</li>
+<li>Decide per action, never per agent. <b>Read is autonomous; refund is gated</b>, in the same system.</li>
+</ul>
+</section>
+
+<!-- ================= 4 ================= -->
+<h2 id="without">4 · Without the technology</h2>
+<p>The version most people write first.</p>
+
+<p>There is a policy check, so this looks careful. Four things are still wrong:</p>
+<ul>
+<li><b>A retry refunds twice.</b> Nothing recognises the second attempt as the same
+operation.</li>
+<li><b>There is no way to ask what would happen</b> without it happening.</li>
+<li><b>No person is involved</b>, however large the amount.</li>
+<li><b>Nothing durable records it.</b> The return value is the only evidence, and it dies
+with the run.</li>
+</ul>
+<p>The policy check is real and it is the smallest part of what this needs.</p>
+
+<!-- ================= 5 ================= -->
+<h2 id="mechanics">5 · Runtime mechanics</h2>
+<p>Six steps, in this order. The order is the design.</p>
+<ol>
+<li><b>Does the target exist?</b> Semantic validation, beyond the argument schema.</li>
+<li><b>Does policy permit it?</b> Evaluated in code, never in the prompt.</li>
+<li><b>Has this exact action already run?</b> Idempotency, by a key derived from the
+request.</li>
+<li><b>Is this a dry run?</b> If so, report the decision and stop here.</li>
+<li><b>Is there a valid approval?</b> A token bound to these arguments, unexpired and
+unused.</li>
+<li><b>Execute, record, audit.</b> The effect, its result, and an append-only entry.</li>
+</ol>
+<p>Steps 2 and 3 run before step 5 deliberately. <b>Asking a person to approve something
+policy forbids trains them to approve without reading.</b></p>
+
+<!-- ================= 7 ================= -->
+<h2 id="components">6 · The components, one at a time</h2>
+<h3>The idempotency key</h3>
+<p>Derived from the request content, never random and never time-based.</p>
+
+<p><b>A UUID per attempt gives every retry a fresh key</b>, so the second attempt looks like
+a new refund. That single line is the most common way idempotency is got wrong.</p>
+
+<h3>Policy in code</h3>
+
+<p>It returns a reason as well as a decision, because the reason is what the model needs in
+order to explain the refusal.</p>
+
+<h3>The approval token</h3>
+
+<p>Bound to the idempotency key, so it authorises <i>that</i> refund and no other. Short
+expiry, single use.</p>
+
+<h3>The audit entry</h3>
+<p>Append-only, written after the effect, holding the action, the key, the arguments, who
+approved it, and the result. <b>If it is not written, the action is unexplainable
+afterwards.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 228" role="img" aria-labelledby="cx8-idem-t cx8-idem-d">
+<title id="cx8-idem-t">Where the idempotency key comes from</title>
+<desc id="cx8-idem-d">A key derived from the request content is identical on every retry, so the second attempt is recognised and ignored. A random or time-based key differs every time, so each retry looks like a brand new refund.</desc>
+<defs><marker id="ah-cx8-idem" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="95" width="273.45" height="56" rx="12"></rect>
+<text class="lbl" x="148.725" y="119">retry of the</text>
+<text class="lbl" x="148.725" y="137">same refund</text>
+<rect class="box b2" x="329.45" y="95" width="291.45" height="56" rx="12"></rect>
+<text class="lbl" x="475.175" y="119">how is the key</text>
+<text class="lbl" x="475.175" y="137">derived?</text>
+<path class="arw" d="M290.45 123 H325.45" marker-end="url(#ah-cx8-idem)"></path>
+<rect class="box b3" x="672.9" y="58" width="215.1" height="56" rx="12"></rect>
+<text class="lbl" x="780.45" y="82">from the request content</text>
+<text class="lbl" x="780.45" y="100">same key -- recognised, ignored</text>
+<path class="arw" d="M623.9 123 C646.9 123, 646.9 86, 668.9 86" marker-end="url(#ah-cx8-idem)"></path>
+<rect class="box b4" x="672.9" y="132" width="215.1" height="56" rx="12"></rect>
+<text class="lbl" x="780.45" y="156">random or timestamped</text>
+<text class="lbl" x="780.45" y="174">new key -- charged twice</text>
+<path class="arw" d="M623.9 123 C646.9 123, 646.9 160, 668.9 160" marker-end="url(#ah-cx8-idem)"></path>
+<text class="cap" x="450" y="222">a random key implements the mechanism and disables it in the same line</text>
+</svg>
+
+<!-- ================= 8 ================= -->
+<h2 id="state">7 · State and data flow</h2>
+<ol>
+<li><b>What data is state?</b> The idempotency ledger, pending approvals, and the audit log.</li>
+<li><b>Who writes each field?</b> The tool writes the ledger and the audit; a reviewer
+writes the approval.</li>
+<li><b>Who reads it?</b> The tool, on every attempt, before doing anything.</li>
+<li><b>Replaced, appended or merged?</b> All three are append-only. Nothing is updated in
+place.</li>
+<li><b>What reducer controls merging?</b> None. The key is unique, and a second write is a
+duplicate.</li>
+<li><b>Only in process memory?</b> No. All three must be durable, or the guarantee is
+fiction.</li>
+<li><b>Is it checkpointed?</b> The ledger is the checkpoint for this action.</li>
+<li><b>Is it in a database?</b> Yes, and it must survive a process restart.</li>
+<li><b>How long does it survive?</b> The ledger for at least the retry window; the audit
+for as long as your retention policy requires.</li>
+<li><b>What retrieves it again?</b> The idempotency key, from any process.</li>
+</ol>
+<p>Row 6 is the one that fails in practice. <b>An in-memory ledger stops working the moment
+you run two workers</b>, and duplicate refunds resume immediately.</p>
+
+<!-- ================= 10 ================= -->
+<h2 id="trace">8 · Trace</h2>
+<p>Every branch, run against the same request.</p>
+
+<p>Read the last two lines together. <b>The same call twice moved money once</b>, and the
+second attempt reported success without repeating the effect.</p>
+
+<!-- ================= 11 ================= -->
+<h2 id="break">9 · Break it</h2>
+<p>Reorder two checks: move the approval gate before the policy check.</p>
+
+<p>Nothing is obviously broken. The refund still cannot happen without both. But now a
+request for a 90-day-old order reaches a reviewer.</p>
+
+<p>All three are outside the refund window and will be denied by policy after approval.
+<b>The reviewer is being asked to approve actions that cannot happen</b>, and after a week
+of that, they stop reading the arguments.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 174" role="img" aria-labelledby="cx8-order-t cx8-order-d">
+<title id="cx8-order-t">The wrong check order</title>
+<desc id="cx8-order-d">The approval gate runs before the policy check, so requests that policy will deny still reach a reviewer. The refund is correctly refused at the end, but the reviewer has been asked to approve an action that could never happen.</desc>
+<defs><marker id="ah-cx8-order" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="52" width="202.5" height="56" rx="12"></rect>
+<rect class="box b2" x="236.5" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M217.5 80 H232.5" marker-end="url(#ah-cx8-order)"></path>
+<rect class="box b3" x="461" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M442 80 H457" marker-end="url(#ah-cx8-order)"></path>
+<rect class="box fail" x="685.5" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M666.5 80 H681.5" marker-end="url(#ah-cx8-order)"></path>
+<text class="lbl" x="113.25" y="76">refund</text>
+<text class="lbl" x="113.25" y="94">requested</text>
+<text class="lbl" x="337.75" y="76">approval gate</text>
+<text class="lbl" x="337.75" y="94">asks a human</text>
+<text class="lbl" x="562.25" y="76">policy denies</text>
+<text class="lbl" x="562.25" y="94">it anyway</text>
+<text class="lbl" x="786.75" y="76">reviewer learns</text>
+<text class="lbl" x="786.75" y="94">not to read</text>
+<path class="xmark" d="M768.75 122 L804.75 150 M804.75 122 L768.75 150"></path>
+<text class="cap rescue" x="450" y="166">nothing wrong was paid out -- the damage is to the reviewer's attention</text>
+</svg>
+
+<!-- ================= 12 ================= -->
+<h2 id="fix">10 · Fix it</h2>
+<p><b>1 · Put the certain checks first.</b> Anything decidable in code is decided
+before a person is involved.</p>
+
+<p><b>2 · Show the reviewer the exact arguments</b>, not a model-written summary of them. A summary is another place for an error to enter.</p>
+
+<p><b>3 · Bind the token to the key</b>, so approving one refund cannot authorise a different
+one.</p>
+
+<p><b>4 · Measure the approval rate.</b> If reviewers approve 99% of requests, the gate is
+theatre and the policy should absorb the decision instead.</p>
+
+<!-- ================= 13 ================= -->
+<h2 id="production">11 · Production version</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Concern</th><th>What you do</th></tr></thead>
+<tbody>
+<tr><td>Default to recommend</td><td><code>dry_run=True</code> by default. Executing takes a deliberate argument</td></tr>
+<tr><td>Idempotency key</td><td>Derived from the request. Never random, never time-based</td></tr>
+<tr><td>Durable ledger</td><td>In a database, not in memory. Two workers otherwise refund twice</td></tr>
+<tr><td>Policy in code</td><td>A function, returning a decision and a reason. Never the system prompt</td></tr>
+<tr><td>Check order</td><td>Certain and cheap first; the human last</td></tr>
+<tr><td>Token binding</td><td>Bound to the idempotency key, short expiry, single use</td></tr>
+<tr><td>Append-only audit</td><td>Action, arguments, key, approver, result, run id. Never updated in place</td></tr>
+<tr><td>Approval rate</td><td>Tracked. A gate approving everything is cost without protection</td></tr>
+<tr><td>Reversal path</td><td>Know how to undo it before you ship it, and test that path</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ================= 14 ================= -->
+<h2 id="comparison">12 · Comparison</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Approval gate</th><th>Full autonomy</th><th>Autonomy with limits</th></tr></thead>
+<tbody>
+<tr><th>Latency to effect</th><td>Minutes to hours</td><td><b>Seconds</b></td><td>Seconds</td></tr>
+<tr><th>Wrong action reaches the system</th><td>No</td><td>Yes</td><td>Only below the limit</td></tr>
+<tr><th>Scales with volume</th><td>No</td><td><b>Yes</b></td><td><b>Yes</b></td></tr>
+<tr><th>Reviewer fatigue</th><td>A real failure mode</td><td>None</td><td>Only on exceptions</td></tr>
+<tr><th>Use it for</th><td>Large, irreversible actions</td><td>Reversible, low-cost actions</td><td><b>Most real systems</b></td></tr>
+</tbody>
+</table>
+</div>
+<p>The last column is what production usually looks like. <b>Refunds under £50 execute
+automatically; anything above goes to a person.</b> That keeps the gate meaningful by
+keeping the queue short.</p>
+
+<!-- ================= 15 ================= -->
+<div class="carry"><b>New questions</b> written for this page: it is new, so there was nothing to carry over.</div>
+<h2 id="interview">13 &middot; Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What is the difference between recommending and executing? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>A recommendation runs every check and reports what would happen, changing nothing. An execution actually performs the action. Making recommend the default means a bug produces a wrong report rather than a wrong refund.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  Why does policy belong in code rather than in the prompt? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>A prompt instruction is text that other text can argue with. A function cannot be persuaded. If policy lives in the system prompt, a sufficiently convincing ticket is an attack surface; if it lives in a function, it is not.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  What is an idempotency key, and where must it come from? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>A value that identifies one logical operation, so a repeat is recognised and ignored. It must be derived from the request content - the order, the amount, the reason. A random or time-based key is different on every attempt, which implements the mechanism and disables it at the same time.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  Why do the policy and idempotency checks run before the approval gate? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>There is no point asking a person to approve something policy forbids, or something that has already happened. Sending impossible requests to a reviewer trains them to approve without reading, which destroys the value of the gate.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  Design the check order for an agent that can issue refunds. <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Validate the request exists and is well-formed. Check policy in code. Check idempotency. Stop and report if this is a dry run. Verify a valid, unexpired, single-use approval. Then execute, record the result, and write an append-only audit entry. Cheap and certain checks first, the human last, because the human is the most expensive step.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  How do you make an approval token safe? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Bind it to the exact action: the tool, the arguments, and the idempotency key. Give it a short expiry and mark it single-use on redemption. An approval that is not bound to specific arguments can be replayed against a different amount, which is the same failure as a confused deputy.</p></div></details>
+
+<!-- ================= 16 ================= -->
+<h2 id="short">14 · In short, and what comes next</h2>
+<p class="bd-choose">Remember these six:</p>
+<ul>
+<li>Recommend by default. Executing should require a deliberate argument.</li>
+<li>Policy lives in a function, because a function cannot be argued with.</li>
+<li>Derive the idempotency key from the request. A random key disables the mechanism.</li>
+<li>The ledger must be durable, or two workers will refund twice.</li>
+<li>Certain checks before the human, always. The human is the expensive step.</li>
+<li>Bind the approval token to the exact action, with a short expiry and one use.</li>
+</ul>
+<div class="callout key">
+<div class="c-ico">🔑</div>
+<div class="c-body"><div class="c-title">The one idea to remember</div>
+<p><b>The agent proposes; a separate, checked path disposes.</b> Keeping execution outside
+the loop means a looping or truncated run cannot move money.</p></div>
+</div>
+<p><b>Next:</b> page 9 is about someone deliberately trying to make the agent use these
+tools against you.</p>
+
+<div class="page-nav" data-page-nav>
+<a href="07-reliability.html"><div class="dir">← Previous</div><div class="ttl">07 · Reliability</div></a>
+          <a class="next" href="09-security.html"><div class="dir">Next →</div><div class="ttl">09 · Security</div></a>
+</div>
+
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script>
+window.__pageNav = {
+  navLabel: "Understanding AI Agents · CampusX",
+  here: "campusx/08-irreversible-actions.html",
+  base: "../",
+  pages: [
+    { file: "campusx/index.html", title: "Section index", num: "✦", kw: "campusx agents index" }
+  ]
+};
+</script>
+<script src="../../assets/app.js?v=20260925c"></script>
+<script src="../../assets/sitenav.js?v=20260925a"></script>
+<script src="../../assets/enhance.js?v=20260925c"></script>
+<script src="../../assets/genai-motion.js?v=20260728a"></script>
+<script src="../../assets/glossary.js?v=20260802b"></script>
+</body>
+</html>

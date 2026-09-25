@@ -1,5 +1,5 @@
 """
-persistence.py — surviving a crash, and the versioning that makes a rollback possible.
+persistence.py - surviving a crash, and the versioning that makes a rollback possible.
 
 Lesson 14. Everything so far has lived in memory. A crash at step 3 loses the
 work, and worse, loses the *knowledge that work happened* -- including whether a

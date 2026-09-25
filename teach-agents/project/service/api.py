@@ -1,5 +1,5 @@
 """
-service/api.py — the agent as a service.
+service/api.py - the agent as a service.
 
 Lesson 14. Turning the agent into an HTTP service forces four decisions that an
 in-process loop lets you avoid.

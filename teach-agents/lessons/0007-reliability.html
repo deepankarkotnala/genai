@@ -4,21 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f4f5f8">
-<title>Lesson 7 · Reliability and safe termination — Understanding AI Agents</title>
+<title>Lesson 7 · Reliability and safe termination | Understanding AI Agents</title>
 <meta name="description" content="Loop detection, oscillation, timeouts, retry budgets, partial failure and safe termination. Break the agent five ways and watch each control catch it. Includes the production loop-forever debugging drill.">
-<link rel="icon" href="../../assets/brand/favicon.svg?v=20260727c" type="image/svg+xml">
-<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260727c" sizes="32x32" type="image/png">
-<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260727c">
-<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260727c" sizes="180x180">
-<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260727c">
-<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260727c" color="#6f47f5">
+<link rel="icon" href="../../assets/brand/favicon.svg?v=20260925b" type="image/svg+xml">
+<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260925b" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260925b">
+<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260925b" sizes="180x180">
+<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260925b">
+<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260925b" color="#6f47f5">
 <meta name="application-name" content="Interview Preparation">
 <meta name="apple-mobile-web-app-title" content="Interview Prep">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var mob=!!(window.matchMedia&&window.matchMedia("(max-width:860px)").matches);var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(mob?"s":"xs");var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition — CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
 <link rel="stylesheet" href="../../assets/styles.css?v=20260805a">
-<link href="../../assets/office-theme.css?v=20260805c" rel="stylesheet"/>
+<link href="../../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="../../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <link href="../../assets/glossary.css?v=20260802b" rel="stylesheet"/>
 <!-- Release 2 Stage 2c pilot: the manifest loads first, the renderer second.
@@ -28,14 +28,15 @@
      only after page, route and fragment have all resolved. -->
 <script defer src="../../assets/curriculum.js?v=20260804c"></script>
 <script defer src="../../assets/page-nav.js?v=20260804c"></script>
+<link href="../../assets/ir-theme.css?v=20260925c" rel="stylesheet"/>
 </head>
 <body data-curriculum-id="ta-l07" data-page="ta-l07">
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
-<a class="brand-link" href="../../index.html" aria-label="Switch job home">
-<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260727c" alt=""/></span>
-<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+<a class="brand-link" href="../../index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
 </a>
 </div>
     <div class="search-wrap">
@@ -73,9 +74,9 @@
           <div class="c-ico">🎯</div>
           <div class="c-body"><div class="c-title">By the end of this lesson you will be able to</div>
           <ul>
-            <li>Answer <em>"your agent loops forever in production — debug it"</em> from experience, not theory.</li>
+            <li>Answer <em>"your agent loops forever in production - debug it"</em> from experience, not theory.</li>
             <li>Distinguish <strong>identical repeats</strong> from <strong>oscillation</strong>, and detect both.</li>
-            <li>Say what a timeout actually does — and what it does <em>not</em> do.</li>
+            <li>Say what a timeout actually does - and what it does <em>not</em> do.</li>
             <li>Say which failures are worth retrying and which are not, and why.</li>
             <li>Handle the failure nobody plans for: the call that <em>partly</em> worked.</li>
             <li>Guarantee that every run ends in a named outcome a human can act on.</li>
@@ -111,6 +112,33 @@
           <div class="c-ico">🔑</div>
           <div class="c-body"><div class="c-title">An agent with no escalation path has only two options</div>
           <p>Guess, or loop. Both are worse than handing over. "It cannot cope with this" is only a failure if there is nowhere for it to go.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 302" role="img" aria-labelledby="l7-escalate-t l7-escalate-d">
+<title id="l7-escalate-t">Escalation is the third option</title>
+<desc id="l7-escalate-d">Without an escalation path an agent that cannot cope has only two moves: invent an answer, or keep trying. Escalation turns not coping into a normal, recorded outcome.</desc>
+<defs><marker id="ah-l7-escalate" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="132" width="300.9" height="56" rx="12"></rect>
+<text class="lbl" x="162.45" y="156">the agent</text>
+<text class="lbl" x="162.45" y="174">cannot proceed</text>
+<rect class="box b2" x="356.9" y="132" width="318.9" height="56" rx="12"></rect>
+<text class="lbl" x="516.35" y="156">is there an</text>
+<text class="lbl" x="516.35" y="174">escalation path?</text>
+<path class="arw" d="M317.9 160 H352.9" marker-end="url(#ah-l7-escalate)"></path>
+<rect class="box b3" x="727.8" y="58" width="160.2" height="56" rx="12"></rect>
+<text class="lbl" x="807.9" y="82">no -- guess an answer</text>
+<text class="lbl" x="807.9" y="100">confidently wrong</text>
+<path class="arw" d="M678.8 160 C701.8 160, 701.8 86, 723.8 86" marker-end="url(#ah-l7-escalate)"></path>
+<rect class="box b4" x="727.8" y="132" width="160.2" height="56" rx="12"></rect>
+<text class="lbl" x="807.9" y="156">no -- keep trying</text>
+<text class="lbl" x="807.9" y="174">burns the budget</text>
+<path class="arw" d="M678.8 160 C701.8 160, 701.8 160, 723.8 160" marker-end="url(#ah-l7-escalate)"></path>
+<rect class="box b5" x="727.8" y="206" width="160.2" height="56" rx="12"></rect>
+<text class="lbl" x="807.9" y="230">yes -- hand to a human</text>
+<text class="lbl" x="807.9" y="248">recorded, honest</text>
+<path class="arw" d="M678.8 160 C701.8 160, 701.8 234, 723.8 234" marker-end="url(#ah-l7-escalate)"></path>
+<text class="cap" x="450" y="296">escalate() touches nothing external, because a fallible fallback is not a fallback</text>
+</svg>
+
           <p>And note the one design rule on it: <strong>escalation must never fail.</strong> It is the fallback for every other failure, and a fallible fallback is not a fallback. So <code>escalate()</code> does no lookups, touches no external system, and validates nothing beyond its own arguments.</p></div>
         </div>
 
@@ -132,14 +160,36 @@
 
         <h2 id="timeout">4 · What a timeout is, precisely</h2>
 
-<pre><code>future = _POOL.submit(_call, tool, args)
-result = future.result(timeout=timeout_s)
-</code></pre>
+<svg class="bd-svg" viewBox="0 0 900 174" role="img" aria-labelledby="l7-timeout-t l7-timeout-d">
+<title id="l7-timeout-t">A timeout bounds your wait, not their work</title>
+<desc id="l7-timeout-d">A timeout stops your process waiting. The call you gave up on may still be running on the other side and may still complete, which is why a retry needs idempotency to be safe.</desc>
+<defs><marker id="ah-l7-timeout" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="52" width="157.6" height="56" rx="12"></rect>
+<rect class="box fail" x="191.6" y="52" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M172.6 80 H187.6" marker-end="url(#ah-l7-timeout)"></path>
+<rect class="box after b3" x="371.2" y="52" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M352.2 80 H367.2" marker-end="url(#ah-l7-timeout)"></path>
+<rect class="box after b4" x="550.8" y="52" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M531.8 80 H546.8" marker-end="url(#ah-l7-timeout)"></path>
+<rect class="box after b5" x="730.4" y="52" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M711.4 80 H726.4" marker-end="url(#ah-l7-timeout)"></path>
+<text class="lbl" x="90.8" y="76">you call</text>
+<text class="lbl" x="90.8" y="94">the service</text>
+<text class="lbl" x="270.4" y="76">you stop waiting</text>
+<text class="lbl" x="270.4" y="94">at 5s</text>
+<text class="lbl" x="450" y="76">their work</text>
+<text class="lbl" x="450" y="94">continues</text>
+<text class="lbl" x="629.6" y="85">you retry</text>
+<text class="lbl" x="809.2" y="76">two refunds</text>
+<text class="lbl" x="809.2" y="94">if not idempotent</text>
+<path class="xmark" d="M252.4 122 L288.4 150 M288.4 122 L252.4 150"></path>
+<text class="cap rescue" x="450" y="166">giving up waiting is not the same as the work being cancelled</text>
+</svg>
 
         <div class="callout danger">
           <div class="c-ico">⚠️</div>
           <div class="c-body"><div class="c-title">A timeout stops you waiting. It does not stop the work.</div>
-          <p>The thread runs on. That is not a flaw in this code — it is what a timeout is on any platform without cancellation. Two consequences:</p>
+          <p>The thread runs on. That is not a flaw in this code - it is what a timeout is on any platform without cancellation. Two consequences:</p>
           <p><strong>1 · A hung tool leaks a thread.</strong> Hence the bounded pool. A real system needs cancellable I/O, not just a wait limit.</p>
           <p><strong>2 · For anything with side effects, a timeout means you do not know whether it happened.</strong> That is Lesson 8's whole problem, and it is why our timeout message says so explicitly: <em>"Whether it took effect is unknown."</em></p>
           <p>Saying this out loud in an interview is worth real credit, because most candidates describe a timeout as though it cancels something.</p></div>
@@ -149,66 +199,42 @@ result = future.result(timeout=timeout_s)
 
         <h2 id="retry">5 · Retry only what can succeed</h2>
 
-<pre><code>except (ConnectionError, OSError) as exc:      # transient -> retry with backoff
-    delay = BACKOFF_BASE_S * (2 ** (attempt - 1))
-...
-except ToolError as exc:                       # bad argument -> return immediately
-    return {"error": "invalid_call", "message": str(exc)}, notes
-</code></pre>
-
-        <p>A malformed call cannot succeed on attempt two. Retrying it three times burns the budget and produces the identical error, slower. <strong>Classify the failure before deciding the response</strong> — the same 4xx-versus-5xx instinct you already have.</p>
+        <p>A malformed call cannot succeed on attempt two. Retrying it three times burns the budget and produces the identical error, slower. <strong>Classify the failure before deciding the response</strong> - the same 4xx-versus-5xx instinct you already have.</p>
 
         <p>Note also that the notes record the difference: <em>"lookup_order succeeded on attempt 3"</em>. A run that works but retries constantly looks identical to a healthy one unless you record it, and "it works, with 40% retries" is a real incident waiting to become an outage.</p>
 
         <h2 id="loops">6 · Repeats and oscillation are different bugs</h2>
 
-<pre><code>counts[sig] = counts.get(sig, 0) + 1
-if counts[sig] &gt; REPEAT_LIMIT:          # same tool, same arguments, third time
-    return finish(BLOCKED, ...)
-</code></pre>
-
-<pre><code>return (window[-1] == window[-3] and window[-2] == window[-4]
-        and window[-1] != window[-2])   # A,B,A,B
-</code></pre>
-
         <p>Repeat detection catches "same call again". <strong>Oscillation catches the subtler version:</strong> two calls alternating forever, each one novel to a check that only compares against the immediately previous call. An agent with contradictory instructions produces this, and it will burn a 40-step budget looking busy.</p>
 
-        <h2 id="run">7 · Break it — five worlds, one goal</h2>
+<svg class="bd-svg" viewBox="0 0 900 168" role="img" aria-labelledby="l7-osc-t l7-osc-d">
+<title id="l7-osc-t">Oscillation: A, B, A, B</title>
+<desc id="l7-osc-d">Two calls alternate. A check that only compares a call against the one immediately before it sees a different call every time, so it never fires, and the run continues until the step limit stops it.</desc>
+<defs><marker id="ah-l7-osc" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker><marker id="ah-l7-oscp" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--accent)"></path></marker></defs>
+<path class="loop" d="M629.6 62 C629.6 16, 90.8 16, 90.8 54" marker-end="url(#ah-l7-oscp)"></path>
+<text class="loop-lbl" x="360.2" y="14">each call differs from the previous one, so a repeat check never fires</text>
+<rect class="box b1" x="12" y="62" width="157.6" height="56" rx="12"></rect>
+<rect class="box b2" x="191.6" y="62" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M172.6 90 H187.6" marker-end="url(#ah-l7-osc)"></path>
+<rect class="box b3" x="371.2" y="62" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M352.2 90 H367.2" marker-end="url(#ah-l7-osc)"></path>
+<rect class="box b4" x="550.8" y="62" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M531.8 90 H546.8" marker-end="url(#ah-l7-osc)"></path>
+<rect class="box b5" x="730.4" y="62" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M711.4 90 H726.4" marker-end="url(#ah-l7-osc)"></path>
+<text class="lbl" x="90.8" y="95">call A</text>
+<text class="lbl" x="270.4" y="95">call B</text>
+<text class="lbl" x="450" y="86">call A</text>
+<text class="lbl" x="450" y="104">again</text>
+<text class="lbl" x="629.6" y="86">call B</text>
+<text class="lbl" x="629.6" y="104">again</text>
+<text class="lbl" x="809.2" y="95">step limit</text>
+<text class="cap" x="450" y="160">detecting this needs a window of four, not a comparison with the last call</text>
+</svg>
 
-<pre><code>cd teach-agents/project
-python steps/l08_safe_refund.py --faults
-</code></pre>
+        <h2 id="run">7 · Break it - five worlds, one goal</h2>
 
-<pre><code>  healthy
-    outcome   : resolved  (needs_human=False)
-    tools     : read_ticket -&gt; lookup_order -&gt; search_kb -&gt; draft_reply
-
-  lookup_order flaky (2 failures)
-    outcome   : resolved  (needs_human=False)
-    control   : lookup_order attempt 1 failed (...); retry in 0.05s
-    control   : lookup_order attempt 2 failed (...); retry in 0.10s
-    control   : lookup_order succeeded on attempt 3
-
-  search_kb unavailable
-    outcome   : escalated  (needs_human=True)
-    control   : search_kb failed all 3 attempts
-    answer    : Escalated TCK-1001 to a human (high urgency): Could not complete search_kb…
-
-  lookup_order slow, 1s limit
-    outcome   : escalated  (needs_human=True)
-    control   : lookup_order timed out after 1.0s; not retried
-
-  lookup_order partial data
-    outcome   : escalated  (needs_human=True)
-    control   : lookup_order returned incomplete data
-
-  step budget of 2
-    outcome   : exhausted  (needs_human=True)
-    answer    : Stopping without a resolution: the step budget ran out.
-                Established so far: read_ticket, lookup_order.
-</code></pre>
-
-        <p>Every row ends in a <strong>named outcome</strong> — <code>resolved</code>, <code>escalated</code>, <code>exhausted</code>, <code>blocked</code> — and <code>needs_human</code> tells the caller whether to queue it. None ends in silence or a traceback.</p>
+        <p>Every row ends in a <strong>named outcome</strong> - <code>resolved</code>, <code>escalated</code>, <code>exhausted</code>, <code>blocked</code> - and <code>needs_human</code> tells the caller whether to queue it. None ends in silence or a traceback.</p>
 
         <p>Note the last one carries <em>"Established so far: read_ticket, lookup_order"</em>. A human picking this up should not have to redo work the agent already did. A bare "failed" throws all of it away.</p>
 
@@ -217,17 +243,11 @@ python steps/l08_safe_refund.py --faults
         <div class="callout danger">
           <div class="c-ico">🐛</div>
           <div class="c-body"><div class="c-title">A real bug from building this lesson</div>
-          <p>With <code>partial</code> injection, <code>lookup_order</code> returned a well-shaped result missing <code>refund_eligible</code>. Nothing raised. The controller noted <em>"returned incomplete data"</em> — and the run still finished <code>resolved</code>, with this in the answer:</p>
-<pre><code>Order ORD-5581 totals 120.0 USD and refund_eligible=None.
-</code></pre>
+          <p>With <code>partial</code> injection, <code>lookup_order</code> returned a well-shaped result missing <code>refund_eligible</code>. Nothing raised. The controller noted <em>"returned incomplete data"</em> - and the run still finished <code>resolved</code>, with this in the answer.</p>
+
           <p>A customer-facing summary asserting eligibility it never actually read, reported as a success.</p>
           <p>The fix needed <strong>two layers</strong>, and that is the lesson: the controller <em>detects</em> the incomplete result; the agent's own rules <em>refuse to proceed on it</em>. Detection without a policy that acts on it is decoration.</p>
-<pre><code>incomplete = [name for name, res in observed.items() if res.get("_partial")]
-if incomplete:
-    return ToolCall("escalate", {..., "reason":
-        f"{', '.join(incomplete)} returned incomplete data, so "
-        "eligibility could not be confirmed."})
-</code></pre>
+
           <p>Partial success is the most dangerous failure mode in any distributed system, and agents make it worse: a missing field becomes <code>None</code>, <code>None</code> gets formatted into prose, and prose reads as fact.</p></div>
         </div>
 
@@ -236,11 +256,9 @@ if incomplete:
         <p>You will be asked this. Do it now, with real output.</p>
 
         <div class="steps">
-          <p><strong>1 · Reproduce the identical repeat.</strong> Write a backend that always returns the same tool call, and run it with <code>max_steps=20</code>:</p>
-<pre><code>outcome  : blocked
-control  : blocked repeat: read_ticket called 3x identically
-</code></pre>
-          <p>Notice it stopped at 3 steps, not 20. <strong>A control that only fires when the budget runs out is a limit in name only</strong> — by then you have paid for the whole run.</p>
+          <p><strong>1 · Reproduce the identical repeat.</strong> Write a backend that always returns the same tool call, and run it with <code>max_steps=20</code>.</p>
+
+          <p>Notice it stopped at 3 steps, not 20. <strong>A control that only fires when the budget runs out is a limit in name only</strong> - by then you have paid for the whole run.</p>
 
           <p><strong>2 · Reproduce the oscillation.</strong> Alternate two ticket ids. Repeat detection never fires; oscillation detection does.</p>
 
@@ -249,69 +267,69 @@ control  : blocked repeat: read_ticket called 3x identically
 
         <h2 id="production">10 · The production concern</h2>
 
-        <p><strong>Reliability is mostly refusing to continue in states you cannot reason about.</strong> There is very little cleverness in <code>control.py</code> — no automatic recovery, no self-healing. That is deliberate. An agent that works around a broken dependency is an agent producing answers on unknown foundations.</p>
+        <p><strong>Reliability is mostly refusing to continue in states you cannot reason about.</strong> There is very little cleverness in <code>control.py</code> - no automatic recovery, no self-healing. That is deliberate. An agent that works around a broken dependency is an agent producing answers on unknown foundations.</p>
 
-        <p>Four things to add in a real system, which we do not have yet: a <strong>circuit breaker</strong> so a dead dependency is not retried by every run; <strong>idempotency</strong> so a retry is safe (Lesson 8); <strong>persistence</strong> so a crash at step 3 does not lose the work (Lesson 14); and <strong>alerting on outcome ratios</strong> — a rising escalation rate is the earliest signal you have.</p>
+        <p>Four things to add in a real system, which we do not have yet: a <strong>circuit breaker</strong> so a dead dependency is not retried by every run; <strong>idempotency</strong> so a retry is safe (Lesson 8); <strong>persistence</strong> so a crash at step 3 does not lose the work (Lesson 14); and <strong>alerting on outcome ratios</strong> - a rising escalation rate is the earliest signal you have.</p>
 
         <div class="callout key">
           <div class="c-ico">🧰</div>
           <div class="c-body"><div class="c-title">You already know this</div>
-          <p>Retry budgets with exponential backoff, classify-then-respond, timeouts that do not cancel, partial failure, bulkheads, graceful degradation with a named fallback. This is resilience engineering, pointed at a probabilistic caller. <strong>Your existing instincts are the valuable part</strong> — say so in an interview, because "I treated the model as an unreliable remote dependency" is exactly the right framing.</p></div>
+          <p>Retry budgets with exponential backoff, classify-then-respond, timeouts that do not cancel, partial failure, bulkheads, graceful degradation with a named fallback. This is resilience engineering, pointed at a probabilistic caller. <strong>Your existing instincts are the valuable part</strong> - say so in an interview, because "I treated the model as an unreliable remote dependency" is exactly the right framing.</p></div>
         </div>
 
         <h2 id="interview">11 · Interview practice</h2>
 
-        <h3>Two-minute answer — "Your agent loops forever in production. Diagnose and fix it."</h3>
+        <h3>Two-minute answer - "Your agent loops forever in production. Diagnose and fix it."</h3>
         <div class="callout note"><div class="c-ico">🎤</div><div class="c-body">
-        <p>"First, is it bounded at all? If termination depends on the model choosing to stop, it isn't — so a step limit is the actual bound and I'd check that exists before anything else.</p>
-        <p>Then I'd get the trace and look at the sequence rather than the output. Four patterns. <em>Identical repeats</em>: same tool, same arguments — usually a failing tool whose error the agent can't act on, or state that conflates 'not tried' with 'tried and failed'. <em>Oscillation</em>: A, B, A, B — contradictory instructions, and it's invisible to a check that only compares against the previous call. <em>Drift</em>: plausible but unrelated calls, which is context dilution, so compaction and a tighter budget. <em>Missing termination</em>: it has the answer and keeps going, because nothing told it what done looks like.</p>
-        <p>The fixes are a repeat counter keyed on tool-plus-arguments, a cycle check over a small window, and tracking attempted calls separately from successful ones. Both controls have to fire well before the step budget — a limit that only trips after you've paid for the run isn't protecting you.</p>
+        <p>"First, is it bounded at all? If termination depends on the model choosing to stop, it isn't - so a step limit is the actual bound and I'd check that exists before anything else.</p>
+        <p>Then I'd get the trace and look at the sequence rather than the output. Four patterns. <em>Identical repeats</em>: same tool, same arguments - usually a failing tool whose error the agent can't act on, or state that conflates 'not tried' with 'tried and failed'. <em>Oscillation</em>: A, B, A, B - contradictory instructions, and it's invisible to a check that only compares against the previous call. <em>Drift</em>: plausible but unrelated calls, which is context dilution, so compaction and a tighter budget. <em>Missing termination</em>: it has the answer and keeps going, because nothing told it what done looks like.</p>
+        <p>The fixes are a repeat counter keyed on tool-plus-arguments, a cycle check over a small window, and tracking attempted calls separately from successful ones. Both controls have to fire well before the step budget - a limit that only trips after you've paid for the run isn't protecting you.</p>
         <p>And the honest answer underneath: 40 steps means the budget was set too high, or the tools are too fine-grained. Fewer, coarser tools and a realistic budget prevent more incidents than better loop detection does."</p></div></div>
 
         <details class="recall"><summary><span class="q-ico">Q</span> System design · Design reliability for an agent calling five internal services with different SLAs. <span class="chev">›</span></summary><div class="a">
-        <p>Per-tool policy, not one global setting — a 50ms cache lookup and a 3s report generator cannot share a timeout. For each: a timeout from that service's p99, a retry budget (and only for transient classes), and a fallback that is either degraded data or escalation.</p>
-        <p>Then the system-level parts. <strong>Circuit breaker per dependency</strong>, so a dead service is not retried by every concurrent run — otherwise your retries become its outage. <strong>A total budget</strong> for the run in wall-clock and cost, because five well-behaved timeouts still add up past a user's patience. <strong>Bulkheads</strong> so one slow tool cannot exhaust the pool every tool shares. <strong>Idempotency on anything with side effects.</strong></p>
+        <p>Per-tool policy, not one global setting - a 50ms cache lookup and a 3s report generator cannot share a timeout. For each: a timeout from that service's p99, a retry budget (and only for transient classes), and a fallback that is either degraded data or escalation.</p>
+        <p>Then the system-level parts. <strong>Circuit breaker per dependency</strong>, so a dead service is not retried by every concurrent run - otherwise your retries become its outage. <strong>A total budget</strong> for the run in wall-clock and cost, because five well-behaved timeouts still add up past a user's patience. <strong>Bulkheads</strong> so one slow tool cannot exhaust the pool every tool shares. <strong>Idempotency on anything with side effects.</strong></p>
         <p>Then observability: outcome ratios per tool, retry rates, and alerting on the escalation rate rather than on errors, since a healthy-looking agent that escalates 60% of tickets is broken in a way no error count shows.</p></div></details>
 
         <details class="recall"><summary><span class="q-ico">Q</span> Debugging · A tool call times out. Did it happen? <span class="chev">›</span></summary><div class="a">
-        <p>You don't know — and that is the correct answer. A timeout means you stopped waiting, not that the work stopped. For a read that's merely wasteful. For anything with side effects it is the hardest case in the lesson.</p>
-        <p>So you design for it in advance rather than resolving it after: an idempotency key derived from the request means a follow-up call is safe whichever way the first one landed. Absent that, your only options are to risk a double effect or to strand the request — and choosing between them at incident time, with a customer waiting, is how mistakes get made.</p>
+        <p>You don't know - and that is the correct answer. A timeout means you stopped waiting, not that the work stopped. For a read that's merely wasteful. For anything with side effects it is the hardest case in the lesson.</p>
+        <p>So you design for it in advance rather than resolving it after: an idempotency key derived from the request means a follow-up call is safe whichever way the first one landed. Absent that, your only options are to risk a double effect or to strand the request - and choosing between them at incident time, with a customer waiting, is how mistakes get made.</p>
         <p>Also: don't retry the timeout itself. Two slow calls are worse than one. Check state, then act.</p></div></details>
 
         <details class="recall"><summary><span class="q-ico">Q</span> Coding · Add loop detection to an agent. <span class="chev">›</span></summary><div class="a">
-        <p>Compute a stable signature per call — tool name plus arguments serialised with sorted keys, so argument ordering doesn't create false novelty. Count signatures; block above a small threshold. Separately keep a window of recent signatures and check for an A,B,A,B cycle. On either, terminate with a named outcome and a reason, not an exception.</p>
+        <p>Compute a stable signature per call - tool name plus arguments serialised with sorted keys, so argument ordering doesn't create false novelty. Count signatures; block above a small threshold. Separately keep a window of recent signatures and check for an A,B,A,B cycle. On either, terminate with a named outcome and a reason, not an exception.</p>
         <p>Details that signal experience: sorted-key serialisation; a threshold above 1, because a legitimate retry exists; blocking well before the step budget; and recording <em>which</em> control fired, so the trace explains itself.</p></div></details>
 
         <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · How do you decide the retry budget and backoff? <span class="chev">›</span></summary><div class="a">
-        <p>From the dependency's failure profile, not a default. Transient network blips justify two or three attempts with exponential backoff and jitter — jitter matters, because synchronised retries from many concurrent runs are a thundering herd. Anything non-transient gets zero retries.</p>
+        <p>From the dependency's failure profile, not a default. Transient network blips justify two or three attempts with exponential backoff and jitter - jitter matters, because synchronised retries from many concurrent runs are a thundering herd. Anything non-transient gets zero retries.</p>
         <p>Then the constraint people miss: <strong>the retry budget interacts with the user's latency budget.</strong> Three attempts with backoff on a 2s timeout is potentially 6s of one step in a run that has a total budget. Retries have to be spent from the same pot as everything else, otherwise a resilient agent is an unusably slow one.</p>
         <p>And measure the retry rate. A steady 30% success-after-retry is a broken dependency masquerading as a healthy agent.</p></div></details>
 
         <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · Should the agent recover automatically from a failing tool? <span class="chev">›</span></summary><div class="a">
-        <p>Rarely, and never silently. Substituting a different tool, or proceeding on partial data, means producing an answer on foundations you did not verify — and the answer will not carry a warning label by the time a customer reads it.</p>
-        <p>The tiered approach: retry transient failures; degrade explicitly where degradation is meaningful and <em>say so in the output</em>; otherwise escalate. What I would not do is let the agent invent a workaround, because that converts a visible failure into an invisible one. Our partial-data bug is the small version — <code>refund_eligible=None</code> formatted into a sentence that read as fact.</p></div></details>
+        <p>Rarely, and never silently. Substituting a different tool, or proceeding on partial data, means producing an answer on foundations you did not verify - and the answer will not carry a warning label by the time a customer reads it.</p>
+        <p>The tiered approach: retry transient failures; degrade explicitly where degradation is meaningful and <em>say so in the output</em>; otherwise escalate. What I would not do is let the agent invent a workaround, because that converts a visible failure into an invisible one. Our partial-data bug is the small version - <code>refund_eligible=None</code> formatted into a sentence that read as fact.</p></div></details>
 
         <h2 id="recap">12 · Recap</h2>
         <div class="recap">
         <ul>
           <li>Five controls: repeat, oscillation, timeout, retry budget, safe termination.</li>
-          <li>Escalation is an <em>action</em>, and it must never fail — everything else falls back to it.</li>
+          <li>Escalation is an <em>action</em>, and it must never fail - everything else falls back to it.</li>
           <li>A timeout stops you waiting, not the work. For side effects, that means "unknown".</li>
           <li>Retry transient failures; never retry a timeout or a malformed argument.</li>
           <li>Repeats and oscillation are different bugs needing different detectors.</li>
           <li>Controls must fire well before the step budget, or they protect nothing.</li>
-          <li>Partial success is the worst failure: nothing raises, and a missing field becomes prose. It took <em>two</em> layers to fix — detect, then refuse.</li>
+          <li>Partial success is the worst failure: nothing raises, and a missing field becomes prose. It took <em>two</em> layers to fix - detect, then refuse.</li>
           <li>Every run ends in a named outcome, and reports what it did establish.</li>
         </ul>
         </div>
 
         <div class="callout key"><div class="c-ico">🚀</div><div class="c-body"><div class="c-title">Next</div>
-        <p>Every tool so far has been reversible. Lesson 8 adds the one that moves money — and a retry that was merely wasteful becomes a second payment.</p></div></div>
+        <p>Every tool so far has been reversible. Lesson 8 adds the one that moves money - and a retry that was merely wasteful becomes a second payment.</p></div></div>
 
         <h2 id="deeper">13 · Optional deep dives</h2>
         <ul>
-          <li><a href="../../modules/08_agents.html">Module 08 · Agentic AI</a> — §9, the mistakes engineers make with agent loops.</li>
-          <li><a href="../../modules/14_production_genai.html">Module 14 · Production GenAI</a> — reliability at the service level.</li>
+          <li><a href="../../modules/08_agents.html">Module 08 · Agentic AI</a> - §9, the mistakes engineers make with agent loops.</li>
+          <li><a href="../../modules/14_production_genai.html">Module 14 · Production GenAI</a> - reliability at the service level.</li>
         </ul>
 
         <div class="page-nav" data-page-nav>
@@ -344,9 +362,9 @@ window.PORTAL = {
   ]
 };
 </script>
-<script src="../../assets/sitenav.js?v=20260804b"></script>
-<script src="../../assets/portal-page.js?v=20260727c"></script>
-<script src="../../assets/enhance.js?v=20260804a"></script>
+<script src="../../assets/sitenav.js?v=20260925a"></script>
+<script src="../../assets/portal-page.js?v=20260925c"></script>
+<script src="../../assets/enhance.js?v=20260925c"></script>
 <script src="../../assets/genai-motion.js?v=20260728a"></script>
 <script src="../../assets/glossary.js?v=20260802b"></script>
 </body>

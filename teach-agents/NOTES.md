@@ -1,4 +1,4 @@
-# Teaching Notes — preferences & working notes
+# Teaching Notes: preferences & working notes
 
 ## Learner profile
 - **Coding:** comfortable in Python. → Use real code, skip programming basics.
@@ -16,13 +16,13 @@
 - Business scenarios: `../EnM Agents.xlsx` (and the plain dump `../enm_dump.txt`).
 - 8 EnM outcomes; #3 and #5 are explicitly marked "need to think through" → good design exercises later.
 
-## Course status — FULL COURSE GENERATED UP FRONT (learner request)
+## Course status: FULL COURSE GENERATED UP FRONT (learner request)
 All 6 lessons + 3 verified code files generated in one session at learner's request (not the
 usual one-per-session cadence). Lessons are self-contained; later ones (esp. 5 & 6 decompositions)
 are explicitly framed as sketches to revise as the learner progresses.
 - L1 ✅ What is an agent (concept)
 - L2 ✅ Run first agent live + Gemini brain swap (hands-on; agent.py)
-- L3 ✅ Prediction vs threshold (concept+code; forecast_tool.py — catches the temp ramp z-score missed)
+- L3 ✅ Prediction vs threshold (concept+code; forecast_tool.py - catches the temp ramp z-score missed)
 - L4 ✅ Orchestration: Anomaly→RCA→Remediation chain (concept+code; orchestrator.py)
 - L5 ✅ Workflow vs autonomous; decision rule; sketched #3 & #5 decompositions
 - L6 ✅ Capstone: 5-step method to map any row; worked example #1; learner fills template for #4/#6/#7
@@ -37,7 +37,7 @@ L5 ~20m, L6 ~25m. style.css extended with detailed-lesson components (.objective
 .annotated/.annot-list, .plain, .recap, .steps); content column widened 720->800px.
 
 ## Verified
-- All 3 code files run clean from teach-agents/code/ (cwd matters — they read sensor_data.csv relatively).
+- All 3 code files run clean from teach-agents/code/ (cwd matters - they read sensor_data.csv relatively).
 - All internal HTML links resolve (xlsx is at Desktop root = ../../ from lessons/).
 
 ## Next live-session candidates (when learner returns)
@@ -47,4 +47,4 @@ L5 ~20m, L6 ~25m. style.css extended with detailed-lesson components (.objective
 - Exponential smoothing forecaster instead of linear fit (promised in L3).
 
 ## housekeeping
-- `../enm_dump.txt` is a scratch extract of the xlsx I created — fine to delete; xlsx is the source of truth.
+- `../enm_dump.txt` is a scratch extract of the xlsx I created - fine to delete; xlsx is the source of truth.

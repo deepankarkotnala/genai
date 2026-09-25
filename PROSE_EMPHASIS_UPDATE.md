@@ -1,4 +1,4 @@
-# Type colour — headings and bold step down from black
+# Type colour: headings and bold step down from black
 
 Light mode ran headings at `#20232b` and bold at the same value, near enough to
 black that a lesson read as a stack of hard black slabs over mid-grey body copy.
@@ -19,13 +19,13 @@ than buy calm.
 ## Headings
 `--heading` is the single token every heading in the portal already reads, so
 softening it there covers h1–h4, hero titles, card titles and section headings on
-every page family at once — modules, teach-agents lessons, DSA chapters, the hub
+every page family at once - modules, teach-agents lessons, DSA chapters, the hub
 and the question bank. Six component titles (`.callout .c-title`, `.quiz .q`,
 `.recall`/`.collapse` `> summary`, `.demo-title`, `.rm-head`) were wired to
 `--text` directly rather than to `--heading`, so they were left out of that and
 are now pointed at the token.
 
-# Bold inside a lesson — grey bold instead of near-black
+# Bold inside a lesson: grey bold instead of near-black
 
 Body copy in a lesson is `--text-secondary` and bold was `--heading` at weight
 650, so every emphasised phrase jumped from mid-grey (#505665) to near-black
@@ -38,7 +38,7 @@ quiet.
   scale, at weight 600 rather than 650.
 - The colour is a token mix, so each theme works from its own pair:
   `--prose-strong: color-mix(in srgb, var(--text) 55%, var(--text-secondary))`.
-  Measured result — light: **#363A45** bold on #505665 body; dark: **#CED1D8**
+  Measured result - light: **#363A45** bold on #505665 body; dark: **#CED1D8**
   bold on #B6BBC5 body.
 - `styles.css` lightened every `strong` to `#dde2e9` in dark mode, close to pure
   white against mid-grey body copy. That is the same over-emphasis, so it is
@@ -46,8 +46,8 @@ quiet.
 - Applies to `strong`, `b` and `dt`.
 
 ## Scope
-Every prose column in the portal carries `.content` — the hub, interview prep,
-ATS lab and Google sections add a second class to the same element — so one
+Every prose column in the portal carries `.content` - the hub, interview prep,
+ATS lab and Google sections add a second class to the same element - so one
 scope covers all of them. Deliberately untouched:
 - Chrome: `.brand-text strong` (sidebar), `.crumbs b` (breadcrumb), the contents
   rail. These sit outside `.content`.

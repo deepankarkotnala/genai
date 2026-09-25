@@ -1,5 +1,5 @@
 """
-run_evals.py — the regression suite for agent behaviour.
+run_evals.py - the regression suite for agent behaviour.
 
 Lesson 10. Unit tests check that functions work. This checks that the *agent*
 behaves, which is a different question with a different failure mode: nothing
@@ -185,7 +185,7 @@ def main(argv: list[str]) -> int:
     print("\n" + "-" * 74)
     print(f"  {passed}/{total} cases passed  ({checks} individual checks)")
     print(f"  happy paths are {sum(1 for r in results if r.kind == 'happy')}/{total} "
-          "of the suite — the rest are refusals, failures and attacks")
+          "of the suite - the rest are refusals, failures and attacks")
     print("-" * 74)
 
     # Non-zero exit is the whole point: this belongs in a build, not a notebook.

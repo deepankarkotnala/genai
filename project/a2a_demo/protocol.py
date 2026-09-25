@@ -1,5 +1,5 @@
 """
-a2a_demo/protocol.py — A2A: agents talking to agents.
+a2a_demo/protocol.py - A2A: agents talking to agents.
 
 Lesson 13. MCP connects an agent to *tools*. A2A connects an agent to *peers* --
 another agent, possibly owned by another team or another company, which you

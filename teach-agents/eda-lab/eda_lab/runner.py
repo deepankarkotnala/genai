@@ -1,5 +1,5 @@
 """
-runner.py — the ten-step controlled workflow.
+runner.py - the ten-step controlled workflow.
 
     1  the user asks a natural-language question
     2  Gemma produces a structured analysis plan

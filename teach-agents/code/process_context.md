@@ -1,4 +1,4 @@
-# Process Context — Polymer Reactor Unit (reference for the EDA agent)
+# Process Context: Polymer Reactor Unit (reference for the EDA agent)
 
 This is a tiny stand-in for the kind of process knowledge an EnM "P&ID Engine" /
 Contextualization Agent would hold (P&IDs, SOPs, design envelopes). The EDA agent reads
@@ -12,7 +12,7 @@ this to turn raw statistical findings into *process-aware* insights.
   poisons the catalyst and drives quality defects.
 - `yield_pct` (%): batch yield. Target ≥ 72.
 - `quality_defects`: defect index per batch. Target ≤ 3.0.
-- `shift`: operating crew (A / B / C). Should not, by itself, affect yield — if it does, it
+- `shift`: operating crew (A / B / C). Should not, by itself, affect yield - if it does, it
   points to a procedural / training gap, not a process one.
 
 ## Known relationships (design intent)

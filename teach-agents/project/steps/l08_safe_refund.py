@@ -30,7 +30,7 @@ GOAL = "Triage ticket TCK-1001 and recommend the next step."
 
 
 def show_faults() -> None:
-    print(BAR); print("  RELIABILITY — the same goal, five broken worlds"); print(BAR)
+    print(BAR); print("  RELIABILITY - the same goal, five broken worlds"); print(BAR)
     cases = [
         ("healthy", None, {}),
         ("lookup_order flaky (2 failures)", FaultPlan(flaky={"lookup_order": 2}), {}),
@@ -54,7 +54,7 @@ def show_faults() -> None:
 
 def show_refund() -> None:
     reset_state()
-    print(BAR); print("  IRREVERSIBLE ACTION — every branch of issue_refund"); print(BAR)
+    print(BAR); print("  IRREVERSIBLE ACTION - every branch of issue_refund"); print(BAR)
 
     def attempt(label: str, args: dict) -> None:
         r = execute("issue_refund", args)
@@ -71,7 +71,7 @@ def show_refund() -> None:
             {"order_id": "ORD-5544", "amount": 99, "reason": "duplicate charge"})
     attempt("amount exceeds order total",
             {"order_id": "ORD-5581", "amount": 5000, "reason": "customer insists"})
-    attempt("dry run — the DEFAULT",
+    attempt("dry run - the DEFAULT",
             {"order_id": "ORD-5581", "amount": 120, "reason": "duplicate charge"})
     attempt("execute without a token",
             {"order_id": "ORD-5581", "amount": 120, "reason": "duplicate charge",
@@ -87,7 +87,7 @@ def show_refund() -> None:
 
 
 def show_attacks() -> None:
-    print(BAR); print("  SECURITY — the adversarial corpus, and what actually stops each"); print(BAR)
+    print(BAR); print("  SECURITY - the adversarial corpus, and what actually stops each"); print(BAR)
     corpus = json.loads(
         (Path(__file__).resolve().parent.parent / "fixtures" / "adversarial" / "attacks.json")
         .read_text(encoding="utf-8")
@@ -96,7 +96,7 @@ def show_attacks() -> None:
         screen = guards.screen_untrusted(a["text"])
         print(f"\n  {a['id']}  ({a['kind']}, via {a['surface']})")
         print(f"    text        : {a['text'][:88]}")
-        print(f"    screen      : {'FLAGGED' if screen.flagged else 'not flagged'} — {screen.report()}")
+        print(f"    screen      : {'FLAGGED' if screen.flagged else 'not flagged'} - {screen.report()}")
         print(f"    stopped by  : {a['stopped_by']}")
 
     print("\n  Note how many say 'capability absence' or 'policy in code' rather than")
@@ -117,7 +117,7 @@ def show_attacks() -> None:
 
 def show_audit() -> None:
     reset_state()
-    print(BAR); print("  AUDIT LOG — append-only, refusals included"); print(BAR)
+    print(BAR); print("  AUDIT LOG - append-only, refusals included"); print(BAR)
     execute("issue_refund", {"order_id": "ORD-5555", "amount": 49, "reason": "too old to refund"})
     execute("issue_refund", {"order_id": "ORD-5581", "amount": 120, "reason": "duplicate charge"})
     token = grant_approval("ORD-5581", 120.00, "alice@support").token

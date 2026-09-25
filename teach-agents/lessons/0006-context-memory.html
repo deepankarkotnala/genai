@@ -4,21 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#f4f5f8">
-<title>Lesson 6 · Context, state and memory — Understanding AI Agents</title>
+<title>Lesson 6 · Context, state and memory | Understanding AI Agents</title>
 <meta name="description" content="Seven things people call memory, two of them built. Token budgets, capping tool results at the source, compaction that refuses to run when it would not help, and state versus memory.">
-<link rel="icon" href="../../assets/brand/favicon.svg?v=20260727c" type="image/svg+xml">
-<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260727c" sizes="32x32" type="image/png">
-<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260727c">
-<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260727c" sizes="180x180">
-<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260727c">
-<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260727c" color="#6f47f5">
+<link rel="icon" href="../../assets/brand/favicon.svg?v=20260925b" type="image/svg+xml">
+<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260925b" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260925b">
+<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260925b" sizes="180x180">
+<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260925b">
+<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260925b" color="#6f47f5">
 <meta name="application-name" content="Interview Preparation">
 <meta name="apple-mobile-web-app-title" content="Interview Prep">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="mobile-web-app-capable" content="yes">
-<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#17191e":"#f3f4f6";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var mob=!!(window.matchMedia&&window.matchMedia("(max-width:860px)").matches);var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(mob?"s":"xs");var wd=["default","wide","full"].indexOf(r.width)>=0?r.width:"wide";var al=r.align==="justify"?"justify":"left";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition — CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
 <link rel="stylesheet" href="../../assets/styles.css?v=20260805a">
-<link href="../../assets/office-theme.css?v=20260805c" rel="stylesheet"/>
+<link href="../../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="../../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <link href="../../assets/glossary.css?v=20260802b" rel="stylesheet"/>
 <!-- Release 2 runtime. The manifest loads first, the renderer second; classic
@@ -28,14 +28,15 @@
      page, route and fragment have all resolved. -->
 <script defer src="../../assets/curriculum.js?v=20260804c"></script>
 <script defer src="../../assets/page-nav.js?v=20260804c"></script>
+<link href="../../assets/ir-theme.css?v=20260925c" rel="stylesheet"/>
 </head>
 <body data-curriculum-id="ta-l06" data-page="ta-l06">
 <div class="app">
   <aside class="sidebar">
     <div class="brand">
-<a class="brand-link" href="../../index.html" aria-label="Switch job home">
-<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260727c" alt=""/></span>
-<div class="brand-text"><strong>Switch job</strong><span>Learning Platform</span></div>
+<a class="brand-link" href="../../index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
 </a>
 </div>
     <div class="search-wrap">
@@ -76,7 +77,7 @@
             <li>Name the <strong>seven</strong> things people call memory, and say which two this agent needs.</li>
             <li>State the <strong>state vs memory</strong> distinction in one sentence, with a test for telling them apart.</li>
             <li>Budget a context window, and cap a tool result <em>at the source</em>.</li>
-            <li>Compact a transcript without losing the goal — and refuse a compaction that would not help.</li>
+            <li>Compact a transcript without losing the goal - and refuse a compaction that would not help.</li>
             <li>Explain why "memory vs RAG" is a trick question.</li>
           </ul></div>
         </div>
@@ -89,16 +90,16 @@
           <thead><tr><th>Store</th><th>Holds</th><th>Built here?</th></tr></thead>
           <tbody>
             <tr><td>Conversation history</td><td>the message list for this run</td><td><strong>yes</strong></td></tr>
-            <tr><td>Workflow state</td><td>step, budget, facts gathered</td><td><strong>yes</strong> — <code>state.py</code></td></tr>
+            <tr><td>Workflow state</td><td>step, budget, facts gathered</td><td><strong>yes</strong> - <code>state.py</code></td></tr>
             <tr><td>Working memory</td><td>scratch notes inside one step</td><td>no</td></tr>
-            <tr><td>Long-term memory</td><td>facts that outlive the run</td><td><strong>yes</strong> — prior tickets</td></tr>
+            <tr><td>Long-term memory</td><td>facts that outlive the run</td><td><strong>yes</strong> - prior tickets</td></tr>
             <tr><td>User profile</td><td>durable per-customer preferences</td><td>no</td></tr>
-            <tr><td>Retrieval store</td><td>documents</td><td>yes — Lesson 5</td></tr>
+            <tr><td>Retrieval store</td><td>documents</td><td>yes - Lesson 5</td></tr>
             <tr><td>Audit history</td><td>what was done, immutably</td><td>Lesson 8</td></tr>
           </tbody>
         </table>
 
-        <p>The three unbuilt ones are not hard; they are unnecessary for this agent. <strong>An agent carrying stores it does not use is slower, dearer and harder to debug</strong> — and "I only built what the workflow needed" is a better answer than a diagram with seven boxes.</p>
+        <p>The three unbuilt ones are not hard; they are unnecessary for this agent. <strong>An agent carrying stores it does not use is slower, dearer and harder to debug</strong> - and "I only built what the workflow needed" is a better answer than a diagram with seven boxes.</p>
 
         <h2 id="statevsmemory">2 · State is not memory</h2>
 
@@ -107,110 +108,153 @@
           <div class="c-body"><div class="c-title">The distinction, and the test</div>
           <p><strong>State</strong> belongs to one run: where am I, what have I gathered, what budget is left. Discarded when the run ends.</p>
           <p><strong>Memory</strong> outlives the run: what do we know about this customer from last month.</p>
-          <p>The test: <strong>if it would be wrong to still have this tomorrow, it is state.</strong></p></div>
+          <p>The test: <strong>if it would be wrong to still have this tomorrow, it is state.</strong></p>
+
+<svg class="bd-svg" viewBox="0 0 900 226" role="img" aria-labelledby="l6-state-t l6-state-d">
+<title id="l6-state-t">State dies with the run; memory does not</title>
+<desc id="l6-state-d">State covers this run only: the step count, what has been gathered, the budget left. Memory is what should still be true for this customer next month. The two have different lifetimes, and conflating them causes two opposite bugs.</desc>
+<text class="cap" x="315" y="24">during the run</text>
+<text class="cap" x="545" y="24">run ends</text>
+<text class="cap" x="775" y="24">next ticket</text>
+<text class="mono" x="12" y="64" style="text-anchor:start">step count</text>
+<rect class="snap s1" x="206" y="46" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="315" y="64">4</text>
+<rect class="snap s2" x="436" y="46" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="545" y="64">gone</text>
+<rect class="snap s3" x="666" y="46" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="775" y="64">1</text>
+<text class="mono" x="12" y="98" style="text-anchor:start">gathered so far</text>
+<rect class="snap s1" x="206" y="80" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="315" y="98">ticket + order</text>
+<rect class="snap s2" x="436" y="80" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="545" y="98">gone</text>
+<rect class="snap s3" x="666" y="80" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="775" y="98">nothing yet</text>
+<text class="mono" x="12" y="132" style="text-anchor:start">budget left</text>
+<rect class="snap s1" x="206" y="114" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="315" y="132">6 steps</text>
+<rect class="snap s2" x="436" y="114" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="545" y="132">gone</text>
+<rect class="snap s3" x="666" y="114" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="775" y="132">12 steps</text>
+<text class="mono" x="12" y="166" style="text-anchor:start">customer facts</text>
+<rect class="snap s1" x="206" y="148" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="315" y="166">prefers email</text>
+<rect class="snap s2" x="436" y="148" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="545" y="166">prefers email</text>
+<rect class="snap s3" x="666" y="148" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="775" y="166">prefers email</text>
+<text class="cap" x="450" y="218">the bottom row survives on purpose; everything above it must not</text>
+</svg>
+</div>
         </div>
 
         <p>Conflating them produces two opposite bugs. Treat state as memory and last week's half-finished investigation leaks into today's answer. Treat memory as state and the agent forgets the customer between tickets while insisting it remembers.</p>
 
-        <p><code>RunState</code> also finally fixes something properly. Lesson 2's infinite-retry bug was patched inside the backend, which had to infer from the transcript whether a tool had been tried. Now it is explicit:</p>
-
-<pre><code>def record(self, tool, result):
-    self.tools_attempted.append(tool)          # grows even on failure
-    if not result.get("error"):
-        self.facts[tool] = result              # only successes become facts
-</code></pre>
+        <p><code>RunState</code> also finally fixes something properly. Lesson 2's infinite-retry bug was patched inside the backend, which had to infer from the transcript whether a tool had been tried. Now it is explicit.</p>
 
         <p>"Not attempted" and "attempted and failed" are now different states, which is what stops the retry loop. Lesson 7 builds a real controller on this.</p>
 
         <h2 id="budget">3 · The context window is a budget</h2>
 
-        <p>Two budgets, not one:</p>
-
-<pre><code>token_budget: int = 6000
-tokens_used: int = 0
-max_steps: int = 6
-</code></pre>
+        <p>Two budgets, not one.</p>
 
         <p>Steps alone are a poor bound, because one expensive call can cost more than five cheap ones. Lesson 11 adds money as a third.</p>
 
         <div class="callout warn">
           <div class="c-ico">⚠️</div>
           <div class="c-body"><div class="c-title">Our token count is an estimate, and says so</div>
-          <p><code>CHARS_PER_TOKEN = 4</code> is a rule of thumb, not a tokeniser. Good enough for budget decisions and honest about it. In production use the provider's own counter — being 20% wrong about your budget is how you get a truncation error at 2 a.m.</p></div>
+          <p><code>CHARS_PER_TOKEN = 4</code> is a rule of thumb, not a tokeniser. Good enough for budget decisions and honest about it. In production use the provider's own counter - being 20% wrong about your budget is how you get a truncation error at 2 a.m.</p></div>
         </div>
 
         <h2 id="cap">4 · Cap at the source</h2>
 
-        <p>Here is the thing most treatments of this topic miss. Watch a real run with a deliberately small 300-token budget:</p>
+<svg class="bd-svg" viewBox="0 0 900 174" role="img" aria-labelledby="l6-flood-t l6-flood-d">
+<title id="l6-flood-t">One oversized tool result floods the window</title>
+<desc id="l6-flood-d">A tool returns a very large result. Nothing caps it, so it is appended whole, and it crowds out the goal and the earlier findings. The next decision is made from mostly one document.</desc>
+<defs><marker id="ah-l6-flood" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="52" width="157.6" height="56" rx="12"></rect>
+<rect class="box fail" x="191.6" y="52" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M172.6 80 H187.6" marker-end="url(#ah-l6-flood)"></path>
+<rect class="box after b3" x="371.2" y="52" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M352.2 80 H367.2" marker-end="url(#ah-l6-flood)"></path>
+<rect class="box after b4" x="550.8" y="52" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M531.8 80 H546.8" marker-end="url(#ah-l6-flood)"></path>
+<rect class="box after b5" x="730.4" y="52" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M711.4 80 H726.4" marker-end="url(#ah-l6-flood)"></path>
+<text class="lbl" x="90.8" y="85">step runs</text>
+<text class="lbl" x="270.4" y="76">tool returns</text>
+<text class="lbl" x="270.4" y="94">40k chars</text>
+<text class="lbl" x="450" y="76">appended</text>
+<text class="lbl" x="450" y="94">whole</text>
+<text class="lbl" x="629.6" y="85">goal crowded out</text>
+<text class="lbl" x="809.2" y="76">next decision</text>
+<text class="lbl" x="809.2" y="94">is worse</text>
+<path class="xmark" d="M252.4 122 L288.4 150 M288.4 122 L252.4 150"></path>
+<text class="cap rescue" x="450" y="166">cap the result where it is produced -- trimming the prompt later is too late</text>
+</svg>
 
-<pre><code>python steps/l05_retrieval.py --memory TCK-1001
-</code></pre>
-
-<pre><code>  step 1: +  78 tokens  transcript=  115  budget=300  [ok]
-  step 2: +  55 tokens  transcript=  175  budget=300  [ok]
-  step 3: + 297 tokens  transcript=  309  budget=300  [OVER]
-</code></pre>
+        <p>Here is the thing most treatments of this topic miss. Picture a real run with a deliberately small 300-token budget.</p>
 
         <p>Step 3 is the retrieval call from Lesson 5, and on its own it is <strong>bigger than the entire budget</strong>. No amount of summarising older messages fixes that, because the problem is the newest message.</p>
-
-<pre><code>def add(self, message):
-    """Append, capping an oversized tool result before it ever lands."""
-    if message.role == "tool" and estimate_tokens(message.content) &gt; MAX_TOOL_RESULT_TOKENS:
-        ...  # truncate, and record that we did
-        self.truncations += 1
-</code></pre>
 
         <div class="callout key">
           <div class="c-ico">🔑</div>
           <div class="c-body"><div class="c-title">Two mechanisms, not one</div>
-          <p><strong>Cap</strong> handles a single oversized result. <strong>Compact</strong> handles accumulation across many steps. Most people reach for compaction alone, then find it cannot help — because the newest message is the bulk of the prompt and compaction is designed to keep recent messages verbatim.</p>
+          <p><strong>Cap</strong> handles a single oversized result. <strong>Compact</strong> handles accumulation across many steps. Most people reach for compaction alone, then find it cannot help - because the newest message is the bulk of the prompt and compaction is designed to keep recent messages verbatim.</p>
           <p>Note the second-order effect: <code>KEEP_RECENT = 2</code>, not 4. A generous "keep the recent turns" setting sounds safer and protects <em>exactly the messages that caused the problem</em>.</p></div>
         </div>
 
         <h2 id="compact">5 · Compact without losing the thread</h2>
 
+<svg class="bd-svg" viewBox="0 0 900 138" role="img" aria-labelledby="l6-compact-t l6-compact-d">
+<title id="l6-compact-t">Compaction replaces old turns with a summary</title>
+<desc id="l6-compact-d">When the conversation approaches the budget, the oldest turns are summarised into a short block. The system prompt, the goal and the most recent turns are kept verbatim, because those are the ones the next decision depends on.</desc>
+<defs><marker id="ah-l6-compact" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="40" width="202.5" height="56" rx="12"></rect>
+<rect class="box b2" x="236.5" y="40" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M217.5 68 H232.5" marker-end="url(#ah-l6-compact)"></path>
+<rect class="box b3" x="461" y="40" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M442 68 H457" marker-end="url(#ah-l6-compact)"></path>
+<rect class="box b4" x="685.5" y="40" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M666.5 68 H681.5" marker-end="url(#ah-l6-compact)"></path>
+<text class="lbl" x="113.25" y="64">conversation</text>
+<text class="lbl" x="113.25" y="82">near the budget</text>
+<text class="lbl" x="337.75" y="64">summarise</text>
+<text class="lbl" x="337.75" y="82">the oldest turns</text>
+<text class="lbl" x="562.25" y="64">keep goal +</text>
+<text class="lbl" x="562.25" y="82">recent turns</text>
+<text class="lbl" x="786.75" y="64">smaller prompt</text>
+<text class="lbl" x="786.75" y="82">same thread</text>
+<circle class="pkt" cx="113.25" cy="18" r="7"></circle>
+<text class="cap" x="450" y="130">what you summarise is lossy for ever -- that is the trade you are making</text>
+</svg>
+
         <p>Order of operations, and every line of it is a decision:</p>
 
         <div class="steps">
-          <p><strong>System prompt stays verbatim</strong> — those are the instructions.</p>
-          <p><strong>The goal stays verbatim</strong> — drop it and the agent is answering a question it can no longer see. This is the single most common compaction bug.</p>
-          <p><strong>Recent turns stay verbatim</strong> — they are what the next decision is about.</p>
+          <p><strong>System prompt stays verbatim</strong> - those are the instructions.</p>
+          <p><strong>The goal stays verbatim</strong> - drop it and the agent is answering a question it can no longer see. This is the single most common compaction bug.</p>
+          <p><strong>Recent turns stay verbatim</strong> - they are what the next decision is about.</p>
           <p><strong>The middle becomes one summary line per tool that ran.</strong></p>
         </div>
 
-<pre><code>  compacted 309 -> 224 tokens (4 messages)
-
-    system       You are a support-ticket triage agent.
-    user         Triage ticket TCK-1001.
-    assistant    Summary of earlier steps (compacted to fit the context window):
-                 - read_ticket: ticket_id=TCK-1001; category=Billing; priority=High
-    assistant    Calling search_kb
-    search_kb    {"query": "billing refund", "chunks_searched": 17, ...
-</code></pre>
-
-        <p>Summarising is lossy on purpose. The alternative — dropping the oldest messages blindly — loses the same information <em>without recording that anything was lost</em>, which is how an agent re-runs a tool it already ran.</p>
+        <p>Summarising is lossy on purpose. The alternative - dropping the oldest messages blindly - loses the same information <em>without recording that anything was lost</em>, which is how an agent re-runs a tool it already ran.</p>
 
         <div class="callout danger">
           <div class="c-ico">🐛</div>
           <div class="c-body"><div class="c-title">Two real bugs found while building this</div>
           <p><strong>1 · The summariser silently did nothing.</strong> The demo serialised tool results with <code>str(result)</code> while the loop uses <code>json.dumps</code>. A Python dict repr uses single quotes, <code>json.loads</code> failed, and every summary line fell back to a raw 90-character truncation. The summary <em>looked</em> plausible, which is why it survived a first reading. Any summariser needs a test that asserts the summary contains parsed values, not just that it exists.</p>
-          <p><strong>2 · Compaction made the transcript bigger.</strong> Summarising a span of short messages produced a summary longer than the span — spending a model call to grow the prompt. The fix is a guard, and it is a better lesson than the original code:</p>
-<pre><code>if after &gt;= before:
-    return f"compaction skipped: would grow {before} -&gt; {after} tokens"
-</code></pre>
+          <p><strong>2 · Compaction made the transcript bigger.</strong> Summarising a span of short messages produced a summary longer than the span - spending a model call to grow the prompt. The fix is a guard, and it is a better lesson than the original code.</p>
+
           <p>"Compact when full" is the instinct. <strong>"Compact when it helps" is the rule.</strong></p></div>
         </div>
 
         <h2 id="longterm">6 · Long-term memory, and one honest label</h2>
 
-        <p><code>recall_prior_tickets()</code> is long-term memory in one function — and it is a <em>lookup</em>, not a mystery:</p>
+        <p><code>recall_prior_tickets()</code> is long-term memory in one function - and it is a <em>lookup</em>, not a mystery.</p>
 
-<pre><code>  TCK-1008  Billing    Question about proration
-  TCK-1004  Returns    Want to return the annual plan
-  basis: matched on customer_tier (the fixture has no customer id)
-</code></pre>
-
-        <p>That last line matters. The fixture has no customer id, so this matches on tier — <strong>"same tier" is not "same person"</strong>, and the function says so in its own output rather than letting a reader assume otherwise. An honest memory reports the basis of its recall.</p>
+        <p>That last line matters. The fixture has no customer id, so this matches on tier - <strong>"same tier" is not "same person"</strong>, and the function says so in its own output rather than letting a reader assume otherwise. An honest memory reports the basis of its recall.</p>
 
         <div class="callout note">
           <div class="c-ico">🔑</div>
@@ -218,7 +262,7 @@ max_steps: int = 6
           <p>They are the same machinery with different purposes. Retrieval searches documents; memory searches history. Both chunk, index, rank and inject. If you answer "memory is different from RAG" you have missed it; the interesting question is what you <em>write</em>, and when.</p></div>
         </div>
 
-        <p>Our write rule is deliberately extreme: <strong>nothing is written at all.</strong> The tickets are the record. Agents that write their own memories need a policy for what is worth keeping and a way to correct a wrong one — and <em>an agent that confidently recalls something false is worse than one that recalls nothing.</em> Lesson 8 adds the first thing this agent genuinely writes, and it is append-only for exactly that reason.</p>
+        <p>Our write rule is deliberately extreme: <strong>nothing is written at all.</strong> The tickets are the record. Agents that write their own memories need a policy for what is worth keeping and a way to correct a wrong one - and <em>an agent that confidently recalls something false is worse than one that recalls nothing.</em> Lesson 8 adds the first thing this agent genuinely writes, and it is append-only for exactly that reason.</p>
 
         <h2 id="break">7 · Break it</h2>
 
@@ -229,12 +273,12 @@ max_steps: int = 6
 
           <p><strong>3 · Disable the cap.</strong> Set <code>MAX_TOOL_RESULT_TOKENS = 100_000</code>. Step 3 goes back to 297 tokens, the transcript to 476, and compaction saves 40 tokens against a 300-token budget. Watch the two mechanisms fail independently.</p>
 
-          <p><strong>4 · Make memory lie.</strong> In <code>recall_prior_tickets</code>, delete the <code>basis</code> field. Nothing breaks and the output looks better — which is the point. Now a reader will believe those are the same customer's tickets. <strong>Removing a caveat is the cheapest way to make a system look more capable than it is.</strong></p>
+          <p><strong>4 · Make memory lie.</strong> In <code>recall_prior_tickets</code>, delete the <code>basis</code> field. Nothing breaks and the output looks better - which is the point. Now a reader will believe those are the same customer's tickets. <strong>Removing a caveat is the cheapest way to make a system look more capable than it is.</strong></p>
         </div>
 
         <h2 id="production">8 · The production concern</h2>
 
-        <p><strong>Long conversations are where agents die.</strong> Not with an error — with drift, as the goal becomes a rounding error in a transcript of tool output. That is not the model being stupid; it is you having diluted the prompt.</p>
+        <p><strong>Long conversations are where agents die.</strong> Not with an error - with drift, as the goal becomes a rounding error in a transcript of tool output. That is not the model being stupid; it is you having diluted the prompt.</p>
 
         <p><strong>Compaction is a model call,</strong> so it costs money and can itself fail. Ours is deterministic string assembly precisely so it cannot; a real summariser needs a fallback for when the summary call errors.</p>
 
@@ -245,26 +289,26 @@ max_steps: int = 6
         <div class="callout key">
           <div class="c-ico">🧰</div>
           <div class="c-body"><div class="c-title">You already know this</div>
-          <p>A token budget is a memory budget. Capping a tool result is response-size limiting on an API. Compaction is log rotation with a digest. State-vs-memory is request scope versus session store — you have made that decision in every web app you have built.</p></div>
+          <p>A token budget is a memory budget. Capping a tool result is response-size limiting on an API. Compaction is log rotation with a digest. State-vs-memory is request scope versus session store - you have made that decision in every web app you have built.</p></div>
         </div>
 
         <h2 id="interview">9 · Interview practice</h2>
 
-        <h3>Two-minute answer — "Your agent hits the context limit mid-run. What do you do?"</h3>
+        <h3>Two-minute answer - "Your agent hits the context limit mid-run. What do you do?"</h3>
         <div class="callout note"><div class="c-ico">🎤</div><div class="c-body">
-        <p>"First I'd find out <em>why</em>, because there are two different problems. Either one tool result is enormous, or many small ones have accumulated — and they need opposite fixes.</p>
+        <p>"First I'd find out <em>why</em>, because there are two different problems. Either one tool result is enormous, or many small ones have accumulated - and they need opposite fixes.</p>
         <p>For a single oversized result, cap it at the source: truncate before it enters the transcript and record that you did. Compaction can't help there, because compaction deliberately keeps recent messages verbatim and the newest message is the problem.</p>
-        <p>For accumulation, compact: keep the system prompt, keep the goal, keep the last couple of turns, and replace the middle with one summary line per tool that ran. Keeping the goal is the part people get wrong — drop it and the agent is answering a question it can no longer see. And I'd guard the compaction: if the summary isn't smaller than the span it replaces, skip it, because otherwise you pay a model call to grow the prompt.</p>
-        <p>Longer term I'd reduce what enters the context at all — tighter tool results, fewer steps via routing — since managing a budget is better than repeatedly rescuing it. And I'd track a budget in tokens as well as steps, because one expensive call can cost more than five cheap ones."</p></div></div>
+        <p>For accumulation, compact: keep the system prompt, keep the goal, keep the last couple of turns, and replace the middle with one summary line per tool that ran. Keeping the goal is the part people get wrong - drop it and the agent is answering a question it can no longer see. And I'd guard the compaction: if the summary isn't smaller than the span it replaces, skip it, because otherwise you pay a model call to grow the prompt.</p>
+        <p>Longer term I'd reduce what enters the context at all - tighter tool results, fewer steps via routing - since managing a budget is better than repeatedly rescuing it. And I'd track a budget in tokens as well as steps, because one expensive call can cost more than five cheap ones."</p></div></div>
 
         <details class="recall"><summary><span class="q-ico">Q</span> System design · Design memory for a support agent handling repeat customers across months. <span class="chev">›</span></summary><div class="a">
-        <p>Separate the stores by lifetime and by who owns them. <strong>Run state</strong>: ephemeral, persisted only for crash recovery, deleted on completion. <strong>Ticket history</strong>: already your system of record — query it, do not copy it into a second store that can disagree with it. <strong>Customer profile</strong>: a small, explicit, human-auditable set of durable facts (preferred language, accessibility needs, tier). Written by rule, not by model whim.</p>
-        <p>Then the parts that make it real. <strong>Write policy:</strong> what earns a place in the profile, and who can correct it — an agent that writes "customer is abusive" from one bad exchange has created a durable, wrong, consequential record. <strong>Retention and deletion:</strong> a subject-access or deletion request must reach every store, which is an argument for fewer stores. <strong>Tenant isolation:</strong> memory keyed so cross-customer leakage is structurally impossible, not merely filtered. <strong>Injection:</strong> anything written from ticket text is attacker-controlled — Lesson 9.</p>
+        <p>Separate the stores by lifetime and by who owns them. <strong>Run state</strong>: ephemeral, persisted only for crash recovery, deleted on completion. <strong>Ticket history</strong>: already your system of record - query it, do not copy it into a second store that can disagree with it. <strong>Customer profile</strong>: a small, explicit, human-auditable set of durable facts (preferred language, accessibility needs, tier). Written by rule, not by model whim.</p>
+        <p>Then the parts that make it real. <strong>Write policy:</strong> what earns a place in the profile, and who can correct it - an agent that writes "customer is abusive" from one bad exchange has created a durable, wrong, consequential record. <strong>Retention and deletion:</strong> a subject-access or deletion request must reach every store, which is an argument for fewer stores. <strong>Tenant isolation:</strong> memory keyed so cross-customer leakage is structurally impossible, not merely filtered. <strong>Injection:</strong> anything written from ticket text is attacker-controlled - Lesson 9.</p>
         <p>Say what you would <em>not</em> build: freeform model-written memories, because the failure mode is confident false recall and there is no cheap way to detect it.</p></div></details>
 
         <details class="recall"><summary><span class="q-ico">Q</span> Debugging · At step 15 the agent starts making unrelated tool calls. Diagnose. <span class="chev">›</span></summary><div class="a">
-        <p>Classic context dilution. Get the actual prompt at step 15 and measure the ratio: how many tokens are the goal and instructions, and how many are accumulated tool output? If the goal is 2% of the prompt, the model is not ignoring it — it is outvoted.</p>
-        <p>Check in order: is compaction running at all; is it keeping the goal; is one tool returning far more than the others; has the transcript been truncated by the provider rather than by you — because provider-side truncation usually drops the <em>oldest</em> messages, which is where your system prompt lives.</p>
+        <p>Classic context dilution. Get the actual prompt at step 15 and measure the ratio: how many tokens are the goal and instructions, and how many are accumulated tool output? If the goal is 2% of the prompt, the model is not ignoring it - it is outvoted.</p>
+        <p>Check in order: is compaction running at all; is it keeping the goal; is one tool returning far more than the others; has the transcript been truncated by the provider rather than by you - because provider-side truncation usually drops the <em>oldest</em> messages, which is where your system prompt lives.</p>
         <p>Then the structural answer: 15 steps for this task probably means the step budget is too generous and the tools too fine-grained. Coarser tools and routing reduce steps, and fewer steps is a better fix than better compaction.</p></div></details>
 
         <details class="recall"><summary><span class="q-ico">Q</span> Coding · Implement transcript compaction. <span class="chev">›</span></summary><div class="a">
@@ -273,10 +317,10 @@ max_steps: int = 6
 
         <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · Should the agent write its own memories? <span class="chev">›</span></summary><div class="a">
         <p>Rarely, and never without a correction path. The appeal is obvious; the failure mode is a durable false belief that shapes every future interaction and that nobody knows to look for. In support, a wrong memory about a customer is worse than no memory, because it produces confidently wrong personalisation.</p>
-        <p>If it must happen: constrain writes to a fixed schema rather than freeform text, require a confidence threshold or human confirmation for anything consequential, timestamp and source every entry so it can be audited, expire entries by default, and make deletion trivial. And measure it — treat recall precision as an eval metric, not an assumption.</p></div></details>
+        <p>If it must happen: constrain writes to a fixed schema rather than freeform text, require a confidence threshold or human confirmation for anything consequential, timestamp and source every entry so it can be audited, expire entries by default, and make deletion trivial. And measure it - treat recall precision as an eval metric, not an assumption.</p></div></details>
 
         <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · Bigger context windows are coming. Does this lesson stop mattering? <span class="chev">›</span></summary><div class="a">
-        <p>No, for three reasons. <strong>Cost</strong> scales with tokens, so a 1M-token window you actually fill is a bill, not a feature. <strong>Attention degrades</strong> over long contexts — models reliably lose material in the middle, so a fact present in the prompt is not a fact used. And <strong>latency</strong> rises with prompt size, which users feel.</p>
+        <p>No, for three reasons. <strong>Cost</strong> scales with tokens, so a 1M-token window you actually fill is a bill, not a feature. <strong>Attention degrades</strong> over long contexts - models reliably lose material in the middle, so a fact present in the prompt is not a fact used. And <strong>latency</strong> rises with prompt size, which users feel.</p>
         <p>What changes is the threshold at which you intervene, not the discipline. The framing that survives: context is a budget you spend deliberately, and the question is always "does this token earn its place", not "does it fit".</p></div></details>
 
         <h2 id="recap">10 · Recap</h2>
@@ -288,18 +332,18 @@ max_steps: int = 6
           <li>Two mechanisms: <strong>cap</strong> a single oversized result at the source, <strong>compact</strong> accumulation. Compaction cannot rescue a huge newest message.</li>
           <li>A generous <code>KEEP_RECENT</code> protects exactly the messages that caused the problem.</li>
           <li>Compaction keeps the system prompt and <em>the goal</em>. Dropping the goal is the classic bug.</li>
-          <li>Compact when it helps, not when it is full — and skip it when the summary would be bigger.</li>
+          <li>Compact when it helps, not when it is full - and skip it when the summary would be bigger.</li>
           <li>Memory and RAG are the same machinery; what differs is what you write. Ours writes nothing, and reports the basis of its recall.</li>
         </ul>
         </div>
 
         <div class="callout key"><div class="c-ico">🚀</div><div class="c-body"><div class="c-title">Next</div>
-        <p>Your agent is competent and completely unprotected. Lesson 7 breaks it on purpose: infinite loops, timeouts, repeated calls and partial failure — then builds the controller that survives them. This is where interviews are won.</p></div></div>
+        <p>Your agent is competent and completely unprotected. Lesson 7 breaks it on purpose: infinite loops, timeouts, repeated calls and partial failure - then builds the controller that survives them. This is where interviews are won.</p></div></div>
 
         <h2 id="deeper">11 · Optional deep dives</h2>
         <ul>
-          <li><a href="../../memory.html">Memory in LLMs</a> — the full taxonomy including CoALA's four types, and memory-vs-RAG in depth.</li>
-          <li><a href="../../modules/08_agents.html">Module 08 · Agentic AI</a> — short- and long-term memory in the agent context.</li>
+          <li><a href="../../memory.html">Memory in LLMs</a> - the full taxonomy including CoALA's four types, and memory-vs-RAG in depth.</li>
+          <li><a href="../../modules/08_agents.html">Module 08 · Agentic AI</a> - short- and long-term memory in the agent context.</li>
         </ul>
 
         <div class="page-nav" data-page-nav>
@@ -329,9 +373,9 @@ window.PORTAL = {
   ]
 };
 </script>
-<script src="../../assets/sitenav.js?v=20260804b"></script>
-<script src="../../assets/portal-page.js?v=20260727c"></script>
-<script src="../../assets/enhance.js?v=20260804a"></script>
+<script src="../../assets/sitenav.js?v=20260925a"></script>
+<script src="../../assets/portal-page.js?v=20260925c"></script>
+<script src="../../assets/enhance.js?v=20260925c"></script>
 <script src="../../assets/genai-motion.js?v=20260728a"></script>
 <script src="../../assets/glossary.js?v=20260802b"></script>
 </body>

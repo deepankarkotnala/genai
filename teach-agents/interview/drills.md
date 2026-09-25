@@ -1,6 +1,6 @@
 # Interview drills
 
-Four timed exercises. Do them under time pressure — the constraint is the point.
+Four timed exercises. Do them under time pressure - the constraint is the point.
 
 ---
 
@@ -11,19 +11,19 @@ Four timed exercises. Do them under time pressure — the constraint is the poin
 Ship in this order:
 
 1. A message list with roles.
-2. A **bounded** `for` loop — not `while True`.
+2. A **bounded** `for` loop - not `while True`.
 3. Call the model; branch on tool-call vs final answer.
 4. Dispatch through a **dictionary**, never `getattr` or `eval` on model output.
 5. Catch tool errors and feed them back as observations.
 6. Append both the decision and the result to the messages.
 7. Return an object carrying **why** it stopped, not just a string.
 
-**Say these out loud while typing** — the commentary is half the score:
+**Say these out loud while typing** - the commentary is half the score:
 
 - "The step limit is the actual bound; if termination depends on the model
   choosing to stop, it isn't bounded."
 - "Dictionary dispatch means a hallucinated tool name is a clean error."
-- "The tool error goes back to the model, not up the stack — a missing record is
+- "The tool error goes back to the model, not up the stack - a missing record is
   information it can act on."
 - "I return why it stopped, so the caller can tell a finished run from a
   truncated one."
@@ -45,7 +45,7 @@ Do not start drawing boxes. Structure it:
 **Scope (15s).** "What's the volume, and what can it do without a human? Those
 two answers change the design more than anything else."
 
-**Shape (30s).** "Most volume is a workflow — password resets, delivery status —
+**Shape (30s).** "Most volume is a workflow - password resets, delivery status - 
 so I'd route first with one cheap classification call and only send ambiguous or
 multi-step tickets to an agent. At ten thousand a day, if the agent handles 15%
 that's 1,500 runs, which is a budget I can state."
@@ -70,7 +70,7 @@ architecture is worse than leaving room for their actual question.
 
 Pick one and talk for twenty minutes. Cover: scope, shape, tools and
 permissions, failure handling, irreversible actions, security, evaluation,
-observability, cost — and what you would *not* build.
+observability, cost - and what you would *not* build.
 
 1. Support triage at 10,000 tickets/day, three teams, four permission tiers.
 2. An agent with email, calendar and CRM access for 10,000 employees.
@@ -99,7 +99,7 @@ candidate causes, what's the immediate mitigation, what's the systemic fix.*
 8. **"Eval scores went up but complaints went up too."**
 
 For every one of these, the first question is the same: **do I have a trace?**
-If the honest answer is no, that's the finding — and saying so is a better
+If the honest answer is no, that's the finding - and saying so is a better
 response than speculating.
 
 ---
@@ -111,7 +111,7 @@ Across all four drills, the differences that matter:
 - You name **numbers**, not adjectives. "+1 model call, +51 tokens" beats
   "slightly more expensive."
 - You volunteer **trade-offs and gaps** before being asked.
-- You say **what you would not build** — over-engineering is a real answer to a
+- You say **what you would not build** - over-engineering is a real answer to a
   real question.
 - You reach for **capability restriction** before prompt wording on anything
   security-shaped.

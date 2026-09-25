@@ -1,0 +1,408 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>09 · Security | Understanding AI Agents</title>
+<meta name="description" content="Prompt injection ranked honestly. Why an absent capability is the only structural defence, why authorisation is checked against the caller, and how the reply itself becomes an exfiltration route.">
+<link rel="icon" href="../../assets/brand/favicon.svg?v=20260925b" type="image/svg+xml">
+<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260925b" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260925b">
+<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260925b" sizes="180x180">
+<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260925b">
+<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260925b" color="#6f47f5">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="../../assets/styles.css?v=20260805a">
+<link href="../../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
+<link href="../../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
+<link href="../../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+<link href="../../assets/ir-theme.css?v=20260925c" rel="stylesheet"/>
+</head>
+<body data-curriculum-id="cx-09" data-page="cx-09">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="../../index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search this section…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Understanding AI Agents · CampusX / <b>09 · Security</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> 09 · Safety</div>
+        <h1>Security: the defence that is not a filter</h1>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~19 min read</span>
+          <span class="pill purple">Pairs with · <a href="../lessons/0009-security.html">Lesson 9 · Security & guardrails</a></span>
+        </div>
+
+<!-- ================= 1 ================= -->
+<h2 id="known">1 · What you already know</h2>
+<p>From page 3: a trusted tool delivers untrusted text into the prompt. From
+page 8: the agent can now issue a refund.</p>
+<p><b>Those two facts together are the whole of this page.</b> Someone who can write into a
+ticket can write into your model's context, and the model now has a tool that moves
+money.</p>
+
+<!-- ================= 2 ================= -->
+<h2 id="breaks">2 · What breaks now</h2>
+<p>Ticket <code>TCK-1008</code>, submitted through your normal customer form.</p>
+
+<p>Your <code>read_ticket</code> tool is your code. It is not compromised. It returns a
+correctly shaped dictionary, and in doing so it places that sentence into the model's
+prompt.</p>
+<p>On page 3 this was inert, because there was no refund tool. <b>Page 8 added one.</b></p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Where injected text arrives</th><th>Who wrote it</th></tr></thead>
+<tbody>
+<tr><td>A ticket body</td><td>A customer, or anyone with the form URL</td></tr>
+<tr><td>A retrieved document</td><td>Whoever could write to the indexed source</td></tr>
+<tr><td>A tool result from another system</td><td>Whoever can write to that system</td></tr>
+<tr><td>A file, an email, a web page</td><td>Anyone at all</td></tr>
+</tbody>
+</table>
+</div>
+<p>All four arrive as ordinary text in the same prompt. <b>Nothing in the format
+distinguishes them from your own instructions.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 302" role="img" aria-labelledby="cx9-where-t cx9-where-d">
+<title id="cx9-where-t">Where injected text comes from</title>
+<desc id="cx9-where-d">Injected instructions arrive in a ticket body, inside a retrieved document, or inside a tool result from another system. All three land in the prompt as ordinary text, which is why the defence cannot be pattern matching.</desc>
+<defs><marker id="ah-cx9-where" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="132" width="249.05" height="56" rx="12"></rect>
+<text class="lbl" x="136.525" y="156">text arrives</text>
+<text class="lbl" x="136.525" y="174">in the prompt</text>
+<rect class="box b2" x="305.05" y="132" width="267.05" height="56" rx="12"></rect>
+<text class="lbl" x="438.575" y="156">who wrote</text>
+<text class="lbl" x="438.575" y="174">it?</text>
+<path class="arw" d="M266.05 160 H301.05" marker-end="url(#ah-cx9-where)"></path>
+<rect class="box b3" x="624.1" y="58" width="263.9" height="56" rx="12"></rect>
+<text class="lbl" x="756.05" y="91">a ticket body -- a customer wrote it</text>
+<path class="arw" d="M575.1 160 C598.1 160, 598.1 86, 620.1 86" marker-end="url(#ah-cx9-where)"></path>
+<rect class="box b4" x="624.1" y="132" width="263.9" height="56" rx="12"></rect>
+<text class="lbl" x="756.05" y="165">a retrieved document -- indexed earlier</text>
+<path class="arw" d="M575.1 160 C598.1 160, 598.1 160, 620.1 160" marker-end="url(#ah-cx9-where)"></path>
+<rect class="box b5" x="624.1" y="206" width="263.9" height="56" rx="12"></rect>
+<text class="lbl" x="756.05" y="239">a tool result -- another system's data</text>
+<path class="arw" d="M575.1 160 C598.1 160, 598.1 234, 620.1 234" marker-end="url(#ah-cx9-where)"></path>
+<text class="cap" x="450" y="296">all three read exactly like your own instructions to the model</text>
+</svg>
+
+<!-- ================= 3 ================= -->
+<h2 id="breakdown">3 · Simple breakdown - Absent capability vs an input filter</h2>
+<section class="breakdown">
+
+<h3 class="bd-tech"><span class="bd-tag">A</span> An absent capability</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> An absent capability means the dangerous operation has no tool at all, so there is nothing for the model to request.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It makes a class of attack structurally impossible rather than merely unlikely.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 372" role="img" aria-labelledby="cx9-exec-t cx9-exec-d">
+<title id="cx9-exec-t">The defences, strongest first</title>
+<desc id="cx9-exec-d">The strongest defence is that no dangerous tool exists, because a capability that is absent cannot be talked into running. Everything below it reduces risk without changing what is possible.</desc>
+<defs><marker id="ah-cx9-exec" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="layer b1" x="150" y="16" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="37">capability: the tool does not exist</text>
+<text class="lbl" x="450" y="55">absent, not filtered</text>
+<rect class="layer b2" x="150" y="82" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="112">policy in code: a function cannot be persuaded</text>
+<path class="arw" d="M450 66 V79" marker-end="url(#ah-cx9-exec)"></path>
+<rect class="layer b3" x="150" y="148" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="178">approval: a person gates the effect</text>
+<path class="arw" d="M450 132 V145" marker-end="url(#ah-cx9-exec)"></path>
+<rect class="layer b4" x="150" y="214" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="244">authorisation: checked against the caller</text>
+<path class="arw" d="M450 198 V211" marker-end="url(#ah-cx9-exec)"></path>
+<rect class="layer b5" x="150" y="280" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="310">output checks: the last line before the reply leaves</text>
+<path class="arw" d="M450 264 V277" marker-end="url(#ah-cx9-exec)"></path>
+<text class="cap" x="450" y="366">a keyword filter is not on this list -- it is the weakest thing people try first</text>
+</svg>
+
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> The tool registry itself. Security is a property of what is declared, and of the credentials the process holds.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> None. There is nothing to configure and nothing to bypass, because the code path does not exist.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> It constrains what the product can do. Adding the capability later reintroduces the whole risk, which is why the decision belongs in design rather than in configuration.</p>
+
+<h3 class="bd-tech"><span class="bd-tag">B</span> An input filter</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> An input filter scans incoming text for patterns that look like injected instructions and blocks or strips them.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It reduces how often an injection attempt reaches the model in a usable form.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b> Each input is matched against a pattern list or scored by a classifier before being added to the prompt.</p>
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> A pattern list or a classifier, a threshold, and a decision about what to do with a positive match.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> The patterns, and whatever the classifier holds. Both need maintaining as new phrasings appear.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> It has false positives and false negatives, and the same instruction can be rephrased, translated or encoded. It never changes what a successful injection could do.</p>
+
+<h3 class="bd-diff">The core differences</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>An absent capability</th><th>An input filter</th></tr></thead>
+<tbody>
+<tr><th>Changes what is possible</th><td>Yes, the operation does not exist</td><td>No, only how often it is attempted successfully</td></tr>
+<tr><th>Fails open or closed</th><td>Cannot fail; there is no path</td><td>Fails open on any phrasing not matched</td></tr>
+<tr><th>Maintenance</th><td>None once decided</td><td>Continuous, as phrasings change</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 class="bd-short">In short - which one to choose</h3>
+<ul>
+<li><b>Remove the capability</b> when the operation is not needed. This is the only defence that changes what an attacker can achieve.</li>
+<li><b>Gate it</b> with policy in code and an approval step when the operation is needed but dangerous.</li>
+<li><b>Filter</b> as a rate reducer on top of both, and never as the thing that makes the system safe.</li>
+</ul>
+</section>
+
+<!-- ================= 4 ================= -->
+<h2 id="without">4 · Without the technology</h2>
+<p>The defence people reach for first.</p>
+
+<p>It catches the example above. It does not catch any of these, all of which do the same
+job.</p>
+
+<p><b>Every bypass is a new pattern, and the list never closes.</b> Worse, the filter creates
+confidence: a system with a filter feels defended, and the tool that moves money is still
+declared.</p>
+
+<!-- ================= 5 ================= -->
+<h2 id="mechanics">5 · Runtime mechanics</h2>
+<p>Five controls, in descending order of how much they protect you.</p>
+<ol>
+<li><b>Capability.</b> The agent cannot run shell commands, open sockets or read arbitrary
+files, because no tool does those things. Absent, not filtered.</li>
+<li><b>Policy in code.</b> A persuasive ticket cannot argue with a function.</li>
+<li><b>Approval.</b> A successful injection still cannot move money without a person.</li>
+<li><b>Authorisation.</b> Checked against the caller from your auth layer, never against
+anything the model produced.</li>
+<li><b>Output checks.</b> Redaction and citation verification, applied to the reply before
+it leaves.</li>
+</ol>
+<p>Prompt wording sits below all five. <b>It reduces the rate and decides nothing.</b></p>
+
+<!-- ================= 7 ================= -->
+<h2 id="components">6 · The components, one at a time</h2>
+<h3>Capability scoping</h3>
+<p>Decided per run, from the authenticated caller, before the loop starts.</p>
+
+<h3>Argument-level authorisation</h3>
+
+<p>Note what is <i>not</i> here: nothing reads <code>args["user_is_admin"]</code>. <b>Anything
+in the arguments may have been influenced by injected text.</b></p>
+
+<h3>Tenant isolation</h3>
+
+<p>Filtering after retrieval is a leak that happens to be hidden. Filtering in the query is
+the control.</p>
+
+<h3>Output redaction</h3>
+<p>Applied at the point the answer is produced, not in the viewer. A value redacted
+downstream was still written somewhere upstream.</p>
+
+<h3>Marking untrusted content</h3>
+
+<p>This helps and is not a boundary. It gives the system prompt something to refer to, and a
+determined injection can still work.</p>
+
+<!-- ================= 8 ================= -->
+<h2 id="state">7 · State and data flow</h2>
+<ol>
+<li><b>What data is state?</b> The caller identity, the scoped tool set, and the tenant.</li>
+<li><b>Who writes each field?</b> Your auth layer, before the run starts.</li>
+<li><b>Who reads it?</b> Dispatch, on every call, and every query that touches data.</li>
+<li><b>Replaced, appended or merged?</b> Fixed for the run. It must never be modifiable
+mid-run.</li>
+<li><b>What reducer controls merging?</b> None, deliberately. Identity is not negotiable.</li>
+<li><b>Only in process memory?</b> The identity, yes. The audit trail, no.</li>
+<li><b>Is it checkpointed?</b> If a run resumes, the identity must be re-established, never
+restored from the checkpoint.</li>
+<li><b>Is it in a database?</b> The audit log is.</li>
+<li><b>How long does it survive?</b> The run, plus the retention period of the log.</li>
+<li><b>What retrieves it again?</b> The run id, which every audit entry carries.</li>
+</ol>
+<p>Row 7 is a real vulnerability in checkpointed systems. <b>Restoring a caller identity from
+a saved state trusts the store as much as the auth layer</b>, and they are rarely equally
+protected.</p>
+
+<!-- ================= 10 ================= -->
+<h2 id="trace">8 · Trace</h2>
+<p>The injected ticket, run against the scoped agent.</p>
+
+<p>Read step 2 honestly. <b>The injection worked.</b> The model did request the refund the
+attacker asked for.</p>
+<p>What stopped it was not the model, and not the system prompt. It was
+<code>policy.refund_permitted</code> returning False for an amount above the automatic
+limit, in code that no text can argue with.</p>
+
+<!-- ================= 11 ================= -->
+<h2 id="break">9 · Break it</h2>
+<p>Now the leak that needs no network tool. Put a secret in the context.</p>
+
+<p>The agent has no HTTP tool and no shell. <b>It exfiltrated a single-use approval token
+through the customer reply</b>, because the reply is a channel and the token was in the
+context.</p>
+<p>Nothing failed. The model was being helpful, and the token is now in a customer's
+inbox.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 174" role="img" aria-labelledby="cx9-exfil-t cx9-exfil-d">
+<title id="cx9-exfil-t">The reply is an exfiltration route</title>
+<desc id="cx9-exfil-d">An agent with no network tool can still leak a secret by writing it into the answer it was asked to send. The output check is the last place the token can be caught before the reply leaves.</desc>
+<defs><marker id="ah-cx9-exfil" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="52" width="202.5" height="56" rx="12"></rect>
+<rect class="box fail" x="236.5" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M217.5 80 H232.5" marker-end="url(#ah-cx9-exfil)"></path>
+<rect class="box after b3" x="461" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M442 80 H457" marker-end="url(#ah-cx9-exfil)"></path>
+<rect class="box after b4" x="685.5" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M666.5 80 H681.5" marker-end="url(#ah-cx9-exfil)"></path>
+<text class="lbl" x="113.25" y="76">token enters</text>
+<text class="lbl" x="113.25" y="94">the context</text>
+<text class="lbl" x="337.75" y="76">model writes it</text>
+<text class="lbl" x="337.75" y="94">into the reply</text>
+<text class="lbl" x="562.25" y="76">output check</text>
+<text class="lbl" x="562.25" y="94">redacts it</text>
+<text class="lbl" x="786.75" y="76">reply sent</text>
+<text class="lbl" x="786.75" y="94">clean</text>
+<path class="xmark" d="M319.75 122 L355.75 150 M355.75 122 L319.75 150"></path>
+<text class="cap rescue" x="450" y="166">no socket needed -- the channel you meant to use is the channel</text>
+</svg>
+
+<!-- ================= 12 ================= -->
+<h2 id="fix">10 · Fix it</h2>
+<p><b>1 · Keep the secret out of the context.</b> The strongest fix, and the one
+people skip.</p>
+
+<p>The approver looks the pending action up by key in their own interface. The token never
+needs to exist in the model's prompt.</p>
+<p><b>2 · Redact on the way out</b>, for anything that reaches the context despite step 1.</p>
+
+<p><b>3 · Alert, do not just redact.</b> A redaction that fires is evidence that a secret
+reached the context, which is a bug upstream.</p>
+<p><b>4 · Verify citations</b>, so an invented policy cannot arrive with a plausible
+reference attached.</p>
+
+<!-- ================= 13 ================= -->
+<h2 id="production">11 · Production version</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Concern</th><th>What you do</th></tr></thead>
+<tbody>
+<tr><td>Capability</td><td>Declare the smallest tool set the task needs. Absent beats filtered</td></tr>
+<tr><td>Scoping</td><td>Tools and credentials bound to the authenticated caller, before the run</td></tr>
+<tr><td>Policy</td><td>In code, returning a decision and a reason. Never in the system prompt</td></tr>
+<tr><td>Authorisation</td><td>Against the caller from your auth layer. Never against a field in the arguments</td></tr>
+<tr><td>Tenant isolation</td><td>Filter in the query; tenant in every cache and checkpoint key</td></tr>
+<tr><td>Secrets</td><td>Never in the context. Redact on output, and alert when redaction fires</td></tr>
+<tr><td>Citations</td><td>Verified against retrieved ids before the answer is shown</td></tr>
+<tr><td>Untrusted marking</td><td>Label external content in tool results. A rate reducer, not a boundary</td></tr>
+<tr><td>Regression tests</td><td>An injection corpus in the evaluation suite, run on every change</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ================= 14 ================= -->
+<h2 id="comparison">12 · Comparison</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Absent capability</th><th>Policy in code</th><th>Approval</th><th>Input filter</th></tr></thead>
+<tbody>
+<tr><th>Changes what is possible</th><td><b>Yes</b></td><td>Yes, within its rules</td><td>Yes, for gated actions</td><td>No</td></tr>
+<tr><th>Can be argued with by text</th><td>No</td><td>No</td><td>No</td><td><b>Yes, by rephrasing</b></td></tr>
+<tr><th>Maintenance burden</th><td>None</td><td>Low</td><td>Reviewer time</td><td><b>Continuous</b></td></tr>
+<tr><th>Costs product capability</th><td><b>Yes</b></td><td>Some</td><td>Latency</td><td>False positives</td></tr>
+<tr><th>Use it for</th><td>Anything not needed</td><td>Every rule you can state</td><td>Irreversible actions</td><td>Reducing noise</td></tr>
+</tbody>
+</table>
+</div>
+<p>The second row is the entire argument. <b>Three of these cannot be talked out of their
+decision, and one can.</b> Build on the three.</p>
+
+<!-- ================= 15 ================= -->
+<div class="carry"><b>New questions</b> written for this page: it is new, so there was nothing to carry over.</div>
+<h2 id="interview">13 &middot; Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What is prompt injection? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Text from an untrusted source that reaches the model's context and is read as instruction rather than as data. It arrives in a ticket body, a retrieved document, or a tool result from another system.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  Why is a keyword filter a weak defence? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>It blocks the phrasings you thought of. The same instruction can be written in another language, split across sentences, or encoded. A filter reduces the rate of successful attempts; it never changes what is possible.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  Rank the defences against prompt injection. <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Capability first: a tool that does not exist cannot be called, whatever the text says. Then policy in code, because a function cannot be persuaded. Then approval, so a successful injection still cannot move money. Then authorisation checked against the request context. Then output checks. Prompt wording is last and is not a boundary.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  Why must authorisation never be checked against something the model said? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>The model's output is derived from text that may include an attacker's. If a tool trusts a field like user_is_admin from the arguments, the attacker controls that field. Authorisation must be evaluated against the caller identity your auth layer established, before the model was involved.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  An agent has no network tool. Can it still leak a secret? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Yes, through the reply it is supposed to send. If a token or a connection string reaches the context, the model can write it into the answer. The output channel you intended is the exfiltration channel, which is why output redaction is a real control rather than defence in depth.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  How do you scope an agent's tools in a multi-tenant system? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Bind the tool set and the credentials to the authenticated tenant before the run starts, so a tool physically cannot reach another tenant's data. Filter at query time using the tenant from the auth context, never post-filter results. Include the tenant in every cache key and every checkpoint key, because a shared cache is a cross-tenant read.</p></div></details>
+
+<!-- ================= 16 ================= -->
+<h2 id="short">14 · In short, and what comes next</h2>
+<p class="bd-choose">Remember these six:</p>
+<ul>
+<li>The security boundary is that no dangerous capability exists. Everything else is secondary.</li>
+<li>Injected text arrives in tickets, documents and tool results, and looks like your own instructions.</li>
+<li>A keyword filter reduces the rate and changes nothing about what is possible.</li>
+<li>Authorise against the caller your auth layer established, never against the arguments.</li>
+<li>An agent with no network tool can still leak through the reply it was asked to send.</li>
+<li>Keep secrets out of the context, and treat a firing redaction as an incident.</li>
+</ul>
+<div class="callout key">
+<div class="c-ico">🔑</div>
+<div class="c-body"><div class="c-title">The one idea to remember</div>
+<p><b>A successful injection should be boring.</b> If the model asking for a forbidden action
+is stopped by a function rather than by good luck, the injection is a logged event and not
+an incident.</p></div>
+</div>
+<p><b>Next:</b> page 10 is about measuring whether any of this works, and about the
+difference between a right answer and a right answer reached correctly.</p>
+
+<div class="page-nav" data-page-nav>
+<a href="08-irreversible-actions.html"><div class="dir">← Previous</div><div class="ttl">08 · Irreversible actions</div></a>
+          <a class="next" href="10-evaluation.html"><div class="dir">Next →</div><div class="ttl">10 · Evaluation</div></a>
+</div>
+
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script>
+window.__pageNav = {
+  navLabel: "Understanding AI Agents · CampusX",
+  here: "campusx/09-security.html",
+  base: "../",
+  pages: [
+    { file: "campusx/index.html", title: "Section index", num: "✦", kw: "campusx agents index" }
+  ]
+};
+</script>
+<script src="../../assets/app.js?v=20260925c"></script>
+<script src="../../assets/sitenav.js?v=20260925a"></script>
+<script src="../../assets/enhance.js?v=20260925c"></script>
+<script src="../../assets/genai-motion.js?v=20260728a"></script>
+<script src="../../assets/glossary.js?v=20260802b"></script>
+</body>
+</html>

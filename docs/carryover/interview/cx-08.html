@@ -1,0 +1,15 @@
+<h2 id="interview">15 &middot; Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What is the difference between recommending and executing? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>A recommendation runs every check and reports what would happen, changing nothing. An execution actually performs the action. Making recommend the default means a bug produces a wrong report rather than a wrong refund.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  Why does policy belong in code rather than in the prompt? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>A prompt instruction is text that other text can argue with. A function cannot be persuaded. If policy lives in the system prompt, a sufficiently convincing ticket is an attack surface; if it lives in a function, it is not.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  What is an idempotency key, and where must it come from? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>A value that identifies one logical operation, so a repeat is recognised and ignored. It must be derived from the request content - the order, the amount, the reason. A random or time-based key is different on every attempt, which implements the mechanism and disables it at the same time.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  Why do the policy and idempotency checks run before the approval gate? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>There is no point asking a person to approve something policy forbids, or something that has already happened. Sending impossible requests to a reviewer trains them to approve without reading, which destroys the value of the gate.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  Design the check order for an agent that can issue refunds. <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Validate the request exists and is well-formed. Check policy in code. Check idempotency. Stop and report if this is a dry run. Verify a valid, unexpired, single-use approval. Then execute, record the result, and write an append-only audit entry. Cheap and certain checks first, the human last, because the human is the most expensive step.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  How do you make an approval token safe? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Bind it to the exact action: the tool, the arguments, and the idempotency key. Give it a short expiry and mark it single-use on redemption. An approval that is not bound to specific arguments can be replayed against a different amount, which is the same failure as a confused deputy.</p></div></details>
+
+<!-- ================= 16 ================= -->

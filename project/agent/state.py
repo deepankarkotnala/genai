@@ -1,5 +1,5 @@
 """
-state.py — run state, which is not memory.
+state.py - run state, which is not memory.
 
 Lesson 6. The distinction candidates fumble most often:
 

@@ -1,5 +1,5 @@
 """
-Lesson 4 — ORCHESTRATION: many specialized agents, one business outcome.
+Lesson 4 - ORCHESTRATION: many specialized agents, one business outcome.
 
 This is the heart of the EnM doc: "individual agents may not work -- need orchestration
 of multiple agents to achieve an outcome."
@@ -51,7 +51,7 @@ KNOWLEDGE_BASE = {
 
 
 # ----------------------------------------------------------------------------- #
-#  TOOLS shared by the agents
+# TOOLS shared by the agents
 # ----------------------------------------------------------------------------- #
 def load_data(path=DATA_FILE):
     with open(path, newline="") as f:
@@ -69,7 +69,7 @@ def z_anomalies(tag, z_threshold=3.0):
 
 
 # ----------------------------------------------------------------------------- #
-#  AGENT 1 — Anomaly Agent.  Goal: find tags in trouble (now OR soon).
+# AGENT 1: Anomaly Agent.  Goal: find tags in trouble (now OR soon).
 # ----------------------------------------------------------------------------- #
 def anomaly_agent():
     print("[Anomaly Agent] scanning tags (threshold + forecast)...")
@@ -90,8 +90,8 @@ def anomaly_agent():
 
 
 # ----------------------------------------------------------------------------- #
-#  AGENT 2 — RCA Agent.  Goal: for each finding, name the failure mode + causes,
-#  rank by an RPN-style score (here: urgency from how soon it breaches / how big the spike).
+# AGENT 2: RCA Agent.  Goal: for each finding, name the failure mode + causes,
+# rank by an RPN-style score (here: urgency from how soon it breaches / how big the spike).
 # ----------------------------------------------------------------------------- #
 def rca_agent(findings):
     print("\n[RCA Agent] mapping failure modes and ranking (RPN-style)...")
@@ -115,20 +115,20 @@ def rca_agent(findings):
 
 
 # ----------------------------------------------------------------------------- #
-#  AGENT 3 — Remediation Agent.  Goal: recommend guided steps from the knowledge base.
+# AGENT 3: Remediation Agent.  Goal: recommend guided steps from the knowledge base.
 # ----------------------------------------------------------------------------- #
 def remediation_agent(diagnoses):
     print("\n[Remediation Agent] recommending guided steps (highest RPN first)...")
     plan = []
     for d in diagnoses:
         kb = KNOWLEDGE_BASE.get(d["tag"], {})
-        steps = kb.get("remediation", ["No SOP found — escalate to LT/LD engineer"])
+        steps = kb.get("remediation", ["No SOP found - escalate to LT/LD engineer"])
         plan.append({"tag": d["tag"], "rpn": d["rpn"], "steps": steps})
     return plan
 
 
 # ----------------------------------------------------------------------------- #
-#  THE ORCHESTRATOR — runs the agents in order, passing results along (handoffs).
+# THE ORCHESTRATOR: runs the agents in order, passing results along (handoffs).
 # ----------------------------------------------------------------------------- #
 def orchestrate():
     print("=" * 64)

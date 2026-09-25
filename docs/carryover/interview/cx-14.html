@@ -1,0 +1,15 @@
+<h2 id="interview">15 &middot; Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  Why is a prompt change a deploy? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Because it changes behaviour in production, exactly as a code change does. It gets a version, it runs through the evaluation suite, and it must be possible to roll it back. Editing a prompt in place with no version is deploying untested code.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What does a health check need to actually check? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>That the service can do its job, not that the process is running. A check that returns 200 whenever the web server is up will report healthy while every model call is failing.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  What four things does wrapping an agent in a service force you to decide? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Concurrency: how many runs at once, and what happens beyond that. Timeouts: what the caller sees when a run exceeds one. Health: what healthy means. Versioning: which code and prompt produced a given result.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  Why must an agent service report its versions in the response? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>So a result can be attributed. Without the code commit and prompt version attached, you cannot say which change caused a regression, and you cannot refuse a result produced by a version you have since withdrawn.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  How do you ship a prompt change safely? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Version it, run the evaluation suite against the new version, compare the metrics against the current one, and ship only if they hold. Keep the previous version deployable. If the change is risky, run both and compare on a sample of live traffic before switching.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  An agent request times out at 30 seconds. What should the caller receive? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>A response that says the run did not complete, carries the run id, and states whether any side effect occurred. The dangerous answer is a generic 504, because the caller cannot tell whether the refund happened. This is why execution sits behind idempotency and approval rather than inside the request.</p></div></details>
+
+<!-- ================= 16 ================= -->

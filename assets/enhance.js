@@ -1,5 +1,5 @@
 /* =========================================================================
-   GenAI Learning Hub — Glass Learning UI enhancements
+   GenAI Learning Hub - Glass Learning UI enhancements
    - Wide, distraction-free reading layout
    - Reading progress, section guidance and scroll-to-top
    - Topic-aware animated SVG explainers on every lesson
@@ -135,7 +135,7 @@
     /* "Overview" rather than "Home": the top bar now carries a Home button of
        its own, and two controls with the same label pointing at the same page
        read as a bug. The status chip moved to the top bar as well, so the
-       ribbon is nothing but tabs — which is what lets it scroll cleanly on a
+       ribbon is nothing but tabs - which is what lets it scroll cleanly on a
        phone. The spacer stays: focus mode reuses it to push the exit control
        to the far end of the bar. */
     ribbon.innerHTML =
@@ -152,7 +152,7 @@
   /* ---------- Breadcrumb structure ----------
      The bar ships its trail as one text node ("Foundations / <b>01 · …</b>"),
      which leaves the stylesheet nothing to target when the row has to shed
-     weight on a phone — the whole string can only be truncated mid-word.
+     weight on a phone - the whole string can only be truncated mid-word.
      Splitting it into trail / separator / current parts lets the narrow
      breakpoints drop the ancestor and keep the chapter title (the part the
      reader actually needs), and gives the slash its own colour instead of
@@ -194,7 +194,7 @@
 
   function addHomeButton() {
     var bar = document.querySelector(".topbar");
-    if (!bar || isDsaPage() || bar.querySelector(".home-btn")) return;
+    if (!bar || bar.querySelector(".home-btn")) return;
 
     var button = document.createElement("a");
     button.className = "home-btn";
@@ -202,93 +202,54 @@
     button.href = homeHref();
     button.innerHTML = iconHome() + '<span class="home-lbl">Home</span>';
     button.addEventListener("click", function (event) {
-      event.preventDefault();
       if (window.top !== window.self) {
+        event.preventDefault();
         try {
           window.parent.postMessage({ type: "genai-hub-home" }, "*");
           return;
         } catch (error) {}
       }
-      window.location.href = homeHref();
     });
 
+    var focusBtn = bar.querySelector(".focus-btn");
     var theme = bar.querySelector("[data-theme-toggle]");
-    if (theme) bar.insertBefore(button, theme);
+    if (focusBtn) bar.insertBefore(button, focusBtn);
+    else if (theme) bar.insertBefore(button, theme);
     else bar.appendChild(button);
   }
 
   function addFocusButton() {
     var bar = document.querySelector(".topbar");
-    var studyContent = document.querySelector(".content-wrap > .content");
-    if (!bar || !studyContent || bar.querySelector(".focus-btn")) return;
+    if (!bar || bar.querySelector(".focus-btn")) return;
 
     var button = document.createElement("button");
     button.type = "button";
     button.className = "focus-btn";
     button.setAttribute("aria-label", "Toggle distraction-free focus mode");
-
-    /* Focus mode used to carry its own Narrow/Medium/Wide/Full strip for the
-       reading measure, stored separately under "genai-focus-width". The
-       Display panel now owns that choice for the whole site and maps it onto
-       --focus-measure (see applyReadingSettings), so the strip is gone and
-       there is one setting instead of two that could disagree. */
-
-    // In focus mode a single navigation bar is pinned to the top of the
-    // viewport and the exit control plus the theme toggle live inside it, so
-    // nothing floats above the lesson. Which element becomes that bar depends
-    // on where the page keeps its workspace links: the injected ribbon on
-    // portal pages, or the top bar itself on DSA chapters. Marking the winner
-    // with `.focus-nav` lets office-theme.css style one selector instead of
-    // one rule set per page family, which is what kept the two drifting apart.
-    function navBar() {
-      return document.querySelector(".office-ribbon") || bar;
-    }
-
-    function dock(active) {
-      var nav = navBar();
-      var theme = document.querySelector(".topbar [data-theme-toggle], .office-ribbon [data-theme-toggle]");
-      var host = active ? nav : bar;
-
-      // Only ever one bar is marked, and the mark is cleared on exit so the
-      // page returns to its two-row breadcrumb + ribbon layout.
-      var marked = document.querySelectorAll(".focus-nav");
-      for (var i = 0; i < marked.length; i++) {
-        if (!active || marked[i] !== nav) marked[i].classList.remove("focus-nav");
-      }
-      if (active) nav.classList.add("focus-nav");
-
-      if (theme) {
-        if (theme.parentNode !== host) host.appendChild(theme);
-        host.insertBefore(button, theme);
-      } else {
-        host.appendChild(button);
-      }
-      /* Reading settings matter most while the lesson is the only thing on
-         screen, so the Display control follows the exit button into the focus
-         bar and comes back to the top bar on exit. It is created after this
-         function is first called, hence the lookup rather than a closure over
-         the element. */
-      var reader = document.querySelector(".reader-wrap");
-      if (reader) host.insertBefore(reader, button);
-    }
+    button.setAttribute("aria-pressed", "false");
 
     function apply(active, persist) {
       document.body.classList.toggle("focus-mode", active);
-      dock(active);
       button.setAttribute("aria-pressed", active ? "true" : "false");
       button.setAttribute("aria-label", active ? "Exit focus mode" : "Enter focus mode");
-      button.title = active ? "Exit focus mode (Esc)" : "Enter focus mode (F)";
+      button.title = active ? "Exit focus mode (Esc)" : "Focus mode (F)";
       button.innerHTML = iconFocus(active) + '<span class="focus-lbl">' + (active ? "Exit focus" : "Focus") + "</span>";
 
       if (active) {
         var app = document.querySelector(".app");
         if (app) app.classList.remove("nav-open");
+        document.body.classList.remove("nav-open");
       }
       if (persist) setStored(FOCUS_KEY, active ? "1" : "0");
-      // The Display panel anchors itself to this button, which has just moved
-      // into (or out of) a bar of a different height.
-      document.dispatchEvent(new CustomEvent("genai-focus-change", { detail: { active: active } }));
+      document.dispatchEvent(new CustomEvent("genai-focus-change", { detail: { active: active, focus: active } }));
+      document.dispatchEvent(new CustomEvent("ir-focus-change", { detail: { active: active, focus: active } }));
     }
+
+    var reader = bar.querySelector(".reader-wrap");
+    var theme = bar.querySelector("[data-theme-toggle]");
+    if (reader) bar.insertBefore(button, reader);
+    else if (theme) bar.insertBefore(button, theme);
+    else bar.appendChild(button);
 
     apply(getStored(FOCUS_KEY, "0") === "1", false);
     button.addEventListener("click", function () {
@@ -296,11 +257,7 @@
     });
 
     document.addEventListener("keydown", function (event) {
-      // A modal dialog owns the keyboard while it is open: Esc must close the
-      // dialog (the browser's own behaviour) rather than exit focus mode, and
-      // typing "f" while reading must not toggle the layout underneath it.
       if (modalOpen()) return;
-
       if (event.key === "Escape" && document.body.classList.contains("focus-mode")) {
         event.preventDefault();
         apply(false, true);
@@ -316,64 +273,19 @@
   }
 
   /* =======================================================================
-     Display settings — text size and reading width
-     =======================================================================
-     One control, two settings, stored under one key. The size and width
-     values are also read by the inline pre-paint script in every page's
-     <head> (the same one that applies the theme), so a reader who has chosen
-     large text gets large text in the first paint instead of watching the
-     lesson reflow a moment after load. That means three things must agree on
-     the storage contract, and the head script is the one that cannot be
-     changed from here:
-
-       key    "gp.reading"
-       value  {"size":"xs|s|m|l|xl","width":"default|wide|full","align":"left|justify"}
-
-     Anything unrecognised falls back to "wide" for width, "left" for align, and
-     for size to "s" on a phone / "xs" above 860px, so values stored under the
-     previous four-step scale land on a sensible default for the device.
-
-     The size default is the only one that depends on the viewport, and the
-     phone default is the *larger* of the two, which looks backwards until you
-     remember the ladder is one set of multipliers over the same type tokens on
-     every screen. On a desktop measure the column is wide enough that the
-     smallest step still gives a long line and the page holds much more at once,
-     so "xs" is the default there. On a ~360px column that same multiplier drops
-     to roughly 30 characters a line, below the comfortable range, so the phone
-     starts one step up at "s". A reader who picks a size explicitly gets it on
-     every device — only the untouched default differs.
-
-     Scope of each setting:
-       size   everywhere
-       align  everywhere
-       width  focus mode only, and only above 860px. Outside focus mode the
-              reading column is pinned by the "ONE TYPE SCALE" layer
-              (`max-width: var(--content-max) !important`), so Cozy and
-              Standard rendered identically and Wide and Full only hid the
-              contents rail — the measure never actually changed. Focus mode
-              is excluded from that layer and owns --focus-measure, which is
-              where the four steps do real work. Below 861px there is no
-              spare canvas either way: the column is the viewport.
-
-     The previous generation of this control also offered a contrast toggle
-     and wrote a set of `reader-*` state classes. Those classes were retired
-     (see DRAWER_READING_GUARDRAILS_UPDATE.md) and the old rules are keyed to
-     the pre-Office palette, so nothing here writes them; clearLegacyReading-
-     Classes() still strips any left over from an old session. */
+     Display settings - text size, alignment and reading width
+     Matches interview_prep portal exactly: one step smaller on desktop,
+     justified by default, and focus mode remembers its own width
+     (`focusWidth`) separately from the regular layout's (`width`). The
+     inline pre-paint script in every page's <head> mirrors these defaults.
+     ======================================================================= */
   var READING_KEY = "gp.reading";
-  // Five steps. Ids are deliberately not "default"/"large" any more — the old
-  // ids implied a default that is no longer the default, and a stored value
-  // from the previous scale simply falls back to defaultSize().
   var SIZES = ["xs", "s", "m", "l", "xl"];
   var WIDTHS = ["default", "wide", "full"];
   var ALIGNS = ["left", "justify"];
 
-  /* Kept in step with the pre-paint script in every page's <head>, which runs
-     the same test before first paint. If these two disagree the lesson reflows
-     one step on load, which is the exact thing the head script exists to
-     prevent. */
   function defaultSize() {
-    return window.matchMedia && window.matchMedia("(max-width: 860px)").matches ? "s" : "xs";
+    return window.matchMedia && window.matchMedia("(max-width: 860px)").matches ? "m" : "s";
   }
 
   function readReadingSettings() {
@@ -381,34 +293,33 @@
     try { stored = JSON.parse(getStored(READING_KEY, "{}")) || {}; } catch (error) { stored = {}; }
     return {
       size: SIZES.indexOf(stored.size) >= 0 ? stored.size : defaultSize(),
-      // Wide is the default measure: on the wide screens where focus mode is
-      // actually used, the old default left two thirds of the canvas empty.
       width: WIDTHS.indexOf(stored.width) >= 0 ? stored.width : "wide",
-      // Ragged-right is the default; see the ALIGNMENT note in office-theme.css
-      // for why forced justification was withdrawn.
-      align: ALIGNS.indexOf(stored.align) >= 0 ? stored.align : "left"
+      focusWidth: WIDTHS.indexOf(stored.focusWidth) >= 0 ? stored.focusWidth : "default",
+      align: ALIGNS.indexOf(stored.align) >= 0 ? stored.align : "justify"
     };
+  }
+
+  // Full is a focus-mode measure; outside it the widest column is Wide.
+  function effectiveWidth(settings) {
+    if (document.body.classList.contains("focus-mode")) return settings.focusWidth || "default";
+    return settings.width === "full" ? "wide" : settings.width;
   }
 
   function applyReadingSettings(settings) {
     var root = document.documentElement;
+    var width = effectiveWidth(settings);
+
     root.setAttribute("data-reading-size", settings.size);
-    root.setAttribute("data-reading-width", settings.width);
+    root.setAttribute("data-reading-width", width);
     root.setAttribute("data-reading-align", settings.align);
-    /* Focus mode caps its canvas with --focus-measure, selected by
-       data-focus-width. It used to carry its own Narrow/Medium/Wide/Full
-       control, which meant two widgets writing two stored values for one
-       idea. Mapping the width here retires that control and keeps the choice
-       consistent whether the lesson is in focus mode or not. */
     document.body.setAttribute("data-focus-width", {
-      default: "medium", wide: "wide", full: "full"
-    }[settings.width]);
+      default: "standard", standard: "standard", wide: "wide", full: "full"
+    }[settings.focusWidth] || "standard");
   }
 
   function addReaderControls() {
     var bar = document.querySelector(".topbar");
-    var studyContent = document.querySelector(".content-wrap > .content");
-    if (!bar || !studyContent || bar.querySelector(".reader-wrap")) return;
+    if (!bar || bar.querySelector(".reader-wrap")) return;
 
     var settings = readReadingSettings();
     applyReadingSettings(settings);
@@ -421,14 +332,13 @@
       { value: "xl", label: "A", cls: "sz-5", name: "Extra large text" }
     ];
     var ALIGN_CHOICES = [
-      { value: "left", label: "Left", name: "Ragged right edge — even word spacing" },
-      { value: "justify", label: "Justified", name: "Flush right edge — word spacing varies per line" }
+      { value: "left", label: "Left", name: "Ragged right edge - even word spacing" },
+      { value: "justify", label: "Justified", name: "Flush right edge - word spacing varies per line" }
     ];
-    // Focus mode only; see the scope note above applyReadingSettings.
     var WIDTH_CHOICES = [
-      { value: "default", label: "Standard", name: "Standard reading measure (~1000px)" },
-      { value: "wide", label: "Wide", name: "Wide reading measure (~1360px)" },
-      { value: "full", label: "Full", name: "Full width — text spans the whole screen" }
+      { value: "default", label: "Standard", name: "Optimal reading line-length (70–80 chars)" },
+      { value: "wide", label: "Wide", name: "Wider column for diagrams and wide code" },
+      { value: "full", label: "Full", name: "Expand to fill the reading pane" }
     ];
 
     function segment(group, choices) {
@@ -446,96 +356,54 @@
     wrap.className = "reader-wrap";
     wrap.innerHTML =
       '<button class="reader-btn" type="button" aria-expanded="false" aria-haspopup="dialog" ' +
-        'title="Text size and reading width" aria-label="Display settings: text size and reading width">' +
+        'title="Display settings" aria-label="Reading and display settings">' +
         glyphType() + '<span class="reader-lbl">Display</span>' +
       "</button>";
 
-    /* The panel is a child of <body>, not of the button. The top bar sets
-       `backdrop-filter`, which makes it the containing block for fixed
-       positioning, and some breakpoints also give it `overflow: hidden` — a
-       panel nested inside it would be positioned against the bar and then
-       clipped by it. Portalling to <body> sidesteps both, and means the panel
-       does not have to be moved when focus mode re-docks the button. */
     var panel = document.createElement("div");
     panel.className = "reader-popover";
     panel.setAttribute("role", "dialog");
-    panel.setAttribute("aria-label", "Display settings");
+    panel.setAttribute("aria-label", "Reading and display settings");
     panel.innerHTML =
       '<div class="reader-head"><h3>Display</h3>' +
-      '<button type="button" class="reader-close" aria-label="Close display settings">' +
-        '<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>' +
-      "</button></div>" +
-      "<p>Changes the lesson only, and follows you across pages.</p>" +
+      '<button type="button" class="reader-close" aria-label="Close display settings">&times;</button>' +
+      "</div>" +
+      "<p>Customize font size, line width and text alignment for comfortable reading.</p>" +
       '<div class="reader-row"><span>Text size</span>' + segment("size", SIZE_CHOICES) + "</div>" +
       '<div class="reader-row"><span>Alignment</span>' + segment("align", ALIGN_CHOICES) + "</div>" +
-      /* Hidden by CSS outside focus mode and below 861px, where the measure
-         cannot change. The row is always built so entering focus mode does not
-         have to rebuild the panel. */
-      '<div class="reader-row reader-row-width"><span>Text width</span>' + segment("width", WIDTH_CHOICES) + "</div>" +
+      '<div class="reader-row reader-row-width"><span>Reading width</span>' + segment("width", WIDTH_CHOICES) + "</div>" +
       '<button type="button" class="reader-reset">Reset to default</button>';
 
-    // The sheet form of the panel (phones) needs something behind it, both to
-    // dim the lesson and to give a tap target that closes it.
     var scrim = document.createElement("div");
     scrim.className = "reader-scrim";
 
-    var live = document.createElement("span");
-    live.className = "sr-only reader-live";
-    live.setAttribute("aria-live", "polite");
+    var theme = bar.querySelector("[data-theme-toggle]");
+    if (theme) bar.insertBefore(wrap, theme);
+    else bar.appendChild(wrap);
 
-    /* Normal layout: the button sits with the other view controls, just before
-       the theme toggle. If focus mode was restored from storage before this
-       ran, the exit button is already docked in the focus bar and the top bar
-       is hidden, so the control joins it there instead. */
-    var theme = document.querySelector(".topbar [data-theme-toggle], .office-ribbon [data-theme-toggle]");
-    var focusBtn = document.querySelector(".focus-btn");
-    if (document.body.classList.contains("focus-mode") && focusBtn && focusBtn.parentNode) {
-      focusBtn.parentNode.insertBefore(wrap, focusBtn);
-    } else if (theme && theme.parentNode) {
-      theme.parentNode.insertBefore(wrap, theme);
-    } else {
-      bar.appendChild(wrap);
-    }
     document.body.appendChild(scrim);
     document.body.appendChild(panel);
-    document.body.appendChild(live);
 
     var trigger = wrap.querySelector(".reader-btn");
 
     function refreshButtons() {
-      var groups = { size: settings.size, align: settings.align, width: settings.width };
+      var groups = { size: settings.size, align: settings.align, width: effectiveWidth(settings) };
       Object.keys(groups).forEach(function (group) {
         var buttons = panel.querySelectorAll("[data-reader-" + group + "] button");
         for (var i = 0; i < buttons.length; i++) {
-          var active = buttons[i].dataset.value === groups[group];
+          var active = buttons[i].getAttribute("data-value") === groups[group];
           buttons[i].classList.toggle("active", active);
           buttons[i].setAttribute("aria-pressed", active ? "true" : "false");
         }
       });
-      var custom = settings.size !== defaultSize() || settings.align !== "left" || settings.width !== "wide";
-      trigger.classList.toggle("is-custom", custom);
-      panel.querySelector(".reader-reset").disabled = !custom;
-    }
-
-    function announce() {
-      var sizes = { xs: "smallest", s: "compact", m: "standard", l: "large", xl: "extra large" };
-      var widths = { default: "standard", wide: "wide", full: "full" };
-      var text = "Display: " + sizes[settings.size] + " text, " +
-        (settings.align === "justify" ? "justified" : "left aligned");
-      // The width only means something where the control is offered.
-      if (document.body.classList.contains("focus-mode")) text += ", " + widths[settings.width] + " width";
-      live.textContent = text + ".";
     }
 
     function save() {
       applyReadingSettings(settings);
       refreshButtons();
       setStored(READING_KEY, JSON.stringify(settings));
-      announce();
     }
 
-    // Below this width the panel is a bottom sheet pinned by the stylesheet,
-    // so it must not carry the inline coordinates the anchored form needs.
     var sheetQuery = window.matchMedia("(max-width: 620px)");
 
     function place() {
@@ -546,21 +414,27 @@
       }
       var rect = trigger.getBoundingClientRect();
       panel.style.top = Math.round(rect.bottom + 8) + "px";
-      panel.style.right = Math.max(8, Math.round(window.innerWidth - rect.right)) + "px";
+      panel.style.right = Math.max(12, Math.round(window.innerWidth - rect.right)) + "px";
     }
 
     function open(value) {
-      if (value) place();
+      if (value) {
+        settings = readReadingSettings();
+        refreshButtons();
+        place();
+      }
       panel.classList.toggle("open", value);
       scrim.classList.toggle("open", value);
-      // Locks the page behind the sheet; harmless for the anchored form.
       document.body.classList.toggle("reader-open", value);
       trigger.setAttribute("aria-expanded", value ? "true" : "false");
     }
 
     function isOpen() { return panel.classList.contains("open"); }
 
-    trigger.addEventListener("click", function () { open(!isOpen()); });
+    trigger.addEventListener("click", function (e) {
+      e.stopPropagation();
+      open(!isOpen());
+    });
     panel.querySelector(".reader-close").addEventListener("click", function () {
       open(false);
       trigger.focus();
@@ -571,15 +445,19 @@
       panel.querySelector("[data-reader-" + group + "]").addEventListener("click", function (event) {
         var button = event.target.closest("button[data-value]");
         if (!button) return;
-        settings[group] = button.dataset.value;
+        var value = button.getAttribute("data-value");
+        // Width is remembered per layout: focus mode keeps its own measure.
+        if (group === "width" && document.body.classList.contains("focus-mode")) settings.focusWidth = value;
+        else settings[group] = value;
         save();
       });
     });
 
     panel.querySelector(".reader-reset").addEventListener("click", function () {
       settings.size = defaultSize();
-      settings.align = "left";
-      settings.width = "wide";
+      settings.align = "justify";
+      if (document.body.classList.contains("focus-mode")) settings.focusWidth = "default";
+      else settings.width = "wide";
       save();
     });
 
@@ -592,12 +470,19 @@
       open(false);
       trigger.focus();
     });
-    // The anchor moves with the bar, so an open panel has to follow it. Focus
-    // mode re-docks the button into a bar of a different height, which is why
-    // this listens for its own toggle as well as the viewport changing.
+
     window.addEventListener("resize", function () { if (isOpen()) place(); });
     window.addEventListener("scroll", function () { if (isOpen()) place(); }, { passive: true });
-    document.addEventListener("genai-focus-change", function () { if (isOpen()) place(); });
+    document.addEventListener("genai-focus-change", function () {
+      applyReadingSettings(settings);
+      refreshButtons();
+      if (isOpen()) place();
+    });
+    document.addEventListener("ir-focus-change", function () {
+      applyReadingSettings(settings);
+      refreshButtons();
+      if (isOpen()) place();
+    });
 
     refreshButtons();
   }
@@ -632,7 +517,7 @@
 
   function setupSectionGuidance() {
     /* A term dialog carries an <h2> for its accessible name, and those dialogs
-       live inside .content — so an unfiltered query lists every definition as a
+       live inside .content - so an unfiltered query lists every definition as a
        chapter section. Section headings are the ones in the document flow. */
     var headings = Array.prototype.slice.call(document.querySelectorAll(".content h2[id]"))
       .filter(function (h) { return !h.closest("dialog"); });
@@ -1024,7 +909,7 @@
   /* The pointer position each spotlight-capable surface publishes as
      --spot-x/--spot-y, for `.glass-spotlight::before` to place its gradient.
 
-     This used to attach one `pointermove` listener per element — on a page with
+     This used to attach one `pointermove` listener per element - on a page with
      forty cards, callouts, quizzes and collapses, that is forty listeners and
      two inline-style writes on every single mouse move, each one invalidating
      that element's style. Now it is one delegated listener that resolves the
@@ -1099,7 +984,7 @@
       document.head.appendChild(meta);
     }
     function update() {
-      meta.content = document.documentElement.getAttribute("data-theme") === "dark" ? "#17191e" : "#f3f4f6";
+      meta.content = document.documentElement.getAttribute("data-theme") === "dark" ? "#1b1b1b" : "#f4f6fb";
     }
     update();
     new MutationObserver(update).observe(document.documentElement, { attributes: true, attributeFilter: ["data-theme"] });
@@ -1110,8 +995,8 @@
      instant `data-theme` changes on <html>. Left alone the flip arrives in
      pieces: each component carries its own transition (`all .15s`, `.2s`,
      `border-color .3s`…) so each starts and finishes re-colouring on its own
-     clock, while gradients, glass and shadows — which cannot interpolate
-     between themes — snap over immediately.
+     clock, while gradients, glass and shadows - which cannot interpolate
+     between themes - snap over immediately.
 
      So the switch is made atomic instead: `.theme-switching` suppresses every
      transition on the page (see styles.css), the new colours paint in a single
@@ -1125,13 +1010,27 @@
   function setupThemeTransition() {
     var root = document.documentElement;
     var release = null;
+    var fade = null;
+    var last = root.getAttribute("data-theme");
 
     new MutationObserver(function () {
+      // Re-applying the current theme is still a mutation; it is not a switch.
+      var now = root.getAttribute("data-theme");
+      if (now === last) return;
+      last = now;
       root.classList.add("theme-switching");
-      // Two frames: the first paints the new theme with transitions off, the
-      // second is when it is safe to hand hover/focus transitions back. A
-      // timeout backs this up in case the tab is hidden and rAF never fires.
       if (release) window.clearTimeout(release);
+      if (fade) { fade.cancel(); fade = null; }
+      /* Interview Room's switch: the colours change once with every
+         transition frozen, then the page plays one tiny compositor fade.
+         No snapshots, clipping or per-component colour animation. A timeout
+         backs the release up in case the tab is hidden and frames never run. */
+      if (!REDUCED && document.body && typeof document.body.animate === "function") {
+        fade = document.body.animate([{ opacity: 0.94 }, { opacity: 1 }], { duration: 90, easing: "linear" });
+        fade.finished.then(drop, drop);
+        release = window.setTimeout(drop, 300);
+        return;
+      }
       release = window.setTimeout(drop, 300);
       window.requestAnimationFrame(function () {
         window.requestAnimationFrame(drop);
@@ -1140,11 +1039,17 @@
 
     function drop() {
       if (release) { window.clearTimeout(release); release = null; }
+      fade = null;
       root.classList.remove("theme-switching");
     }
   }
 
-  /* ---------- Light↔dark as a crossfade ----------
+  /* ---------- Light↔dark as a crossfade - RETIRED ----------
+     No longer called from init(): Interview Room's single 90ms fade in
+     setupThemeTransition replaced the view-transition snapshot, which cost a
+     full-page capture on every toggle. Kept for reference.
+
+     Original notes:
      The atomic flip above is correct but abrupt. A view transition is the one
      way to fade it without the stagger: it crossfades a *snapshot* of the
      rendered page, so the gradients, `backdrop-filter` glass and shadows that
@@ -1155,7 +1060,7 @@
 
      The listener is on `document` in the capture phase deliberately. Listeners
      added to the button itself run in registration order regardless of the
-     capture flag, and app.js registers its handler first — so a listener on the
+     capture flag, and app.js registers its handler first - so a listener on the
      button could never run before the theme had already flipped. Document
      capture runs ahead of any listener on the target.
 
@@ -1169,7 +1074,7 @@
     var busy = false;
 
     document.addEventListener("click", function (event) {
-      if (passthrough) return;                     // our own re-dispatch — let it through
+      if (passthrough) return;                     // our own re-dispatch - let it through
       var button = event.target.closest && event.target.closest("[data-theme-toggle]");
       if (!button) return;
 
@@ -1181,7 +1086,7 @@
       if (busy) { flip(); return; }
       busy = true;
 
-      /* A theme change is one crossfade of the whole page — that is the point
+      /* A theme change is one crossfade of the whole page - that is the point
          of routing it through a view transition at all. Page navigation names
          the sidebar, top bar, ribbon and contents rail as separate groups and
          holds them still (see "Page transitions" in styles.css), which is right
@@ -1255,26 +1160,304 @@
     }
   }
 
+  /* ---------- Card open/close motion ----------
+     Interview Room's question-card motion (portal.js setupQuestionCardMotion),
+     applied to this portal's <details> components. One delegated listener
+     animates the element's height with the Web Animations API - measure,
+     animate, then hand back to native <details> - while the body fades on the
+     compositor. Duration scales with distance, so a two-line answer is quick
+     and a long one glides instead of whipping open. Both directions use a
+     curve that moves on the first frame, so a close answers the click as
+     quickly as an open does. */
+  var CARD_SELECTOR = "details.prep-question, details.collapse, details.recall, details.dsa-prob, details.dsa-hint";
+
+  function setupCardMotion() {
+    if (!Element.prototype.animate) return;
+    var EASE = "cubic-bezier(.22, 1, .36, 1)";
+
+    function duration(dist, closing) {
+      if (closing) return Math.min(420, Math.max(240, 200 + dist * 0.3));
+      return Math.min(620, Math.max(260, 220 + dist * 0.32));
+    }
+    function bodies(d) {
+      return Array.prototype.filter.call(d.children, function (c) { return c.tagName !== "SUMMARY"; }).slice(0, 4);
+    }
+    function barBottom() {
+      var bar = document.querySelector(".topbar");
+      return bar ? bar.getBoundingClientRect().bottom : 0;
+    }
+    function finish(d) {
+      d._cardAnim = null;
+      (d._cardFades || []).forEach(function (f) { f.cancel(); });
+      d._cardFades = null;
+      d.classList.remove("is-animating", "is-closing");
+      d.style.height = "";
+    }
+
+    function run(d, s, opening) {
+      var from = d.offsetHeight;
+      if (d._cardAnim) { d._cardAnim.cancel(); (d._cardFades || []).forEach(function (f) { f.cancel(); }); }
+      d.classList.add("is-animating");
+      d.classList.toggle("is-closing", !opening);
+      if (opening) d.open = true;
+      d.style.height = "";
+      var to = opening ? d.offsetHeight : s.offsetHeight + (d.offsetHeight - d.clientHeight);
+      /* Closing something taller than the screen: start the collapse from the
+         viewport's bottom edge. The part below the fold is invisible anyway,
+         so the whole motion plays where it can be seen. */
+      if (!opening) {
+        var r = d.getBoundingClientRect();
+        var visible = window.innerHeight - Math.max(r.top, barBottom()) + 24;
+        if (from > visible) from = Math.max(to, visible);
+      }
+      var ms = duration(Math.abs(to - from), !opening);
+      var anim = d.animate({ height: [from + "px", to + "px"] }, { duration: ms, easing: EASE });
+      d._cardAnim = anim;
+      d._cardFades = bodies(d).map(function (b) {
+        return b.animate(
+          opening ? { opacity: [0, 1], transform: ["translateY(-6px)", "none"] }
+                  : { opacity: [1, 0], transform: ["none", "translateY(-4px)"] },
+          { duration: opening ? ms * 0.9 : ms * 0.45, easing: opening ? EASE : "ease-out", fill: "both" }
+        );
+      });
+      function done() {
+        if (d._cardAnim !== anim) return; // superseded by a reverse click
+        if (!opening) d.open = false;
+        anim.cancel();
+        finish(d);
+      }
+      anim.onfinish = done;
+      // finish waits for a rendered frame; a hidden tab may never draw one.
+      window.setTimeout(done, ms + 80);
+    }
+
+    document.addEventListener("click", function (e) {
+      var s = e.target.closest && e.target.closest("summary");
+      if (!s || e.defaultPrevented || e.button !== 0 || REDUCED) return;
+      var d = s.parentElement;
+      if (!d || !d.matches(CARD_SELECTOR) || s !== d.querySelector(":scope > summary")) return;
+      // Links and buttons inside a summary keep their own behaviour.
+      var control = e.target.closest("a, button, input, select, textarea");
+      if (control && s.contains(control)) return;
+      e.preventDefault();
+      var opening = d._cardAnim ? d.classList.contains("is-closing") : !d.open;
+      /* Closing a card you have scrolled deep into: bring its header back so
+         you do not lose your place when the body folds away above you. */
+      if (!opening && d.getBoundingClientRect().top < barBottom()) {
+        d.scrollIntoView({ block: "start", behavior: "smooth" });
+      }
+      run(d, s, opening);
+    });
+  }
+
+  /* ---------- Phone rendering of pipeline diagrams ----------
+     Interview Room never makes a reader swipe sideways through a diagram:
+     below 640px it swaps in a second, single-column rendering of the same
+     drawing. The prep diagrams here are left-to-right pipelines drawn on a
+     ~930-unit canvas, forced to min-width 650px - on a phone that read as a
+     cut-off picture. This builds the narrow version from the wide one: nodes
+     sharing a column (parallel branches) become one row, stages stack top to
+     bottom, and every stage connects to the next. CSS decides which of the
+     two is shown, so rotating a tablet needs no re-render. */
+  var SVGNS = "http://www.w3.org/2000/svg";
+
+  function buildNarrowDiagrams() {
+    document.querySelectorAll(".prep-diagram > svg:not(.dg-narrow)").forEach(function (wide) {
+      if (wide.nextElementSibling && wide.nextElementSibling.classList.contains("dg-narrow")) return;
+      var nodes = [].map.call(wide.querySelectorAll("g.prep-node"), function (g) {
+        var r = g.querySelector("rect");
+        var texts = g.querySelectorAll("text");
+        if (!r || !texts.length) return null;
+        return {
+          x: +r.getAttribute("x") + (+r.getAttribute("width") / 2),
+          y: +r.getAttribute("y") + (+r.getAttribute("height") / 2),
+          title: texts[0].textContent,
+          sub: texts[1] ? texts[1].textContent : "",
+          cls: g.getAttribute("class")
+        };
+      }).filter(Boolean);
+      if (!nodes.length && wide.querySelector("g.prep-shield")) { narrowShields(wide); return; }
+      if (nodes.length < 2) return;
+
+      // Columns of the wide drawing become rows of the narrow one.
+      nodes.sort(function (a, b) { return a.x - b.x || a.y - b.y; });
+      var rows = [];
+      nodes.forEach(function (n) {
+        var row = rows[rows.length - 1];
+        if (row && Math.abs(row[0].x - n.x) < 45 && row.length < 3) row.push(n);
+        else rows.push([n]);
+      });
+      rows.forEach(function (row) { row.sort(function (a, b) { return a.y - b.y; }); });
+
+      var W = 340, NODE_H = 60, GAP = 34, PAD = 8, COL_GAP = 12;
+      var H = PAD * 2 + rows.length * NODE_H + (rows.length - 1) * GAP;
+      var svg = document.createElementNS(SVGNS, "svg");
+      svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+      svg.setAttribute("class", "dg-narrow");
+      svg.setAttribute("role", "img");
+      svg.setAttribute("aria-label", wide.getAttribute("aria-label") || "Diagram");
+      wide.classList.add("dg-wide");
+
+      function el(tag, attrs, text) {
+        var e = document.createElementNS(SVGNS, tag);
+        Object.keys(attrs).forEach(function (k) { e.setAttribute(k, attrs[k]); });
+        if (text != null) e.textContent = text;
+        return e;
+      }
+      // Text that fits its box: shrink rather than spill past the rect.
+      function fitSize(text, width, base, weight) {
+        var per = weight > 700 ? 0.58 : 0.54;
+        return Math.max(10, Math.min(base, (width - 14) / Math.max(1, text.length * per)));
+      }
+
+      var boxes = rows.map(function (row, ri) {
+        var w = row.length === 1 ? 236 : (W - PAD * 2 - COL_GAP * (row.length - 1)) / row.length;
+        var total = w * row.length + COL_GAP * (row.length - 1);
+        var x0 = (W - total) / 2;
+        var y = PAD + ri * (NODE_H + GAP);
+        return row.map(function (n, ci) { return { n: n, x: x0 + ci * (w + COL_GAP), y: y, w: w }; });
+      });
+
+      // Connectors first, so boxes sit on top of them.
+      for (var i = 0; i < boxes.length - 1; i++) {
+        boxes[i].forEach(function (a) {
+          boxes[i + 1].forEach(function (b) {
+            var x1 = a.x + a.w / 2, y1 = a.y + NODE_H, x2 = b.x + b.w / 2, y2 = b.y - 6;
+            var my = (y1 + y2) / 2;
+            svg.appendChild(el("path", { class: "dgn-edge", d: "M" + x1 + "," + y1 + " C" + x1 + "," + my + " " + x2 + "," + my + " " + x2 + "," + y2 }));
+            svg.appendChild(el("path", { class: "dgn-head", d: "M" + (x2 - 4.5) + "," + (y2 - 1) + " L" + x2 + "," + (y2 + 6) + " L" + (x2 + 4.5) + "," + (y2 - 1) + " Z" }));
+          });
+        });
+      }
+      boxes.forEach(function (row) {
+        row.forEach(function (b) {
+          var g = el("g", { class: b.n.cls });
+          var cx = b.x + b.w / 2;
+          g.appendChild(el("rect", { x: b.x, y: b.y, width: b.w, height: NODE_H, rx: 14 }));
+          var ts = fitSize(b.n.title, b.w, 15, 760);
+          g.appendChild(el("text", { x: cx, y: b.y + (b.n.sub ? 26 : 35), "font-size": ts.toFixed(1), style: "font-size:" + ts.toFixed(1) + "px" }, b.n.title));
+          if (b.n.sub) {
+            var ss = fitSize(b.n.sub, b.w, 11.5, 600);
+            g.appendChild(el("text", { class: "sub", x: cx, y: b.y + 45, style: "font-size:" + ss.toFixed(1) + "px" }, b.n.sub));
+          }
+          svg.appendChild(g);
+        });
+      });
+      wide.insertAdjacentElement("afterend", svg);
+    });
+  }
+
+  /* Defence-in-depth drawings are nested layers, not a pipeline. On a phone
+     each layer becomes a band with its label on top and the next layer
+     inset inside it, so the nesting still reads at a glance. */
+  function narrowShields(wide) {
+    var layers = [].map.call(wide.querySelectorAll("g.prep-shield"), function (g) {
+      var t = g.querySelectorAll("text");
+      return { cls: g.getAttribute("class"), title: t[0] ? t[0].textContent : "", sub: t[1] ? t[1].textContent : "" };
+    });
+    if (!layers.length) return;
+    var W = 340, INSET = 14, LABEL = 44, CORE = 70;
+    var H = layers.length * LABEL + CORE + (layers.length - 1) * INSET + 8;
+    var svg = document.createElementNS(SVGNS, "svg");
+    svg.setAttribute("viewBox", "0 0 " + W + " " + H);
+    svg.setAttribute("class", "dg-narrow");
+    svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", wide.getAttribute("aria-label") || "Diagram");
+    wide.classList.add("dg-wide");
+    layers.forEach(function (l, i) {
+      var last = i === layers.length - 1;
+      var x = 4 + i * INSET, y = 4 + i * LABEL, w = W - 8 - i * INSET * 2;
+      var h = H - 8 - i * (LABEL + INSET);
+      var g = document.createElementNS(SVGNS, "g");
+      g.setAttribute("class", l.cls);
+      var r = document.createElementNS(SVGNS, "rect");
+      [["x", x], ["y", y], ["width", w], ["height", h], ["rx", 20]].forEach(function (a) { r.setAttribute(a[0], a[1]); });
+      g.appendChild(r);
+      // Wrap a long layer label onto two lines rather than shrinking it away.
+      var words = l.title.split(" "), lines = [""], max = Math.floor((w - 24) / 6.4);
+      words.forEach(function (wd) {
+        var cur = lines[lines.length - 1];
+        if ((cur + " " + wd).trim().length > max && cur) lines.push(wd); else lines[lines.length - 1] = (cur + " " + wd).trim();
+      });
+      lines.slice(0, 2).forEach(function (line, li) {
+        var t = document.createElementNS(SVGNS, "text");
+        t.setAttribute("x", last ? x + w / 2 : x + 14);
+        t.setAttribute("y", last ? y + 30 + li * 16 : y + 20 + li * 15);
+        t.setAttribute("style", "font-size:12px;" + (last ? "text-anchor:middle" : "text-anchor:start"));
+        t.textContent = line;
+        g.appendChild(t);
+      });
+      if (last && l.sub) {
+        var s = document.createElementNS(SVGNS, "text");
+        s.setAttribute("class", "sub");
+        s.setAttribute("x", x + w / 2);
+        s.setAttribute("y", y + 52);
+        s.setAttribute("style", "font-size:11px;text-anchor:middle");
+        s.textContent = l.sub;
+        g.appendChild(s);
+      }
+      svg.appendChild(g);
+    });
+    wide.insertAdjacentElement("afterend", svg);
+  }
+
+  function normalizeMenuBtn() {
+    var btn = document.querySelector(".menu-btn");
+    if (!btn) return;
+    if (!btn.querySelector("svg")) {
+      btn.innerHTML = '<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 6h16M4 12h16M4 18h16"/></svg>';
+    }
+  }
+
+  function ensureTopbarSpacer() {
+    var bar = document.querySelector(".topbar");
+    if (!bar || bar.querySelector(".topbar-spacer")) return;
+    var spacer = document.createElement("div");
+    spacer.className = "topbar-spacer";
+    var homeBtn = bar.querySelector(".home-btn");
+    var focusBtn = bar.querySelector(".focus-btn");
+    var readerWrap = bar.querySelector(".reader-wrap");
+    var themeBtn = bar.querySelector("[data-theme-toggle]");
+    var firstAction = homeBtn || focusBtn || readerWrap || themeBtn;
+    if (firstAction) bar.insertBefore(spacer, firstAction);
+    else bar.appendChild(spacer);
+  }
+
+  function setupScrollClass() {
+    var ticking = false;
+    function update() {
+      ticking = false;
+      document.body.classList.toggle("is-scrolled", (window.scrollY || window.pageYOffset || 0) > 8);
+    }
+    window.addEventListener("scroll", function () {
+      if (!ticking) { ticking = true; window.requestAnimationFrame(update); }
+    }, { passive: true });
+    update();
+  }
+
   function init() {
     clearLegacyReadingClasses();
-    addDsaWorkspaceNav();
-    addOfficeRibbon();
+    normalizeMenuBtn();
     structureCrumbs();
     // Order matters: each of these inserts itself before the theme toggle, so
     // calling them in reading order lays the bar out Home → Focus → Aa → ☾.
     addHomeButton();
     addFocusButton();
     addReaderControls();
+    ensureTopbarSpacer();
+    setupScrollClass();
     setupTermDialogs();
     // injectTopicDiagram();  // Learning-loop concept diagram removed site-wide (felt unnecessary).
     setupReadingProgress();
     setupSectionGuidance();
     setupDiagramAnimation();
-    setupSoftReveal();
+    buildNarrowDiagrams();
+    // setupSoftReveal();  // Interview Room has no entrance motion: content paints where it is.
+    setupCardMotion();
     addScrollTop();
     setupThemeColor();
     setupThemeTransition();
-    setupThemeCrossfade();
+    // setupThemeCrossfade();  // Retired - see setupThemeTransition.
   }
 
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", init);

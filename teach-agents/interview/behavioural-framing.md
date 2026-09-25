@@ -12,14 +12,14 @@ production-shaped agent system. That is the truth, and it is a strong position.
 
 What you should **not** do is imply the agent shipped to customers, that you have
 years of GenAI production experience, or that the fixtures were real traffic. It
-is unnecessary — a well-built project you can defend in depth beats a vague claim
+is unnecessary - a well-built project you can defend in depth beats a vague claim
 of production experience, and it survives follow-up questions, which the vague
 claim does not.
 
 **The sentence that does the work:**
 
 > "I've got nine years in software and four to five in ML. GenAI is newer for me,
-> so rather than read about agents I built one properly — a support-triage agent
+> so rather than read about agents I built one properly - a support-triage agent
 > with an approval gate on refunds, an eval suite, tracing and an adversarial
 > test corpus. Most of what made it work turned out to be ordinary engineering:
 > idempotency, retry budgets, least privilege, audit trails."
@@ -73,20 +73,20 @@ policy-grounded reply. Some need a refund, which is irreversible.
 framework. Six tools: read a ticket, look up an order, search the knowledge base,
 draft a reply, escalate, issue a refund.
 
-**Hard part 1 — the refund (90s).** The centrepiece. Dry-run by default; policy
+**Hard part 1 - the refund (90s).** The centrepiece. Dry-run by default; policy
 in code rather than the prompt; a derived idempotency key so a retry can't pay
 twice; an approval token bound to an exact order and amount that the agent cannot
 mint; an append-only audit log including refusals. Mention the timeout case: if
 the payment call times out you don't know whether it happened, and the
 idempotency key is what makes the follow-up safe.
 
-**Hard part 2 — knowing it works (60s).** A golden set where happy paths are a
+**Hard part 2 - knowing it works (60s).** A golden set where happy paths are a
 minority, because refusals regress silently. Outcome *and* trajectory checks. And
 the thing worth leading with: *"I tested the suite by breaking the agent on
-purpose, and one of my regressions wasn't caught — deleting a safety default
+purpose, and one of my regressions wasn't caught - deleting a safety default
 passed twelve out of twelve. That's how I found the coverage hole."*
 
-**Hard part 3 — security (60s).** The boundary is that no dangerous capability
+**Hard part 3 - security (60s).** The boundary is that no dangerous capability
 exists, not that a filter blocks things. There's a test that disables the keyword
 screen and shows the money attacks still fail.
 
@@ -120,12 +120,12 @@ success:
 - *An eval hole in fully-covered code.* Above.
 
 **"What would you do differently?"** Measure the multi-agent split before
-building it, not after — I built the supervisor and then found it cost more for
+building it, not after - I built the supervisor and then found it cost more for
 identical outcomes. And I'd have written the eval suite earlier; several bugs
 would have been caught by it rather than by me.
 
 **"What are you weakest on?"** Answer honestly and bound it: production
-operation at scale — I've built the mechanisms but not run them under real
+operation at scale - I've built the mechanisms but not run them under real
 traffic for a year. Then say what you'd want in the first month: real traces,
 the escalation rate, and a golden set built from actual tickets.
 

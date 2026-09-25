@@ -23,13 +23,13 @@ Dependency-free and offline-capable. No external libraries, fonts or CDNs.
 - Hover states avoid underlines: inline links use a soft highlight; linked cards
   use elevation, title colour and action-chip motion
 
-Implementation files (paths corrected — the former `genai-portal/` wrapper was
+Implementation files (paths corrected - the former `genai-portal/` wrapper was
 removed and should not be reintroduced):
 
-- `assets/styles.css` — design system, responsive layout, animation layer
-- `assets/office-theme.css` — final normalisation layer, loaded last
-- `assets/enhance.js` — SVG diagrams, reader tools, motion behaviour
-- `assets/sitenav.js` — shared grouped navigation registry
+- `assets/styles.css` - design system, responsive layout, animation layer
+- `assets/office-theme.css` - final normalisation layer, loaded last
+- `assets/enhance.js` - SVG diagrams, reader tools, motion behaviour
+- `assets/sitenav.js` - shared grouped navigation registry
 
 ## Mobile navigation
 
@@ -42,22 +42,22 @@ removed and should not be reintroduced):
 
 ## Learning sections
 
-**GenAI interview question bank** — 107 questions across 10 topics, with concise
+**GenAI interview question bank** - 107 questions across 10 topics, with concise
 answers, 30-second versions and likely follow-ups; topic filtering, open/close
 all, keyboard navigation and saved progress.
 
-**Scenario design studio** — the C-D-S-S-M framework (Clarify, Design, Scale,
+**Scenario design studio** - the C-D-S-S-M framework (Clarify, Design, Scale,
 Secure, Measure) across 8 architecture exercises. Each covers assumptions,
 requirements, agent fit, stack, latency and cost optimisation, load handling,
 prompt-injection defences, application security, metrics, trade-offs, a Python
 sketch and a two-minute answer structure. Includes a 20-minute practice timer.
 
-**SQL for GenAI roles** — `interview-prep/09-sql-for-genai.html`, 12 questions
+**SQL for GenAI roles** - `interview-prep/09-sql-for-genai.html`, 12 questions
 covering joins, window functions, deduplication, CTEs, top-N, indexing, query
 plans, transactions, JSONB, pgvector, tenant isolation, safe text-to-SQL and
 generated-query evaluation.
 
-**Understanding AI Agents** — 15-lesson interview course built around one
+**Understanding AI Agents** - 15-lesson interview course built around one
 support-ticket triage agent. See `teach-agents/CURRICULUM.md`.
 
 ## Link and asset validation
@@ -72,7 +72,7 @@ Repeat after any structural change:
 - Confirm the shared brand block is present on every page
 
 An earlier audit measured 108 HTML pages, 2,020 static references and 105
-navigation targets, all resolving. **Those figures are historical** — the
+navigation targets, all resolving. **Those figures are historical** - the
 repository has grown well beyond them, so re-measure rather than cite them.
 
 Removed during that audit and not to be reintroduced: the `genai-portal/`

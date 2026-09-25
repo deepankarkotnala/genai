@@ -1,5 +1,5 @@
 """
-control.py — the controller that makes the loop survivable.
+control.py - the controller that makes the loop survivable.
 
 Lesson 7. Lesson 2's loop always terminates, which is the minimum. It does not
 yet cope with a tool that hangs, a tool that fails twice then works, a tool that

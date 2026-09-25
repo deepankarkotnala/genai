@@ -1,5 +1,5 @@
 """
-brain.py — the model boundary, and the error taxonomy that makes retries sane.
+brain.py - the model boundary, and the error taxonomy that makes retries sane.
 
 Two backends behind one interface:
 

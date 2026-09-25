@@ -1,0 +1,17 @@
+<h2 id="interview">15 &middot; Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What is a reducer in LangGraph? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>A function attached to a state field that decides how an update combines with the existing value. <code>add_messages</code> appends to a message list; <code>operator.add</code> concatenates or sums. A field with no reducer is replaced by each update.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What does a node return? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>A partial update: a dict holding only the fields it changed. It never returns the whole state. Returning the whole state rewrites fields other nodes updated in the same superstep.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  What is a superstep, and why does the distinction matter? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>One round of execution: every node the edges have made ready runs, all their updates are merged through their reducers, and one checkpoint is written. It matters because two nodes ready at once run in the same superstep and their updates merge, rather than one overwriting the other.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  What does the checkpointer actually give you? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Three things from one mechanism: memory across turns keyed by <code>thread_id</code>, the ability to pause inside a node and resume later, and recovery after a crash. All three exist because the full state is written after every superstep.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  Your message list keeps losing history. What is wrong? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>The field has no reducer, so every update replaces it instead of appending. Annotate it as <code>Annotated[list, add_messages]</code>. This is invisible in a single-node graph, which is why it survives to production - test with two nodes writing the same field.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  How do you make a resumable graph safe when a node has side effects? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Assume a resumed superstep may re-run the node. Derive an idempotency key from the request rather than generating one per attempt, record completed effects in a durable ledger, and check that ledger before acting. The checkpointer guarantees the state is recoverable; it does not guarantee an effect happened only once.</p></div></details>
+<details class="collapse"><summary><span class="pill purple">Staff · design</span>  When would you not use LangGraph? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>When every run completes inside one request and a failure can just be retried. Then the hand-written loop is about fifteen lines, debuggable with a stack trace, and carries no framework upgrade path. Adopt LangGraph for the requirement it actually serves - durable execution, human-in-the-loop pauses, resumable runs across workers - and name that requirement rather than calling it more advanced.</p></div></details>
+
+<!-- ================= 16 ================= -->

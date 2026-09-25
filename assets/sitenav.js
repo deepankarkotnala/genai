@@ -1,8 +1,8 @@
 /* =========================================================================
-   GenAI Learning Hub — Unified site navigation (Option C)
+   GenAI Learning Hub - Unified site navigation (Option C)
    ONE sidebar shared by every page across all folders. Content stays grouped
    and visually distinct by source folder; nothing is flattened into a single
-   mixed list. No iframes — every link is a normal navigation.
+   mixed list. No iframes - every link is a normal navigation.
 
    This module owns the sidebar (.nav) and the cross-site search box. It builds
    from a single central registry of GROUPS → pages, each page carrying a
@@ -12,7 +12,7 @@
    "../" hops, so the same registry works from any folder.
 
    The page's existing controller (app.js or portal-page.js) still handles
-   theme, right-rail TOC, copy buttons, quizzes and the mobile drawer — they
+   theme, right-rail TOC, copy buttons, quizzes and the mobile drawer - they
    just no longer build the sidebar (this does).
    Pure vanilla JS, no deps, offline-safe.
    ========================================================================= */
@@ -42,15 +42,15 @@
         // Foundations. Module 00 ("The Basics") is deliberately not listed: it
         // is no longer part of the reading path, so it is out of the sidebar,
         // the search index and the reading order on the hub. Its file stays on
-        // disk — the same treatment the retired RAG modules and the old
-        // teach-agents lessons get above — so nothing 404s for a bookmark.
+        // disk - the same treatment the retired RAG modules and the old
+        // teach-agents lessons get above - so nothing 404s for a bookmark.
         { path: "modules/01_foundations.html", title: "Foundations of LLMs", num: "01", track: "Foundations", kw: "llm token transformer attention prompt context window temperature decoding next token prediction" },
         { path: "modules/02_transformers.html", title: "Transformers Deep Dive", num: "02", track: "Foundations", kw: "transformer attention self-attention multi-head positional encoding qkv softmax feedforward residual layernorm" },
         { path: "modules/03_local_llms.html", title: "Local LLMs & Ollama", num: "03", track: "Foundations", kw: "ollama local llama qwen gemma quantization gguf gpu vram modelfile" },
         // Retrieval
         { path: "modules/04_embeddings.html", title: "Embeddings", num: "04", track: "Retrieval", kw: "embedding vector cosine similarity semantic dense sparse sentence-transformers" },
         { path: "modules/05_vector_databases.html", title: "Vector Databases", num: "05", track: "Retrieval", kw: "vector database faiss qdrant pgvector hnsw ann index recall" },
-        // RAG lives in exactly one place in this portal — this page. It is the
+        // RAG lives in exactly one place in this portal - this page. It is the
         // full sequence: what RAG is, then chunking, hybrid retrieval,
         // reranking and evaluation. The old 06_rag_basics / 07_advanced_rag
         // modules and the learn-rag-mcp guide said the same things again in
@@ -109,15 +109,15 @@
         // RAG, End-to-End is deliberately NOT listed here. It is the single
         // RAG page and it lives in the GenAI Mastery reading sequence above,
         // at step 06, so there is exactly one place to learn RAG.
-        { path: "agent-protocols.html", title: "Agent Protocols — MCP · A2A · A2UI", num: "🔗", kw: "agent protocols mcp model context protocol a2a agent2agent agent to agent a2ui agent to ui agent user interface generative ui ag-ui copilotkit interoperability agent card well-known task lifecycle input required auth required artifact message part skill json-rpc grpc rest streaming push notification webhook surface component catalog data model json pointer declarative mcp apps extensions stateless 2026-07-28 tools resources prompts linux foundation ap2 agent payments protocol comparison interview" },
+        { path: "agent-protocols.html", title: "Agent Protocols - MCP · A2A · A2UI", num: "🔗", kw: "agent protocols mcp model context protocol a2a agent2agent agent to agent a2ui agent to ui agent user interface generative ui ag-ui copilotkit interoperability agent card well-known task lifecycle input required auth required artifact message part skill json-rpc grpc rest streaming push notification webhook surface component catalog data model json pointer declarative mcp apps extensions stateless 2026-07-28 tools resources prompts linux foundation ap2 agent payments protocol comparison interview" },
         { path: "llm-evals.html", title: "LLM Evals", num: "✅", kw: "llm evals evaluation vibe testing golden dataset llm as judge faithfulness groundedness rag agent safety operational benchmarks mmlu ragas deepeval interview ai engineer" },
         { path: "llmops.html", title: "LLMOps", num: "⚙️", kw: "llmops mlops lifecycle prompt versioning experiment tracking deployment observability tracing cost token latency optimization guardrails feedback loop tooling langfuse langsmith interview" },
-        { path: "langfuse.html", title: "Langfuse — Observability", num: "📡", kw: "langfuse observability trace cost latency quality scores" },
+        { path: "langfuse.html", title: "Langfuse - Observability", num: "📡", kw: "langfuse observability trace cost latency quality scores" },
         { path: "guardrails.html", title: "Guardrails", num: "🛡️", kw: "guardrails safety scope pii hallucination policy" },
         { path: "memory.html", title: "Memory in LLMs", num: "🧠", kw: "memory context window stateless chat history" },
         { path: "langgraph.html", title: "LangGraph & components", num: "🕸️", kw: "langgraph state node edge checkpointer human in the loop asyncio pydantic" },
         { path: "claude-agent.html", title: "How a Claude Agent Works", num: "🤖", kw: "claude agent sdk tool runner loop context safety" },
-        { path: "hermes.html", title: "Hermes — open local models", num: "🔱", kw: "hermes nous ollama open function calling local models" }
+        { path: "hermes.html", title: "Hermes - open local models", num: "🔱", kw: "hermes nous ollama open function calling local models" }
       ]
     },
     /* ===================================================================
@@ -135,7 +135,7 @@
       blurb: "GenAI · Python · per-tool drills", home: "interview-prep/index.html",
       pages: [
         /* --- Sub-section 1: GenAI --- */
-        { path: "interview-prep/index.html", title: "GenAI bank — overview", num: "✦", track: "GenAI Interview Prep", kw: "interview questions india genai preparation answers overview" },
+        { path: "interview-prep/index.html", title: "GenAI bank - overview", num: "✦", track: "GenAI Interview Prep", kw: "interview questions india genai preparation answers overview" },
         { path: "interview-prep/00-neural-networks.html", title: "Neural Networks", num: "G0", track: "GenAI Interview Prep", kw: "neural network neuron weights bias activation forward pass loss backpropagation optimizer gradients pytorch ai engineer interview" },
         { path: "interview-prep/01-llm-foundations-prompting.html", title: "Foundations & prompting", num: "G1", track: "GenAI Interview Prep", kw: "llm transformer tokens context temperature hallucination prompt structured output function calling fine tuning" },
         { path: "interview-prep/02-embeddings-rag.html", title: "Embeddings & RAG", num: "G2", track: "GenAI Interview Prep", kw: "embeddings cosine vector database pgvector hnsw chunking hybrid search reranking retrieval evaluation" },
@@ -150,7 +150,7 @@
         { path: "interview-prep/11-mock-rounds.html", title: "Mock interview rounds", num: "G11", track: "GenAI Interview Prep", kw: "mock interview rounds timed rag debugging agents python coding recall at k asyncio semaphore rate limit validated json pydantic system design behavioural star failure" },
 
         /* --- Sub-section 2: Python & AI/ML --- */
-        { path: "python-interview/index.html", title: "Python bank — overview", num: "✦", track: "Python & AI/ML Interviews", kw: "python ai ml interview questions bank overview 2026 india validated simple answers" },
+        { path: "python-interview/index.html", title: "Python bank - overview", num: "✦", track: "Python & AI/ML Interviews", kw: "python ai ml interview questions bank overview 2026 india validated simple answers" },
         { path: "python-interview/01-python-core.html", title: "Python Core & How It Runs", num: "P1", track: "Python & AI/ML Interviews", kw: "python interpreter compiled bytecode cpython dynamic typing duck typing mutable immutable is vs equals operators truthiness numbers pep8 typecast type casting type conversion implicit explicit int str float shallow deep copy interview" },
         { path: "python-interview/02-data-structures.html", title: "Strings, Collections & Data Structures", num: "P2", track: "Python & AI/ML Interviews", kw: "string bytes formatting f-string regex list tuple set dictionary collections counter defaultdict deque namedtuple slicing sorting interview" },
         { path: "python-interview/03-functions-scope.html", title: "Functions, Scope & Functional Python", num: "P3", track: "Python & AI/ML Interviews", kw: "function args kwargs default mutable argument closure lambda scope legb global nonlocal map filter reduce partial recursion interview" },
@@ -168,13 +168,13 @@
         { path: "python-interview/15-practical-scenarios.html", title: "Practical Questions", num: "P15", track: "Python & AI/ML Interviews", kw: "practical scenario questions crore csv 10 million rows large file streaming chunksize polars duckdb pyarrow parquet batching concurrency asyncio semaphore rate limit backoff retry 1000 pdfs folder rag ingestion ocr scanned tables chunking overlap metadata incremental upsert reindex embeddings at scale dedupe vector database pgvector qdrant milvus weaviate pinecone hnsw ef_search hybrid search reranking latency time to first token ttft p95 streaming semantic caching prompt caching model routing cost optimization batch api prompt injection indirect injection sql injection text to sql guardrails owasp least privilege row level security pii redaction dpdp gdpr hipaa agent tools exfiltration hallucination groundedness citations evals llm as judge recall at k monitoring observability tracing long context interview" },
 
         /* --- Sub-section 3: one page per technology, interview-shaped --- */
-        { path: "interview-labs/index.html", title: "Drills — overview", num: "✦", track: "Technology Drills — one tool at a time", kw: "focused interview labs technology drills python backend fastapi websocket langchain rag mcp overview" },
-        { path: "interview-labs/python-sync-async-interview.html", title: "Sync vs Async Python", num: "T1", track: "Technology Drills — one tool at a time", kw: "python synchronous asynchronous asyncio event loop coroutine task thread process gil timeout cancellation backpressure interview" },
-        { path: "interview-labs/fastapi-interview.html", title: "FastAPI", num: "T2", track: "Technology Drills — one tool at a time", kw: "fastapi asgi starlette pydantic dependency injection request lifecycle def async def testing security deployment interview" },
-        { path: "interview-labs/websockets-interview.html", title: "WebSockets", num: "T3", track: "Technology Drills — one tool at a time", kw: "websocket web socket handshake frames fastapi real time heartbeat reconnect backpressure broker scaling interview" },
-        { path: "interview-labs/langchain-interview.html", title: "LangChain", num: "T4", track: "Technology Drills — one tool at a time", kw: "langchain create agent tools middleware runtime runnable lcel structured output streaming testing interview" },
-        { path: "interview-labs/rag-interview.html", title: "RAG", num: "T5", track: "Technology Drills — one tool at a time", kw: "rag retrieval chunking hybrid reranking evaluation security debugging system design interview" },
-        { path: "interview-labs/mcp-interview.html", title: "MCP", num: "T6", track: "Technology Drills — one tool at a time", kw: "mcp model context protocol host client server tools resources prompts transport security interview" }
+        { path: "interview-labs/index.html", title: "Drills - overview", num: "✦", track: "Technology Drills - one tool at a time", kw: "focused interview labs technology drills python backend fastapi websocket langchain rag mcp overview" },
+        { path: "interview-labs/python-sync-async-interview.html", title: "Sync vs Async Python", num: "T1", track: "Technology Drills - one tool at a time", kw: "python synchronous asynchronous asyncio event loop coroutine task thread process gil timeout cancellation backpressure interview" },
+        { path: "interview-labs/fastapi-interview.html", title: "FastAPI", num: "T2", track: "Technology Drills - one tool at a time", kw: "fastapi asgi starlette pydantic dependency injection request lifecycle def async def testing security deployment interview" },
+        { path: "interview-labs/websockets-interview.html", title: "WebSockets", num: "T3", track: "Technology Drills - one tool at a time", kw: "websocket web socket handshake frames fastapi real time heartbeat reconnect backpressure broker scaling interview" },
+        { path: "interview-labs/langchain-interview.html", title: "LangChain", num: "T4", track: "Technology Drills - one tool at a time", kw: "langchain create agent tools middleware runtime runnable lcel structured output streaming testing interview" },
+        { path: "interview-labs/rag-interview.html", title: "RAG", num: "T5", track: "Technology Drills - one tool at a time", kw: "rag retrieval chunking hybrid reranking evaluation security debugging system design interview" },
+        { path: "interview-labs/mcp-interview.html", title: "MCP", num: "T6", track: "Technology Drills - one tool at a time", kw: "mcp model context protocol host client server tools resources prompts transport security interview" }
       ]
     },
     /* PYTHON_INTERVIEW_END */
@@ -225,13 +225,13 @@
         { path: "dsa-prep/15-graphs-grids.html", title: "Graphs & Grids", num: "15", track: "Non-linear structures", kw: "graph grid bfs dfs connected components multi source shortest path islands clone" },
         { path: "dsa-prep/16-advanced-graphs.html", title: "Advanced Graphs", num: "16", track: "Non-linear structures", kw: "topological sort union find dijkstra bellman ford mst weighted shortest path" },
         { path: "dsa-prep/17-greedy.html", title: "Greedy", num: "17", track: "Optimization", kw: "greedy exchange argument interval scheduling reachability partition jump game gas station" },
-        { path: "dsa-prep/18-dynamic-programming-1d.html", title: "Dynamic Programming — 1D", num: "18", track: "Optimization", kw: "dynamic programming 1d state recurrence memoization tabulation rolling house robber coin change lis" },
-        { path: "dsa-prep/19-dynamic-programming-2d.html", title: "Dynamic Programming — 2D", num: "19", track: "Optimization", kw: "dynamic programming 2d grid knapsack edit distance interval dp path counting lcs" },
+        { path: "dsa-prep/18-dynamic-programming-1d.html", title: "Dynamic Programming - 1D", num: "18", track: "Optimization", kw: "dynamic programming 1d state recurrence memoization tabulation rolling house robber coin change lis" },
+        { path: "dsa-prep/19-dynamic-programming-2d.html", title: "Dynamic Programming - 2D", num: "19", track: "Optimization", kw: "dynamic programming 2d grid knapsack edit distance interval dp path counting lcs" },
         { path: "dsa-prep/20-bit-math-matrix.html", title: "Bit, Math & Matrix", num: "20", track: "Optimization", kw: "bit manipulation xor mask math gcd sieve modular matrix rotate image game of life" },
         { path: "dsa-prep/21-data-structure-design.html", title: "Data Structure Design", num: "21", track: "Applied interview work", kw: "data structure design lru lfu min stack median stream twitter time based key value snapshot" },
         { path: "dsa-prep/22-python-numpy-pandas-performance.html", title: "Python, NumPy & Pandas Performance", num: "22", track: "Applied interview work", kw: "numpy pandas vectorization broadcasting memory contiguity itertuples apply categorical chunked cosine similarity top k" },
         { path: "dsa-prep/23-role-tracks-mocks-revision.html", title: "Role Tracks, Mocks & Revision", num: "23", track: "Study tracks", kw: "role tracks mocks revision signal structure map 30 60 90 spaced repetition flashcards readiness" },
-        { path: "dsa-prep/24-advanced-dsa-optional.html", title: "Advanced DSA — Optional", num: "24", track: "Study tracks", kw: "advanced fenwick tree segment tree coordinate compression sweep line reservoir sampling meet in the middle" }
+        { path: "dsa-prep/24-advanced-dsa-optional.html", title: "Advanced DSA - Optional", num: "24", track: "Study tracks", kw: "advanced fenwick tree segment tree coordinate compression sweep line reservoir sampling meet in the middle" }
       ]
     },
     {
@@ -357,7 +357,7 @@
 
     var intro = document.createElement("section");
     intro.className = "mobile-nav-intro";
-    var currentLabel = currentGroup ? currentGroup.label : "Switch job Learning Platform";
+    var currentLabel = currentGroup ? currentGroup.label : "Learn GenAI Learning Platform";
     var currentCount = currentGroup ? currentGroup.pages.length : GROUPS.length;
     var countLabel = currentGroup ? (currentCount + (currentCount === 1 ? " page" : " pages") + " in this path") : (currentCount + " learning paths");
     intro.innerHTML =
@@ -369,21 +369,56 @@
   }
 
   /* ---------- Cross-site search (searches ALL groups) ---------- */
+  /* Matched to interview_prep: the results replace the nav rather than
+     stacking above it (a result list on top of sixteen sections puts the
+     answer below the fold on a laptop), grouped under the same uppercase
+     labels the nav uses, with a clear control inside the pill. */
+  function escapeHTML(s) {
+    return String(s).replace(/[&<>"']/g, function (c) {
+      return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c];
+    });
+  }
   function setupSearch() {
     var input = document.querySelector("[data-search]") || document.querySelector("[data-secsearch]");
     var out = document.querySelector(".search-results") || document.querySelector("[data-secresults]");
     if (!input || !out) return;
-    input.placeholder = "Find chapter or topic…  ( / )";
-    input.setAttribute("aria-label", "Find a chapter or topic");
+    var sidebar = input.closest(".sidebar");
+    // Some page families ship the pill without its magnifier.
+    var box = input.parentElement;
+    if (box && !box.querySelector("svg")) {
+      box.insertAdjacentHTML("afterbegin", '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" ' +
+        'stroke-width="2" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg>');
+    }
+    input.type = "search";
+    input.placeholder = "Search all topics";
+    input.setAttribute("aria-label", "Search every page in this portal");
+    input.setAttribute("autocomplete", "off");
+    input.setAttribute("spellcheck", "false");
+    out.setAttribute("role", "listbox");
+    out.setAttribute("aria-label", "Search results");
+
+    var clear = document.createElement("button");
+    clear.type = "button";
+    clear.className = "sb-clear";
+    clear.hidden = true;
+    clear.setAttribute("aria-label", "Clear search");
+    clear.innerHTML = "&times;";
+    input.insertAdjacentElement("afterend", clear);
+
     // flatten registry for searching, remembering each page's group label
     var index = [];
     GROUPS.forEach(function (g) {
       g.pages.forEach(function (p) { index.push({ p: p, group: g.label }); });
     });
-    function esc(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
-    function render(q) {
-      q = q.trim().toLowerCase();
-      if (!q) { out.innerHTML = ""; return; }
+    function setOpen(on) {
+      clear.hidden = !on;
+      if (sidebar) sidebar.classList.toggle("is-searching", on);
+      if (!on) out.innerHTML = "";
+    }
+    function render(raw) {
+      var q = raw.trim().toLowerCase();
+      if (!q) { setOpen(false); return; }
+      setOpen(true);
       var hits = index.map(function (rec) {
         var hay = (rec.p.title + " " + rec.group + " " + (rec.p.kw || "")).toLowerCase();
         var score = 0;
@@ -391,21 +426,38 @@
         q.split(/\s+/).forEach(function (w) { if (w && hay.indexOf(w) > -1) score += 1; });
         return { rec: rec, score: score };
       }).filter(function (x) { return x.score > 0; })
-        .sort(function (a, b) { return b.score - a.score; }).slice(0, 8);
-      if (!hits.length) { out.innerHTML = '<div class="search-empty">No results for "' + q + '"</div>'; return; }
-      out.innerHTML = hits.map(function (h) {
-        var p = h.rec.p;
-        var t = p.title.replace(new RegExp("(" + esc(q) + ")", "i"), "<b>$1</b>");
-        return '<a class="search-result" href="' + href(p.path) + '">' +
-               '<span class="sr-group">' + h.rec.group + '</span>' + t + "</a>";
+        .sort(function (a, b) { return b.score - a.score; }).slice(0, 15);
+      if (!hits.length) {
+        out.innerHTML = '<p class="sb-empty">No match for <strong>' + escapeHTML(raw.trim()) +
+          '</strong>.<br>Try a shorter phrase or a single term.</p>';
+        return;
+      }
+      // Grouped by section, sections in order of their best hit.
+      var order = [], byGroup = {};
+      hits.forEach(function (h) {
+        if (!byGroup[h.rec.group]) { byGroup[h.rec.group] = []; order.push(h.rec.group); }
+        byGroup[h.rec.group].push(h.rec.p);
+      });
+      out.innerHTML = order.map(function (group) {
+        return '<div class="sb-sec">' + escapeHTML(group) + '</div>' +
+          byGroup[group].map(function (p) {
+            var at = p.title.toLowerCase().indexOf(q), t = escapeHTML(p.title);
+            if (at > -1) t = escapeHTML(p.title.slice(0, at)) + "<b>" + escapeHTML(p.title.slice(at, at + q.length)) +
+                             "</b>" + escapeHTML(p.title.slice(at + q.length));
+            return '<a class="search-result sb-hit" href="' + href(p.path) + '">' +
+                   '<span class="sr-num">' + p.num + '</span><span class="sr-t">' + t + '</span></a>';
+          }).join("");
       }).join("");
     }
     input.addEventListener("input", function (e) { render(e.target.value); });
+    clear.addEventListener("click", function () { input.value = ""; setOpen(false); input.focus(); });
     document.addEventListener("keydown", function (e) {
       if (e.key === "/" && document.activeElement !== input && !/input|textarea/i.test(document.activeElement.tagName)) {
         e.preventDefault(); input.focus();
       }
-      if (e.key === "Escape") { input.blur(); out.innerHTML = ""; }
+      if (e.key === "Escape" && (input.value || document.activeElement === input)) {
+        input.value = ""; setOpen(false); input.blur();
+      }
     });
   }
 
@@ -423,7 +475,7 @@
     var f = document.createElement("footer");
     f.className = "site-footer";
     f.innerHTML =
-      '<span>© ' + year + ' Switch job</span>' +
+      '<span>© ' + year + ' Learn GenAI</span>' +
       '<span class="sep">·</span>' +
       '<span>Developed by Deepankar Kotnala</span>';
     content.appendChild(f);
@@ -518,7 +570,7 @@
 
     /* The shell renders the desktop sidebar at `--density` (0.9) via `zoom`, so
        a layout width of W is only 0.9W on screen. The handle is `position:
-       fixed` and therefore outside the zoomed subtree — it moves 1:1 with the
+       fixed` and therefore outside the zoomed subtree - it moves 1:1 with the
        pointer while the edge it is dragging moves at 0.9. Dividing the pointer
        delta by the factor makes the visible edge track the cursor exactly.
        Read from the computed value rather than hard-coded so the stylesheet
@@ -535,13 +587,20 @@
        make the panel impossible to shrink.
 
        The old comment said this "mirrors the compact desktop --sidebar-w token
-       in styles.css" and mirrored clamp(220px, 15vw, 252px) — one of five
+       in styles.css" and mirrored clamp(220px, 15vw, 252px) - one of five
        competing declarations, and not the one that actually won. There is a
        single token now, so take the floor from it and keep the literals only for
        the case where it is missing entirely. */
+    /* The token is declared in rem (17.5rem), and ir-theme.css widens it with
+       the reading size (a min()/calc() expression). A custom property's
+       computed value is its declared text, so parseFloat read "17.5rem" as
+       17.5 and wrote `--sidebar-w: 17.5px` back - the rail collapsed to a
+       sliver on any browser with no saved width. The floor is now measured off
+       the rail as rendered, falling back to the base token in px. */
     var STYLESHEET_DESKTOP_W = (function () {
-      var declared = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--sidebar-w"));
-      return declared > 0 ? Math.round(declared) : 0;
+      var rootPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
+      var rendered = isMobile() ? 0 : sidebar.getBoundingClientRect().width / density();
+      return Math.round(rendered > 120 ? rendered : 17.5 * rootPx);
     })();
 
     function desktopMinimum() {
@@ -569,7 +628,7 @@
       if (isMobile()) return Math.max(minimum, Math.floor(window.innerWidth * 0.98));
       /* Keep a useful reading area even on smaller desktop windows. The 560px
          budget is screen space but the value returned is a layout width, so it
-         has to be divided back out by the density factor — otherwise the cap
+         has to be divided back out by the density factor - otherwise the cap
          reserves 10% less for the article than it reads as. */
       var budget = (window.innerWidth - 560) / density();
       return Math.max(minimum, Math.min(SIDEBAR_MAX_WIDTH, Math.floor(budget)));
@@ -583,17 +642,25 @@
       return Math.max(activeMinimum(), Math.min(activeMaximum(), Math.round(value)));
     }
 
+    /* As in interview_prep, the stylesheet owns the width until the reader
+       drags: only a custom width is written inline on <html>. Writing one on
+       every load pinned the rail and stopped it growing with the text size. */
+    var desktopCustom = false;
+    var mobileCustom = false;
+
     function apply(value, persist) {
       var next = clamp(value);
       if (isMobile()) {
         mobileCurrent = next;
-        document.documentElement.style.setProperty("--mobile-sidebar-w", next + "px");
+        if (persist) mobileCustom = true;
+        if (mobileCustom) document.documentElement.style.setProperty("--mobile-sidebar-w", next + "px");
         if (persist) {
           try { localStorage.setItem(LS_MOBILE_SIDEBAR_WIDTH, String(next)); } catch (e) {}
         }
       } else {
         desktopCurrent = next;
-        document.documentElement.style.setProperty("--sidebar-w", next + "px");
+        if (persist) desktopCustom = true;
+        if (desktopCustom) document.documentElement.style.setProperty("--sidebar-w", next + "px");
         if (persist) {
           try { localStorage.setItem(LS_SIDEBAR_WIDTH, String(next)); } catch (e) {}
         }
@@ -604,11 +671,27 @@
       handle.setAttribute("aria-valuetext", next + " pixels wide");
     }
 
+    // Back to the stylesheet's width, forgetting the dragged one.
+    function reset() {
+      if (isMobile()) {
+        mobileCustom = false;
+        mobileCurrent = mobileMinimum();
+        document.documentElement.style.removeProperty("--mobile-sidebar-w");
+        try { localStorage.removeItem(LS_MOBILE_SIDEBAR_WIDTH); } catch (e) {}
+      } else {
+        desktopCustom = false;
+        desktopCurrent = desktopMinimum();
+        document.documentElement.style.removeProperty("--sidebar-w");
+        try { localStorage.removeItem(LS_SIDEBAR_WIDTH); } catch (e) {}
+      }
+      apply(activeCurrent(), false);
+    }
+
     try {
       var savedDesktop = parseInt(localStorage.getItem(LS_SIDEBAR_WIDTH), 10);
       var savedMobile = parseInt(localStorage.getItem(LS_MOBILE_SIDEBAR_WIDTH), 10);
-      if (Number.isFinite(savedDesktop)) desktopCurrent = savedDesktop;
-      if (Number.isFinite(savedMobile)) mobileCurrent = savedMobile;
+      if (Number.isFinite(savedDesktop)) { desktopCurrent = savedDesktop; desktopCustom = true; }
+      if (Number.isFinite(savedMobile)) { mobileCurrent = savedMobile; mobileCustom = true; }
     } catch (e) {}
     apply(activeCurrent(), false);
 
@@ -616,7 +699,12 @@
       if (event.button !== 0) return;
       dragging = true;
       startX = event.clientX;
-      startWidth = activeCurrent();
+      // Start from the rail as drawn: without a custom width the stylesheet's
+      // (text-size dependent) width is the one on screen.
+      var customNow = isMobile() ? mobileCustom : desktopCustom;
+      var drawn = sidebar.getBoundingClientRect().width / (isMobile() ? 1 : density());
+      startWidth = customNow || !(drawn > 0) ? activeCurrent() : drawn;
+      if (isMobile()) mobileCustom = true; else desktopCustom = true;
       handle.setPointerCapture(event.pointerId);
       document.body.classList.add("sidebar-resizing");
       event.preventDefault();
@@ -640,7 +728,7 @@
 
     handle.addEventListener("pointerup", finishResize);
     handle.addEventListener("pointercancel", finishResize);
-    handle.addEventListener("dblclick", function () { apply(activeMinimum(), true); });
+    handle.addEventListener("dblclick", reset);
     handle.addEventListener("keydown", function (event) {
       var next = activeCurrent();
       if (event.key === "ArrowLeft") next -= SIDEBAR_KEY_STEP;
@@ -689,7 +777,7 @@
   /* ---------- The loading ring ----------
      Shown only when a navigation is actually slow. The browser keeps painting
      the *old* document until the new one is ready, so the wait belongs to the
-     page being left — which is why this lives here and not in the arriving
+     page being left - which is why this lives here and not in the arriving
      page's markup, where it could only ever appear after the wait was over.
 
      GRACE is the whole design: on a warm cache a page swap is tens of
@@ -698,8 +786,8 @@
      navigation has been outstanding that long, so the common case renders
      no loader at all. */
   var GRACE = 220;
-  // A navigation the user abandons — Escape, a cancelled prompt, a link that
-  // resolves to a download — never fires pagehide, and the ring would spin on a
+  // A navigation the user abandons - Escape, a cancelled prompt, a link that
+  // resolves to a download - never fires pagehide, and the ring would spin on a
   // page that is going nowhere. It gives up rather than lying.
   var MAX_VISIBLE = 12000;
   var loaderTimer = null;
@@ -727,7 +815,7 @@
       buildLoader();
       // Same tick as the insert: the fade is a keyframe (see styles.css), so it
       // does not need the element to have rendered a frame first. That matters
-      // — a page slow enough to earn a spinner is a page whose frames may not
+      // - a page slow enough to earn a spinner is a page whose frames may not
       // be running.
       document.documentElement.classList.add("is-loading");
       loaderGiveUp = window.setTimeout(disarmLoader, MAX_VISIBLE);
@@ -746,7 +834,7 @@
        navigation-adjacent: arming the loading ring.
 
        No click is intercepted any more. The old code called preventDefault(),
-       added `.is-leaving`, waited for a fade and then set location.href — that
+       added `.is-leaving`, waited for a fade and then set location.href - that
        wait was pure latency in front of every navigation, on top of an animation
        that read as jitter. Now the browser navigates on the click, immediately,
        and the ring appears only if the new document takes longer than GRACE. */

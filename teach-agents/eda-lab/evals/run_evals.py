@@ -1,5 +1,5 @@
 """
-run_evals.py — score the EDA agent against the golden set.
+run_evals.py - score the EDA agent against the golden set.
 
     python evals/run_evals.py            # fake backend, offline, deterministic
     python evals/run_evals.py --ollama   # score the real Gemma model

@@ -69,7 +69,7 @@
   "pages": {
     "agent-protocols": {
       "path": "agent-protocols.html",
-      "title": "Agent Protocols — MCP · A2A · A2UI",
+      "title": "Agent Protocols - MCP · A2A · A2UI",
       "type": "content",
       "contentRole": "learn",
       "tags": [
@@ -301,7 +301,7 @@
     },
     "dsa-18": {
       "path": "dsa-prep/18-dynamic-programming-1d.html",
-      "title": "Dynamic Programming — 1D",
+      "title": "Dynamic Programming - 1D",
       "type": "content",
       "contentRole": "learn",
       "durations": {
@@ -312,7 +312,7 @@
     },
     "dsa-19": {
       "path": "dsa-prep/19-dynamic-programming-2d.html",
-      "title": "Dynamic Programming — 2D",
+      "title": "Dynamic Programming - 2D",
       "type": "content",
       "contentRole": "learn",
       "durations": {
@@ -367,7 +367,7 @@
     },
     "dsa-24": {
       "path": "dsa-prep/24-advanced-dsa-optional.html",
-      "title": "Advanced DSA — Optional",
+      "title": "Advanced DSA - Optional",
       "type": "content",
       "contentRole": "learn",
       "durations": {
@@ -438,7 +438,7 @@
     },
     "hermes": {
       "path": "hermes.html",
-      "title": "Hermes — open local models",
+      "title": "Hermes - open local models",
       "type": "content",
       "contentRole": "learn",
       "tags": [
@@ -477,7 +477,7 @@
     },
     "drills-index": {
       "path": "interview-labs/index.html",
-      "title": "Drills — overview",
+      "title": "Drills - overview",
       "type": "index"
     },
     "drill-langchain": {
@@ -771,7 +771,7 @@
     },
     "genai-bank-index": {
       "path": "interview-prep/index.html",
-      "title": "GenAI bank — overview",
+      "title": "GenAI bank - overview",
       "type": "index"
     },
     "job-search": {
@@ -790,7 +790,7 @@
     },
     "langfuse": {
       "path": "langfuse.html",
-      "title": "Langfuse — Observability",
+      "title": "Langfuse - Observability",
       "type": "content",
       "contentRole": "learn",
       "tags": [
@@ -1634,7 +1634,7 @@
     },
     "python-bank-index": {
       "path": "python-interview/index.html",
-      "title": "Python bank — overview",
+      "title": "Python bank - overview",
       "type": "index"
     },
     "rag-deep-dive": {
@@ -1982,6 +1982,176 @@
       "title": "Interview capstone",
       "type": "content",
       "contentRole": "build",
+      "durations": {
+        "full": null,
+        "core": null,
+        "sections": {}
+      }
+    },
+    "cx-index": {
+      "path": "teach-agents/campusx/index.html",
+      "title": "CampusX section index",
+      "type": "index"
+    },
+    "cx-01": {
+      "path": "teach-agents/campusx/01-what-a-model-does.html",
+      "title": "What a language model actually does",
+      "type": "content",
+      "contentRole": "learn",
+      "durations": {
+        "full": null,
+        "core": null,
+        "sections": {}
+      }
+    },
+    "cx-02": {
+      "path": "teach-agents/campusx/02-the-agent-loop.html",
+      "title": "The agent loop",
+      "type": "content",
+      "contentRole": "learn",
+      "durations": {
+        "full": null,
+        "core": null,
+        "sections": {}
+      }
+    },
+    "cx-03": {
+      "path": "teach-agents/campusx/03-tools-and-the-boundary.html",
+      "title": "Tools and the trust boundary",
+      "type": "content",
+      "contentRole": "learn",
+      "durations": {
+        "full": null,
+        "core": null,
+        "sections": {}
+      }
+    },
+    "cx-04": {
+      "path": "teach-agents/campusx/04-reasoning-patterns.html",
+      "title": "Reasoning patterns",
+      "type": "content",
+      "contentRole": "learn",
+      "durations": {
+        "full": null,
+        "core": null,
+        "sections": {}
+      }
+    },
+    "cx-05": {
+      "path": "teach-agents/campusx/05-retrieval.html",
+      "title": "Retrieval",
+      "type": "content",
+      "contentRole": "learn",
+      "durations": {
+        "full": null,
+        "core": null,
+        "sections": {}
+      }
+    },
+    "cx-06": {
+      "path": "teach-agents/campusx/06-context-and-memory.html",
+      "title": "Context and memory",
+      "type": "content",
+      "contentRole": "learn",
+      "durations": {
+        "full": null,
+        "core": null,
+        "sections": {}
+      }
+    },
+    "cx-07": {
+      "path": "teach-agents/campusx/07-reliability.html",
+      "title": "Reliability",
+      "type": "content",
+      "contentRole": "learn",
+      "durations": {
+        "full": null,
+        "core": null,
+        "sections": {}
+      }
+    },
+    "cx-08": {
+      "path": "teach-agents/campusx/08-irreversible-actions.html",
+      "title": "Irreversible actions",
+      "type": "content",
+      "contentRole": "learn",
+      "durations": {
+        "full": null,
+        "core": null,
+        "sections": {}
+      }
+    },
+    "cx-09": {
+      "path": "teach-agents/campusx/09-security.html",
+      "title": "Security",
+      "type": "content",
+      "contentRole": "learn",
+      "durations": {
+        "full": null,
+        "core": null,
+        "sections": {}
+      }
+    },
+    "cx-10": {
+      "path": "teach-agents/campusx/10-evaluation.html",
+      "title": "Evaluation",
+      "type": "content",
+      "contentRole": "learn",
+      "durations": {
+        "full": null,
+        "core": null,
+        "sections": {}
+      }
+    },
+    "cx-11": {
+      "path": "teach-agents/campusx/11-tracing-and-cost.html",
+      "title": "Tracing and cost",
+      "type": "content",
+      "contentRole": "learn",
+      "durations": {
+        "full": null,
+        "core": null,
+        "sections": {}
+      }
+    },
+    "cx-12": {
+      "path": "teach-agents/campusx/12-mcp.html",
+      "title": "MCP",
+      "type": "content",
+      "contentRole": "learn",
+      "durations": {
+        "full": null,
+        "core": null,
+        "sections": {}
+      }
+    },
+    "cx-13": {
+      "path": "teach-agents/campusx/13-multi-agent.html",
+      "title": "Multi-agent",
+      "type": "content",
+      "contentRole": "learn",
+      "durations": {
+        "full": null,
+        "core": null,
+        "sections": {}
+      }
+    },
+    "cx-14": {
+      "path": "teach-agents/campusx/14-deployment.html",
+      "title": "Deployment",
+      "type": "content",
+      "contentRole": "learn",
+      "durations": {
+        "full": null,
+        "core": null,
+        "sections": {}
+      }
+    },
+    "cx-15": {
+      "path": "teach-agents/campusx/15-capstone.html",
+      "title": "Capstone",
+      "type": "content",
+      "contentRole": "learn",
       "durations": {
         "full": null,
         "core": null,

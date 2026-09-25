@@ -1,4 +1,4 @@
-/* ATS Agent Build Lab — course progress and small interactions. Offline-safe. */
+/* ATS Agent Build Lab - course progress and small interactions. Offline-safe. */
 (function () {
   "use strict";
   var KEY = "genai.ats-agent-lab.completed.v1";
@@ -22,7 +22,7 @@
     var button = document.querySelector("[data-ats-complete]");
     if (button && lesson) {
       var complete = done.indexOf(lesson) > -1;
-      button.textContent = complete ? "✓ Completed — click to undo" : "Mark lesson complete";
+      button.textContent = complete ? "✓ Completed - click to undo" : "Mark lesson complete";
       button.classList.toggle("ghost", complete);
       button.setAttribute("aria-pressed", complete ? "true" : "false");
     }

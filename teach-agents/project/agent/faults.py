@@ -1,5 +1,5 @@
 """
-faults.py — deliberate breakage, so Lesson 7 can be run rather than described.
+faults.py - deliberate breakage, so Lesson 7 can be run rather than described.
 
 Reliability is the one topic you cannot learn from prose. You have to watch the
 agent hang, loop and half-succeed, then watch your controls catch it. This module

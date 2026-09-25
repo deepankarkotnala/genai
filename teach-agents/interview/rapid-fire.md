@@ -1,7 +1,7 @@
 # Rapid-fire: 45 questions
 
 Answer out loud in under 30 seconds each. If you hesitate, that topic needs
-another pass. Answers are deliberately terse — the drill is recall, not essays.
+another pass. Answers are deliberately terse - the drill is recall, not essays.
 
 ---
 
@@ -19,7 +19,7 @@ system, user, assistant, tool. They organise a conversation; they enforce
 nothing.
 
 **4 · Does `temperature=0` give you determinism?**
-No — closest available. Batching, GPU scheduling and silent model updates all
+No - closest available. Batching, GPU scheduling and silent model updates all
 break exact reproducibility. So never assert exact matches on a live model.
 
 **5 · What does "the model called a tool" actually mean?**
@@ -29,12 +29,12 @@ decided whether to honour it.
 **6 · Where is the enforcement point for tool use?**
 The dispatch function, not the prompt.
 
-**7 · Schema-valid — does that mean correct?**
+**7 · Schema-valid - does that mean correct?**
 No. `{"ticket_id": "TCK-9999"}` is schema-valid and names nothing. Schema
 validation and semantic validation are different layers.
 
 **8 · Why is a tool description part of your prompt?**
-The model never sees your code — only name, description and schema. Wrong tool
+The model never sees your code - only name, description and schema. Wrong tool
 chosen? Fix the description first.
 
 **9 · Why reject `True` where an integer is expected?**
@@ -53,7 +53,7 @@ Untrusted. Tool output *shape* is trusted because your code made it; the
 
 ## Loop and patterns (L2, L4)
 
-**12 · Prompt, chain, workflow, agent — what distinguishes them?**
+**12 · Prompt, chain, workflow, agent - what distinguishes them?**
 Who decides the next step: nobody, you at build time, you with branches, the
 model at run time.
 
@@ -81,7 +81,7 @@ Exactly one. Critique-revise loops don't converge; they oscillate or drift while
 the bill grows.
 
 **19 · What can reflection not catch?**
-An error the model can't see. It shares its own blind spots — good at omissions,
+An error the model can't see. It shares its own blind spots - good at omissions,
 bad at wrong beliefs.
 
 **20 · What does routing buy?**
@@ -119,7 +119,7 @@ Same machinery, different purpose. Retrieval searches documents; memory searches
 history. The interesting question is what you *write*.
 
 **28 · Your agent hits the context limit. First question?**
-Is it one huge result or many small ones? Cap at the source vs compact — opposite
+Is it one huge result or many small ones? Cap at the source vs compact - opposite
 fixes.
 
 **29 · What must compaction always keep?**
@@ -138,14 +138,14 @@ A timeout (the slow thing is still slow) and a malformed argument (it can't
 succeed on attempt two).
 
 **32 · Repeat vs oscillation?**
-Same call again vs A,B,A,B. Different detectors — a check against the previous
+Same call again vs A,B,A,B. Different detectors - a check against the previous
 call alone misses the cycle.
 
 **33 · Why must escalation never fail?**
 It's the fallback for every other failure. A fallible fallback isn't one.
 
 **34 · Most dangerous failure mode?**
-Partial success. Nothing raises, the shape is right, a field is missing — and a
+Partial success. Nothing raises, the shape is right, a field is missing - and a
 missing field becomes prose that reads as fact.
 
 **35 · How do you let an agent spend money?**
@@ -153,10 +153,10 @@ Dry-run default, policy in code, derived idempotency key, approval token bound t
 order and amount, append-only audit, caps.
 
 **36 · Why is a derived key, not a UUID?**
-A fresh key per attempt makes every retry look new — you'd implement the
+A fresh key per attempt makes every retry look new - you'd implement the
 mechanism and disable it in the same line.
 
-**37 · Duplicate detected — error or success?**
+**37 · Duplicate detected - error or success?**
 Success with `duplicate: true`. The caller asked for a state and that state
 holds. Errors invite workarounds.
 
@@ -165,7 +165,7 @@ An approval request for an impossible action trains reviewers to click through.
 Approval fatigue is a security failure.
 
 **39 · Your primary defence against prompt injection?**
-That no dangerous capability exists. Not filtering — absence.
+That no dangerous capability exists. Not filtering - absence.
 
 **40 · Direct vs indirect injection?**
 Ticket body vs a document your own retriever fetched. Indirect is harder because
@@ -175,7 +175,7 @@ it arrives through your trusted tool.
 Otherwise an injection claims to be an admin. Confused deputy.
 
 **42 · Is prompt injection solvable?**
-Not in general — no parameterised query for natural language. The *consequence*
+Not in general - no parameterised query for natural language. The *consequence*
 is solvable.
 
 ---

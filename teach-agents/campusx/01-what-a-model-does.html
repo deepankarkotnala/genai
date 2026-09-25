@@ -1,0 +1,425 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>01 · What a language model actually does | Understanding AI Agents</title>
+<meta name="description" content="A language model scores the next token and nothing else. What that one fact forces on every application built above it, and why an API call is not the same thing as a model.">
+<link rel="icon" href="../../assets/brand/favicon.svg?v=20260925b" type="image/svg+xml">
+<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260925b" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260925b">
+<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260925b" sizes="180x180">
+<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260925b">
+<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260925b" color="#6f47f5">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="../../assets/styles.css?v=20260805a">
+<link href="../../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
+<link href="../../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
+<link href="../../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+<link href="../../assets/ir-theme.css?v=20260925c" rel="stylesheet"/>
+</head>
+<body data-curriculum-id="cx-01" data-page="cx-01">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="../../index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search this section…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Understanding AI Agents · CampusX / <b>01 · What a language model actually does</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> 01 · Foundations</div>
+        <h1>What a language model actually does</h1>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~18 min read</span>
+          <span class="pill purple">Pairs with · <a href="../lessons/0001-llm-mechanics.html">Lesson 1 · LLM mechanics</a></span>
+        </div>
+
+<!-- ================= 1 ================= -->
+<h2 id="known">1 · What you already know</h2>
+<p>You have sent text to a model and read the reply. You know it can summarise,
+classify and rewrite, and you know the reply is not always identical twice.</p>
+<p><b>This page is about what happens underneath that.</b> Everything later in this section
+ - tools, loops, retrieval, approval - exists because of the three limits below.</p>
+
+<!-- ================= 2 ================= -->
+<h2 id="breaks">2 · What breaks now</h2>
+<p>Take a real request: <i>has invoice ORD-5581 been paid?</i></p>
+<p>Send it to a model on its own and one of two things happens. It says it cannot know, or
+it returns a confident answer that is not true. Neither is usable in production.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>What the request needs</th><th>Why one model call cannot supply it</th></tr></thead>
+<tbody>
+<tr><td>A value from your database</td><td>The model has no network and no file system</td></tr>
+<tr><td>An action, such as issuing a refund</td><td>It returns text, and text does not move money</td></tr>
+<tr><td>A second step that uses the first result</td><td>One call returns once, and then the process ends</td></tr>
+<tr><td>A record of what it did</td><td>Nothing was written down, because nothing ran</td></tr>
+</tbody>
+</table>
+</div>
+<p>All four rows are the same missing thing. <b>A model call cannot act, and it cannot
+continue.</b> The rest of this section is what you build around it to fix that.</p>
+
+<!-- ================= 3 ================= -->
+<h2 id="breakdown">3 · Simple breakdown - A language model vs a rules engine</h2>
+<section class="breakdown">
+
+<h3 class="bd-tech"><span class="bd-tag">A</span> A language model</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> A language model is a fixed set of numbers that, given text, returns a score for every token that could come next. A <b>token</b> is a chunk of text, roughly three quarters of an English word.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It turns text into more text, so that work stated in language can be done by software. It supplies no facts of its own beyond what training left in the weights.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 168" role="img" aria-labelledby="cx1-exec-t cx1-exec-d">
+<title id="cx1-exec-t">How one call runs</title>
+<desc id="cx1-exec-d">Text is split into tokens. The model scores every possible next token. One is selected and appended to the text. The enlarged text is scored again, and the loop repeats until a stop condition is reached.</desc>
+<defs><marker id="ah-cx1-exec" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker><marker id="ah-cx1-execp" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--accent)"></path></marker></defs>
+<path class="loop" d="M629.6 62 C629.6 16, 270.4 16, 270.4 54" marker-end="url(#ah-cx1-execp)"></path>
+<text class="loop-lbl" x="450" y="14">the enlarged text is scored again</text>
+<rect class="box b1" x="12" y="62" width="157.6" height="56" rx="12"></rect>
+<rect class="box b2" x="191.6" y="62" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M172.6 90 H187.6" marker-end="url(#ah-cx1-exec)"></path>
+<rect class="box b3" x="371.2" y="62" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M352.2 90 H367.2" marker-end="url(#ah-cx1-exec)"></path>
+<rect class="box b4" x="550.8" y="62" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M531.8 90 H546.8" marker-end="url(#ah-cx1-exec)"></path>
+<rect class="box b5" x="730.4" y="62" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M711.4 90 H726.4" marker-end="url(#ah-cx1-exec)"></path>
+<text class="lbl" x="90.8" y="95">your text</text>
+<text class="lbl" x="270.4" y="86">split into</text>
+<text class="lbl" x="270.4" y="104">tokens</text>
+<text class="lbl" x="450" y="86">score every</text>
+<text class="lbl" x="450" y="104">next token</text>
+<text class="lbl" x="629.6" y="86">select one</text>
+<text class="lbl" x="629.6" y="104">append it</text>
+<text class="lbl" x="809.2" y="95">stop?</text>
+<text class="cap" x="450" y="160">one call returns one completion, and the model keeps nothing afterwards</text>
+</svg>
+
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> Text is split into tokens, each token becomes a vector, and stacked transformer layers score the next token. Selection picks one, appends it, and the enlarged text is scored again.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> None. The model holds nothing between calls. Anything it appears to remember was re-sent in the request.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> It cannot act, look anything up, or count reliably. Structured-output modes constrain generation to a schema. A longer context window raises the budget but adds no memory between calls.</p>
+
+<h3 class="bd-tech"><span class="bd-tag">B</span> A rules engine</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> A rules engine is code that applies conditions you wrote to data you supply, and returns the outcome those conditions produce.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It makes decisions that must be identical every time, and that someone must be able to read and audit.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b> Each rule is evaluated against the input in a defined order, until one matches or the set is exhausted.</p>
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> A rule set, an evaluation order, and the data the rules read. Every branch is written by a person.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> Whatever your storage holds. The engine itself keeps nothing between calls.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> It handles only cases someone anticipated. Phrasing it was not written for produces no match at all.</p>
+
+<h3 class="bd-diff">The core differences</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>A language model</th><th>A rules engine</th></tr></thead>
+<tbody>
+<tr><th>Handles unforeseen input</th><td>Yes, by scoring what is plausible</td><td>No, an unmatched input returns nothing</td></tr>
+<tr><th>Same input, same output</th><td>Only when temperature is 0</td><td>Always, by construction</td></tr>
+<tr><th>Explains its decision</th><td>No, only the text it produced</td><td>Yes, the matching rule is the explanation</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 class="bd-short">In short - which one to choose</h3>
+<ul>
+<li>Use a <b>language model</b> when the input is language you cannot enumerate in advance, and a plausible answer beats no answer.</li>
+<li>Use a <b>rules engine</b> when the decision must be identical every time, auditable, and defensible to someone outside engineering.</li>
+<li>Most production systems use both: the model reads the language, and the rules decide what is allowed to happen next.</li>
+</ul>
+</section>
+
+<!-- ================= 4 ================= -->
+<h2 id="without">4 · Without the technology</h2>
+<p>Before language models, this job was done by matching words.</p>
+
+<p>Run it on <code>"the delivery was not good"</code> and it returns <b>positive</b>. The word
+<i>good</i> is present, and the word <i>not</i> is in neither set.</p>
+<p>You can add negation handling. Then you need sarcasm, comparatives, misspellings, and
+every phrasing a customer might use. <b>The list never ends, because language is not a
+list.</b> That is the problem a language model solves: it scores plausibility over text it
+has never seen verbatim.</p>
+<p>What it does not solve: it still cannot read your database, and it still answers
+confidently when it does not know.</p>
+
+<!-- ================= 5 ================= -->
+<h2 id="mechanics">5 · Runtime mechanics</h2>
+<p>One call runs in five steps.</p>
+<ol>
+<li><b>Tokenise.</b> Your text is split into tokens, and each becomes an integer id.</li>
+<li><b>Embed.</b> Each id becomes a vector, so meaning and position can be computed on.</li>
+<li><b>Score.</b> Stacked transformer layers produce one score per token in the
+vocabulary - around 100,000 numbers, for the single next position.</li>
+<li><b>Select.</b> One token is chosen from those scores. Temperature and top-p decide how
+much of the distribution is considered.</li>
+<li><b>Append and repeat.</b> The chosen token joins the text, and the enlarged text goes
+back to step 3.</li>
+</ol>
+<p>Generation stops at an end-of-sequence token, at your maximum token count, or at a stop
+string you supplied. <b>Nothing else stops it.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 192" role="img" aria-labelledby="cx1-ctx-t cx1-ctx-d">
+<title id="cx1-ctx-t">The same call, three passes in</title>
+<desc id="cx1-ctx-d">The prompt stays fixed while the generated text grows. Each pass re-reads everything produced so far, which is why the cost of one call grows with the length of its answer.</desc>
+<text class="cap" x="315" y="24">pass 1</text>
+<text class="cap" x="545" y="24">pass 2</text>
+<text class="cap" x="775" y="24">pass 3</text>
+<text class="mono" x="12" y="64" style="text-anchor:start">prompt tokens</text>
+<rect class="snap s1" x="206" y="46" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="315" y="64">412</text>
+<rect class="snap s2" x="436" y="46" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="545" y="64">412</text>
+<rect class="snap s3" x="666" y="46" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="775" y="64">412</text>
+<text class="mono" x="12" y="98" style="text-anchor:start">generated so far</text>
+<rect class="snap s1" x="206" y="80" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="315" y="98">0</text>
+<rect class="snap s2" x="436" y="80" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="545" y="98">1</text>
+<rect class="snap s3" x="666" y="80" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="775" y="98">2</text>
+<text class="mono" x="12" y="132" style="text-anchor:start">read this pass</text>
+<rect class="snap s1" x="206" y="114" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="315" y="132">412</text>
+<rect class="snap s2" x="436" y="114" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="545" y="132">413</text>
+<rect class="snap s3" x="666" y="114" width="218" height="26" rx="7"></rect>
+<text class="mono snap-txt" x="775" y="132">414</text>
+<text class="cap" x="450" y="184">the model re-reads the whole text every pass; it does not resume where it stopped</text>
+</svg>
+
+<!-- ================= 7 ================= -->
+<h2 id="components">6 · The components, one at a time</h2>
+<h3>The tokenizer</h3>
+<p>It maps text to integer ids and back. It is fixed for a given model, and it is why token
+counts differ between providers for the same sentence.</p>
+
+<p>Identifiers and code fragment into many tokens. That matters when you pay per token and
+paste logs into a prompt.</p>
+
+<h3>The context window</h3>
+<div class="def"><strong>Context window</strong> - the maximum number of tokens one call can
+consider, counting the input and the generated output together.</div>
+<p>The system prompt, tool declarations, conversation history, tool results and the answer
+all share that one budget. Fill it with tool output and there is no room left for the
+answer.</p>
+
+<h3>Sampling controls</h3>
+
+<p>Use temperature 0 for extraction, classification, and anything you will parse. Raise it
+only when variety is the point.</p>
+
+<h3>Structured output</h3>
+<p>Asking for JSON in the prompt is a request. Structured-output mode is a constraint: the
+provider restricts generation so the result matches your schema.</p>
+
+<!-- ================= 8 ================= -->
+<h2 id="state">7 · State and data flow</h2>
+<p>A model call is <b>stateless</b>. That is one sentence, and it costs you the
+whole of page 6 later in this section.</p>
+<ol>
+<li><b>What data is state?</b> Nothing inside the model. The message list your code holds.</li>
+<li><b>Who writes each field?</b> Your application appends every message.</li>
+<li><b>Who reads it?</b> Your application, which re-sends the whole list on every call.</li>
+<li><b>Replaced, appended or merged?</b> Appended. Messages accumulate.</li>
+<li><b>What reducer controls merging?</b> None. Your code decides what stays.</li>
+<li><b>Only in process memory?</b> Yes, unless you persist it yourself.</li>
+<li><b>Is it checkpointed?</b> No.</li>
+<li><b>Is it in a database?</b> Only if you put it there.</li>
+<li><b>How long does it survive?</b> Until your process ends.</li>
+<li><b>What retrieves it again?</b> A conversation id you assigned and stored.</li>
+</ol>
+<p><b>The model contributes nothing to any of those ten answers.</b> Every one is your
+application's responsibility.</p>
+
+<!-- ================= 10 ================= -->
+<h2 id="trace">8 · Trace</h2>
+<p>What actually happened, in order:</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>#</th><th>Step</th><th>Value</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Two messages serialised into one prompt</td><td>38 tokens</td></tr>
+<tr><td>2</td><td>Scored the next token</td><td>~100,000 scores</td></tr>
+<tr><td>3</td><td>Selected the highest, temperature being 0</td><td><code>'Refund'</code></td></tr>
+<tr><td>4</td><td>Scored again with that token appended</td><td>end-of-sequence won</td></tr>
+<tr><td>5</td><td>Returned, and kept nothing</td><td>1 completion token</td></tr>
+</tbody>
+</table>
+</div>
+<p>Send the identical request again and step 3 selects the same token, because temperature
+is 0. Raise it to 0.7 and step 3 may select something else, and every later step changes
+with it.</p>
+
+<!-- ================= 11 ================= -->
+<h2 id="break">9 · Break it</h2>
+<p>Ask the model something it cannot know.</p>
+
+<p>There is no such invoice in the prompt. There was no lookup. The date, the method and
+the outcome were produced because they are plausible continuations of that sentence.</p>
+<p><b>Nothing failed.</b> No exception, no error field, no warning. The call succeeded and
+returned a well-formed answer that is entirely invented.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 174" role="img" aria-labelledby="cx1-fail-t cx1-fail-d">
+<title id="cx1-fail-t">Why nothing raised an error</title>
+<desc id="cx1-fail-d">The model scored a plausible continuation and returned it. There was no lookup to fail and no validation step, so the invented answer reached the user looking exactly like a correct one.</desc>
+<defs><marker id="ah-cx1-fail" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="52" width="202.5" height="56" rx="12"></rect>
+<rect class="box fail" x="236.5" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M217.5 80 H232.5" marker-end="url(#ah-cx1-fail)"></path>
+<rect class="box after b3" x="461" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M442 80 H457" marker-end="url(#ah-cx1-fail)"></path>
+<rect class="box after b4" x="685.5" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M666.5 80 H681.5" marker-end="url(#ah-cx1-fail)"></path>
+<text class="lbl" x="113.25" y="85">question asked</text>
+<text class="lbl" x="337.75" y="76">no data</text>
+<text class="lbl" x="337.75" y="94">in the prompt</text>
+<text class="lbl" x="562.25" y="76">plausible text</text>
+<text class="lbl" x="562.25" y="94">scored highest</text>
+<text class="lbl" x="786.75" y="76">returned as</text>
+<text class="lbl" x="786.75" y="94">an answer</text>
+<path class="xmark" d="M319.75 122 L355.75 150 M355.75 122 L319.75 150"></path>
+<text class="cap rescue" x="450" y="166">the failure is invisible at the call site -- this is why evaluation exists</text>
+</svg>
+
+<!-- ================= 12 ================= -->
+<h2 id="fix">10 · Fix it</h2>
+<p>Three mechanisms, smallest first.</p>
+<p><b>1 · Put the fact in the prompt.</b> If the data is in the prompt, the model is
+summarising rather than inventing.</p>
+
+<p><b>2 · Permit refusal.</b> <code>NOT_IN_DATA</code> is a status your code checks, not a
+sentence a user reads. An answer that can never be "I do not know" is always a guess.</p>
+<p><b>3 · Verify before showing.</b> Check that every identifier in the answer appears in
+the data you supplied.</p>
+
+<p>The first mechanism is retrieval, which page 5 builds properly. The second is why a
+relevance floor exists. The third is a citation check.</p>
+
+<!-- ================= 13 ================= -->
+<h2 id="production">11 · Production version</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Concern</th><th>What you do</th></tr></thead>
+<tbody>
+<tr><td>Timeouts</td><td>Set one on every call. A model call is a network call, and it can hang</td></tr>
+<tr><td>Retries</td><td>Retry on 429 and 5xx with exponential backoff. Never retry a 400</td></tr>
+<tr><td>Token budget</td><td>Count before sending. A prompt over the window fails the whole call</td></tr>
+<tr><td>Cost</td><td>Record <code>usage</code> per call against a run id. Cost per answered request is the number that matters</td></tr>
+<tr><td>Determinism</td><td>Temperature 0 for anything parsed. Pin the model version: "latest" changes under you</td></tr>
+<tr><td>Prompt versioning</td><td>A prompt is code. Version it, and record which version produced which output</td></tr>
+<tr><td>PII</td><td>Decide what may enter a prompt before you send one. Redact at capture, not in the viewer</td></tr>
+<tr><td>Fallback</td><td>Know what happens when the provider is down. "Nothing" is a decision, made in advance</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ================= 14 ================= -->
+<h2 id="comparison">12 · Comparison</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Language model</th><th>Rules engine</th><th>Classical ML classifier</th></tr></thead>
+<tbody>
+<tr><th>Handles unseen phrasing</th><td><b>Yes</b></td><td>No</td><td>Partly, within its training distribution</td></tr>
+<tr><th>Same output every time</th><td>Only at temperature 0</td><td><b>Always</b></td><td>Yes</td></tr>
+<tr><th>Explains itself</th><td>No</td><td><b>Yes, the matched rule</b></td><td>Feature weights, if the model is simple</td></tr>
+<tr><th>Setup cost</th><td>An API key</td><td>Writing every rule</td><td>Labelled data and training</td></tr>
+<tr><th>Cost per call</th><td>Tokens in and out</td><td>Near zero</td><td>Near zero after training</td></tr>
+<tr><th>Use it for</th><td>Open-ended language</td><td>Decisions that must be audited</td><td>High-volume, stable, labelled tasks</td></tr>
+</tbody>
+</table>
+</div>
+<p>The row that decides most architectures is the third. <b>A model cannot tell you why it
+answered as it did</b>, so anything that must be defended to an auditor keeps a rules engine
+in the path.</p>
+
+<!-- ================= 15 ================= -->
+<div class="carry"><b>New questions</b> written for this page: it is new, so there was nothing to carry over.</div>
+<h2 id="interview">13 &middot; Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What does a language model do, in one sentence? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>It takes text, and returns a score for every token that could come next. One token is selected from those scores and appended. Everything else - chat, tool calling, agents - is that step run repeatedly by code around the model.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  Why do people say a model has no memory? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Each call is independent. The model holds nothing between calls. A chat that appears to remember your name is re-sending your name in every request. What looks like memory is the application resending text.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  What is the context window, and what competes for it? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>It is the maximum number of tokens one call can consider, counting the input and the generated output together. The system prompt, tool declarations, conversation history, tool results and the answer all share that one budget.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  Why is the same prompt able to give different answers? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Selection from the scored tokens is probabilistic by default. Temperature and top-p control how much of the distribution is considered. Set temperature to 0 and selection becomes near-deterministic, though not guaranteed across model versions or hardware.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  A model returns JSON that will not parse. What are your options? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Ask for a schema through the provider's structured-output mode, which constrains generation rather than requesting politely. Validate the result with Pydantic and re-prompt once on failure with the validation error attached. Never regex-repair the string: it hides the failure and produces plausible wrong values.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  What does "the model cannot act" mean for your architecture? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>The model returns text. Every effect on a real system happens in your code, which reads the requested action and decides whether to run it. That decision point is where validation, authorisation and approval live. No prompt can move that boundary.</p></div></details>
+
+<!-- ================= 16 ================= -->
+<h2 id="short">14 · In short, and what comes next</h2>
+<p class="bd-choose">Remember these six:</p>
+<ul>
+<li>A model scores the next token. Everything else is code you write around it.</li>
+<li>It has no memory. Anything it seems to remember was re-sent in the request.</li>
+<li>The context window is one shared budget: prompt, tools, history and answer.</li>
+<li>It cannot act. Your code performs every real effect, and owns every check.</li>
+<li>It answers confidently when it does not know, and nothing raises an error.</li>
+<li>Temperature 0 for anything you parse, and pin the model version.</li>
+</ul>
+<div class="callout key">
+<div class="c-ico">🔑</div>
+<div class="c-body"><div class="c-title">The one idea to remember</div>
+<p><b>The model produces text; your code produces effects.</b> Every safety mechanism in
+this section lives on your side of that line, because there is nowhere else to put it.</p></div>
+</div>
+<p><b>Next:</b> page 2 puts this single call inside a loop, so the model can request an
+action, see the result, and decide again.</p>
+
+<div class="page-nav" data-page-nav>
+<a href="index.html"><div class="dir">← Previous</div><div class="ttl">Section index</div></a>
+          <a class="next" href="02-the-agent-loop.html"><div class="dir">Next →</div><div class="ttl">02 · The agent loop</div></a>
+</div>
+
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script>
+window.__pageNav = {
+  navLabel: "Understanding AI Agents · CampusX",
+  here: "campusx/01-what-a-model-does.html",
+  base: "../",
+  pages: [
+    { file: "campusx/index.html", title: "Section index", num: "✦", kw: "campusx agents index" }
+  ]
+};
+</script>
+<script src="../../assets/app.js?v=20260925c"></script>
+<script src="../../assets/sitenav.js?v=20260925a"></script>
+<script src="../../assets/enhance.js?v=20260925c"></script>
+<script src="../../assets/genai-motion.js?v=20260728a"></script>
+<script src="../../assets/glossary.js?v=20260802b"></script>
+</body>
+</html>

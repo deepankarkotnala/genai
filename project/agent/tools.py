@@ -1,5 +1,5 @@
 """
-tools.py — the three read-only tools, and the boundary they sit on.
+tools.py - the three read-only tools, and the boundary they sit on.
 
 Everything the agent can do, it does through this file. That sentence is the
 most important one in the course, and it has a corollary worth saying out loud:

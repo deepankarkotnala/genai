@@ -1,4 +1,4 @@
-# Deploying Switch job to GitHub Pages
+# Deploying Learn GenAI to GitHub Pages
 
 The site is ready to deploy from a repository root. Its navigation does not hard-code a repository name, Windows path, or domain.
 

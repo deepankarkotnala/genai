@@ -1,0 +1,404 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>12 · MCP | Understanding AI Agents</title>
+<meta name="description" content="Why N times M becomes N plus M, the three roles, and the security risk people miss - the tool description is written by someone else and lands in your prompt.">
+<link rel="icon" href="../../assets/brand/favicon.svg?v=20260925b" type="image/svg+xml">
+<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260925b" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260925b">
+<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260925b" sizes="180x180">
+<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260925b">
+<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260925b" color="#6f47f5">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="../../assets/styles.css?v=20260805a">
+<link href="../../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
+<link href="../../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
+<link href="../../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+<link href="../../assets/ir-theme.css?v=20260925c" rel="stylesheet"/>
+</head>
+<body data-curriculum-id="cx-12" data-page="cx-12">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="../../index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search this section…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Understanding AI Agents · CampusX / <b>12 · MCP</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> 12 · Scale</div>
+        <h1>MCP: sharing tools without writing them four times</h1>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~17 min read</span>
+          <span class="pill purple">Pairs with · <a href="../lessons/0012-mcp.html">Lesson 12 · MCP</a></span>
+        </div>
+
+<!-- ================= 1 ================= -->
+<h2 id="known">1 · What you already know</h2>
+<p>From page 3 a tool is a function, a schema and a registry entry, all inside
+your process. From page 9 the tool set is scoped to the caller.</p>
+<p><b>This page is about what changes when the tool lives somewhere else</b>, and you did not
+write it.</p>
+
+<!-- ================= 2 ================= -->
+<h2 id="breaks">2 · What breaks now</h2>
+<p>Four teams each build an agent. All four need to read the ticketing system.</p>
+
+<p>Three implementations of one integration, three schemas, three sets of credentials, and
+three places to fix the same bug. Add a fourth agent and it is written again.</p>
+<p>Now the other direction. Your agent needs Slack, GitHub, Postgres and the file system.
+That is four integrations you write and maintain, each with its own authentication and its
+own schema style.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Applications</th><th>Tools</th><th>Integrations to maintain</th></tr></thead>
+<tbody>
+<tr><td>4</td><td>5</td><td><b>20</b></td></tr>
+<tr><td>4</td><td>5, with one protocol</td><td><b>9</b> (4 clients + 5 servers)</td></tr>
+</tbody>
+</table>
+</div>
+<p><b>That arithmetic is the entire argument for MCP.</b> N times M becomes N plus M, and
+nothing else about the protocol matters as much.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 240" role="img" aria-labelledby="cx12-nm-t cx12-nm-d">
+<title id="cx12-nm-t">Why the arithmetic changes</title>
+<desc id="cx12-nm-d">Without a shared protocol every application writes its own integration for every tool, so the work grows as applications times tools. With one protocol, each side is written once and the work grows as applications plus tools.</desc>
+<defs><marker id="ah-cx12-nm" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="layer b1" x="150" y="16" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="37">4 apps x 5 tools, each hand-written</text>
+<text class="lbl" x="450" y="55">20 integrations to maintain</text>
+<rect class="layer b2" x="150" y="82" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="103">one protocol in the middle</text>
+<text class="lbl" x="450" y="121">MCP</text>
+<path class="arw" d="M450 66 V79" marker-end="url(#ah-cx12-nm)"></path>
+<rect class="layer b3" x="150" y="148" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="169">4 clients + 5 servers, written once</text>
+<text class="lbl" x="450" y="187">9 things to maintain</text>
+<path class="arw" d="M450 132 V145" marker-end="url(#ah-cx12-nm)"></path>
+<text class="cap" x="450" y="234">this is the entire argument, and the rest is detail</text>
+</svg>
+
+<!-- ================= 3 ================= -->
+<h2 id="breakdown">3 · Simple breakdown - MCP vs an in-process tool</h2>
+<section class="breakdown">
+
+<h3 class="bd-tech"><span class="bd-tag">A</span> MCP</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> MCP is an open protocol for exposing tools, read-only resources and prompt templates to a model application over JSON-RPC.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It lets one team maintain a capability once, and every compliant application use it without writing an integration.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 306" role="img" aria-labelledby="cx12-exec-t cx12-exec-d">
+<title id="cx12-exec-t">Host, client, server</title>
+<desc id="cx12-exec-d">The host runs the model and the conversation, and spawns one client per server. Each client speaks the protocol to exactly one server. The server wraps one real system and is the boundary that holds its credentials.</desc>
+<defs><marker id="ah-cx12-exec" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="layer b1" x="150" y="16" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="46">host -- runs the model and the conversation</text>
+<rect class="layer b2" x="150" y="82" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="112">client -- one per server, speaks the protocol</text>
+<path class="arw" d="M420 66 V79" marker-end="url(#ah-cx12-exec)"></path>
+<path class="arw" d="M480 79 V66" marker-end="url(#ah-cx12-exec)"></path>
+<rect class="layer b3" x="150" y="148" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="178">server -- wraps one system, holds its credentials</text>
+<path class="arw" d="M420 132 V145" marker-end="url(#ah-cx12-exec)"></path>
+<path class="arw" d="M480 145 V132" marker-end="url(#ah-cx12-exec)"></path>
+<rect class="layer b4" x="150" y="214" width="600" height="50" rx="11"></rect>
+<text class="lbl" x="450" y="244">the real system -- database, files, an API</text>
+<path class="arw" d="M420 198 V211" marker-end="url(#ah-cx12-exec)"></path>
+<path class="arw" d="M480 211 V198" marker-end="url(#ah-cx12-exec)"></path>
+<text class="cap" x="450" y="300">the server is where authorisation lives, because it owns the credentials</text>
+</svg>
+
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> A host running the model, one client per connected server, and servers that each wrap one real system and hold its credentials.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> The session is not durable. Capabilities are negotiated at connection time, and a dropped connection means re-initialising.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> Every connected tool costs prompt tokens on every model call. Descriptions come from the server. Remote transports need authentication that the protocol does not supply for you.</p>
+
+<h3 class="bd-tech"><span class="bd-tag">B</span> An in-process tool</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> An in-process tool is an ordinary function in your codebase, declared to the model with a schema you wrote.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It gives one agent a capability with no protocol, no process boundary and no network in the path.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b> The model requests a call, your dispatch layer validates it, and the function runs inside the same process.</p>
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> A registry, a schema, and the function. Nothing else exists.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> Whatever the function touches. There is no session and nothing to negotiate.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> It cannot be reused by another application without copying it. Every consumer maintains its own version, and they drift.</p>
+
+<h3 class="bd-diff">The core differences</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>MCP</th><th>An in-process tool</th></tr></thead>
+<tbody>
+<tr><th>Reused by other applications</th><td>Yes, any compliant host</td><td>No, copy the code</td></tr>
+<tr><th>Latency per call</th><td>Milliseconds</td><td>Microseconds</td></tr>
+<tr><th>Who writes the description</th><td>The server's author</td><td>You</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 class="bd-short">In short - which one to choose</h3>
+<ul>
+<li>Use <b>MCP</b> when a capability is shared across applications, or maintained by another team.</li>
+<li>Use an <b>in-process tool</b> when one agent needs a few tools that only it uses. It is simpler and faster.</li>
+<li>The decision is about <b>ownership and reuse</b>, never about which is more advanced.</li>
+</ul>
+</section>
+
+<!-- ================= 4 ================= -->
+<h2 id="without">4 · Without the technology</h2>
+<p>Without a protocol, sharing a tool means copying it.</p>
+
+<p>Three behaviours, three schemas, and one of them has no timeout. When the ticket API adds
+a required header, <b>three teams fix it at three different times</b>, and one of them does
+not notice for a week.</p>
+<p>The alternative is not a framework. It is agreeing on a wire format, which is all MCP
+is.</p>
+
+<!-- ================= 5 ================= -->
+<h2 id="mechanics">5 · Runtime mechanics</h2>
+<p>One MCP interaction, in order:</p>
+<ol>
+<li><b>Initialise.</b> The client connects and both sides declare which capabilities they
+support.</li>
+<li><b>List.</b> The client calls <code>tools/list</code>, and the server returns each
+tool's name, description and input schema.</li>
+<li><b>Declare.</b> The host inserts those descriptions and schemas into the model's
+prompt, alongside its own in-process tools.</li>
+<li><b>Call.</b> The model requests one. The client sends <code>tools/call</code> with the
+arguments to that server.</li>
+<li><b>Return.</b> The server executes against the real system and returns content, which
+the host appends as a tool result.</li>
+</ol>
+<p><b>Step 3 is where the security property lives.</b> Text you did not write has entered
+your prompt.</p>
+
+<!-- ================= 7 ================= -->
+<h2 id="components">6 · The components, one at a time</h2>
+<h3>The host</h3>
+<p>Your application. It runs the model, owns the conversation, and spawns one client per
+server. <b>It still owns validation and approval</b>, exactly as in page 3.</p>
+
+<h3>The client</h3>
+<p>One per server, inside the host. It initialises the session, lists capabilities, and
+sends calls. It is a transport, not a policy layer.</p>
+
+<h3>The server</h3>
+<p>Wraps one system, and holds that system's credentials. This is the real boundary: your
+agent never has the database password, because the server does.</p>
+
+<h3>The three primitives</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Primitive</th><th>What it is</th><th>Who controls it</th></tr></thead>
+<tbody>
+<tr><td>Tool</td><td>An action, with side effects</td><td>The model requests it</td></tr>
+<tr><td>Resource</td><td>Read-only data, addressed by URI</td><td>The application attaches it</td></tr>
+<tr><td>Prompt</td><td>A reusable template</td><td>The user selects it</td></tr>
+</tbody>
+</table>
+</div>
+<p><b>Who invokes each one is the trust design</b>, and it is the question interviewers use to
+tell whether you have read the specification.</p>
+
+<!-- ================= 8 ================= -->
+<h2 id="state">7 · State and data flow</h2>
+<ol>
+<li><b>What data is state?</b> The session: negotiated capabilities and the tool list.</li>
+<li><b>Who writes each field?</b> Both sides, during initialisation.</li>
+<li><b>Who reads it?</b> The host, when building the prompt; the client, when routing a
+call.</li>
+<li><b>Replaced, appended or merged?</b> Replaced on reconnection. Nothing merges.</li>
+<li><b>What reducer controls merging?</b> None.</li>
+<li><b>Only in process memory?</b> Yes. The session is not durable.</li>
+<li><b>Is it checkpointed?</b> No. A dropped connection means re-initialising.</li>
+<li><b>Is it in a database?</b> Only whatever the server itself persists.</li>
+<li><b>How long does it survive?</b> The connection.</li>
+<li><b>What retrieves it again?</b> Nothing. You reconnect and list again.</li>
+</ol>
+<p>Rows 6 and 7 have a practical consequence. <b>Make MCP tools idempotent</b>, because a
+reconnection mid-run means a call may be retried against a server that already ran it.</p>
+
+<!-- ================= 10 ================= -->
+<h2 id="trace">8 · Trace</h2>
+
+<p>Three round trips, and the third is the only one that does work. <b>The first two happen
+once per connection</b>, which is why per-call latency is milliseconds rather than a full
+handshake.</p>
+
+<!-- ================= 11 ================= -->
+<h2 id="break">9 · Break it</h2>
+<p>You reviewed a server, approved it, and shipped. A week later the server is
+updated.</p>
+
+<p>Your code did not change. Your prompt did.</p>
+
+<p><b>The instruction arrived through a channel you were not watching.</b> Nothing you would
+call a vulnerability was exploited: a tool description is supposed to tell the model when to
+use the tool, and this one did.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 174" role="img" aria-labelledby="cx12-desc-t cx12-desc-d">
+<title id="cx12-desc-t">The description is a prompt you did not write</title>
+<desc id="cx12-desc-d">A tool description is written by whoever wrote the server, and it is inserted into your prompt on every request. A server that changes its description after review has changed your prompt without touching your code.</desc>
+<defs><marker id="ah-cx12-desc" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="52" width="202.5" height="56" rx="12"></rect>
+<rect class="box fail" x="236.5" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M217.5 80 H232.5" marker-end="url(#ah-cx12-desc)"></path>
+<rect class="box after b3" x="461" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M442 80 H457" marker-end="url(#ah-cx12-desc)"></path>
+<rect class="box after b4" x="685.5" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M666.5 80 H681.5" marker-end="url(#ah-cx12-desc)"></path>
+<text class="lbl" x="113.25" y="76">you review</text>
+<text class="lbl" x="113.25" y="94">and approve</text>
+<text class="lbl" x="337.75" y="76">server updates</text>
+<text class="lbl" x="337.75" y="94">its description</text>
+<text class="lbl" x="562.25" y="76">new text enters</text>
+<text class="lbl" x="562.25" y="94">your prompt</text>
+<text class="lbl" x="786.75" y="76">the model</text>
+<text class="lbl" x="786.75" y="94">acts on it</text>
+<path class="xmark" d="M319.75 122 L355.75 150 M355.75 122 L319.75 150"></path>
+<text class="cap rescue" x="450" y="166">fingerprint name, description and schema at review; fail the run on change</text>
+</svg>
+
+<!-- ================= 12 ================= -->
+<h2 id="fix">10 · Fix it</h2>
+<p><b>1 · Fingerprint at review, and fail on change.</b> This is the fix.</p>
+
+<p><b>2 · Allowlist named tools</b>, rather than accepting whatever a server offers.</p>
+
+<p><b>3 · Namespace by server</b>, so two servers cannot both claim <code>search</code> and
+silently shadow one another.</p>
+
+<p><b>4 · Keep the checks from page 8 on your side.</b> The refund in that trace was still
+subject to policy, idempotency and approval, all of which live in your host. <b>MCP moved
+the tool; it moved none of the checks.</b></p>
+
+<!-- ================= 13 ================= -->
+<h2 id="production">11 · Production version</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Concern</th><th>What you do</th></tr></thead>
+<tbody>
+<tr><td>Server review</td><td>Read the source of anything you install. It runs with the permissions you give it</td></tr>
+<tr><td>Fingerprinting</td><td>Hash name, description and schema at review. Fail the run on change</td></tr>
+<tr><td>Tool allowlist</td><td>Named tools, never "everything this server offers"</td></tr>
+<tr><td>Namespacing</td><td>Prefix by server. Collisions are otherwise silent and unattributable</td></tr>
+<tr><td>Least privilege</td><td>Scoped credentials per server, and filesystem roots where applicable</td></tr>
+<tr><td>Timeouts</td><td>Per call. A remote tool can hang where a local function would not</td></tr>
+<tr><td>Reconnection</td><td>Re-initialise on a dropped session, and make tools idempotent so a retry is safe</td></tr>
+<tr><td>Schema tax</td><td>Every connected tool costs tokens on every model call. Connect what the task needs</td></tr>
+<tr><td>Transport</td><td>stdio locally; authenticated HTTP remotely. Never an unauthenticated remote server</td></tr>
+<tr><td>Audit</td><td>Server, tool, arguments and result per call, with the run id from page 11</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ================= 14 ================= -->
+<h2 id="comparison">12 · Comparison</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>MCP</th><th>In-process tool</th><th>A plain REST API</th></tr></thead>
+<tbody>
+<tr><th>Who can call it</th><td><b>Any compliant host</b></td><td>One agent</td><td>Any HTTP client</td></tr>
+<tr><th>Discovery</th><td><b>At run time</b></td><td>Hard-coded</td><td>OpenAPI, if provided</td></tr>
+<tr><th>Schema for the model</th><td>Generated by the server</td><td>You write it</td><td>You write an adapter</td></tr>
+<tr><th>Latency per call</th><td>Milliseconds</td><td><b>Microseconds</b></td><td>Milliseconds</td></tr>
+<tr><th>Trust boundary</th><td><b>Real, and text-carrying</b></td><td>None</td><td>Real, data only</td></tr>
+<tr><th>Use it for</th><td>Tools shared across agents</td><td>One agent, few tools</td><td>Services not built for models</td></tr>
+</tbody>
+</table>
+</div>
+<p>The fifth row is the difference in kind. <b>A REST API returns data; an MCP server also
+returns text that lands in your prompt.</b> That is why the security section of this page is
+longer than the protocol section.</p>
+
+<!-- ================= 15 ================= -->
+<div class="carry"><b>New questions</b> written for this page: it is new, so there was nothing to carry over.</div>
+<h2 id="interview">13 &middot; Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What problem does MCP solve? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Integration duplication. Without a shared protocol, every application writes its own integration for every tool, so the work grows as applications times tools. With one, each side is written once and the work grows as applications plus tools.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  Name the three roles. <span class="chev">›</span></summary>
+<div class="collapse-body"><p>The host is the application that runs the model and the conversation. The client lives inside the host and speaks the protocol to exactly one server. The server wraps one real system and exposes its capabilities.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  What are the three primitives, and who controls each? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Tools are actions the model can invoke, so they are model-controlled. Resources are read-only data the host attaches to context, so they are application-controlled. Prompts are reusable templates surfaced to the user, so they are user-controlled. The split is the trust design.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  What changes about security when a tool moves behind MCP? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>The tool description now comes from someone else and lands in your prompt. You also gain a real trust boundary: the server holds the credentials and enforces its own authorisation. What does not change is that your host still owns validation and approval.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  What is the risk people miss with MCP? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>A tool description is text written by whoever wrote the server, and it is inserted into your prompt on every request. A server that changes its description after you reviewed it has changed your prompt without touching your code. Fingerprint name, description and schema at review, and fail on change.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  When would you not use MCP? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>When one agent uses a handful of tools that only it needs. The protocol adds a process, a transport, a serialisation boundary and millisecond-scale latency to what was a function call. It earns that when a capability is shared across applications or maintained by another team.</p></div></details>
+
+<!-- ================= 16 ================= -->
+<h2 id="short">14 · In short, and what comes next</h2>
+<p class="bd-choose">Remember these six:</p>
+<ul>
+<li>MCP turns N times M integrations into N plus M. That is the only reason to adopt it.</li>
+<li>Three roles: host, client, server. Three primitives: tools, resources, prompts.</li>
+<li>Who invokes each primitive - model, application, user - is the trust design.</li>
+<li>Tool descriptions come from the server and land in your prompt. Treat them as untrusted.</li>
+<li>Allowlist, namespace and fingerprint everything you accept.</li>
+<li>The host still owns validation and approval. The protocol moves none of that.</li>
+</ul>
+<div class="callout key">
+<div class="c-ico">🔑</div>
+<div class="c-body"><div class="c-title">The one idea to remember</div>
+<p><b>MCP standardises how a tool is described and reached, never whether calling it is
+safe.</b> Every check from pages 3, 8 and 9 still applies, and one new one appears: the
+description is now text you did not write.</p></div>
+</div>
+<p><b>Next:</b> page 13 is about the far side having its own goals - delegating to another
+agent rather than calling a tool.</p>
+
+<div class="page-nav" data-page-nav>
+<a href="11-tracing-and-cost.html"><div class="dir">← Previous</div><div class="ttl">11 · Tracing and cost</div></a>
+          <a class="next" href="13-multi-agent.html"><div class="dir">Next →</div><div class="ttl">13 · Multi-agent</div></a>
+</div>
+
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script>
+window.__pageNav = {
+  navLabel: "Understanding AI Agents · CampusX",
+  here: "campusx/12-mcp.html",
+  base: "../",
+  pages: [
+    { file: "campusx/index.html", title: "Section index", num: "✦", kw: "campusx agents index" }
+  ]
+};
+</script>
+<script src="../../assets/app.js?v=20260925c"></script>
+<script src="../../assets/sitenav.js?v=20260925a"></script>
+<script src="../../assets/enhance.js?v=20260925c"></script>
+<script src="../../assets/genai-motion.js?v=20260728a"></script>
+<script src="../../assets/glossary.js?v=20260802b"></script>
+</body>
+</html>

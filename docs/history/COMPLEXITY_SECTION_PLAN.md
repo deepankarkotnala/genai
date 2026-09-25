@@ -1,7 +1,7 @@
-# Plan — New DSA Section: "Time & Space Complexity from Zero"
+# Plan: New DSA Section: "Time & Space Complexity from Zero"
 
 > A build-first plan for a **new, foundational chapter that sits at the very top of the
-> DSA curriculum**, teaching time and space complexity from absolute zero — with simple
+> DSA curriculum**, teaching time and space complexity from absolute zero - with simple
 > explanations, analogies, runnable code snippets, worked examples, and practice.
 > This is the design document. Implementation happens **after** this plan is approved.
 
@@ -19,7 +19,7 @@
 6. Use the vocabulary an interviewer expects (worst/average/best case, amortised, in-place).
 
 **Audience:** Complete beginners first; the later sections reward returning readers.
-No prior CS theory assumed — only the basic Python from later chapters.
+No prior CS theory assumed - only the basic Python from later chapters.
 
 **Non-goals (kept deliberately out, to avoid overwhelming a beginner):**
 - Formal limit-based definitions of Θ / Ω (mention Big-O only, note the others exist).
@@ -36,20 +36,20 @@ existing **Foundations** track. We avoid renumbering all 25 files.
 
 | Item | Decision |
 |------|----------|
-| **New file** | `dsa-prep/00-complexity.html` — but `00` is taken. Use `dsa-prep/complexity.html` with the display number **`0`** (marker style, like Contents uses `✦`). |
+| **New file** | `dsa-prep/00-complexity.html` - but `00` is taken. Use `dsa-prep/complexity.html` with the display number **`0`** (marker style, like Contents uses `✦`). |
 | **Display label** | Number chip renders **`0`**; title **"Time & Space Complexity"**; eyebrow **"Chapter 0 · Foundations"**. |
 | **Track** | `Foundations` (same track as 00 and 01). |
 | **Order** | First card in the Foundations block, above `00-interview-strategy`. |
 
 **Three wiring points (all beginner-invisible, must stay in sync):**
 
-1. **[index.html](index.html)** — add a new `<a class="dsa-crow" …>` as the *first* row in the
+1. **[index.html](index.html)** - add a new `<a class="dsa-crow" …>` as the *first* row in the
    Foundations `<div class="dsa-contents">` (before the `00-interview-strategy` row).
    Also update the hero pill `25 chapters` → `26 chapters`.
    *(The "N of N chapters shown" line is computed from `rows.length` in
-   [dsa-prep.js:206](../assets/dsa-prep.js#L206) — it updates itself, no edit needed.)*
+   [dsa-prep.js:206](../assets/dsa-prep.js#L206) - it updates itself, no edit needed.)*
 
-2. **[sitenav.js](../assets/sitenav.js)** — insert one entry in the `dsa` section's `pages`
+2. **[sitenav.js](../assets/sitenav.js)** - insert one entry in the `dsa` section's `pages`
    array, immediately after the `Contents` entry and before `00-interview-strategy`:
    `{ path: "dsa-prep/complexity.html", title: "Time & Space Complexity", num: "0", track: "Foundations", kw: "big o time complexity space complexity auxiliary memory constant linear logarithmic quadratic exponential worst average best amortized in place growth rate operations counting" }`
 
@@ -81,12 +81,12 @@ Reuse the classes already proven in [01-python-dsa-foundations.html](01-python-d
 - **Bottom nav:** `page-nav` with prev/next.
 
 **One new, optional visual element** (only if cheap to add with existing CSS): a small
-ASCII/box "growth table" showing how each class scales at n = 10, 100, 1000 — rendered as a
+ASCII/box "growth table" showing how each class scales at n = 10, 100, 1000 - rendered as a
 normal `table-wrap` table, so **no new CSS is required**.
 
 ---
 
-## 4. Pedagogical spine — how concepts stack
+## 4. Pedagogical spine: how concepts stack
 
 Each concept is introduced only after its prerequisite, so nothing feels like magic:
 
@@ -137,7 +137,7 @@ priority: short sentences, one idea per snippet.
 ### 1 · Why we don't measure time with a stopwatch (`id="why"`)
 - Idea: a fast laptop hides a bad algorithm on small inputs; we care about **how cost grows**
   as the input grows, independent of hardware.
-- Analogy: two recipes — one gets slower *a little* as guests double, one *quadruples*. At a
+- Analogy: two recipes - one gets slower *a little* as guests double, one *quadruples*. At a
   dinner party both look fine; at a wedding one collapses.
 - Snippet: same task, `n=10` vs `n=1_000_000`, showing the linear vs quadratic gap in
   *operation counts* (printed counters, not timings).
@@ -155,11 +155,11 @@ priority: short sentences, one idea per snippet.
 - Idea in one line: **Big-O = the shape of growth after dropping constants and smaller terms.**
 - Three rules with mini-examples: drop constants (`2n → O(n)`), drop lower-order terms
   (`n² + n → O(n²)`), keep the biggest.
-- Analogy: describing a road trip as "about 5 hours" — you don't add the 30 seconds at a stop sign.
+- Analogy: describing a road trip as "about 5 hours" - you don't add the 30 seconds at a stop sign.
 - Table: expression → Big-O (5–6 rows).
 - Callout key: what "worst case unless stated" means (matches the book's convention).
 
-### 4 · The complexity zoo (`id="zoo"`) — the heart of the chapter
+### 4 · The complexity zoo (`id="zoo"`): the heart of the chapter
 For **each** class: one-line meaning + everyday example + a canonical code snippet +
 "where you'll meet it later". Table at the top ranks them best→worst.
 
@@ -177,7 +177,7 @@ For **each** class: one-line meaning + everyday example + a canonical code snipp
   learner *feels* why O(n²) and O(2ⁿ) explode. (Cap huge numbers with "≈ astronomically large".)
 - Small self-contained snippet per class (all with `assert` + `print(... ok)`).
 
-### 5 · Sequential vs nested loops — add vs multiply (`id="loops"`)
+### 5 · Sequential vs nested loops: add vs multiply (`id="loops"`)
 - Rule: loops **one after another** add (`O(n) + O(n) = O(n)`); loops **inside** each other
   multiply (`O(n) × O(n) = O(n²)`).
 - Snippets: two separate loops; a nested loop; a nested loop whose inner bound depends on the
@@ -199,15 +199,15 @@ For **each** class: one-line meaning + everyday example + a canonical code snipp
 
 ### 8 · Amortised cost (`id="amortised"`)
 - Idea: one occasional expensive step, averaged over many cheap ones, is still cheap.
-- Canonical example: Python `list.append` — mostly O(1), occasionally resizes O(n),
+- Canonical example: Python `list.append` - mostly O(1), occasionally resizes O(n),
   **amortised O(1)**. (Cross-link to [01 · Python DSA Foundations](01-python-dsa-foundations.html#list-growth).)
 - Callout note: "Amortised ≠ average-case; it's a guarantee across a sequence of ops."
 
 ### 9 · What space complexity means (`id="space"`)
 - Three buckets, defined simply and with a picture:
-  - **Input space** — what you were given (usually not counted).
-  - **Auxiliary space** — *extra* memory your algorithm allocates (this is what we optimise).
-  - **Output space** — memory for the answer (usually excluded).
+  - **Input space** - what you were given (usually not counted).
+  - **Auxiliary space** - *extra* memory your algorithm allocates (this is what we optimise).
+  - **Output space** - memory for the answer (usually excluded).
 - Snippet contrast: summing a list in O(1) auxiliary vs building a new doubled list in O(n) auxiliary.
 - Reuse the exact **memory-analysis standard** callout (`callout key`) from ch. 01 §12.
 
@@ -217,19 +217,19 @@ For **each** class: one-line meaning + everyday example + a canonical code snipp
 - Callout note (🧠): "Say the depth out loud: 'O(h), so O(n) worst case on a skewed tree.'"
   (Mirrors ch. 01 §9.)
 
-### 11 · Time–space trade-offs (`id="tradeoffs"`) — the "aha" section
+### 11 · Time–space trade-offs (`id="tradeoffs"`): the "aha" section
 - The core interview move: **spend memory to save time, or save memory by doing more work.**
 - Worked pair on one problem (**Two Sum**, beginner-familiar):
   - Brute force: nested loop, **O(n²) time / O(1) space**.
   - Hash map: one pass, **O(n) time / O(n) space**.
   - Side-by-side snippets + a two-row comparison table.
 - Second, shorter example: in-place reverse (O(1) aux) vs building a reversed copy (O(n) aux).
-- Callout key: "There is rarely a 'best' — there's the best *for the given constraints*.
+- Callout key: "There is rarely a 'best' - there's the best *for the given constraints*.
   State the trade-off; let the interviewer pick."
 
 ### 12 · A repeatable analysis recipe (`id="recipe"`)
 A numbered checklist the reader applies to any function:
-1. Identify the input size(s) — name them (`n`, `m`, …).
+1. Identify the input size(s) - name them (`n`, `m`, …).
 2. Count loops: nested → multiply, sequential → add.
 3. Spot hidden costs (`x in list`, slicing, string `+=`, sorting inside a loop).
    Cross-link to ch. 01 for the Python-specific traps.
@@ -239,7 +239,7 @@ A numbered checklist the reader applies to any function:
 
 ### 13 · Common beginner traps (`id="traps"`)
 `callout warn`/`danger` set:
-- "Two loops means O(n²)" — no, only if **nested**.
+- "Two loops means O(n²)" - no, only if **nested**.
 - Forgetting that `sorted()` inside a loop adds a log factor per iteration.
 - Counting the output array as auxiliary space (usually it isn't).
 - Assuming `x in my_list` is O(1) (it's O(n); a set is O(1)). Cross-link ch. 01.
@@ -256,7 +256,7 @@ A numbered checklist the reader applies to any function:
 
 ### Quiz (`quiz`)
 1–2 multiple-choice questions with `data-correct` + `explain`, e.g. "Which is faster for large
-n: O(n log n) or O(n²)?" and "A function builds a new list of size n and returns it — what is
+n: O(n log n) or O(n²)?" and "A function builds a new list of size n and returns it - what is
 its *auxiliary* space?".
 
 ### One-page cheat sheet (`dsa-cheat`)
@@ -285,7 +285,7 @@ Target ~20 snippets total:
 - **Space:** O(1)-aux running sum vs O(n)-aux copy; recursive-sum stack depth.
 - **Trade-off:** Two Sum brute vs hash; in-place reverse vs copy reverse.
 
-Growth intuition rendered as a table (n = 10 / 100 / 1000) — no code, just numbers.
+Growth intuition rendered as a table (n = 10 / 100 / 1000) - no code, just numbers.
 
 ---
 
@@ -319,5 +319,5 @@ Growth intuition rendered as a table (n = 10 / 100 / 1000) — no code, just num
 - **Display number:** `0` chip (recommended) vs a symbol like `✦`/`★`. Default: **`0`**.
 - **Filename:** `complexity.html` (recommended) vs renumbering everything to make it a true `00`.
   Default: **`complexity.html`** (no renumbering, lowest risk).
-- **Depth of the zoo:** include O(2ⁿ) and O(n!) for completeness (recommended, kept gentle) —
+- **Depth of the zoo:** include O(2ⁿ) and O(n!) for completeness (recommended, kept gentle) - 
   or stop at O(n²) to avoid scaring beginners. Default: **include, clearly labelled "rare / brute force".**

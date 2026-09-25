@@ -15,7 +15,7 @@
     var nav = document.querySelector(".nav");
     if (!content || !nav) return;
     /* A term dialog carries an <h2> for its accessible name, and those dialogs
-       live inside .content — so an unfiltered query lists every definition as a
+       live inside .content - so an unfiltered query lists every definition as a
        chapter section. Section headings are the ones in the document flow. */
     var heads = [].slice.call(content.querySelectorAll("h2[id]")).filter(function (h) { return !h.closest("dialog"); });
 

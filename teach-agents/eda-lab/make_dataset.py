@@ -1,5 +1,5 @@
 """
-make_dataset.py — the synthetic support-operations dataset.
+make_dataset.py - the synthetic support-operations dataset.
 
     python make_dataset.py --seed 20260731
 

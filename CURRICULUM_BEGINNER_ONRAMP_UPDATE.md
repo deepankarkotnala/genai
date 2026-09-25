@@ -1,17 +1,17 @@
-# GenAI Mastery — beginner on-ramp across all 15 modules
+# GenAI Mastery: beginner on-ramp across all 15 modules
 
 ## The problem
 
 Module 01's lead sentence read "a probabilistic next-token predictor wrapped
-around a transformer" — *transformer* in the first line of the track, 200 lines
+around a transformer" - *transformer* in the first line of the track, 200 lines
 before anything explained it. The first two sections then used *neural network*,
 *differentiable function*, *logits*, *softmax*, *vocabulary*, *autoregressive*,
 *prefill*, *cached decode*, *in-context learning* and *top-p* without defining
 any of them, and the Feynman check asked the reader to explain cached decode
-steps — a concept resting on three undefined terms. The material was sound; the
+steps - a concept resting on three undefined terms. The material was sound; the
 vocabulary it assumed was never handed over.
 
-## New — Module 00 · The Basics
+## New: Module 00 · The Basics
 
 `modules/00_basics.html`, ~30 minutes, no mathematics, no prerequisites. Ten
 sections: what a model is (training vs inference), why text becomes tokens, what
@@ -32,7 +32,7 @@ map. Module 01's Back link points to it; its Next points to Module 01.
    03–15 (Module 00 is itself the plain-language page; 01 got a *Before you
    start* block; 02 got a "this is the module that opens the black box" note).
 2. **Click-to-define jargon.** The site's existing `.term-link` + `<dialog>`
-   mechanism — previously used on exactly one page and no module page — now
+   mechanism - previously used on exactly one page and no module page - now
    defines terms in place at first use. 22 definitions across 12 modules:
 
    | Module | Definitions added |
@@ -61,7 +61,7 @@ map. Module 01's Back link points to it; its Next points to Module 01.
 ## Sequencing
 
 The track order was left as it is. 01 → 02 (deep dive) → 03 is sound *provided*
-01 does not lean on transformer internals — the fault was vocabulary, not
+01 does not lean on transformer internals - the fault was vocabulary, not
 ordering, and re-cutting the track would have renumbered 15 modules to fix a
 problem that a primer plus definitions fixes.
 
@@ -81,8 +81,8 @@ own `kw` list in `sitenav.js` as its vocabulary). 127 forward references, 92 of
 them previously unlinked. Two caveats worth knowing before acting on that number:
 single words like *cost*, *python*, *task* and *interview* appear in those lists
 and generate false positives, and a forward reference is only a problem when the
-term is load-bearing where it appears. The openings — where a lost reader gives
-up — are what this pass fixed. The remaining tail is mid-module mentions worth a
+term is load-bearing where it appears. The openings - where a lost reader gives
+up - are what this pass fixed. The remaining tail is mid-module mentions worth a
 look but not a rewrite.
 
 ## Verified

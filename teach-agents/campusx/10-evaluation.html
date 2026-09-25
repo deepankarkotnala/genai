@@ -1,0 +1,413 @@
+<!doctype html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>10 · Evaluation | Understanding AI Agents</title>
+<meta name="description" content="Outcome evaluation checks the answer; trajectory evaluation checks the path. Why you need both, where a deterministic assertion beats a model judge, and how a suite becomes a gate.">
+<link rel="icon" href="../../assets/brand/favicon.svg?v=20260925b" type="image/svg+xml">
+<link rel="icon" href="../../assets/brand/favicon-32.png?v=20260925b" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="../../assets/brand/favicon.ico?v=20260925b">
+<link rel="apple-touch-icon" href="../../assets/brand/apple-touch-icon.png?v=20260925b" sizes="180x180">
+<link rel="manifest" href="../../assets/brand/site.webmanifest?v=20260925b">
+<link rel="mask-icon" href="../../assets/brand/safari-pinned-tab.svg?v=20260925b" color="#6f47f5">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"light";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="../../assets/styles.css?v=20260805a">
+<link href="../../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
+<link href="../../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
+<link href="../../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+<link href="../../assets/ir-theme.css?v=20260925c" rel="stylesheet"/>
+</head>
+<body data-curriculum-id="cx-10" data-page="cx-10">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="../../index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="../../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-search placeholder="Search this section…  ( / )">
+      </div>
+      <div class="search-results"></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Understanding AI Agents · CampusX / <b>10 · Evaluation</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+        <div class="eyebrow"><span class="dot"></span> 10 · Operations</div>
+        <h1>Evaluation: the answer, and the path to it</h1>
+        <div class="meta-row">
+          <span class="pill blue">⏱ ~18 min read</span>
+          <span class="pill purple">Pairs with · <a href="../lessons/0010-evaluation.html">Lesson 10 · Agent evaluation</a></span>
+        </div>
+
+<!-- ================= 1 ================= -->
+<h2 id="known">1 · What you already know</h2>
+<p>You have an agent that retrieves, refuses when nothing clears the floor,
+retries transient failures, and gates refunds behind policy and approval.</p>
+<p><b>You do not know whether any of that works.</b> This page is about measuring it, and
+about the measurement most systems are missing.</p>
+
+<!-- ================= 2 ================= -->
+<h2 id="breaks">2 · What breaks now</h2>
+<p>You change one line of the system prompt to improve tone. You run three
+tickets by hand. They look fine, so you ship it.</p>
+
+<p>Two weeks later, refusals have dropped from 12% to 2%. The agent stopped saying
+<code>NOT_IN_CONTEXT</code> and started answering off-corpus questions from whatever the
+floor let through.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>What you checked</th><th>What you could not have seen</th></tr></thead>
+<tbody>
+<tr><td>Three tickets, by hand</td><td>The refusal rate across all cases</td></tr>
+<tr><td>The answers looked right</td><td>Which tools ran to produce them</td></tr>
+<tr><td>No errors were raised</td><td>Off-corpus questions now get answers</td></tr>
+</tbody>
+</table>
+</div>
+<p><b>A prompt is code, and this was a deploy with no tests.</b> The rest of this page is
+what the tests look like.</p>
+
+<!-- ================= 3 ================= -->
+<h2 id="breakdown">3 · Simple breakdown - Deterministic assertion vs LLM-as-judge</h2>
+<section class="breakdown">
+
+<h3 class="bd-tech"><span class="bd-tag">A</span> A deterministic assertion</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> A deterministic assertion is a check written in code that compares a run's result against an expected value, and produces the same verdict every time.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It detects regressions in properties that have a definite right answer, at zero cost per case.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 138" role="img" aria-labelledby="cx10-exec-t cx10-exec-d">
+<title id="cx10-exec-t">One evaluation run</title>
+<desc id="cx10-exec-d">Every case in the golden set is executed. Each run is scored twice: once on the final answer, and once on the path it took. The results aggregate into per-metric numbers, which are compared against the previous run.</desc>
+<defs><marker id="ah-cx10-exec" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="40" width="157.6" height="56" rx="12"></rect>
+<rect class="box b2" x="191.6" y="40" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M172.6 68 H187.6" marker-end="url(#ah-cx10-exec)"></path>
+<rect class="box b3" x="371.2" y="40" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M352.2 68 H367.2" marker-end="url(#ah-cx10-exec)"></path>
+<rect class="box b4" x="550.8" y="40" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M531.8 68 H546.8" marker-end="url(#ah-cx10-exec)"></path>
+<rect class="box b5" x="730.4" y="40" width="157.6" height="56" rx="12"></rect>
+<path class="arw" d="M711.4 68 H726.4" marker-end="url(#ah-cx10-exec)"></path>
+<text class="lbl" x="90.8" y="64">golden set</text>
+<text class="lbl" x="90.8" y="82">of cases</text>
+<text class="lbl" x="270.4" y="73">run each one</text>
+<text class="lbl" x="450" y="64">score outcome</text>
+<text class="lbl" x="450" y="82">+ trajectory</text>
+<text class="lbl" x="629.6" y="73">aggregate</text>
+<text class="lbl" x="809.2" y="64">compare to</text>
+<text class="lbl" x="809.2" y="82">last run</text>
+<circle class="pkt" cx="90.8" cy="18" r="7"></circle>
+<text class="cap" x="450" y="130">a number is only useful next to the number it replaced</text>
+</svg>
+
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> A case file declaring the expected outcome and the permitted trajectory, and a runner that executes each case and compares.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> Nothing beyond the case definitions and the recorded results of each run.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> It cannot judge tone, clarity or faithfulness. Writing an assertion for a subjective property produces a check that is precise and wrong.</p>
+
+<h3 class="bd-tech"><span class="bd-tag">B</span> LLM-as-judge</h3>
+
+<p class="bd-item"><b class="no-jargon">What it is.</b> LLM-as-judge uses a model to score another model's output against a written rubric, producing a rating and usually a justification.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It scores properties that have no definite answer, such as whether an explanation is faithful to its sources or whether a tone suits a customer.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b> The output, the rubric and often a reference answer are sent to a model, which returns a score.</p>
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> A rubric, a judge model and version, and a calibration sample scored by a person.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> The rubric and the calibration data. Both must be versioned, because a rubric change silently moves every score.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> It is slower, costs money per case, and is not reproducible across model versions. It agrees with itself more than it agrees with you unless calibrated.</p>
+
+<h3 class="bd-diff">The core differences</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>A deterministic assertion</th><th>LLM-as-judge</th></tr></thead>
+<tbody>
+<tr><th>Same verdict every run</th><td>Yes</td><td>No, and it drifts across model versions</td></tr>
+<tr><th>Cost per case</th><td>Zero</td><td>A model call, sometimes several</td></tr>
+<tr><th>Can score tone or faithfulness</th><td>No</td><td>Yes, with a rubric</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 class="bd-short">In short - which one to choose</h3>
+<ul>
+<li>Use a <b>deterministic assertion</b> for anything with a definite answer. That is most of a good suite.</li>
+<li>Use a <b>judge</b> only for genuinely subjective properties, with a written rubric and a calibration sample.</li>
+<li>Never use a judge for something <code>in</code> can decide. <b>"Did it call issue_refund?" is a set membership test</b>, not a question for a model.</li>
+</ul>
+</section>
+
+<!-- ================= 4 ================= -->
+<h2 id="without">4 · Without the technology</h2>
+<p>Manual checking, which is where every project starts.</p>
+
+<p>Three properties make this unusable as the system grows:</p>
+<ul>
+<li><b>It does not scale.</b> Forty cases is an hour of reading, so it stops happening.</li>
+<li><b>It is not comparable.</b> "Looks right" yesterday and "looks right" today are not
+the same measurement.</li>
+<li><b>It only sees the answer.</b> The tool calls scroll past, so a right answer reached
+through a forbidden path passes.</li>
+</ul>
+<p>The third is the one that matters most, and it is invisible to a person reading
+output.</p>
+
+<!-- ================= 5 ================= -->
+<h2 id="mechanics">5 · Runtime mechanics</h2>
+<p>An evaluation run has four stages.</p>
+<ol>
+<li><b>Load the golden set.</b> Each case declares an input, the expected outcome, and the
+trajectory rules that apply.</li>
+<li><b>Execute.</b> Every case is run against the current code and prompt version, with
+the full trace captured.</li>
+<li><b>Score twice.</b> The outcome against the expected answer; the trajectory against
+the tools that ran.</li>
+<li><b>Aggregate and compare.</b> Per-metric numbers, next to the previous run's numbers,
+with a non-zero exit if a gate is breached.</li>
+</ol>
+<p>Stage 4 is what makes it a gate rather than a report. <b>A suite that does not fail the
+build is a notebook.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 228" role="img" aria-labelledby="cx10-two-t cx10-two-d">
+<title id="cx10-two-t">Outcome and trajectory catch different bugs</title>
+<desc id="cx10-two-d">Outcome evaluation checks the final answer. Trajectory evaluation checks the path taken. A right answer reached through a forbidden path passes the first and fails the second, which is why both are needed.</desc>
+<defs><marker id="ah-cx10-two" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="95" width="255.15" height="56" rx="12"></rect>
+<text class="lbl" x="139.575" y="128">a finished run</text>
+<rect class="box b2" x="311.15" y="95" width="273.15" height="56" rx="12"></rect>
+<text class="lbl" x="447.725" y="119">what are you</text>
+<text class="lbl" x="447.725" y="137">checking?</text>
+<path class="arw" d="M272.15 123 H307.15" marker-end="url(#ah-cx10-two)"></path>
+<rect class="box b3" x="636.3" y="58" width="251.7" height="56" rx="12"></rect>
+<text class="lbl" x="762.15" y="82">the final answer -- OUTCOME</text>
+<text class="lbl" x="762.15" y="100">misses how it got there</text>
+<path class="arw" d="M587.3 123 C610.3 123, 610.3 86, 632.3 86" marker-end="url(#ah-cx10-two)"></path>
+<rect class="box b4" x="636.3" y="132" width="251.7" height="56" rx="12"></rect>
+<text class="lbl" x="762.15" y="156">the path taken -- TRAJECTORY</text>
+<text class="lbl" x="762.15" y="174">catches right answers reached wrongly</text>
+<path class="arw" d="M587.3 123 C610.3 123, 610.3 160, 632.3 160" marker-end="url(#ah-cx10-two)"></path>
+<text class="cap" x="450" y="222">one scores the result, the other scores the method</text>
+</svg>
+
+<!-- ================= 7 ================= -->
+<h2 id="components">6 · The components, one at a time</h2>
+<h3>The golden set</h3>
+<p>Cases that represent what actually arrives. Balance matters: if every case is answerable,
+the suite cannot detect a system that never refuses.</p>
+
+<h3>Outcome checks</h3>
+<p>Did the answer contain the right identifier, the right amount, the right status? Exact
+where possible, containment where not.</p>
+
+<h3>Trajectory checks</h3>
+
+<p><b>This is the half most suites are missing</b>, and it is where security and cost
+regressions show up.</p>
+
+<h3>Universal invariants</h3>
+<p>Rules that apply to every case, held in the harness rather than repeated per case.</p>
+
+<!-- ================= 8 ================= -->
+<h2 id="state">7 · State and data flow</h2>
+<ol>
+<li><b>What data is state?</b> The golden set, and the recorded results of each run.</li>
+<li><b>Who writes each field?</b> You write the cases; the runner writes the results.</li>
+<li><b>Who reads it?</b> The comparison step, and whoever reviews the diff.</li>
+<li><b>Replaced, appended or merged?</b> Results append, one row per run. Nothing is
+overwritten.</li>
+<li><b>What reducer controls merging?</b> None. Each run is a separate record.</li>
+<li><b>Only in process memory?</b> No. Results must be durable to compare across runs.</li>
+<li><b>Is it checkpointed?</b> Each run is its own record, keyed by code and prompt version.</li>
+<li><b>Is it in a database?</b> Or a committed file. Either works if it is versioned.</li>
+<li><b>How long does it survive?</b> Indefinitely. Old results are how you show a trend.</li>
+<li><b>What retrieves it again?</b> The version pair: code commit and prompt version.</li>
+</ol>
+<p>Row 10 is what makes a regression attributable. <b>If a result does not record which
+prompt version produced it</b>, you cannot say which change caused the drop.</p>
+
+<!-- ================= 10 ================= -->
+<h2 id="trace">8 · Trace</h2>
+<p>The suite run before and after the prompt change from section 2:</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Metric</th><th>v3 (before)</th><th>v4 (after)</th><th></th></tr></thead>
+<tbody>
+<tr><td>Pass rate</td><td>0.925</td><td>0.750</td><td><b>gate breached</b></td></tr>
+<tr><td>Refusals on off-corpus cases</td><td>8 / 8</td><td><b>1 / 8</b></td><td>the regression</td></tr>
+<tr><td>Mean steps</td><td>4.1</td><td>4.0</td><td>unchanged</td></tr>
+<tr><td>Total cost</td><td>$0.164</td><td>$0.161</td><td>unchanged</td></tr>
+</tbody>
+</table>
+</div>
+
+<p><b>The tone change was caught before it shipped</b>, by eight cases that exist to check
+that the system can still say no.</p>
+
+<!-- ================= 11 ================= -->
+<h2 id="break">9 · Break it</h2>
+<p>Now a case the suite passes and production fails. Replace the trajectory
+checks with an LLM judge.</p>
+
+<p>The run being judged did this.</p>
+
+<p>The answer is correct, so the judge said acceptable. <b>It did not notice that the agent
+read three orders to answer a question about one</b>, because "how many lookups is too many"
+is not in the rubric, and a judge only measures what the rubric names.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 174" role="img" aria-labelledby="cx10-judge-t cx10-judge-d">
+<title id="cx10-judge-t">A judge only measures what the rubric names</title>
+<desc id="cx10-judge-d">The agent read three customers' orders to answer a question about one. The final answer was correct, so the judge marked the run acceptable. Nothing in the rubric mentioned how many lookups were appropriate.</desc>
+<defs><marker id="ah-cx10-judge" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box b1" x="12" y="52" width="202.5" height="56" rx="12"></rect>
+<rect class="box b2" x="236.5" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M217.5 80 H232.5" marker-end="url(#ah-cx10-judge)"></path>
+<rect class="box fail" x="461" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M442 80 H457" marker-end="url(#ah-cx10-judge)"></path>
+<rect class="box after b4" x="685.5" y="52" width="202.5" height="56" rx="12"></rect>
+<path class="arw" d="M666.5 80 H681.5" marker-end="url(#ah-cx10-judge)"></path>
+<text class="lbl" x="113.25" y="76">3 lookups</text>
+<text class="lbl" x="113.25" y="94">1 was needed</text>
+<text class="lbl" x="337.75" y="76">answer is</text>
+<text class="lbl" x="337.75" y="94">correct</text>
+<text class="lbl" x="562.25" y="76">judge says</text>
+<text class="lbl" x="562.25" y="94">acceptable</text>
+<text class="lbl" x="786.75" y="76">regression</text>
+<text class="lbl" x="786.75" y="94">ships</text>
+<path class="xmark" d="M544.25 122 L580.25 150 M580.25 122 L544.25 150"></path>
+<text class="cap rescue" x="450" y="166">counting calls is an assertion, not a judgement -- do not ask a model</text>
+</svg>
+
+<!-- ================= 12 ================= -->
+<h2 id="fix">10 · Fix it</h2>
+<p><b>1 · Assert what is decidable.</b> Three lookups where one was needed is a
+counting problem, not a judgement.</p>
+
+<p><b>2 · Keep the judge for what a rule cannot express</b>, with a written rubric.</p>
+
+<p><b>3 · Calibrate before trusting it.</b> Score twenty runs by hand, have the judge score
+the same twenty, and measure agreement.</p>
+
+<p><b>4 · Version the rubric with the results</b>, because changing a rubric moves every
+score and makes the comparison meaningless.</p>
+
+<!-- ================= 13 ================= -->
+<h2 id="production">11 · Production version</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Concern</th><th>What you do</th></tr></thead>
+<tbody>
+<tr><td>Both halves</td><td>Outcome and trajectory. One scores the result, the other the method</td></tr>
+<tr><td>Deterministic first</td><td>A judge only where a rule genuinely cannot work</td></tr>
+<tr><td>Golden-set balance</td><td>Include refusals, ambiguity, missing data and injection cases</td></tr>
+<tr><td>Non-zero exit</td><td>The suite fails the build, or it is a notebook</td></tr>
+<tr><td>Version everything</td><td>Code commit, prompt version and rubric version, recorded with each result</td></tr>
+<tr><td>Judge calibration</td><td>Against a hand-scored sample, repeated when the judge model changes</td></tr>
+<tr><td>Production cases</td><td>Every real failure becomes a case before the fix is written</td></tr>
+<tr><td>Cost and steps</td><td>Tracked per run. A quality gain that triples cost is a decision, not a win</td></tr>
+<tr><td>Distributions</td><td>Report p95 as well as the mean. An average hides the tail that hurts</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ================= 14 ================= -->
+<h2 id="comparison">12 · Comparison</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Deterministic assertion</th><th>LLM judge</th><th>Human review</th></tr></thead>
+<tbody>
+<tr><th>Reproducible</th><td><b>Yes</b></td><td>No</td><td>No</td></tr>
+<tr><th>Cost per case</th><td><b>Zero</b></td><td>A model call</td><td>Minutes of attention</td></tr>
+<tr><th>Scores subjective quality</th><td>No</td><td>Yes</td><td><b>Yes, best</b></td></tr>
+<tr><th>Scales to 500 cases</th><td><b>Yes</b></td><td>Yes, at a price</td><td>No</td></tr>
+<tr><th>Needs calibration</th><td>No</td><td><b>Yes</b></td><td>Between reviewers</td></tr>
+<tr><th>Use it for</th><td>Anything with a right answer</td><td>Tone, faithfulness</td><td>Calibrating the other two</td></tr>
+</tbody>
+</table>
+</div>
+<p>The last row is the practical arrangement. <b>Humans score the sample that calibrates the
+judge</b>, the judge scores the subjective properties, and assertions carry everything
+else.</p>
+
+<!-- ================= 15 ================= -->
+<div class="carry"><b>New questions</b> written for this page: it is new, so there was nothing to carry over.</div>
+<h2 id="interview">13 &middot; Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What is the difference between outcome and trajectory evaluation? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Outcome evaluation asks whether the final answer is right. Trajectory evaluation asks whether the path taken was acceptable: which tools ran, in what order, and whether any forbidden call was made.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  Why is outcome evaluation alone not enough? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>A run can produce a perfect answer through a path that read another customer's order, called a paid tool nine times, or skipped the policy check. Outcome evaluation scores that as a pass, because the answer was right.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  When should you use an LLM judge, and when should you not? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Use a deterministic assertion whenever the property has a definite answer: did it call issue_refund, does the answer contain this order id, was the amount 120.0. Those are set membership and equality tests. A judge earns its place only on subjective properties like tone or explanation quality, and then it needs a written rubric and its own calibration.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  What makes a good golden set? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Cases that represent what actually arrives, including the awkward ones: ambiguous requests, missing data, off-corpus questions, and at least one injection attempt. Balance matters - a set where 90% of cases are answerable cannot detect a system that never refuses.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  Your evaluation suite passes but production quality dropped. What went wrong? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>The suite is measuring something other than what changed. Usually it is one of three things: the golden set does not contain the case that regressed, the metric is an average that hides a tail, or the change affected the trajectory rather than the outcome and only outcomes are scored. Add the failing production case to the set first, so the fix is verifiable.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  How do you calibrate an LLM judge before trusting it? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Score a sample by hand, have the judge score the same sample, and measure agreement. If it disagrees with you on cases you are confident about, the rubric is wrong, not the sample. Re-calibrate when the judge model version changes, because the score distribution moves with it.</p></div></details>
+
+<!-- ================= 16 ================= -->
+<h2 id="short">14 · In short, and what comes next</h2>
+<p class="bd-choose">Remember these six:</p>
+<ul>
+<li>Outcome evaluation scores the answer; trajectory evaluation scores the path.</li>
+<li>A right answer reached through a forbidden path must fail, and only trajectory catches it.</li>
+<li>Use an assertion wherever a rule can decide. That is most of a good suite.</li>
+<li>A judge needs a written rubric and calibration against hand-scored cases.</li>
+<li>Non-zero exit, or the suite is a notebook rather than a gate.</li>
+<li>Every production failure becomes a case before the fix is written.</li>
+</ul>
+<div class="callout key">
+<div class="c-ico">🔑</div>
+<div class="c-body"><div class="c-title">The one idea to remember</div>
+<p><b>A prompt change is a code change.</b> Shipping one without running the suite is
+deploying without tests, and the failure it causes is usually silent.</p></div>
+</div>
+<p><b>Next:</b> page 11 is about seeing inside a single run - where the time went, where the
+money went, and how to debug from a trace alone.</p>
+
+<div class="page-nav" data-page-nav>
+<a href="09-security.html"><div class="dir">← Previous</div><div class="ttl">09 · Security</div></a>
+          <a class="next" href="11-tracing-and-cost.html"><div class="dir">Next →</div><div class="ttl">11 · Tracing and cost</div></a>
+</div>
+
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script>
+window.__pageNav = {
+  navLabel: "Understanding AI Agents · CampusX",
+  here: "campusx/10-evaluation.html",
+  base: "../",
+  pages: [
+    { file: "campusx/index.html", title: "Section index", num: "✦", kw: "campusx agents index" }
+  ]
+};
+</script>
+<script src="../../assets/app.js?v=20260925c"></script>
+<script src="../../assets/sitenav.js?v=20260925a"></script>
+<script src="../../assets/enhance.js?v=20260925c"></script>
+<script src="../../assets/genai-motion.js?v=20260728a"></script>
+<script src="../../assets/glossary.js?v=20260802b"></script>
+</body>
+</html>

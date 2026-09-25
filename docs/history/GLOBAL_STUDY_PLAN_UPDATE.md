@@ -1,6 +1,6 @@
 # Global Study Plan update
 
-## 2026-08-02 — rebuilt as a sequential, page-by-page route
+## 2026-08-02: rebuilt as a sequential, page-by-page route
 
 The plan previously listed hours per section and a five-card "recommended route"
 that named only a handful of pages. Following it as a sequence was not possible:
@@ -14,7 +14,7 @@ route, and 5 of the 11 Deep Dives were missing entirely.
   reason naming what it depends on. Step numbering is continuous across phases
   (implemented by overriding the `.readmap` CSS counter with an inline
   `counter-reset: roadmap N`, so no new CSS was needed).
-- **Understanding AI Agents is now Phase 4 in full** — steps 14–29, all 15 lessons
+- **Understanding AI Agents is now Phase 4 in full** - steps 14–29, all 15 lessons
   plus environment setup for the `teach-agents/eda-lab` Python lab. Previously it
   appeared only as a row in the hours table with no position in the route, so a
   reader following the route would never have been told when to do it.
@@ -42,7 +42,7 @@ route, and 5 of the 11 Deep Dives were missing entirely.
   self-contained sub-portal, is absent from `assets/sitenav.js`, and nothing in the
   main hub links to it. It remains on disk and reachable by direct URL. Revisit if
   a target role screens on classical ML.
-- **Deleted** as confirmed-dead duplicates: `learn-rag-mcp/` (8 pages — the
+- **Deleted** as confirmed-dead duplicates: `learn-rag-mcp/` (8 pages - the
   comment at `assets/sitenav.js:56` records that it and the retired
   `06_rag_basics` / `07_advanced_rag` modules restated `rag-deep-dive.html` in
   different words), `modules/__p.html` (a duplicate of module 05 under a scratch
@@ -65,7 +65,7 @@ route, and 5 of the 11 Deep Dives were missing entirely.
 - Added `genai-portal/study-plan.html` as the first top-level sidebar destination.
 - Added beginner-paced hour estimates for every major site section.
 - The estimates assume no prior Neural Networks, AI, or GenAI knowledge, while allowing for basic Python and classical ML experience.
-- Estimates include explanation, note-making, implementation, debugging, active recall, revision, and interview practice—not only reading time.
+- Estimates include explanation, note-making, implementation, debugging, active recall, revision, and interview practice - not only reading time.
 - Kept the requested cadence: 2–4 focused hours on weekdays and 8 focused hours across the weekend.
 - Removed browser-stored learning progress and completion UI so a public static deployment does not imply cross-device synchronization.
 - Theme, sidebar, and reading preferences remain local because they are display preferences, not learning records.

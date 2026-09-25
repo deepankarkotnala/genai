@@ -1,17 +1,17 @@
 /* =========================================================================
-   transitions-preview.js — SANDBOX ONLY
+   transitions-preview.js - SANDBOX ONLY
    =========================================================================
 
    Companion to transitions-preview.css. Two jobs that CSS cannot do alone:
 
-     1  Speculation Rules — prefetch same-origin pages on hover, so the
+     1  Speculation Rules - prefetch same-origin pages on hover, so the
         document is already in memory by the time the click lands.
      2  Wrap the theme toggle in a same-document view transition, so light↔dark
         crossfades the whole rendered page instead of re-colouring element by
         element.
 
    Loaded last, after app.js / sitenav.js / enhance.js / genai-motion.js.
-   Nothing here modifies those files — the theme hook works by intercepting the
+   Nothing here modifies those files - the theme hook works by intercepting the
    click before their handler sees it, then handing the click straight back.
    ========================================================================= */
 (function () {
@@ -22,12 +22,12 @@
   /* -----------------------------------------------------------------------
      1 · Prefetch on hover
      -----------------------------------------------------------------------
-     `eagerness: "moderate"` is the browser's own hover/pointerdown heuristic —
+     `eagerness: "moderate"` is the browser's own hover/pointerdown heuristic - 
      it decides when a hover looks committed, rather than us firing a request on
      every stray pointer movement. Cheap: prefetch fetches the document only,
      not subresources, and the cap keeps a long sidebar from stampeding.
 
-     Chromium only. Other browsers ignore the script tag entirely — the JSON is
+     Chromium only. Other browsers ignore the script tag entirely - the JSON is
      inert to them, so there is no fallback to write. Needs an HTTP origin;
      over file:// it is silently skipped.
      --------------------------------------------------------------------- */
@@ -51,7 +51,7 @@
      -----------------------------------------------------------------------
      The listener is on `document` in the capture phase deliberately. Listeners
      attached to the button itself fire in registration order regardless of the
-     capture flag, and app.js registers its handler first — so a listener on the
+     capture flag, and app.js registers its handler first - so a listener on the
      button could never run before the theme had already flipped. Document
      capture runs before any listener on the target.
 
@@ -66,7 +66,7 @@
     var passthrough = false;
 
     document.addEventListener("click", function (event) {
-      if (passthrough) return;                              // our own re-dispatch — let it run
+      if (passthrough) return;                              // our own re-dispatch - let it run
       var button = event.target.closest && event.target.closest("[data-theme-toggle]");
       if (!button) return;
 

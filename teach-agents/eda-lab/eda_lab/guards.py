@@ -1,5 +1,5 @@
 """
-guards.py — semantic validation, resource limits, and the supplementary screen.
+guards.py - semantic validation, resource limits, and the supplementary screen.
 
 The security model, in priority order. Say it this way in an interview:
 

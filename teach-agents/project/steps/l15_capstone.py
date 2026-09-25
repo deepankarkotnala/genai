@@ -1,5 +1,5 @@
 """
-Milestone entry point for Lessons 14-15 — the finished system.
+Milestone entry point for Lessons 14-15 - the finished system.
 
     cd teach-agents/project
     python steps/l15_capstone.py               end-to-end demonstration
@@ -34,7 +34,7 @@ GOAL = "Triage ticket TCK-1001 and recommend the next step."
 
 def end_to_end() -> None:
     reset_state()
-    print(BAR); print("  SUPPORT TRIAGE AGENT — end to end"); print(BAR)
+    print(BAR); print("  SUPPORT TRIAGE AGENT - end to end"); print(BAR)
 
     print("\n  1 · a healthy run, traced")
     trace = Trace(goal=GOAL)
@@ -42,7 +42,7 @@ def end_to_end() -> None:
     print(f"      outcome {result.outcome} · tools {' -> '.join(result.tool_calls)}")
     print(f"      {trace.total_tokens} tokens · {trace.wall_ms}ms · {len(trace.spans)} spans")
 
-    print("\n  2 · a degraded run — a tool is down")
+    print("\n  2 · a degraded run - a tool is down")
     set_faults(FaultPlan(unavailable={"search_kb"}))
     degraded = run_controlled(GOAL, get_brain())
     set_faults(None)
@@ -54,7 +54,7 @@ def end_to_end() -> None:
     print(f"      outcome {injected.outcome} · tools {' -> '.join(injected.tool_calls)}")
     print(f"      issue_refund called: {'issue_refund' in injected.tool_calls}")
 
-    print("\n  4 · the refund path — prepare, approve, retry")
+    print("\n  4 · the refund path - prepare, approve, retry")
     prepared = api.request_refund("run_demo", "ORD-5581", 120.0, "duplicate charge")
     print(f"      prepare  -> {prepared['status']}  key={prepared['idempotency_key']}")
     approved = api.approve_refund("run_demo", "ORD-5581", 120.0, "alice@support",

@@ -65,7 +65,7 @@
      than compared as a whole string. */
   function parseHours(text) {
     if (!text) return null;
-    var m = String(text).match(/(\d[\d,]*)\s*[–—-]\s*(\d[\d,]*)/);
+    var m = String(text).match(/(\d[\d,]*)\s*[– - -]\s*(\d[\d,]*)/);
     if (m) {
       return [parseInt(m[1].replace(/,/g, ""), 10), parseInt(m[2].replace(/,/g, ""), 10)];
     }

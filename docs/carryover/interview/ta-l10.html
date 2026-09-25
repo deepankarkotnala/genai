@@ -1,0 +1,40 @@
+<h2 id="interview">8 · Interview practice</h2>
+
+        <h3>Two-minute answer - "How do you know your agent works?"</h3>
+        <div class="callout note"><div class="c-ico">🎤</div><div class="c-body">
+        <p>"Two layers. <strong>Outcome eval</strong>: did it end in the right state with the right answer. <strong>Trajectory eval</strong>: was the path acceptable - did it avoid tools it shouldn't have called, stay in scope, cite real sources. You need both, because a run can produce a perfect answer via a path that read another customer's data, and outcome eval scores that as a pass.</p>
+        <p>My golden set is deliberately mostly <em>not</em> happy paths - about a third. The behaviours that regress silently are the refusals: escalating instead of guessing, returning nothing when retrieval finds nothing, declining a refund. Nobody notices those stopping until a customer does.</p>
+        <p>Two invariants run on every case regardless of what the case asserts: the run terminated in a named outcome, and no unapproved payment happened. Safety properties that depend on the test author remembering aren't safety properties.</p>
+        <p>I keep LLM-as-judge for genuinely subjective things like faithfulness, with a written rubric and measured agreement against human labels. 'Did it call this tool' is a set membership test - asking a model is slower and less reliable than <code>in</code>.</p>
+        <p>And the thing I'd actually lead with: I test the suite by breaking the agent on purpose. When I did that here, deleting a safety default passed twelve out of twelve - nothing exercised it. That's how I found the hole, and it's why I don't trust coverage numbers."</p></div></div>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> System design · Design evaluation for an agent handling 10,000 tickets a day. <span class="chev">›</span></summary><div class="a">
+        <p>Three tiers, because they answer different questions at different costs.</p>
+        <p><strong>Offline, per change:</strong> a golden set of a few hundred cases, deterministic checks, runs in CI, blocks the merge. Balanced toward refusals and attacks, not happy paths.</p>
+        <p><strong>Online, continuous:</strong> the signals only production gives you - escalation rate, human override rate, reopen rate, CSAT on agent-handled tickets, cost per ticket. Override rate is the best early quality signal and costs nothing to collect.</p>
+        <p><strong>Sampled human review:</strong> a small daily sample scored against a rubric, which is also how you calibrate any judge and how you find new golden cases.</p>
+        <p>Then the operational parts: shadow mode for a new model before it serves; per-segment slicing, since aggregate metrics hide a broken tier; and a feedback loop where every production failure becomes a golden case, so the same regression cannot ship twice.</p>
+        <p>At this volume, say the cost out loud: judging every run with a model is a second inference bill. Deterministic checks on everything, judge on a sample.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Debugging · Your eval scores went up but users are complaining more. <span class="chev">›</span></summary><div class="a">
+        <p>The suite has stopped measuring what matters. Likely causes, in the order I'd check them.</p>
+        <p><strong>Contamination:</strong> did golden cases leak into the prompt as few-shot examples? Then you're measuring memorisation.</p>
+        <p><strong>Drift:</strong> the golden set was built from last quarter's tickets and real traffic has moved. Sample recent production tickets and see whether they resemble the fixtures.</p>
+        <p><strong>Metric mismatch:</strong> you're scoring answer correctness while users complain about tone, latency or being escalated too often - all invisible to the current checks.</p>
+        <p><strong>Aggregation hiding a segment:</strong> overall up, one customer tier or ticket category sharply down. Slice before believing an average.</p>
+        <p><strong>Overfitting to the judge:</strong> if a model grades and you tuned against it, you've optimised for the judge's biases - longer answers, its own phrasing.</p>
+        <p>The fix that generalises: make every user complaint a golden case. A suite fed by real failures cannot drift far from reality.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Coding · Write a trajectory check. <span class="chev">›</span></summary><div class="a">
+        <p>Take the ordered tool calls from the run and assert <em>constraints</em>, not one exact sequence: required tools present, forbidden tools absent, ordering constraints only where a real dependency exists, and a cap on total calls.</p>
+        <p>Say while writing: "I assert constraints rather than an exact sequence, because a different valid ordering shouldn't fail" - and then the counterpoint that shows judgement: "but <code>issue_refund</code> appearing anywhere is a hard fail regardless of the answer".</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · How do you evaluate something subjective, like whether a reply is appropriate? <span class="chev">›</span></summary><div class="a">
+        <p>Decompose it until most of it is objective. "Appropriate" usually breaks into: is it grounded in cited sources (checkable), does it state the policy correctly (checkable against policy code), does it avoid promising something we cannot do (checkable against a phrase list), is the tone right (genuinely subjective).</p>
+        <p>Only the last needs a judge - and then with a written rubric, examples of pass and fail at the boundary, and measured agreement against human labels on a small set. If the judge agrees with humans 70% of the time, that is your ceiling and you should say so rather than quoting the score as truth.</p>
+        <p>The failure I would name: treating a judge score as ground truth and tuning against it. You end up optimising for the judge.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · How big should a golden set be? <span class="chev">›</span></summary><div class="a">
+        <p>Big enough that a real regression fails at least one case, small enough to run on every commit. In practice a few hundred, and composition matters far more than size - thirteen well-chosen cases caught two real regressions here; a thousand happy paths would have caught neither.</p>
+        <p>I'd grow it by failure, not by volume: every production incident and every user complaint becomes a case. That keeps it correlated with reality, which random sampling does not.</p>
+        <p>And I'd measure the suite itself. Periodically inject known regressions and count how many the suite catches - mutation testing for agents. That number is more informative than case count or coverage, and it is the one that told me my own suite had a hole.</p></div></details>
