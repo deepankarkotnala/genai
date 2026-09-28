@@ -589,8 +589,66 @@ RAG system.</p>
 </table>
 </div>
 
+<!-- ================= chunking evaluation ================= -->
+<h2 id="chunk-eval">12 · Evaluating a chunking strategy</h2>
+<p><b>Good chunking → retrieves the right information → the LLM gets the right context → a better answer.</b>
+So you do not evaluate chunking in isolation. You measure how each chunking strategy changes retrieval
+quality and the final answer.</p>
+
+<h3 id="chunk-eval-dataset">Build a small evaluation set</h3>
+<p>Write 50–100 representative questions where you know the expected answer and, ideally, the source
+section or chunk that contains it. For example: <i>"What is the company's work-from-home policy?"</i>
+→ expected source <code>HR_Policy.pdf → Section 4 → Work From Home</code>.</p>
+<p>Run the same questions through each strategy - for example fixed 500-token chunks, 500 tokens with
+overlap, recursive chunking, and heading/section-based chunking - with the same embedding model,
+retrieval method, top-K and questions. Change one thing: the chunking.</p>
+
+<h3 id="chunk-eval-metrics">The metrics</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Metric</th><th>Question it answers</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td>Recall@K</td><td>Did the retriever return the chunk needed to answer?</td><td>Correct chunk in the top 5 for 90 of 100 questions → Recall@5 = 90%</td></tr>
+<tr><td>Precision@K</td><td>How many of the retrieved chunks are relevant?</td><td>2 of the top 5 relevant → Precision@5 = 2/5 = 40%</td></tr>
+<tr><td>MRR</td><td>How high does the first correct result appear?</td><td>Rank 1 → 1.0, rank 2 → 0.5, rank 5 → 0.2. Average across questions; higher is better</td></tr>
+<tr><td>Context precision</td><td>Is the retrieved context relevant to the question?</td><td>For a maternity-leave question, casual-leave or remote-work chunks are noise</td></tr>
+<tr><td>Context recall</td><td>Did the context contain everything needed?</td><td>The answer needs both the leave length and the HR notification rule. Retrieving one is incomplete</td></tr>
+<tr><td>Answer quality</td><td>Was the final answer good?</td><td>Correctness, relevance, completeness, faithfulness/groundedness, citation accuracy. Ragas and DeepEval automate parts of this</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="chunk-eval-scorecard">Compare strategies on one scorecard</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Metric</th><th>Strategy A</th><th>Strategy B</th><th>Strategy C</th></tr></thead>
+<tbody>
+<tr><th>Recall@5</th><td>82%</td><td><b>94%</b></td><td>91%</td></tr>
+<tr><th>Precision@5</th><td>61%</td><td>78%</td><td><b>83%</b></td></tr>
+<tr><th>MRR</th><td>0.71</td><td><b>0.86</b></td><td>0.82</td></tr>
+<tr><th>Context recall</th><td>79%</td><td><b>92%</b></td><td>90%</td></tr>
+<tr><th>Answer correctness</th><td>84%</td><td><b>93%</b></td><td>91%</td></tr>
+<tr><th>Faithfulness</th><td>91%</td><td>95%</td><td><b>96%</b></td></tr>
+</tbody>
+</table>
+</div>
+<p>Illustrative numbers. In a real evaluation, use your own representative dataset and compare every
+strategy with the same embedding model, retrieval method, top-K and questions.</p>
+
+<h3 id="chunk-eval-order">Evaluate in this order</h3>
+<p><code>Documents → Chunking → Embeddings → Vector DB → Retriever → Relevant chunks → LLM → Answer</code></p>
+<ol>
+<li><b>Did we find it?</b> Recall@K, Precision@K, MRR.</li>
+<li><b>Did we find enough?</b> Context recall.</li>
+<li><b>Was it useful?</b> Context precision.</li>
+<li><b>Was the answer good?</b> Answer correctness, faithfulness.</li>
+</ol>
+<p><b>There is no universally best chunk size.</b> A strategy that works for legal documents may behave
+differently on tables, code, PDFs or technical documentation. Your evaluation set must represent the
+documents and questions your application actually handles.</p>
+
 <!-- ================= 14 ================= -->
-<h2 id="comparison">12 · Comparison</h2>
+<h2 id="comparison">13 · Comparison</h2>
 <div class="table-wrap">
 <table>
 <thead><tr><th></th><th>Naive RAG</th><th>Hybrid + rerank</th><th>CRAG</th><th>Self-RAG</th></tr></thead>
@@ -611,13 +669,15 @@ each of which multiplies your latency and cost.</p>
 
 <div class="carry"><b>New for this page.</b> The previous version had no interview section,
 so these are written rather than carried over.</div>
-<h2 id="interview">13 · Interview preparation</h2>
+<h2 id="interview">14 · Interview preparation</h2>
 <details class="collapse"><summary><span class="pill green">Beginner</span>  What is RAG and why use it over fine-tuning? <span class="chev">&rsaquo;</span></summary>
 <div class="collapse-body"><p>RAG retrieves relevant text at request time and puts it in the prompt, so the model answers from supplied evidence rather than its weights. Fine-tuning changes the weights, which changes behaviour and format but is a poor way to add facts. The deciding factor is usually change rate and traceability: a policy updated this morning is answerable this afternoon with RAG, and every answer can cite the chunk it came from. They are not alternatives - production systems often fine-tune for format and use RAG for knowledge.</p></div></details>
 <details class="collapse"><summary><span class="pill green">Beginner</span>  Walk me through a RAG pipeline. <span class="chev">&rsaquo;</span></summary>
 <div class="collapse-body"><p>Two pipelines. Indexing, offline: load the source, split into chunks, embed each chunk, store the vector with its text and metadata. Querying, per request: embed the question, retrieve candidates, rerank them with a cross-encoder, keep those above a score floor within a token budget, build a prompt that constrains the model to that evidence and permits refusal, generate, and return the answer with the chunk ids used. The two pipelines run at different times and fail in different ways.</p></div></details>
 <details class="collapse"><summary><span class="pill blue">Intermediate</span>  How do you choose chunk size and overlap? <span class="chev">&rsaquo;</span></summary>
 <div class="collapse-body"><p>Chunk size decides what one vector represents. Too small and the chunk lacks the context to be understood on its own; too large and its vector averages several topics into a direction matching none of them. I start at 500–800 tokens for prose with 10–20% overlap so a sentence split across a boundary survives intact in one chunk, and I split on structure - headings, paragraphs - rather than a character count. Then I measure retrieval recall on a labelled set and adjust, because the right number is corpus-specific and no default survives contact with real documents.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  How do you evaluate a text chunking strategy? <span class="chev">&rsaquo;</span></summary>
+<div class="collapse-body"><p>I wouldn't evaluate chunking in isolation. I would create a representative evaluation dataset of questions and expected source information, run different chunking strategies through the same embedding and retrieval pipeline, and compare retrieval metrics such as Recall@K, Precision@K and MRR, followed by end-to-end metrics such as context recall, context precision, answer correctness and faithfulness.</p></div></details>
 <details class="collapse"><summary><span class="pill blue">Intermediate</span>  Your RAG system gives a wrong answer. How do you debug it? <span class="chev">&rsaquo;</span></summary>
 <div class="collapse-body"><p>First separate the two halves, because four different failures produce the same symptom. Check whether the evidence exists in the corpus at all - grep for it. If it is there, check whether retrieval returned it; if not, that is a chunking, hybrid-search or reranking problem. If it was returned but ranked below the cut, raise k and re-check. If it was in the prompt and the answer contradicts it, that is generation, and the fix is the prompt or the model. I track retrieval recall and groundedness as separate metrics precisely so this question is answerable in one look rather than by guesswork.</p></div></details>
 <details class="collapse"><summary><span class="pill blue">Intermediate</span>  Why add a reranker when you already have similarity search? <span class="chev">&rsaquo;</span></summary>
@@ -630,7 +690,7 @@ so these are written rather than carried over.</div>
 <div class="collapse-body"><p>Authorisation belongs at retrieval, as a metadata filter derived from the caller's identity, with the filtered fields payload-indexed - post-filtering means you already searched data the user cannot see, and it also silently breaks top-k. Redact PII at ingestion, not at generation, because once it is in the index it is retrievable. Store the permission attributes on the chunk at index time and re-index when they change; a document losing a permission must stop being retrievable immediately, which means deletion by document id, not a soft flag. Log the question, retrieved chunk ids, scores and prompt version for every answer, since the chunk ids are the only way to explain an answer during an audit months later. Gate prompt and model changes on an eval set measuring retrieval recall and groundedness separately, and alert on the refusal rate - a sudden drop usually means the index broke, not that the questions got easier.</p></div></details>
 
 <!-- ================= 16 ================= -->
-<h2 id="short">14 · In short, and what comes next</h2>
+<h2 id="short">15 · In short, and what comes next</h2>
 <p class="bd-choose">Remember these six:</p>
 <ul>
 <li>Retrieval always returns something. A calibrated score floor is not optional.</li>
