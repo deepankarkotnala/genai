@@ -1,0 +1,736 @@
+<!DOCTYPE html>
+
+<html data-theme="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="#f4f5f8" name="theme-color"/>
+<title>04 · Vector Databases | GenAI Mastery</title>
+<!-- Interview Preparation brand metadata -->
+<link href="../assets/brand/favicon.svg?v=20260925b" rel="icon" type="image/svg+xml"/>
+<link href="../assets/brand/favicon-32.png?v=20260925b" rel="icon" sizes="32x32" type="image/png"/>
+<link href="../assets/brand/favicon.ico?v=20260925b" rel="shortcut icon"/>
+<link href="../assets/brand/apple-touch-icon.png?v=20260925c" rel="apple-touch-icon" sizes="180x180"/>
+<link href="../assets/brand/site.webmanifest?v=20260925b" rel="manifest"/>
+<link color="#6f47f5" href="../assets/brand/safari-pinned-tab.svg?v=20260925b" rel="mask-icon"/>
+<link href="../assets/brand/social-card.png?v=20260925b" rel="image_src"/>
+<meta content="Learn GenAI" name="application-name"/>
+<meta content="Learn GenAI" name="apple-mobile-web-app-title"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="#2563eb" name="msapplication-TileColor"/>
+<meta content="../assets/brand/browserconfig.xml?v=20260925b" name="msapplication-config"/>
+<meta content="website" property="og:type"/>
+<meta content="Learn GenAI Learning Platform" property="og:site_name"/>
+<meta content="04 · Vector Databases | GenAI Mastery" property="og:title"/>
+<meta content="Store and search millions of vectors fast: exact vs approximate nearest neighbor, HNSW and IVF indexes, recall/latency tradeoffs, metadata filtering, and choosing between FAISS, Qdrant, pgvector and ElasticSearch." property="og:description"/>
+<meta content="../assets/brand/social-card.png?v=20260925b" property="og:image"/>
+<meta content="1200" property="og:image:width"/>
+<meta content="630" property="og:image:height"/>
+<meta content="Learn GenAI learning platform logo" property="og:image:alt"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="04 · Vector Databases - GenAI Mastery" name="twitter:title"/>
+<meta content="Store and search millions of vectors fast: exact vs approximate nearest neighbor, HNSW and IVF indexes, recall/latency tradeoffs, metadata filtering, and choosing between FAISS, Qdrant, pgvector and ElasticSearch." name="twitter:description"/>
+<meta content="../assets/brand/social-card.png?v=20260925b" name="twitter:image"/>
+<link href="../assets/brand/favicon-16.png?v=20260925b" rel="icon" sizes="16x16" type="image/png"/>
+<!-- /Interview Preparation brand metadata -->
+<meta content="Store and search millions of vectors fast: exact vs approximate nearest neighbor, HNSW and IVF indexes, recall/latency tradeoffs, metadata filtering, and choosing between FAISS, Qdrant, pgvector and ElasticSearch." name="description"/>
+<!-- Theme before first paint. Without this the document paints with the light
+     tokens and only flips when app.js runs at the end of <body>, which is a
+     white flash on every navigation in dark mode. Mirrors app.js's getTheme()
+     exactly - same key, same "dark" default - so the pre-paint value can never
+     disagree with what the scripts apply a moment later. Inline and blocking on
+     purpose: an external file would cost a round trip before first paint. -->
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20261123b" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
+<link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
+<link href="../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="../assets/curriculum.js?v=20261123c"></script>
+<script defer src="../assets/page-nav.js?v=20261123c"></script>
+<link href="../assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+</head>
+<body data-curriculum-id="vector-databases" data-page="05">
+<div class="app">
+<aside class="sidebar">
+<div class="brand">
+<a class="brand-link" href="../index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
+</a>
+</div>
+<div class="search-wrap">
+<div class="search-box">
+<svg fill="none" height="15" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="15"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+<input data-search="" placeholder="Search modules…  ( / )" type="text"/>
+</div>
+<div class="search-results"></div>
+</div>
+<nav class="nav"></nav>
+</aside>
+<div class="backdrop"></div>
+<div class="main">
+<header class="topbar">
+<button aria-label="Menu" class="icon-btn menu-btn">
+<svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg>
+</button>
+<div class="crumbs">Retrieval / <b>04 · Vector Databases</b></div>
+<button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
+</header>
+<div class="content-wrap">
+<main class="content">
+
+<div class="eyebrow"><span class="dot"></span> Module 04 · Retrieval track</div>
+<h1>Vector databases</h1>
+<p class="lead">Page 03 compared a question against every stored vector. That is exact, and
+it stops being fast at around a million vectors. A vector database finds near matches by
+checking only a few thousand candidates - and accepts being occasionally wrong in exchange.
+This page is built in three levels: read Level 1 first, and stop there if you like.</p>
+<div class="meta-row">
+<span class="pill blue">⏱ Study + recall · 2–3 h</span>
+<span class="pill">Difficulty · Beginner to advanced, in three levels</span>
+<span class="pill purple">Prereq · 03 Embeddings</span>
+</div>
+
+<h3>How to use this page</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Level</th><th>What you get</th><th>Who it is for</th></tr></thead>
+<tbody>
+<tr><td><b>1 · The core idea</b><br/>sections 1-5, about 25 minutes</td><td>Why checking every vector fails at scale, how an index avoids it, and what "approximate" costs you</td><td>Everyone. Read this first.</td></tr>
+<tr><td><b>2 · The real version</b><br/>sections 6-11</td><td>How an HNSW search runs, the parts of a vector database, and the two silent failures</td><td>When Level 1 feels easy</td></tr>
+<tr><td><b>3 · Engineering and interviews</b><br/>sections 12-15</td><td>Production practice, vector vs relational databases, which product to pick, interview questions</td><td>Optional on a first read</td></tr>
+</tbody>
+</table>
+</div>
+
+<p class="bd-choose">Everything on this page comes back to five ideas. Level 1 covers the
+first three.</p>
+<ol>
+<li><b>Checking every vector is exact but does not scale.</b> The work grows with the
+collection, and past about a million vectors it is too slow.</li>
+<li><b>An index checks a few thousand candidates, whatever the size.</b> The most common one
+is HNSW, a layered graph.</li>
+<li><b>The price is approximate answers.</b> The share of true matches you get back is
+called recall, and nothing reports it unless you measure it.</li>
+<li><b>Filters belong inside the search, on indexed fields.</b> That is also where
+permissions are enforced.</li>
+<li><b>Start with pgvector, and give every chunk a stable id.</b> Move to a dedicated vector
+database only when a measured limit pushes you.</li>
+</ol>
+
+<!-- ================= LEVEL 1 ================= -->
+<div class="level-head" id="level-1"><span class="lv-badge">Level 1</span><span class="lv-title">The core idea</span><span class="lv-meta">About 25 minutes. Only multiplication and fractions.</span></div>
+
+<!-- ================= 1 ================= -->
+<h2 id="known">1 · What you already know</h2>
+<p>From 03 Embeddings: every chunk of text becomes a vector, scaled to length 1. A question
+becomes a vector too, and the best matches are the stored vectors with the highest cosine
+score.</p>
+<p>You also know that something is always nearest, so a minimum score is compulsory.</p>
+<p><b>This page is about what happens when there are 10 million vectors instead of
+10,000.</b></p>
+
+<!-- ================= 2 ================= -->
+<h2 id="breaks">2 · The problem: checking everything does not scale</h2>
+<p>Comparing a question with every stored vector is called a <b>full scan</b>. Its cost
+grows in step with the collection. With 768 numbers per vector:</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Vectors</th><th>Memory</th><th>Work per question</th><th>Verdict</th></tr></thead>
+<tbody>
+<tr><td>10,000</td><td>31 MB</td><td>7.7 million multiply-adds</td><td>Fine</td></tr>
+<tr><td>1,000,000</td><td>3.1 GB</td><td>768 million multiply-adds</td><td>Slow once real traffic arrives</td></tr>
+<tr><td>10,000,000</td><td>31 GB</td><td>7.7 billion multiply-adds</td><td>Impractical for every question</td></tr>
+</tbody>
+</table>
+</div>
+<p>And three more needs arrive at the same time as the scale:</p>
+<ul>
+<li><b>Filter during the search.</b> "Only documents this user's team may see" must limit
+what is searched, not just what is shown.</li>
+<li><b>Update in place.</b> When a document changes, its old vectors must go without
+rebuilding everything.</li>
+<li><b>Survive a restart.</b> Rebuilding 31 GB in memory on every deploy is not a
+system.</li>
+</ul>
+<p><b>All of these are solved by one thing: an index that does not look at every vector,
+inside a database that stores, filters and updates.</b></p>
+
+<!-- ================= 3 ================= -->
+<h2 id="idea">3 · The big idea: don't check everything</h2>
+<p>To find a house in another country, you do not knock on every door. You take a motorway
+to the right city, main roads to the right district, then walk a few streets. Each stage
+gets you closer with a few big moves, then small ones.</p>
+<p>The most common vector index, <b>HNSW</b> (hierarchical navigable small world), works the
+same way. It links each vector to a few of its nearest neighbours, in several layers:</p>
+
+<svg class="bd-svg" viewBox="0 0 900 300" role="img" aria-labelledby="hw-t hw-d">
+<title id="hw-t">An HNSW search descending through layers</title>
+<desc id="hw-d">Three layers of linked points. The top layer has three points far apart, the middle layer five, and the bottom layer holds every point. A search starts at a point in the top layer, moves along the layer towards the question, drops down a layer, moves again, drops to the bottom layer and takes one short step to the point nearest the question.</desc>
+<defs><marker id="ah-hw" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--accent)"></path></marker></defs>
+<rect class="snap" x="10" y="14" width="880" height="74" rx="12"></rect>
+<rect class="snap" x="10" y="104" width="880" height="74" rx="12"></rect>
+<rect class="snap" x="10" y="194" width="880" height="74" rx="12"></rect>
+<text class="lbl" x="100" y="47">top layer</text>
+<text class="cap" x="100" y="66">few points, long jumps</text>
+<text class="lbl" x="100" y="137">middle layer</text>
+<text class="cap" x="100" y="156">more points</text>
+<text class="lbl" x="100" y="227">bottom layer</text>
+<text class="cap" x="100" y="246">every point</text>
+<path class="arw" d="M250 51 H794"></path>
+<path class="arw" d="M250 141 H794"></path>
+<path class="arw" d="M250 231 H862"></path>
+<circle class="box" cx="250" cy="51" r="7"></circle>
+<circle class="box" cx="522" cy="51" r="7"></circle>
+<circle class="box" cx="794" cy="51" r="7"></circle>
+<circle class="box" cx="250" cy="141" r="7"></circle>
+<circle class="box" cx="386" cy="141" r="7"></circle>
+<circle class="box" cx="522" cy="141" r="7"></circle>
+<circle class="box" cx="658" cy="141" r="7"></circle>
+<circle class="box" cx="794" cy="141" r="7"></circle>
+<circle class="box" cx="250" cy="231" r="7"></circle>
+<circle class="box" cx="318" cy="231" r="7"></circle>
+<circle class="box" cx="386" cy="231" r="7"></circle>
+<circle class="box" cx="454" cy="231" r="7"></circle>
+<circle class="box" cx="522" cy="231" r="7"></circle>
+<circle class="box" cx="590" cy="231" r="7"></circle>
+<circle class="box" cx="658" cy="231" r="7"></circle>
+<circle class="box" cx="794" cy="231" r="7"></circle>
+<circle class="box" cx="862" cy="231" r="7"></circle>
+<circle cx="726" cy="231" r="9" fill="var(--accent)"></circle>
+<path class="att" d="M250 51 H522 V141 H658 V231 H714" stroke-width="3" marker-end="url(#ah-hw)"></path>
+<text class="cap pct" x="250" y="32">start</text>
+<text class="cap pct" x="726" y="260">nearest to the question</text>
+<text class="cap" x="450" y="290">a few long jumps, then short local steps - a handful of hops instead of millions of comparisons</text>
+</svg>
+
+<p>Three things to notice:</p>
+<ul>
+<li><b>The search only touches the points along its path</b> and their neighbours - a few
+thousand, not millions.</li>
+<li><b>Adding more vectors barely lengthens the path.</b> The layers keep the number of hops
+small as the collection grows.</li>
+<li><b>Each step is greedy:</b> it moves to whichever neighbour is closer to the question.
+That is what makes it fast, and also what lets it occasionally miss.</li>
+</ul>
+<p>The road trip is an analogy, but the layered graph and the greedy walk are exactly what
+HNSW does.</p>
+
+<!-- ================= 4 ================= -->
+<h2 id="recall">4 · The price: approximate answers, measured as recall</h2>
+<p>Because the walk is greedy, it can settle in a good-but-not-best neighbourhood and miss
+a true nearest neighbour. Indexes like this are called <b>ANN</b>, for approximate nearest
+neighbour.</p>
+<p>How often it misses is measured by <b>recall</b>: of the true top results, what fraction
+did the index actually return?</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Top 4 results</th></tr></thead>
+<tbody>
+<tr><td>Exact search (checks everything)</td><td>A, B, C, D</td></tr>
+<tr><td>The index</td><td>A, B, C, <b>E</b></td></tr>
+<tr><td>Recall@4</td><td>3 of the true 4 found = <b>3/4 = 0.75</b></td></tr>
+</tbody>
+</table>
+</div>
+<p><b>Nothing tells you that E replaced D.</b> No error, no warning. The only way to know
+your recall is to run exact search on a sample of questions and compare.</p>
+
+<!-- ================= 5 ================= -->
+<h2 id="worked">5 · Worked example: how much work, how much accuracy</h2>
+<h4>Step 1 · Work saved</h4>
+<p>A collection holds 10,000,000 vectors. A full scan compares the question with all of
+them. A typical HNSW search computes distances to a few thousand vectors; call it 10,000 to
+be generous.</p>
+<p>10,000,000 ÷ 10,000 = <b>1,000 times less work</b> per question.</p>
+
+<h4>Step 2 · Recall measured on three test questions</h4>
+<p>Run each question through exact search and through the index, and count how many of the
+true top 4 the index found:</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Test question</th><th>True top 4 found by the index</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>4 of 4</td></tr>
+<tr><td>2</td><td>3 of 4</td></tr>
+<tr><td>3</td><td>4 of 4</td></tr>
+<tr><th>Total</th><td>11 of 12 = <b>recall@4 of 0.92</b></td></tr>
+</tbody>
+</table>
+</div>
+<p>So the index does about a thousandth of the work and finds 92% of the true top
+results. <b>That is the trade every vector database makes.</b> Your job is to measure it,
+then decide whether it is good enough. Real tests use hundreds of questions, not
+three.</p>
+
+<div class="callout key">
+<div class="c-ico">🔑</div>
+<div class="c-body"><div class="c-title">The trade in one line</div>
+<p><b>A vector database swaps exactness for speed.</b> Recall is the price, and you only
+know the price if you measure it.</p></div>
+</div>
+
+<h3>Check yourself: Level 1</h3>
+<p>Answer each one out loud before you open it. Recalling an answer is what makes it
+stick; re-reading it is not.</p>
+<details class="recall"><summary><span class="q-ico">Q</span> Why does comparing a question against every vector stop working at scale? <span class="chev">›</span></summary><div class="a">The work and memory grow in step with the collection. At 10 million vectors of 768 numbers that is 7.7 billion multiply-adds and 31 GB for every single question.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> How does an HNSW index avoid checking everything? <span class="chev">›</span></summary><div class="a">It links vectors to their near neighbours in layers. A search makes a few long jumps on the sparse top layers, then short steps on the bottom layer, touching only a few thousand vectors.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What is recall@4, and how do you measure it? <span class="chev">›</span></summary><div class="a">The fraction of the true top 4 results that the index actually returned. Measure it by running exact search on a sample of questions and comparing the two result lists.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What does "approximate" in ANN cost you, and why can't you see it? <span class="chev">›</span></summary><div class="a">Sometimes a true nearest neighbour is missing from the results. Nothing raises an error - the missing result is simply absent - so only measuring recall reveals it.</div></details>
+
+<div class="callout tip">
+<div class="c-ico">✅</div>
+<div class="c-body"><div class="c-title">You can stop here</div>
+<p>If you answered those, you can explain what a vector database does and what it trades
+away. Level 2 shows how the search really runs, and the two failures that look like "bad
+embeddings" but are not.</p></div>
+</div>
+
+<!-- ================= LEVEL 2 ================= -->
+<div class="level-head" id="level-2"><span class="lv-badge">Level 2</span><span class="lv-title">The real version</span><span class="lv-meta">How an HNSW search runs, what a vector database is made of, and its silent failures.</span></div>
+
+<!-- ================= 6 ================= -->
+<h2 id="mechanics">6 · How a search runs</h2>
+
+<svg class="bd-svg" viewBox="0 0 900 110" role="img" aria-labelledby="vd-t vd-d">
+<title id="vd-t">Vector database search</title>
+<desc id="vd-d">A query vector arrives, metadata filters restrict which vectors are eligible, the approximate index walks a small number of candidates instead of the whole collection, the candidates are scored exactly, and the top results are returned with their stored text and metadata.</desc>
+<defs><marker id="ah-vd" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box" x="11" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="191" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="371" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="551" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="731" y="26" width="158" height="58" rx="12"></rect>
+<path class="arw" d="M172 55 H186" marker-end="url(#ah-vd)"></path>
+<path class="arw" d="M352 55 H366" marker-end="url(#ah-vd)"></path>
+<path class="arw" d="M532 55 H546" marker-end="url(#ah-vd)"></path>
+<path class="arw" d="M712 55 H726" marker-end="url(#ah-vd)"></path>
+<text class="lbl" x="90" y="51">question</text>
+<text class="lbl" x="90" y="69">vector</text>
+<text class="lbl" x="270" y="51">filter limits</text>
+<text class="lbl" x="270" y="69">what is searched</text>
+<text class="lbl" x="450" y="51">graph walk:</text>
+<text class="lbl" x="450" y="69">a few thousand</text>
+<text class="lbl" x="630" y="51">exact score</text>
+<text class="lbl" x="630" y="69">on those only</text>
+<text class="lbl" x="810" y="51">top k + text</text>
+<text class="lbl" x="810" y="69">+ metadata</text>
+</svg>
+
+<p>Inside the graph walk, HNSW does this:</p>
+<ol>
+<li><b>Build:</b> each vector becomes a node, linked to about <code>M</code> of its nearest
+neighbours.</li>
+<li><b>Build:</b> nodes are placed in layers at random, with each higher layer holding far
+fewer nodes. The bottom layer holds all of them.</li>
+<li><b>Search:</b> start at a fixed entry point in the top layer.</li>
+<li>Move greedily to whichever neighbour is closer to the question, until no neighbour is
+closer.</li>
+<li>Drop to the next layer down and repeat from that node.</li>
+<li>On the bottom layer, keep a list of the best <code>ef_search</code> candidates seen so
+far, and keep exploring until the list stops improving.</li>
+<li>Return the best <code>k</code> from that list.</li>
+</ol>
+<p><b>Step 4 is where it can go wrong:</b> a greedy walk can settle in the wrong region
+and never reach the true nearest neighbour. A bigger <code>ef_search</code> makes that
+rarer, at the cost of more work.</p>
+
+<!-- ================= 7 ================= -->
+<h2 id="components">7 · The parts of a vector database</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Part</th><th>What it does</th><th>What goes wrong without it</th></tr></thead>
+<tbody>
+<tr><td><b>Collection</b></td><td>A named set of vectors that share one size and one distance metric, both fixed at creation</td><td>Mixing models or sizes in one collection makes scores meaningless</td></tr>
+<tr><td><b>Point</b></td><td>One id, one vector and one payload (the text and metadata)</td><td>Without the payload, a search returns ids you cannot use</td></tr>
+<tr><td><b>Distance metric</b></td><td>Cosine or dot product for normalised text embeddings</td><td>A metric the embedding model was not trained for ranks results badly</td></tr>
+<tr><td><b>ANN index (HNSW or IVF)</b></td><td>Finds near neighbours without a full scan</td><td>Every question scans the whole collection</td></tr>
+<tr><td><b>Metadata filter</b></td><td>Limits which points are eligible during the search</td><td>Filtering afterwards can leave too few results, and is a weak permission boundary</td></tr>
+<tr><td><b>Payload index</b></td><td>An index on each field you filter by</td><td>Selective filters become slow, and can silently return too few results (section 10)</td></tr>
+<tr><td><b>Quantisation</b></td><td>Stores vectors as small integers or bits, then rescores the shortlist at full precision</td><td>Memory is 4 to 32 times larger than it needs to be</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>The three HNSW settings</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Setting</th><th>When it applies</th><th>Raising it</th></tr></thead>
+<tbody>
+<tr><td><code>M</code></td><td>Build</td><td>Better recall, more memory, slower build</td></tr>
+<tr><td><code>ef_construction</code></td><td>Build</td><td>Better graph quality, much slower build</td></tr>
+<tr><td><code>ef_search</code></td><td><b>Each query</b></td><td>Better recall, slower queries. Tune this one first</td></tr>
+</tbody>
+</table>
+</div>
+<p><b>IVF</b> is the main alternative to HNSW. It groups vectors into clusters and
+searches only the clusters nearest the question. It builds faster and uses less memory, but
+usually has lower recall at the same speed. pgvector offers both (<code>hnsw</code> and
+<code>ivfflat</code>).</p>
+
+<h4>The common products</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Choice</th><th>What it is</th><th>Pick it when</th></tr></thead>
+<tbody>
+<tr><td><b>pgvector</b></td><td>A Postgres extension</td><td>You already run Postgres and have up to a few million vectors</td></tr>
+<tr><td><b>Qdrant</b></td><td>A standalone vector database</td><td>You need strong filtering and easy self-hosting</td></tr>
+<tr><td><b>Chroma</b></td><td>An embedded, Python-first store</td><td>Prototypes and local experiments</td></tr>
+<tr><td><b>Milvus</b></td><td>A distributed vector database</td><td>Billions of vectors, and a team to run it</td></tr>
+<tr><td><b>FAISS</b></td><td>A library, not a database</td><td>You want only the index and will handle storage yourself</td></tr>
+<tr><td><b>Pinecone</b></td><td>A managed service</td><td>You want no operations work at all</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ================= 8 ================= -->
+<h2 id="state">8 · What is stored, and how changes work</h2>
+<p>A vector database stores the vectors, their payloads, and the graph linking them. One
+question touches only a small slice of that:</p>
+
+<svg class="bd-svg" viewBox="0 0 900 190" role="img" aria-labelledby="ix-t ix-d">
+<title id="ix-t">What one query touches</title>
+<desc id="ix-d">An illustrative query. Of ten million stored vectors, the metadata filter makes about four hundred thousand eligible, the graph walk visits a few thousand of them, and four are returned. The rest of the collection is never read.</desc>
+<rect class="snap" x="10" y="34" width="272" height="118" rx="12"></rect>
+<g>
+<text class="lbl" x="146" y="60">stored</text>
+<text class="cap mono" x="146" y="88">10,000,000 vectors</text>
+<text class="cap" x="146" y="112">31 GB at 768 numbers each</text>
+<text class="cap" x="146" y="134">a full scan reads all of it</text>
+</g>
+<rect class="snap" x="314" y="34" width="272" height="118" rx="12"></rect>
+<g>
+<text class="lbl" x="450" y="60">after the filter</text>
+<text class="cap mono" x="450" y="88">~400,000 eligible</text>
+<text class="cap" x="450" y="112">team = support</text>
+<text class="cap" x="450" y="134">payload index used</text>
+</g>
+<rect class="snap" x="618" y="34" width="272" height="118" rx="12"></rect>
+<g>
+<text class="lbl" x="754" y="60">after the walk</text>
+<text class="cap mono" x="754" y="88">a few thousand visited</text>
+<text class="cap mono" x="754" y="112">4 returned</text>
+<text class="cap" x="754" y="134">recall measured, not assumed</text>
+</g>
+<text class="cap" x="450" y="180">illustrative numbers - the collection size barely affects the walk, which is what the index buys</text>
+</svg>
+
+<div class="table-wrap">
+<table>
+<tbody>
+<tr><th>Writing</th><td><b>Upsert</b> by id: insert if new, replace if the id exists. The graph is updated incrementally.</td></tr>
+<tr><th>Deleting</th><td>Usually <b>soft</b>: the point is marked deleted but stays in the graph until a clean-up pass (compaction), so it still costs memory.</td></tr>
+<tr><th>Ids</th><td>Derive each id from the document id and chunk number, for example <code>handbook-v3#chunk-12</code>. Re-ingesting the same document then replaces its chunks instead of duplicating them.</td></tr>
+<tr><th>Durability</th><td>Data is persisted to disk, with snapshots for backup. Rebuilding a large HNSW graph from raw vectors can take hours.</td></tr>
+<tr><th>Model changes</th><td>A new embedding model means a new collection. Build it alongside, check it, then switch.</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ================= 9 ================= -->
+<h2 id="trace">9 · Trace: turning the <code>ef_search</code> dial</h2>
+<p>The same questions at four <code>ef_search</code> values on one 10-million-vector
+collection. The numbers are illustrative; the shape of the curve is typical.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th><code>ef_search</code></th><th>Latency</th><th>Recall@4</th><th>Reading</th></tr></thead>
+<tbody>
+<tr><td>16</td><td>3 ms</td><td>0.71</td><td>Fast, and misses more than one result in four</td></tr>
+<tr><td>64</td><td>8 ms</td><td>0.94</td><td>A reasonable default</td></tr>
+<tr><td>128</td><td>12 ms</td><td>0.98</td><td>Usually where to stop</td></tr>
+<tr><td>512</td><td>41 ms</td><td>0.995</td><td>3.4 times the latency for 1.5 more points of recall</td></tr>
+</tbody>
+</table>
+</div>
+<p>Recall climbs quickly and then barely moves, while latency keeps climbing. <b>Tune
+<code>ef_search</code> first, and expect the curve to flatten earlier than you
+think.</b></p>
+
+<!-- ================= 10 ================= -->
+<h2 id="break">10 · Break it</h2>
+<h4>Filter hard on a field with no index</h4>
+<p>Search with a filter that only 12 of 10 million points pass, on a field that has no
+payload index. The walk heads towards the question, but almost every node it reaches is
+rejected by the filter. It runs out of candidates before finding the 12 that qualify.
+<b>The results are wrong and nothing says so</b> - people often misdiagnose this as "the
+embeddings are bad".</p>
+
+<svg class="bd-svg" viewBox="0 0 900 175" role="img" aria-labelledby="fw-t fw-d">
+<title id="fw-t">Filtered walk dead-ends</title>
+<desc id="fw-d">A selective filter on an unindexed field means the graph walk reaches nodes that are all rejected. It exhausts its candidate list before finding the few qualifying vectors, and returns too few results with no error raised.</desc>
+<defs><marker id="ah-fw" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box" x="14" y="62" width="176" height="56" rx="12"></rect>
+<rect class="box fail" x="240" y="62" width="200" height="56" rx="12"></rect>
+<rect class="box after" x="490" y="62" width="176" height="56" rx="12"></rect>
+<rect class="box after" x="716" y="62" width="170" height="56" rx="12"></rect>
+<path class="arw" d="M193 90 H236" marker-end="url(#ah-fw)"></path>
+<path class="arw" d="M443 90 H486" marker-end="url(#ah-fw)"></path>
+<path class="arw" d="M669 90 H712" marker-end="url(#ah-fw)"></path>
+<text class="lbl" x="102" y="84">filter: 12 of 10M</text>
+<text class="lbl" x="102" y="102">field not indexed</text>
+<text class="lbl" x="340" y="84">walk visits nodes</text>
+<text class="lbl" x="340" y="102">all rejected</text>
+<text class="lbl" x="578" y="84">candidates</text>
+<text class="lbl" x="578" y="102">exhausted</text>
+<text class="lbl" x="801" y="84">1 result</text>
+<text class="lbl" x="801" y="102">no error</text>
+<path class="xmark" d="M322 130 L358 156 M358 130 L322 156"></path>
+<text class="cap" x="450" y="170">looks like bad embeddings; is actually a missing payload index</text>
+</svg>
+
+<h4>Ingest the same document twice with random ids</h4>
+<p>Every chunk now exists twice. A top-4 search returns two passages, each repeated, the
+model sees the same text twice, and the collection has doubled in size. Nothing
+raises.</p>
+
+<!-- ================= 11 ================= -->
+<h2 id="fix">11 · Fix it</h2>
+<ul>
+<li><b>Index every field you filter on.</b> With a payload index, a database such as Qdrant
+can estimate how many points pass a filter, and when the number is small it switches to an
+exact scan of just those points - correct and fast. Recent pgvector versions (0.8 and
+later) can keep scanning the index until enough rows pass the filter.</li>
+<li><b>Measure recall instead of assuming it.</b> Run exact search on a sample of real
+questions, compare with the index, and re-measure after any settings change.</li>
+<li><b>Make ids deterministic.</b> Build them from the document id and chunk number, so
+re-ingesting replaces instead of duplicating.</li>
+</ul>
+<p><b>Together these turn every silent failure on this page into either a measured number
+or an impossible state.</b></p>
+
+<h3>Check yourself: Level 2</h3>
+<details class="recall"><summary><span class="q-ico">Q</span> <span>Which HNSW setting do you tune first, and what does raising it do?</span> <span class="chev">›</span></summary><div class="a"><code>ef_search</code>, because it can change per query. Raising it improves recall and slows queries, and the recall gain flattens quickly.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> A filtered search returns only one result when you expected four. What is the likely cause? <span class="chev">›</span></summary><div class="a">A selective filter on a field with no payload index: the graph walk keeps reaching rejected points and runs out of candidates. Index the field so the database can switch to an exact scan of the few matching points.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Why should chunk ids be derived from the document id and chunk number? <span class="chev">›</span></summary><div class="a">So re-ingesting a document replaces its chunks. Random ids create silent duplicates that crowd the top results and double the collection.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Why is filtering after the search worse than filtering during it? <span class="chev">›</span></summary><div class="a">If the top results are mostly filtered out afterwards, too few remain. And permissions enforced only after the search depend on every caller remembering the filter.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What is the difference between HNSW and IVF? <span class="chev">›</span></summary><div class="a">HNSW walks a layered graph of near neighbours. IVF groups vectors into clusters and searches only the nearest clusters. IVF builds faster and is smaller; HNSW usually gets higher recall at the same speed.</div></details>
+
+<!-- ================= LEVEL 3 ================= -->
+<div class="level-head" id="level-3"><span class="lv-badge">Level 3</span><span class="lv-title">Engineering and interviews</span><span class="lv-meta">Optional on a first read. Come back when you run retrieval in production or prepare for interviews.</span></div>
+
+<!-- ================= 12 ================= -->
+<h2 id="production">12 · Production version</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Concern</th><th>What you do</th></tr></thead>
+<tbody>
+<tr><td>Recall</td><td>Measure against exact search on a sample, per collection. Re-measure after any setting change</td></tr>
+<tr><td>Filters</td><td>Index every filtered field. An unindexed filter is a correctness bug, not just a slow query</td></tr>
+<tr><td>Permissions</td><td>Filter inside the query, never only afterwards</td></tr>
+<tr><td>Ids</td><td>Derive from document id plus chunk number. Never random</td></tr>
+<tr><td>Deletes</td><td>Soft by default. Schedule compaction, and watch memory against the live point count</td></tr>
+<tr><td>Memory</td><td>Vectors plus graph plus payloads. The HNSW graph adds roughly <code>M × 8</code> bytes per point - 128 bytes at M = 16, or about 1.3 GB for 10 million points</td></tr>
+<tr><td>Quantisation</td><td>Small-integer vectors with full-precision rescoring above a few million points. Measure recall before and after</td></tr>
+<tr><td>Backups</td><td>Snapshots. Rebuilding a large index from raw vectors can take hours</td></tr>
+<tr><td>Model changes</td><td>A new embedding model means a new collection. Build alongside, verify, then switch</td></tr>
+<tr><td>Monitoring</td><td>p95 latency, recall on a fixed sample, live point count, memory</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ================= 13 ================= -->
+<h2 id="breakdown">13 · Vector database vs relational database, side by side</h2>
+<p>A reference summary in the six-label format used across the course.</p>
+
+<section class="breakdown">
+
+<h3 class="bd-tech"><span class="bd-tag">A</span> Vector database</h3>
+
+<h4>Basic level</h4>
+<p class="bd-item"><b class="no-jargon">What it is.</b> A database that stores vectors with
+their metadata and returns the approximate nearest neighbours of a query vector, using an
+index such as HNSW or IVF.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It keeps similarity search fast
+as the collection grows, by checking a small fraction of the vectors instead of all of
+them.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b> Filter, walk the index to a
+few thousand candidates, score those exactly, return the top k with their text. The diagram
+in section 6 shows it.</p>
+
+<h4>Intermediate level</h4>
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> The default index
+is HNSW, a layered graph: a search enters at the sparse top layer, walks greedily towards
+the query, drops a layer and repeats. <code>M</code> (links per node) is fixed at build
+time; <code>ef_search</code> (candidates kept during the walk) can change per query. IVF is
+the alternative: cluster the vectors and search only the nearest clusters.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> Vectors, payloads and the graph
+are persisted to disk. Inserts update the graph incrementally. Deletes are usually soft
+until compaction, so deleted points still cost memory and search time.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> Results are
+approximate, and the miss rate is invisible unless you measure recall. Building HNSW is slow
+and memory-hungry, and very selective filters interact badly with the graph. Advanced
+features include quantisation, built-in hybrid search with BM25, multi-tenancy and
+replication.</p>
+
+<h3 class="bd-tech"><span class="bd-tag">B</span> Relational database</h3>
+
+<h4>Basic level</h4>
+<p class="bd-item"><b class="no-jargon">What it is.</b> A database that stores rows in typed
+tables and answers queries with exact conditions, using B-tree and hash indexes to avoid
+reading every row.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It returns exactly the rows that
+match a condition, with transactional guarantees about what is stored.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 110" role="img" aria-labelledby="rd-t rd-d">
+<title id="rd-t">Relational query execution</title>
+<desc id="rd-d">A query is parsed, the planner chooses an index, the B-tree is descended to the matching key range, matching rows are fetched, and the exact result set is returned. The same query always returns the same rows.</desc>
+<defs><marker id="ah-rd" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box" x="11" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="191" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="371" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="551" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="731" y="26" width="158" height="58" rx="12"></rect>
+<path class="arw" d="M172 55 H186" marker-end="url(#ah-rd)"></path>
+<path class="arw" d="M352 55 H366" marker-end="url(#ah-rd)"></path>
+<path class="arw" d="M532 55 H546" marker-end="url(#ah-rd)"></path>
+<path class="arw" d="M712 55 H726" marker-end="url(#ah-rd)"></path>
+<text class="lbl" x="90" y="60">SQL query</text>
+<text class="lbl" x="270" y="51">planner picks</text>
+<text class="lbl" x="270" y="69">an index</text>
+<text class="lbl" x="450" y="51">descend the</text>
+<text class="lbl" x="450" y="69">B-tree</text>
+<text class="lbl" x="630" y="51">fetch matching</text>
+<text class="lbl" x="630" y="69">rows</text>
+<text class="lbl" x="810" y="51">exact result,</text>
+<text class="lbl" x="810" y="69">same every time</text>
+</svg>
+
+<h4>Intermediate level</h4>
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> A B-tree keeps keys
+sorted, so a lookup descends a shallow tree and a range query walks the leaves. That works
+because the key has one sortable order. Vectors with hundreds of dimensions have no such
+order, so a B-tree cannot answer "what is nearest" - which is why a different index
+exists.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> Rows persist with ACID
+guarantees: a committed write is durable and visible to the next reader, and a transaction
+applies completely or not at all.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> No built-in
+notion of "similar" for vectors. <b>pgvector</b> closes most of the gap by adding vector
+columns and HNSW or IVF indexes to Postgres, so one database holds rows, metadata and
+vectors together - usually the right first choice.</p>
+
+<h3 class="bd-diff">The core differences</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Vector database</th><th>Relational database</th></tr></thead>
+<tbody>
+<tr><th>Workflow design</th>
+<td>Ask for the k nearest vectors and get a ranked, approximate list. Tuning trades recall against latency.</td>
+<td>Ask for rows matching a condition and get all of them, exactly. There is nothing to trade.</td></tr>
+<tr><th>When something goes wrong</th>
+<td>A missed neighbour raises nothing - it is silently absent. Only measuring recall against exact search reveals it.</td>
+<td>A wrong result is a bug in the query, and the same query always returns the same rows, so it is reproducible.</td></tr>
+<tr><th>Architectural paradigm</th>
+<td>Approximate nearest-neighbour search over a graph or clusters.</td>
+<td>Exact set retrieval over a sorted index.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 class="bd-short">In short - which one to choose</h3>
+<p class="bd-choose">Use a dedicated vector database when:</p>
+<ul>
+<li>You are past roughly ten million vectors, or need very high query throughput.</li>
+<li>Vector search is the product and you need its tuning settings exposed.</li>
+<li>You need built-in hybrid search and reranking.</li>
+</ul>
+<p class="bd-choose">Use pgvector in your existing Postgres when:</p>
+<ul>
+<li>You have up to a few million vectors, which covers most systems.</li>
+<li>The vectors belong next to rows you already store, and you want one backup story.</li>
+<li>You would rather not run another database. <b>This is the right default.</b></li>
+</ul>
+<p class="bd-choose bd-avoid">Use neither when:</p>
+<ul>
+<li>You have fewer than about 50,000 vectors. Comparing against all of them in memory is
+exact, fast enough, and has no recall to worry about.</li>
+<li>You have not yet measured whether retrieval is your bottleneck.</li>
+</ul>
+</section>
+
+<!-- ================= 14 ================= -->
+<h2 id="comparison">14 · Comparison</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>In-memory full scan</th><th>pgvector</th><th>Qdrant / Milvus</th><th>Postgres B-tree</th></tr></thead>
+<tbody>
+<tr><th>Exact results</th><td><b>Yes</b></td><td>Exact or approximate</td><td>Approximate</td><td>Yes, but not for similarity</td></tr>
+<tr><th>Comfortable size</th><td>Up to ~100k</td><td>A few million</td><td><b>Billions</b></td><td>Not applicable</td></tr>
+<tr><th>Filtering</th><td>You write it</td><td><b>Full SQL</b></td><td>Payload filters</td><td>Full SQL</td></tr>
+<tr><th>Persistence</th><td>You write it</td><td>ACID</td><td>Snapshots and a write-ahead log</td><td>ACID</td></tr>
+<tr><th>Extra operations work</th><td>None</td><td>None</td><td>Another service</td><td>None</td></tr>
+<tr><th>Use it for</th><td>Prototypes, under 50k</td><td><b>Most systems</b></td><td>Very large or very high traffic</td><td>The metadata beside the vectors</td></tr>
+</tbody>
+</table>
+</div>
+<p><b>Start with pgvector.</b> Move to a dedicated vector database when a measured limit
+pushes you - recall you cannot reach, latency you cannot hold, or a collection that no
+longer fits - not at the design stage.</p>
+
+<!-- ================= 15 ================= -->
+<h2 id="interview">15 &middot; Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What is a vector database for? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>To store embeddings and answer "which stored vectors are nearest to this query vector?" at scale and low latency, using approximate nearest-neighbor indexes - plus metadata filtering. It's the storage + retrieval engine of RAG.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What does "approximate" mean in ANN? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>The index may not return the exact true nearest neighbors every time - it returns very-close ones much faster than brute force. The miss rate (1 − recall) is small and tunable; you trade a little accuracy for big speed gains.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  Explain HNSW and its key parameters. <span class="chev">›</span></summary>
+<div class="collapse-body"><p>A hierarchical navigable small-world graph: multiple layers, sparse on top for long hops, dense at the bottom holding all vectors. Search starts at the top and greedily descends toward the query - roughly O(log N). Params: <code>M</code> (edges/node → recall &amp; memory), <code>ef_construction</code> (build-time quality), and <code>ef_search</code> (query-time candidates → the live recall/latency dial).</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  Pre-filtering vs post-filtering - when does it matter? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Post-filtering runs ANN then discards non-matches - fine for permissive filters, but selective filters can leave you with too few or zero results because the top-k were all filtered out. Pre-filtering restricts the search space to matching vectors first, giving correct top-k for selective filters. Use pre-filtering for tenant/permission/date constraints.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  Recall is fine in tests but bad in prod. Diagnose. <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Suspects: (1) production data distribution differs from test; (2) <code>ef_search</code> lowered for latency; (3) selective metadata filters + post-filtering starving results; (4) index not rebuilt after a bulk load, or stale after deletes; (5) embedding model/version drift between index and query (03 Embeddings). Reproduce with a flat-index ground truth on prod queries, compare recall@k, and isolate the variable. Fix the specific cause - often raise ef_search or switch to pre-filtering.</p></div></details>
+<details class="collapse"><summary><span class="pill purple">Staff · design</span>  Design vector search for 1B vectors, multi-tenant, &lt;50ms p99. <span class="chev">›</span></summary>
+<div class="collapse-body"><p>1B × 768 floats won't fit one node in RAM as raw HNSW - use <strong>IVF+PQ</strong> or quantized HNSW to compress, and <strong>shard</strong> by tenant or hash with replicas for HA. Pre-filter by tenant (route to the tenant's shard for isolation + smaller search space). Tune <code>ef_search</code> per route to hit p99 under the recall SLO; add a small re-rank stage (05 RAG, End-to-End) on the top candidates to recover precision lost to quantization. Operate: background re-index jobs for model upgrades (versioned vectors), warm caches, monitor recall@k continuously with a sampled ground-truth job, and capacity-plan RAM. Consider a tiered design: quantized index for breadth, exact rescoring on finalists.</p></div></details>
+
+<!-- ================= 16 ================= -->
+<h2 id="short">16 · In short, and what comes next</h2>
+<p class="bd-choose">The five ideas from the top of the page. Try to say each one before
+you read it.</p>
+<ol>
+<li><b>Checking every vector is exact but does not scale.</b> The work grows with the
+collection, and past about a million vectors it is too slow.</li>
+<li><b>An index checks a few thousand candidates, whatever the size.</b> The most common one
+is HNSW, a layered graph.</li>
+<li><b>The price is approximate answers.</b> The share of true matches you get back is
+called recall, and nothing reports it unless you measure it.</li>
+<li><b>Filters belong inside the search, on indexed fields.</b> That is also where
+permissions are enforced.</li>
+<li><b>Start with pgvector, and give every chunk a stable id.</b> Move to a dedicated vector
+database only when a measured limit pushes you.</li>
+</ol>
+<div class="callout key">
+<div class="c-ico">🔑</div>
+<div class="c-body"><div class="c-title">The one idea to remember</div>
+<p><b>A vector database trades exactness for speed, and the trade is invisible by
+default.</b> Measuring recall, indexing filter fields and using stable ids are what make
+that trade something you chose rather than something that happened to you.</p></div>
+</div>
+<p><b>Next:</b> <a href="../rag-deep-dive.html">05 · RAG, End-to-End</a> connects
+embeddings and a vector database to a language model: chunking, grounding, citations,
+reranking, and how to tell whether retrieval or generation caused a bad answer.</p>
+
+<div class="page-nav" data-page-nav>
+<a href="04_embeddings.html"><div class="dir">← Previous</div><div class="ttl">03 · Embeddings</div></a>
+<a class="next" href="../rag-deep-dive.html"><div class="dir">Next →</div><div class="ttl">05 · RAG, End-to-End</div></a>
+</div>
+
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script src="../assets/app.js?v=20261123b"></script>
+<script src="../assets/sitenav.js?v=20261123b"></script>
+<script src="../assets/enhance.js?v=20260925c"></script>
+<script src="../assets/genai-motion.js?v=20260728a"></script>
+<script src="../assets/glossary.js?v=20261123b"></script>
+</body>
+</html>

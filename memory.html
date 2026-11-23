@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>08 · Memory | GenAI Mastery</title>
+<!-- Interview Preparation brand metadata -->
+<link rel="icon" href="assets/brand/favicon.svg?v=20260925b" type="image/svg+xml">
+<link rel="icon" href="assets/brand/favicon-32.png?v=20260925b" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="assets/brand/favicon.ico?v=20260925b">
+<link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png?v=20260925c" sizes="180x180">
+<link rel="manifest" href="assets/brand/site.webmanifest?v=20260925b">
+<link rel="mask-icon" href="assets/brand/safari-pinned-tab.svg?v=20260925b" color="#6f47f5">
+<link rel="image_src" href="assets/brand/social-card.png?v=20260925b">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="msapplication-TileColor" content="#1e3a8a">
+<meta name="msapplication-config" content="assets/brand/browserconfig.xml?v=20260925b">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Interview Preparation">
+<meta property="og:title" content="08 · Memory | GenAI Mastery">
+<meta property="og:description" content="How memory works in LLM applications: the stateless model and context window, short-term vs long-term memory, conversation buffers and summaries, vector-based long-term memory, the memory tool, and memory in agents - with code.">
+<meta property="og:image" content="assets/brand/social-card.png?v=20260925b">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Learn GenAI learning platform logo">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="08 · Memory - GenAI Mastery">
+<meta name="twitter:description" content="How memory works in LLM applications: the stateless model and context window, short-term vs long-term memory, conversation buffers and summaries, vector-based long-term memory, the memory tool, and memory in agents - with code.">
+<meta name="twitter:image" content="assets/brand/social-card.png?v=20260925b">
+<link href="assets/brand/favicon-16.png?v=20260925b" rel="icon" sizes="16x16" type="image/png"/>
+<!-- /Interview Preparation brand metadata -->
+<meta name="description" content="How memory works in LLM applications: the stateless model and context window, short-term vs long-term memory, conversation buffers and summaries, vector-based long-term memory, the memory tool, and memory in agents - with code.">
+<!-- Theme before first paint. Without this the document paints with the light
+     tokens and only flips when app.js runs at the end of <body>, which is a
+     white flash on every navigation in dark mode. Mirrors app.js's getTheme()
+     exactly - same key, same "dark" default - so the pre-paint value can never
+     disagree with what the scripts apply a moment later. Inline and blocking on
+     purpose: an external file would cost a round trip before first paint. -->
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="assets/styles.css?v=20261123b">
+<link href="assets/office-theme.css?v=20260925c" rel="stylesheet"/>
+<link href="assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
+<style>
+  .nav .sec-num { font-family: var(--font-mono); }
+  .mem-cols { display:grid; gap:16px; grid-template-columns:1fr 1fr; margin:20px 0; }
+  @media (max-width:760px){ .mem-cols{ grid-template-columns:1fr; } }
+</style>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="assets/curriculum.js?v=20261123c"></script>
+<script defer src="assets/page-nav.js?v=20261123c"></script>
+<link href="assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+</head>
+<body data-curriculum-id="memory" data-page="memory">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-secsearch placeholder="Jump to a section…  ( / )">
+      </div>
+      <div class="search-results" data-secresults></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Agents / <b>08 · Memory</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+
+<div class="eyebrow"><span class="dot"></span> Module 08 · Agents track</div>
+<h1>Memory</h1>
+<p class="lead">A language model remembers nothing between calls. Memory is something your
+application builds around it: what it resends, what it writes down, and what it looks up
+again. Interviewers ask about it because the common answers - "use a bigger context window",
+"the checkpointer handles it" - are wrong.</p>
+<div class="meta-row">
+<span class="pill blue">⏱ 15–30 min</span>
+<span class="pill">Difficulty · Interview essentials</span>
+<span class="pill purple">Prereq · 05 RAG and 06 Agentic AI</span>
+</div>
+
+<h2 id="breaks">1 · The idea in one minute</h2>
+<p><b>A model is stateless.</b> Each call is independent, and nothing is kept after it
+returns. Every chat app that seems to remember you is resending the earlier messages in
+every request.</p>
+<p>Think of a doctor who sees you fresh at every visit. What makes it feel as if they
+remember you is two things:</p>
+<ul>
+<li><b>What is said in the room today.</b> That is <b>short-term memory</b>: the recent
+messages, sent to the model again on every turn. It lives inside the context window, the
+maximum amount of text one call can hold.</li>
+<li><b>Your patient file.</b> That is <b>long-term memory</b>: facts stored outside the
+model, such as "prefers email", and pulled back into the prompt when they are relevant.</li>
+</ul>
+<p>Somebody decides what goes into the file and which page to pull out before the visit. In
+an LLM app, that somebody is your code.</p>
+<p><b>Memory is two decisions you make in code: what to write down, and what to bring
+back.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 240" role="img" aria-labelledby="mem-t mem-d">
+<title id="mem-t">How memory works around a stateless model</title>
+<desc id="mem-d">A new message arrives. The application retrieves a few relevant facts from the memory store, builds a prompt from those facts plus the last few turns, and calls the model, which remembers nothing itself. The answer goes back to the user. After the turn, a write step keeps only durable facts and saves them to the memory store, keyed by user, ready for the next retrieval.</desc>
+<defs><marker id="ah-mem" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box" x="11" y="20" width="158" height="58" rx="12"></rect>
+<rect class="box" x="191" y="20" width="158" height="58" rx="12"></rect>
+<rect class="box" x="371" y="20" width="158" height="58" rx="12"></rect>
+<rect class="box" x="551" y="20" width="158" height="58" rx="12"></rect>
+<rect class="box" x="731" y="20" width="158" height="58" rx="12"></rect>
+<path class="arw" d="M172 49 H186" marker-end="url(#ah-mem)"></path>
+<path class="arw" d="M352 49 H366" marker-end="url(#ah-mem)"></path>
+<path class="arw" d="M532 49 H546" marker-end="url(#ah-mem)"></path>
+<path class="arw" d="M712 49 H726" marker-end="url(#ah-mem)"></path>
+<text class="lbl" x="90" y="45">new message</text>
+<text class="cap" x="90" y="64">from the user</text>
+<text class="lbl" x="270" y="45">retrieve</text>
+<text class="cap" x="270" y="64">a few facts</text>
+<text class="lbl" x="450" y="45">build prompt</text>
+<text class="cap" x="450" y="64">facts + last turns</text>
+<text class="lbl" x="630" y="45">model call</text>
+<text class="cap" x="630" y="64">remembers nothing</text>
+<text class="lbl" x="810" y="45">answer</text>
+<text class="cap" x="810" y="64">back to the user</text>
+<rect class="box" x="191" y="150" width="158" height="58" rx="12"></rect>
+<rect class="box" x="731" y="150" width="158" height="58" rx="12"></rect>
+<text class="lbl" x="270" y="175">memory store</text>
+<text class="cap" x="270" y="194">facts, by user id</text>
+<text class="lbl" x="810" y="175">write step</text>
+<text class="cap" x="810" y="194">keep durable facts</text>
+<path class="arw" d="M810 78 V147" marker-end="url(#ah-mem)"></path>
+<path class="arw" d="M731 179 H352" marker-end="url(#ah-mem)"></path>
+<path class="arw" d="M270 150 V81" marker-end="url(#ah-mem)"></path>
+<text class="cap" x="540" y="170">only what passes the filter is stored</text>
+<text class="cap" x="450" y="232">short-term memory: the last turns inside the prompt · long-term memory: the store, outside the model</text>
+</svg>
+
+<h2 id="components">2 · The parts you must know</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Part</th><th>What it does</th><th>What goes wrong without it</th></tr></thead>
+<tbody>
+<tr><td><b>Short-term memory</b></td><td>The recent messages, resent in the prompt on every turn</td><td>The model loses the thread of the conversation</td></tr>
+<tr><td><b>Trimming and summarising</b></td><td>Keeps a long chat inside the context window: drop the oldest turns, or replace them with a short summary</td><td>Long chats hit the window limit, and every turn costs more because everything is resent</td></tr>
+<tr><td><b>Long-term memory store</b></td><td>Facts that outlive the session, in a database or a vector store</td><td>The assistant forgets the customer the moment the session ends</td></tr>
+<tr><td><b>Write filter</b></td><td>Decides what is worth keeping: facts that are still true tomorrow and would change a future answer</td><td>The store fills with small talk, and retrieval returns noise</td></tr>
+<tr><td><b>Retrieval</b></td><td>Pulls the few relevant facts into the prompt, by similarity search (as in RAG) or by key</td><td>A fact that is stored but never retrieved is invisible - the most common "it forgot" bug</td></tr>
+<tr><td><b>Key</b></td><td>Stores each fact under the user and tenant (customer company) it belongs to</td><td>Keyed by session, a fact is unreachable tomorrow. Without the tenant in the query, one customer can see another's data</td></tr>
+<tr><td><b>Supersede and expire</b></td><td>A newer fact replaces the older one; stale facts expire</td><td>Retrieval returns "call me" and "email only" together, and the model picks one</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>The memory types interviewers name</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Type</th><th>Holds</th><th>Usually stored as</th></tr></thead>
+<tbody>
+<tr><td><b>Working</b></td><td>This conversation and the current task</td><td>The message list in the prompt</td></tr>
+<tr><td><b>Episodic</b></td><td>What happened before: "last week you asked about a refund"</td><td>Past interactions, or summaries of them</td></tr>
+<tr><td><b>Semantic</b></td><td>Facts about the user or the world: "prefers email"</td><td>Database rows or vector-store entries</td></tr>
+<tr><td><b>Procedural</b></td><td>How to do the task</td><td>The system prompt and the tool definitions</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>Three things that are not long-term memory</h3>
+<ul>
+<li><b>A bigger context window.</b> More text fits into one call. Nothing survives to the next
+session, and you pay for every token on every turn.</li>
+<li><b>A checkpointer.</b> It saves a run's state so the run can resume - LangGraph uses
+it for thread-level, short-term memory. It does not make a fact available to a new
+conversation. For that you need a long-term store keyed by user.</li>
+<li><b>Fine-tuning.</b> It changes behaviour and style. It cannot hold per-user facts, cannot
+be updated per conversation, and cannot delete one person's data on request.</li>
+</ul>
+
+<h2 id="failures">3 · How it fails, and the fix</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Failure</th><th>What you see</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td>Storing every message</td><td>Thousands of rows per user; retrieval returns chatter and old task state</td><td>Write filter: keep only what is still true tomorrow and changes a future answer</td></tr>
+<tr><td>Contradictions kept</td><td>Old and new preferences both come back</td><td>Supersede at write time: the newer fact retires the older one</td></tr>
+<tr><td>Wrong key</td><td>Remembers within a chat, forgets the next day</td><td>Key by user and tenant, never by session</td></tr>
+<tr><td>Written but not retrieved</td><td>"I already told it that"</td><td>Check the write happened, then the key, then the retrieval ranking. Log what was retrieved into each prompt</td></tr>
+<tr><td>Long chat overflows</td><td>Early details lost, cost per turn keeps rising</td><td>Keep the last turns verbatim, summarise older ones, keep exact values (ids, amounts) word for word</td></tr>
+<tr><td>Privacy ignored</td><td>Personal data kept for ever, cannot be deleted on request</td><td>Treat the store as personal data: a retention limit, delete-by-user as one operation, tenant in every query</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="say">4 · Say this in the interview</h2>
+<div class="callout key">
+<div class="c-ico">🎤</div>
+<div class="c-body"><div class="c-title">A 30-second answer</div>
+<p>"An LLM is stateless, so memory is something the application builds. Short-term memory
+is the recent conversation, resent in the prompt and kept inside the context window by
+trimming or summarising. Long-term memory is a store outside the model, keyed by user and
+tenant, holding durable facts like preferences. Before each call I retrieve a few relevant
+facts into the prompt. After each turn a write step decides what is worth keeping, and newer
+facts supersede older ones. A bigger context window or a checkpointer is not long-term
+memory. And because the store holds personal data, it needs a retention limit and per-user
+deletion."</p></div>
+</div>
+
+<h2 id="interview">5 · Interview questions</h2>
+<p>Answer each one out loud before you open it.</p>
+<details class="recall"><summary><span class="q-ico">Q</span> Does an LLM remember previous conversations? <span class="chev">›</span></summary><div class="a">No. Each call is independent, and the model keeps nothing after it returns. Apps that seem to remember are resending earlier messages, or retrieving stored facts into the prompt.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What is the difference between short-term and long-term memory? <span class="chev">›</span></summary><div class="a">Short-term memory is the current conversation, resent in the prompt each turn and lost when the session ends. Long-term memory is facts written to a store outside the model, keyed by user, and retrieved into the prompt in later sessions.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Does a bigger context window solve memory? <span class="chev">›</span></summary><div class="a">No. It lets more text fit into one call. Nothing survives to the next session, every resent token is paid for on every turn, and very long prompts tend to lose details in the middle.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Is a checkpointer, such as LangGraph's, memory? <span class="chev">›</span></summary><div class="a">It is thread-level, short-term persistence: it saves the run's state so the run can resume. It does not make facts available to a new conversation. Cross-session memory needs a separate long-term store keyed by user - LangGraph provides one as a Store.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> How do you decide what to write to long-term memory? <span class="chev">›</span></summary><div class="a">Store a fact only if it will still be true tomorrow and would change a future answer: a preference, an entitlement, a decision. If it would be wrong to still have it tomorrow, it is task state and must not be stored.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> How do you keep a long conversation inside the context window? <span class="chev">›</span></summary><div class="a">Keep the last few turns verbatim, replace older turns with a running summary, and copy exact values such as ids and amounts into the summary word for word. Durable facts go to the long-term store instead of riding along in the chat.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What are episodic, semantic and procedural memory? <span class="chev">›</span></summary><div class="a">Episodic: what happened in past interactions. Semantic: facts about the user or the world. Procedural: how to do the task, which in practice is the system prompt and the tool definitions.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> A user says the assistant forgot what they told it. How do you debug it? <span class="chev">›</span></summary><div class="a">First check whether the fact was ever written - most "forgetting" is a write that never happened. Then check the key: a fact keyed by session is unreachable from a new chat. Then check whether retrieval ranked it out, and whether a newer fact superseded it.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Design memory for a multi-tenant assistant. <span class="chev">›</span></summary><div class="a">Key every fact by tenant and user, and put the tenant in the query itself rather than filtering afterwards. Store a source and timestamp with each fact, supersede contradictions at write time, expire stale facts, cap how many facts are retrieved, and make delete-by-user a single operation, because data-protection law will require it.</div></details>
+
+<h2 id="short">6 · In short</h2>
+<ol>
+<li><b>The model is stateless.</b> Every appearance of memory is your code resending or retrieving text.</li>
+<li><b>Short-term memory is the prompt; long-term memory is a store</b> outside the model, keyed by user and tenant.</li>
+<li><b>Memory is a write decision.</b> Keep only what is still true tomorrow and changes a future answer.</li>
+<li><b>Retrieve a few relevant facts, and supersede old ones,</b> or the store turns into noise.</li>
+<li><b>A memory store holds personal data:</b> retention limits and delete-by-user are part of the design.</li>
+</ol>
+<p><b>Next:</b> <a href="modules/10_langchain.html">09 · LangChain</a> - the framework most
+teams use to wire prompts, models, retrieval and memory together.</p>
+
+<div class="page-nav" data-page-nav>
+<a href="modules/09_mcp.html"><div class="dir">← Previous</div><div class="ttl">07 · Model Context Protocol</div></a>
+<a class="next" href="modules/10_langchain.html"><div class="dir">Next →</div><div class="ttl">09 · LangChain</div></a>
+</div>
+      
+</main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/app.js?v=20261123b"></script>
+<script src="assets/sitenav.js?v=20261123b"></script>
+<script src="assets/enhance.js?v=20260925c"></script>
+<script src="assets/genai-motion.js?v=20260728a"></script>
+<script src="assets/section-nav.js?v=20260731b"></script>
+</body>
+</html>

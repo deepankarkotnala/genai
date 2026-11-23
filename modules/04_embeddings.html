@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+
+<html data-theme="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="#f4f5f8" name="theme-color"/>
+<title>03 · Embeddings | GenAI Mastery</title>
+<!-- Interview Preparation brand metadata -->
+<link href="../assets/brand/favicon.svg?v=20260925b" rel="icon" type="image/svg+xml"/>
+<link href="../assets/brand/favicon-32.png?v=20260925b" rel="icon" sizes="32x32" type="image/png"/>
+<link href="../assets/brand/favicon.ico?v=20260925b" rel="shortcut icon"/>
+<link href="../assets/brand/apple-touch-icon.png?v=20260925c" rel="apple-touch-icon" sizes="180x180"/>
+<link href="../assets/brand/site.webmanifest?v=20260925b" rel="manifest"/>
+<link color="#6f47f5" href="../assets/brand/safari-pinned-tab.svg?v=20260925b" rel="mask-icon"/>
+<link href="../assets/brand/social-card.png?v=20260925b" rel="image_src"/>
+<meta content="Learn GenAI" name="application-name"/>
+<meta content="Learn GenAI" name="apple-mobile-web-app-title"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="#2563eb" name="msapplication-TileColor"/>
+<meta content="../assets/brand/browserconfig.xml?v=20260925b" name="msapplication-config"/>
+<meta content="website" property="og:type"/>
+<meta content="Learn GenAI Learning Platform" property="og:site_name"/>
+<meta content="03 · Embeddings | GenAI Mastery" property="og:title"/>
+<meta content="Turn text into vectors that capture meaning: what embeddings are, cosine similarity, dense vs sparse, choosing an embedding model, normalization, chunk granularity, and production embedding pipelines." property="og:description"/>
+<meta content="../assets/brand/social-card.png?v=20260925b" property="og:image"/>
+<meta content="1200" property="og:image:width"/>
+<meta content="630" property="og:image:height"/>
+<meta content="Learn GenAI learning platform logo" property="og:image:alt"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="03 · Embeddings - GenAI Mastery" name="twitter:title"/>
+<meta content="Turn text into vectors that capture meaning: what embeddings are, cosine similarity, dense vs sparse, choosing an embedding model, normalization, chunk granularity, and production embedding pipelines." name="twitter:description"/>
+<meta content="../assets/brand/social-card.png?v=20260925b" name="twitter:image"/>
+<link href="../assets/brand/favicon-16.png?v=20260925b" rel="icon" sizes="16x16" type="image/png"/>
+<!-- /Interview Preparation brand metadata -->
+<meta content="Turn text into vectors that capture meaning: what embeddings are, cosine similarity, dense vs sparse, choosing an embedding model, normalization, chunk granularity, and production embedding pipelines." name="description"/>
+<!-- Theme before first paint. Without this the document paints with the light
+     tokens and only flips when app.js runs at the end of <body>, which is a
+     white flash on every navigation in dark mode. Mirrors app.js's getTheme()
+     exactly - same key, same "dark" default - so the pre-paint value can never
+     disagree with what the scripts apply a moment later. Inline and blocking on
+     purpose: an external file would cost a round trip before first paint. -->
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20261123b" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
+<link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
+<link href="../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+<!-- Release 2 Stage 2c pilot: the manifest loads first, the renderer second.
+     Classic deferred scripts execute in document order after parsing, so the
+     nav slot exists and the manifest is defined before the renderer runs. The
+     authored links inside [data-page-nav] remain in the source and are replaced
+     only after page, route and fragment have all resolved. -->
+<script defer src="../assets/curriculum.js?v=20261123c"></script>
+<script defer src="../assets/page-nav.js?v=20261123c"></script>
+<link href="../assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+</head>
+<body data-curriculum-id="embeddings" data-page="04">
+<div class="app">
+<aside class="sidebar">
+<div class="brand">
+<a class="brand-link" href="../index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
+</a>
+</div>
+<div class="search-wrap">
+<div class="search-box">
+<svg fill="none" height="15" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="15"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+<input data-search="" placeholder="Search modules…  ( / )" type="text"/>
+</div>
+<div class="search-results"></div>
+</div>
+<nav class="nav"></nav>
+</aside>
+<div class="backdrop"></div>
+<div class="main">
+<header class="topbar">
+<button aria-label="Menu" class="icon-btn menu-btn">
+<svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg>
+</button>
+<div class="crumbs">Retrieval / <b>03 · Embeddings</b></div>
+<button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
+</header>
+<div class="content-wrap">
+<main class="content">
+
+<div class="eyebrow"><span class="dot"></span> Module 03 · Retrieval track</div>
+<h1>Embeddings</h1>
+<p class="lead">An embedding turns a piece of text into one list of numbers, so that texts
+with similar meaning get similar lists. That one trick lets a computer see that "how long
+to send something back" and "refunds are accepted within 30 days" mean nearly the same
+thing. This page is built in three levels: read Level 1 first, and stop there if you
+like.</p>
+<div class="meta-row">
+<span class="pill blue">⏱ Study + recall · 2–3 h</span>
+<span class="pill">Difficulty · Beginner to advanced, in three levels</span>
+<span class="pill purple">Prereq · 01 Foundations of LLMs, 02 Transformers</span>
+</div>
+
+<h3>How to use this page</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Level</th><th>What you get</th><th>Who it is for</th></tr></thead>
+<tbody>
+<tr><td><b>1 · The core idea</b><br/>sections 1-5, about 25 minutes</td><td>What an embedding is, how closeness is measured, and one search worked by hand</td><td>Everyone. Read this first.</td></tr>
+<tr><td><b>2 · The real version</b><br/>sections 6-11</td><td>What happens inside one embedding call, the parts that matter, and the two classic failures</td><td>When Level 1 feels easy</td></tr>
+<tr><td><b>3 · Engineering and interviews</b><br/>sections 12-15</td><td>Production practice, dense vs keyword search, comparisons, interview questions</td><td>Optional on a first read</td></tr>
+</tbody>
+</table>
+</div>
+
+<p class="bd-choose">Everything on this page comes back to five ideas. Level 1 covers the
+first three.</p>
+<ol>
+<li><b>An embedding is one list of numbers per piece of text.</b> Similar meaning gives
+lists that point in a similar direction.</li>
+<li><b>Cosine similarity measures how closely two embeddings point the same way.</b> 1 means
+the same direction, 0 means unrelated. Store vectors at length 1 and it becomes a simple
+dot product.</li>
+<li><b>Nearest is not the same as relevant.</b> A search always returns something, so you
+need a minimum score.</li>
+<li><b>Embeddings are weak at exact codes and names.</b> Keyword search (BM25) is strong
+there, so real systems use both.</li>
+<li><b>Embeddings only work with the model that made them.</b> Change the model and you
+must re-embed everything.</li>
+</ol>
+
+<!-- ================= LEVEL 1 ================= -->
+<div class="level-head" id="level-1"><span class="lv-badge">Level 1</span><span class="lv-title">The core idea</span><span class="lv-meta">About 25 minutes. No maths beyond multiplying, adding and one square root.</span></div>
+
+<!-- ================= 1 ================= -->
+<h2 id="known">1 · What you already know</h2>
+<p>From 01 and 02: inside a model, every token becomes a <b>vector</b> - a list of numbers -
+and the transformer layers blend those vectors so each one carries meaning from its
+context.</p>
+<p>That was one vector per <em>token</em>, inside the chat model. <b>This page is about one
+vector for a whole sentence or paragraph, made by a separate, smaller model called an
+embedding model.</b> You send it text; it sends back the list of numbers.</p>
+
+<!-- ================= 2 ================= -->
+<h2 id="breaks">2 · The problem: matching words is not matching meaning</h2>
+<p>A user asks a support bot a question. The answer is somewhere in the company handbook.
+The obvious way to find it is to search for the user's words.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>User asks</th><th>Handbook says</th><th>Shared words</th><th>Same meaning?</th></tr></thead>
+<tbody>
+<tr><td>how long to send something back</td><td>refunds accepted within 30 days</td><td>none</td><td>yes</td></tr>
+<tr><td>cancel my subscription</td><td>terminating your plan</td><td>none</td><td>yes</td></tr>
+<tr><td>java performance</td><td>java coffee roasting temperature</td><td>one</td><td>no</td></tr>
+</tbody>
+</table>
+</div>
+<p>Word search gets all three wrong. It misses the first two because they share no words,
+and it matches the third because one word happens to repeat. <b>Word overlap is not
+meaning.</b> An embedding model is trained so that the first two pairs score high and the
+third scores low.</p>
+
+<!-- ================= 3 ================= -->
+<h2 id="idea">3 · The big idea: meaning as a position on a map</h2>
+<p>Picture a map where every piece of text has a location, and texts that mean similar
+things sit close together. An embedding is that location, written as numbers. To find the
+handbook passage that answers a question, put the question on the map and look at what is
+nearby.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 315" role="img" aria-labelledby="mp-t mp-d">
+<title id="mp-t">A toy meaning map</title>
+<desc id="mp-d">Texts are drawn as points on a two-dimensional map. Refund policy and return an item sit close together on the left, cancel my plan and end subscription sit together in the middle, and coffee roasting and espresso beans sit together on the right. The question send it back sits among the refund texts, and a dashed circle around it marks its nearest neighbours.</desc>
+<circle class="loop" cx="198" cy="160" r="118"></circle>
+<text class="loop-lbl" x="198" y="30">nearest neighbours of the question</text>
+<circle cx="200" cy="140" r="9" fill="var(--accent)"></circle>
+<text class="lbl tgt" x="200" y="120">send it back?</text>
+<circle class="box" cx="140" cy="190" r="7"></circle>
+<text class="lbl" x="140" y="216">refund policy</text>
+<circle class="box" cx="250" cy="185" r="7"></circle>
+<text class="lbl" x="250" y="211">return an item</text>
+<circle class="box" cx="500" cy="110" r="7"></circle>
+<text class="lbl" x="500" y="136">cancel my plan</text>
+<circle class="box" cx="590" cy="175" r="7"></circle>
+<text class="lbl" x="590" y="201">end subscription</text>
+<circle class="box" cx="745" cy="205" r="7"></circle>
+<text class="lbl" x="745" y="231">coffee roasting</text>
+<circle class="box" cx="820" cy="120" r="7"></circle>
+<text class="lbl" x="820" y="146">espresso beans</text>
+<text class="cap" x="450" y="306">a toy map with 2 directions - real embeddings use hundreds, but close still means similar</text>
+</svg>
+
+<p>Three things to notice:</p>
+<ul>
+<li><b>Different words, same neighbourhood.</b> "send it back?" lands next to "refund
+policy" even though they share no words.</li>
+<li><b>Nobody drew this map by hand.</b> The embedding model learned where to put things by
+training on millions of pairs of texts known to be related.</li>
+<li><b>Real maps have hundreds of directions,</b> not two - often 384 to 3,072. No single
+direction has a human meaning like "refunds". Meaning is spread across all of them.</li>
+</ul>
+<p>The map is an analogy, but a close one: an embedding really is a point in space, and
+search really is "find the nearest points".</p>
+
+<!-- ================= 4 ================= -->
+<h2 id="cosine">4 · Measuring closeness: cosine similarity</h2>
+<p>Think of each embedding as an arrow from the centre of the map to its point. <b>Cosine
+similarity</b> asks one question: how much do two arrows point the same way?</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Cosine</th><th>Meaning</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td><b>1</b></td><td>Same direction</td><td>Two texts with the same meaning</td></tr>
+<tr><td><b>0</b></td><td>Unrelated (at right angles)</td><td>A refund question and a coffee article</td></tr>
+<tr><td><b>-1</b></td><td>Opposite direction</td><td>Rare with text embeddings; in practice most scores sit between 0 and 1</td></tr>
+</tbody>
+</table>
+</div>
+<p>Cosine looks only at <em>direction</em>, not length. That matters: a one-line FAQ answer
+and a long policy page about the same topic point the same way, so they score the same.</p>
+
+<!-- ================= 5 ================= -->
+<h2 id="worked">5 · Worked example: search by hand</h2>
+<p>Here is a real search, small enough to check with a pencil. Real embeddings have
+hundreds of numbers; these have three. To make them readable, pretend the three numbers
+mean "about returns", "about cancelling" and "about coffee". Real dimensions have no such
+names.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Text</th><th>Embedding</th></tr></thead>
+<tbody>
+<tr><td><b>Question:</b> how long to send something back?</td><td><code>[3, 1, 0]</code></td></tr>
+<tr><td>A · Refunds are accepted within 30 days</td><td><code>[4, 2, 0]</code></td></tr>
+<tr><td>B · Terminating your plan</td><td><code>[1, 3, 0]</code></td></tr>
+<tr><td>C · Java coffee roasting</td><td><code>[0, 0, 4]</code></td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Step 1 · Dot product: multiply number by number and add</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Document</th><th>Question · document</th><th>Dot product</th></tr></thead>
+<tbody>
+<tr><td>A</td><td>3×4 + 1×2 + 0×0</td><td>14</td></tr>
+<tr><td>B</td><td>3×1 + 1×3 + 0×0</td><td>6</td></tr>
+<tr><td>C</td><td>3×0 + 1×0 + 0×4</td><td>0</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Step 2 · Divide by the two lengths</h4>
+<p>The length of a vector is the square root of the sum of its squares. The question's
+length is √(9 + 1 + 0) = √10 ≈ 3.16. Dividing by both lengths removes the effect of length
+and leaves only direction.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Document</th><th>Its length</th><th>Dot ÷ (3.16 × its length)</th><th>Cosine</th></tr></thead>
+<tbody>
+<tr><td>A</td><td>√20 ≈ 4.47</td><td>14 ÷ 14.14</td><td><b>0.99</b></td></tr>
+<tr><td>B</td><td>√10 ≈ 3.16</td><td>6 ÷ 10.00</td><td><b>0.60</b></td></tr>
+<tr><td>C</td><td>√16 = 4</td><td>0 ÷ 12.65</td><td><b>0.00</b></td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Step 3 · Sort by score</h4>
+<p>A (0.99) comes first, B (0.60) second, C (0.00) last. The refund passage answers the
+question, and it shares no words with it. <b>That is semantic search.</b></p>
+
+<div class="callout key">
+<div class="c-ico">🔑</div>
+<div class="c-body"><div class="c-title">The shortcut every real system uses</div>
+<p>Scale every vector to length 1 once, when you store it. This is called
+<b>normalising</b>. Then step 2 disappears: the question becomes
+<code>[0.95, 0.32, 0]</code>, A becomes <code>[0.89, 0.45, 0]</code>, and their plain dot
+product is 0.99 - the same answer, with less work on every search.</p></div>
+</div>
+<p>Try one more by hand: a shorter document <code>[2, 1, 0]</code> points exactly the same
+way as A. Its cosine with the question is also 0.99, which is why length does not
+matter.</p>
+
+<h3>Check yourself: Level 1</h3>
+<p>Answer each one out loud before you open it. Recalling an answer is what makes it
+stick; re-reading it is not.</p>
+<details class="recall"><summary><span class="q-ico">Q</span> What is an embedding, in one sentence? <span class="chev">›</span></summary><div class="a">A fixed-length list of numbers that represents the meaning of a piece of text, made so that texts with similar meaning get lists pointing in a similar direction.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Why does word search miss "how long to send something back" against "refunds accepted within 30 days"? <span class="chev">›</span></summary><div class="a">They share no words. Word search matches spelling, not meaning; the embeddings of the two texts sit close together because their meanings are close.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What do cosine scores of 1 and 0 mean? <span class="chev">›</span></summary><div class="a">1 means the two vectors point the same way (same meaning). 0 means they are at right angles (unrelated).</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Why does a short FAQ answer and a long page on the same topic get the same cosine? <span class="chev">›</span></summary><div class="a">Cosine divides out the lengths and looks only at direction. Same topic, same direction, same score.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What does normalising buy you? <span class="chev">›</span></summary><div class="a">With every vector stored at length 1, cosine similarity is just the dot product, so each search skips the length calculation.</div></details>
+
+<div class="callout tip">
+<div class="c-ico">✅</div>
+<div class="c-body"><div class="c-title">You can stop here</div>
+<p>If you answered those, you can explain what embeddings are and how semantic search
+works. Level 2 shows what happens inside a real embedding call, and the two ways it goes
+wrong.</p></div>
+</div>
+
+<!-- ================= LEVEL 2 ================= -->
+<div class="level-head" id="level-2"><span class="lv-badge">Level 2</span><span class="lv-title">The real version</span><span class="lv-meta">What one embedding call does, the parts that matter, and the two classic failures.</span></div>
+
+<!-- ================= 6 ================= -->
+<h2 id="mechanics">6 · What happens when you embed a text</h2>
+
+<svg class="bd-svg" viewBox="0 0 900 110" role="img" aria-labelledby="em-t em-d">
+<title id="em-t">Dense embedding retrieval</title>
+<desc id="em-d">Text is tokenized and passed through the embedding model, whose token outputs are pooled into one fixed-length vector. That vector is normalised, then compared against every stored vector by cosine similarity, and the closest are returned in score order.</desc>
+<defs><marker id="ah-em" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box" x="11" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="191" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="371" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="551" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="731" y="26" width="158" height="58" rx="12"></rect>
+<path class="arw" d="M172 55 H186" marker-end="url(#ah-em)"></path>
+<path class="arw" d="M352 55 H366" marker-end="url(#ah-em)"></path>
+<path class="arw" d="M532 55 H546" marker-end="url(#ah-em)"></path>
+<path class="arw" d="M712 55 H726" marker-end="url(#ah-em)"></path>
+<text class="lbl" x="90" y="51">text, cut to</text>
+<text class="lbl" x="90" y="69">the input limit</text>
+<text class="lbl" x="270" y="51">model →</text>
+<text class="lbl" x="270" y="69">token vectors</text>
+<text class="lbl" x="450" y="51">pool → one</text>
+<text class="lbl mono" x="450" y="69">[768 numbers]</text>
+<text class="lbl" x="630" y="51">normalise,</text>
+<text class="lbl" x="630" y="69">compare</text>
+<text class="lbl" x="810" y="51">top matches</text>
+<text class="lbl" x="810" y="69">by score</text>
+<text class="cap" x="450" y="104">the same steps run for every stored chunk (once) and for every question (each time)</text>
+</svg>
+
+<ol>
+<li><b>Tokenize.</b> The text is split into tokens by the embedding model's own tokenizer,
+which is usually not the one your chat model uses.</li>
+<li><b>Cut to the input limit.</b> Anything past the model's limit - often 512 tokens - is
+<b>dropped without any warning</b>.</li>
+<li><b>Encode.</b> The tokens pass through a transformer, which gives one vector per
+token.</li>
+<li><b>Pool.</b> Those token vectors are combined into one vector, most often by averaging
+them (mean pooling).</li>
+<li><b>Normalise.</b> The vector is scaled to length 1, so cosine becomes a dot
+product.</li>
+<li><b>Store or compare.</b> At ingestion you store it next to its text. At question time
+you compare it with the stored vectors and sort by score.</li>
+</ol>
+<p><b>Step 2 is the one that bites.</b> A 3,000-token document sent to a 512-token model
+gets a vector that describes only its first 17% - and nothing tells you.</p>
+
+<!-- ================= 7 ================= -->
+<h2 id="components">7 · The parts that matter, and what goes wrong without each</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Part</th><th>What it does</th><th>What goes wrong if you ignore it</th></tr></thead>
+<tbody>
+<tr><td><b>Embedding model</b></td><td>Turns text into a vector. Usually a small transformer, often 20 to 500 million parameters</td><td>A model trained on the wrong language or domain puts unrelated texts close together</td></tr>
+<tr><td><b>Input limit</b></td><td>The most tokens the model reads</td><td>Longer text is silently cut, so its vector ignores everything past the limit</td></tr>
+<tr><td><b>Chunking</b></td><td>Splits documents into passages, one vector each</td><td>A 40-page PDF as one vector is a vector of nothing in particular</td></tr>
+<tr><td><b>Pooling</b></td><td>Combines token vectors into one</td><td>Using a different pooling from the one the model was trained with quietly lowers quality</td></tr>
+<tr><td><b>Normalisation</b></td><td>Scales vectors to length 1</td><td>Scores computed with dot product are skewed by length</td></tr>
+<tr><td><b>Query and passage prefixes</b></td><td>Some models expect a label such as "query:" or "passage:" before the text</td><td>Leaving it out costs real accuracy, with no error</td></tr>
+<tr><td><b>Dimensions</b></td><td>How many numbers per vector</td><td>More dimensions can hold more detail, but cost more storage and search time</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Dimensions and storage</h4>
+<p>Each number is stored as a 4-byte float, so storage is simple multiplication:</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Dimensions</th><th>Bytes per vector</th><th>1 million vectors</th></tr></thead>
+<tbody>
+<tr><td>384</td><td>1,536</td><td>1.5 GB</td></tr>
+<tr><td>768</td><td>3,072</td><td>3.1 GB</td></tr>
+<tr><td>1,536</td><td>6,144</td><td>6.1 GB</td></tr>
+<tr><td>3,072</td><td>12,288</td><td>12.3 GB</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Picking a model</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Model</th><th>Dimensions</th><th>Input limit (tokens)</th><th>Notes</th></tr></thead>
+<tbody>
+<tr><td><code>all-MiniLM-L6-v2</code></td><td>384</td><td>256</td><td>Tiny and fast; a good baseline</td></tr>
+<tr><td><code>nomic-embed-text</code></td><td>768</td><td>8,192</td><td>Long input, runs locally</td></tr>
+<tr><td><code>bge-large-en-v1.5</code></td><td>1,024</td><td>512</td><td>Strong English quality</td></tr>
+<tr><td><code>text-embedding-3-small</code></td><td>1,536</td><td>8,191</td><td>Hosted; can return fewer dimensions on request</td></tr>
+<tr><td><code>multilingual-e5-large</code></td><td>1,024</td><td>512</td><td>Matches across languages</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Bi-encoder and cross-encoder</h4>
+<p>Everything above is a <b>bi-encoder</b>: the question and each document are embedded
+separately, so documents can be embedded in advance. A <b>cross-encoder</b> reads the
+question and one document <em>together</em> and outputs a relevance score. It is more
+accurate but cannot be precomputed, so it is used to <b>rerank</b> a shortlist of, say, 50
+results - never to search everything.</p>
+
+<!-- ================= 8 ================= -->
+<h2 id="state">8 · What you store, and when it goes stale</h2>
+<p>An embedding system stores three things per chunk: the vector, the original text, and
+metadata such as the source document and date. The search runs on the vectors; the text is
+what you hand to the model afterwards.</p>
+<div class="table-wrap">
+<table>
+<tbody>
+<tr><th>Who writes it</th><td>The ingestion job, once per chunk. Answering a question writes nothing.</td></tr>
+<tr><th>How a change works</th><td>A document changes: delete its old chunks by id and insert the new ones. Without a stable id you get silent duplicates.</td></tr>
+<tr><th>Caching</th><td>The same text through the same model gives the same vector, so caching by a hash of model name plus text makes re-ingestion almost free.</td></tr>
+<tr><th>When it goes stale</th><td><b>When the embedding model changes.</b> Vectors from two models live in different spaces and cannot be compared. Every vector must be rebuilt.</td></tr>
+</tbody>
+</table>
+</div>
+<p><b>The embedding model is not a swappable part.</b> Changing it invalidates the whole
+index, so record the model name with the index and refuse to search on a mismatch.</p>
+
+<!-- ================= 9 ================= -->
+<h2 id="trace">9 · Trace: one search over 10,000 chunks</h2>
+<p>A handbook split into 10,000 chunks, embedded with a 768-dimension model.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Step</th><th>Operation</th><th>In</th><th>Out</th><th>Cost</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>Embed every chunk</td><td>10,000 texts</td><td>10,000 × 768 numbers</td><td>10,000 model calls, <b>once</b></td></tr>
+<tr><td>2</td><td>Store</td><td>the vectors</td><td>about 31 MB</td><td>once</td></tr>
+<tr><td>3</td><td>Embed the question</td><td>1 text</td><td>768 numbers</td><td>1 small model call</td></tr>
+<tr><td>4</td><td>Score every chunk</td><td>10,000 × 768 and 768</td><td>10,000 scores</td><td>7.7 million multiply-adds - milliseconds</td></tr>
+<tr><td>5</td><td>Sort, keep the top 4</td><td>10,000 scores</td><td>4 chunks</td><td>tiny</td></tr>
+</tbody>
+</table>
+</div>
+<p>Comparing against every vector is exact and fast at this size. At 10 million chunks,
+step 4 becomes 7.7 billion multiply-adds and 31 GB of vectors for every single question.
+<b>That is the problem the next page, 04 Vector Databases, solves.</b></p>
+
+<!-- ================= 10 ================= -->
+<h2 id="break">10 · Break it</h2>
+<h4>Ask about something the handbook does not cover</h4>
+<p>Ask the support bot about crypto payments, which the handbook never mentions. Four
+chunks still come back, because <b>something is always nearest</b>. The scores are lower,
+but if nothing checks them, the chat model will happily answer from unrelated text.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 175" role="img" aria-labelledby="nn-t nn-d">
+<title id="nn-t">Nearest is not relevant</title>
+<desc id="nn-d">A query with no relevant document still returns the four nearest vectors. The scores are lower but nothing compares them to a threshold, so unrelated text reaches the model and an answer is produced from it.</desc>
+<defs><marker id="ah-nn" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box" x="14" y="62" width="180" height="56" rx="12"></rect>
+<rect class="box fail" x="244" y="62" width="200" height="56" rx="12"></rect>
+<rect class="box after" x="494" y="62" width="170" height="56" rx="12"></rect>
+<rect class="box after" x="714" y="62" width="170" height="56" rx="12"></rect>
+<path class="arw" d="M197 90 H240" marker-end="url(#ah-nn)"></path>
+<path class="arw" d="M447 90 H490" marker-end="url(#ah-nn)"></path>
+<path class="arw" d="M667 90 H710" marker-end="url(#ah-nn)"></path>
+<text class="lbl" x="104" y="84">off-topic question</text>
+<text class="lbl mono" x="104" y="102">"crypto payments"</text>
+<text class="lbl" x="344" y="84">nearest 4 returned</text>
+<text class="lbl mono" x="344" y="102">best score 0.41</text>
+<text class="lbl" x="579" y="84">no minimum</text>
+<text class="lbl" x="579" y="102">score checked</text>
+<text class="lbl" x="799" y="84">model answers</text>
+<text class="lbl" x="799" y="102">from unrelated text</text>
+<path class="xmark" d="M326 130 L362 156 M362 130 L326 156"></path>
+<text class="cap" x="450" y="170">something is always nearest - that is not the same as relevant</text>
+</svg>
+
+<h4>Search for an exact code</h4>
+<p>Ask about product <code>SKU-90210</code>. To an embedding model, <code>SKU-90210</code>
+and <code>SKU-90211</code> are almost the same point on the map - both are "a product
+code". The manual for the wrong product can easily rank first. Keyword search would have
+matched the exact string.</p>
+
+<!-- ================= 11 ================= -->
+<h2 id="fix">11 · Fix it</h2>
+<h4>Add a minimum score</h4>
+<p>Compare the top score against a threshold, and say "I don't know" below it. Set the
+threshold from data, not by guessing: score a set of questions you have labelled as
+answerable or not, and pick the value that separates them. The right number differs for
+every model and every corpus.</p>
+
+<h4>Add keyword search, and merge by rank</h4>
+<p>Run <b>BM25</b> keyword search alongside the embedding search. This is called
+<b>hybrid search</b>. The two scores cannot be added - a cosine of 0.7 and a BM25 score of
+14 are on different scales - so merge the two lists by <em>position</em> instead. The
+standard method is <b>reciprocal rank fusion</b> (RRF): each list gives a document
+1 ÷ (60 + its rank), and you add them up.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Question: "SKU-90210 return window"</th><th>Keyword rank</th><th>Embedding rank</th><th>RRF score</th></tr></thead>
+<tbody>
+<tr><td>Returns policy</td><td>2</td><td>1</td><td>1/62 + 1/61 = <b>0.0325</b></td></tr>
+<tr><td>SKU-90210 manual</td><td>1</td><td>3</td><td>1/61 + 1/63 = <b>0.0323</b></td></tr>
+<tr><td>SKU-90211 manual (wrong product)</td><td>-</td><td>2</td><td>1/62 = <b>0.0161</b></td></tr>
+</tbody>
+</table>
+</div>
+<p>Both useful documents end up on top, and the wrong product drops to third. <b>Hybrid
+search is the honest default</b>, because real users ask in their own words <em>and</em>
+type exact codes.</p>
+
+<h3>Check yourself: Level 2</h3>
+<details class="recall"><summary><span class="q-ico">Q</span> What happens to a 3,000-token document sent to a model with a 512-token limit? <span class="chev">›</span></summary><div class="a">Everything after the first 512 tokens is dropped without a warning, so the vector describes only the first 17% of the document. Chunk documents to fit the limit.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> You switch to a better embedding model. What must you do with the existing index? <span class="chev">›</span></summary><div class="a">Re-embed everything. Vectors from different models live in different spaces and cannot be compared, so a half-migrated index gives wrong results silently.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Why can't you just add a cosine score and a BM25 score together? <span class="chev">›</span></summary><div class="a">They are on different scales. Reciprocal rank fusion merges by position instead: each list contributes 1 ÷ (60 + rank).</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What is the difference between a bi-encoder and a cross-encoder? <span class="chev">›</span></summary><div class="a">A bi-encoder embeds question and document separately, so documents are embedded in advance and search is fast. A cross-encoder reads the pair together - more accurate, but too slow for anything except reranking a shortlist.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> How do you stop a search from answering a question the documents do not cover? <span class="chev">›</span></summary><div class="a">Enforce a minimum score, calibrated on labelled questions, and answer "I don't know" below it.</div></details>
+
+<!-- ================= LEVEL 3 ================= -->
+<div class="level-head" id="level-3"><span class="lv-badge">Level 3</span><span class="lv-title">Engineering and interviews</span><span class="lv-meta">Optional on a first read. Come back when you build retrieval or prepare for interviews.</span></div>
+
+<!-- ================= 12 ================= -->
+<h2 id="production">12 · Production version</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Concern</th><th>What you do</th></tr></thead>
+<tbody>
+<tr><td>Model pinning</td><td>Record the model name and dimensions with the index. Refuse to search on a mismatch</td></tr>
+<tr><td>Re-embedding</td><td>Changing the model means rebuilding everything. Budget for it before you choose the model</td></tr>
+<tr><td>Truncation</td><td>Check every chunk's token count against the model's input limit</td></tr>
+<tr><td>Caching</td><td>Cache vectors by a hash of model name plus text, so re-ingestion costs almost nothing</td></tr>
+<tr><td>Batching</td><td>Embed in batches of 32 to 256. One call per chunk wastes most of the throughput</td></tr>
+<tr><td>Minimum score</td><td>Calibrate on labelled questions and enforce it. Never ship without one</td></tr>
+<tr><td>Hybrid</td><td>Add BM25 as soon as codes, names or error messages appear in questions. Merge by rank</td></tr>
+<tr><td>Normalisation</td><td>Normalise once, at write time, and store normalised</td></tr>
+<tr><td>Cost</td><td>Embedding is priced per input token and is far cheaper than generation. The index is a one-off cost; each question is one small call</td></tr>
+<tr><td>Evaluation</td><td>Measure recall@k on a labelled set before tuning anything else - see 14 LLM Evals</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ================= 13 ================= -->
+<h2 id="breakdown">13 · Dense embeddings vs BM25, side by side</h2>
+<p>A reference summary in the six-label format used across the course.</p>
+
+<section class="breakdown">
+
+<h3 class="bd-tech"><span class="bd-tag">A</span> Dense embeddings</h3>
+
+<h4>Basic level</h4>
+<p class="bd-item"><b class="no-jargon">What it is.</b> A fixed-length list of numbers
+produced by a neural model from a piece of text, where texts with similar meaning produce
+vectors pointing in similar directions.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It finds text that means the same
+thing as the question even when it shares none of the same words.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b> Embed every chunk once, embed
+the question, compare by cosine, return the closest. The diagram in section 6 shows
+it.</p>
+
+<h4>Intermediate level</h4>
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> A transformer
+encoder, usually much smaller than a chat model. It produces one vector per token, and a
+pooling step combines them into one. It is trained on pairs of texts known to be related,
+which is what makes distance mean similarity. Output is typically 384 to 3,072
+dimensions.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> The model itself is stateless:
+the same text gives the same vector for a given model. The stored vectors are the state,
+and they are valid only for the model that produced them.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> Weak on
+exact identifiers such as product codes, error numbers and names. Text past the input limit
+is silently dropped. Advanced options include models that embed questions and passages
+differently, models whose vectors can be shortened to fewer dimensions (Matryoshka), and
+multi-vector models such as ColBERT.</p>
+
+<h3 class="bd-tech"><span class="bd-tag">B</span> BM25 keyword search</h3>
+
+<h4>Basic level</h4>
+<p class="bd-item"><b class="no-jargon">What it is.</b> A scoring function that ranks
+documents by the question's words they contain, giving rare words more weight and repeated
+words less.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It finds documents containing the
+exact words you asked for.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 110" role="img" aria-labelledby="bm-t bm-d">
+<title id="bm-t">BM25 retrieval</title>
+<desc id="bm-d">Text is tokenized and normalised into terms, an inverted index maps each term to the documents containing it, the query terms are looked up, and each candidate document is scored by term frequency and rarity before being ranked.</desc>
+<defs><marker id="ah-bm" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box" x="11" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="191" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="371" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="551" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="731" y="26" width="158" height="58" rx="12"></rect>
+<path class="arw" d="M172 55 H186" marker-end="url(#ah-bm)"></path>
+<path class="arw" d="M352 55 H366" marker-end="url(#ah-bm)"></path>
+<path class="arw" d="M532 55 H546" marker-end="url(#ah-bm)"></path>
+<path class="arw" d="M712 55 H726" marker-end="url(#ah-bm)"></path>
+<text class="lbl" x="90" y="60">text</text>
+<text class="lbl" x="270" y="51">split into words,</text>
+<text class="lbl" x="270" y="69">lowercase, stem</text>
+<text class="lbl" x="450" y="51">inverted index</text>
+<text class="lbl" x="450" y="69">word → documents</text>
+<text class="lbl" x="630" y="51">score by</text>
+<text class="lbl" x="630" y="69">frequency, rarity</text>
+<text class="lbl" x="810" y="60">ranked list</text>
+</svg>
+
+<h4>Intermediate level</h4>
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> An <b>inverted
+index</b>: a map from each word to the documents that contain it. The score combines how
+often the word appears in the document, how rare it is across the collection, and the
+document's length. No neural network and no training are involved.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> The index is the state. Adding
+or removing a document is a cheap update that does not touch the others.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> A question
+that shares no words with a relevant document scores zero - the failure in section 2.
+Synonyms and paraphrases are invisible to it. Advanced options include stemming, stopword
+lists, field boosting, phrase matching, and learned sparse models such as SPLADE that let a
+model choose the word weights.</p>
+
+<h3 class="bd-diff">The core differences</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Dense embeddings</th><th>BM25</th></tr></thead>
+<tbody>
+<tr><th>Workflow design</th>
+<td>Embed everything once, embed the question, compare vectors. Adding documents means running the model again.</td>
+<td>Build an inverted index, look up the question's words, score the matches. Adding a document is a cheap index update.</td></tr>
+<tr><th>When nothing matches</th>
+<td>Still returns the nearest neighbours, with lower scores. Without a minimum score, a miss looks much like a hit.</td>
+<td>Returns an empty list or zero scores, which is a clear signal you can act on.</td></tr>
+<tr><th>Architectural paradigm</th>
+<td>Nearest-neighbour search in a learned space of meaning.</td>
+<td>Exact word lookup with a statistical ranking formula.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 class="bd-short">In short - which one to choose</h3>
+<p class="bd-choose">Use dense embeddings when:</p>
+<ul>
+<li>Users ask in their own words and the documents use different ones.</li>
+<li>Paraphrase, synonyms or multiple languages matter.</li>
+<li>The documents are prose rather than identifiers.</li>
+</ul>
+<p class="bd-choose">Use BM25 when:</p>
+<ul>
+<li>Questions contain exact codes, names or error messages.</li>
+<li>You need to explain why a document matched.</li>
+<li>The documents change constantly and re-embedding is expensive.</li>
+</ul>
+<p class="bd-choose bd-avoid">Use both - hybrid - when:</p>
+<ul>
+<li>Real users do both, which is almost always. This is the honest default.</li>
+<li>You have measured each one and know which kind of question needs which.</li>
+</ul>
+</section>
+
+<!-- ================= 14 ================= -->
+<h2 id="comparison">14 · Comparison</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>BM25</th><th>Dense</th><th>Hybrid</th><th>Cross-encoder</th></tr></thead>
+<tbody>
+<tr><th>Handles paraphrase</th><td>No</td><td><b>Yes</b></td><td>Yes</td><td>Yes</td></tr>
+<tr><th>Handles exact codes</th><td><b>Yes</b></td><td>Poorly</td><td>Yes</td><td>Yes</td></tr>
+<tr><th>Cost per question</th><td>Lowest</td><td>Low</td><td>Low</td><td><b>High</b></td></tr>
+<tr><th>Can be computed in advance</th><td>Yes</td><td>Yes</td><td>Yes</td><td><b>No</b></td></tr>
+<tr><th>Explains a match</th><td><b>Yes</b> - the words</td><td>No</td><td>Partly</td><td>No</td></tr>
+<tr><th>Use it for</th><td>Codes, names, logs</td><td>Natural questions</td><td><b>The default</b></td><td>Reranking the top 50</td></tr>
+</tbody>
+</table>
+</div>
+<p><b>The standard production shape is hybrid retrieval feeding a reranker:</b> BM25 and
+dense search each return about 50 results, rank fusion merges them, a cross-encoder
+reorders the shortlist, and the top few reach the model.</p>
+
+<!-- ================= 15 ================= -->
+<h2 id="interview">15 &middot; Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What is a text embedding? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>A fixed-length numeric vector representing the meaning of a piece of text, produced by a model trained so that semantically similar texts get nearby vectors. It lets you measure relevance with geometric distance instead of keyword overlap.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  Why cosine similarity instead of Euclidean distance for text? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Cosine measures the angle between vectors, ignoring magnitude - and for text, direction (which concepts are present) matters more than length. With normalized vectors, cosine, dot product, and Euclidean give the same ranking, so people normalize and use the fast dot product.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  Dense vs sparse embeddings - when do you need each? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Dense (semantic) embeddings match meaning and paraphrase but miss exact terms. Sparse/lexical (BM25, SPLADE) match exact keywords, codes, and rare proper nouns but miss synonyms. Use dense for conceptual queries, sparse for precise terms, and <strong>hybrid</strong> (combine both, then rerank) when you need both - covered in 05 RAG, End-to-End.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  How does embedding dimensionality affect a system? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Higher dimensions can capture more nuance but cost more storage (linear in dims × number of vectors) and slightly slower similarity computation and index build. 384-d is fast/light; 768–1024 is a common quality balance; 1536+ for top quality. Choose based on recall needs vs. storage/latency budget; some models (Matryoshka) let you truncate dims gracefully.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  Your retrieval quality dropped overnight. Embeddings are a suspect - how do you investigate? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Check for a silent model/version change (different model → incompatible space) or a normalization/prefix regression (someone dropped the <code>query:</code> prefix). Verify index and query use the <em>same</em> model + same preprocessing. Inspect a few queries' nearest neighbors manually. Run your retrieval eval set (recall@k, MRR) against a known-good baseline. If a model upgrade happened, you likely need a full re-embed; partial re-index leaves mixed spaces.</p></div></details>
+<details class="collapse"><summary><span class="pill purple">Staff · design</span>  Design an embedding platform serving 50 teams over billions of documents. <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Centralize a versioned <strong>embedding service</strong> (one or few approved models) so vectors are comparable and re-index jobs are coordinated. Components: a batched GPU embedding API with autoscaling; a feature/registry that records <em>model id + version + normalization</em> alongside every vector; an idempotent, resumable re-embedding pipeline (model upgrades = backfill jobs); a cache layer for hot query vectors and semantic caching; cost/latency dashboards per team. Governance: deprecation policy for models, eval gates before any model swap (recall@k regression check), and PII handling for inputs. Treat the embedding model like a database schema - versioned, migrated deliberately, never silently changed.</p></div></details>
+
+<!-- ================= 16 ================= -->
+<h2 id="short">16 · In short, and what comes next</h2>
+<p class="bd-choose">The five ideas from the top of the page. Try to say each one before
+you read it.</p>
+<ol>
+<li><b>An embedding is one list of numbers per piece of text.</b> Similar meaning gives
+lists that point in a similar direction.</li>
+<li><b>Cosine similarity measures how closely two embeddings point the same way.</b> 1 means
+the same direction, 0 means unrelated. Store vectors at length 1 and it becomes a simple
+dot product.</li>
+<li><b>Nearest is not the same as relevant.</b> A search always returns something, so you
+need a minimum score.</li>
+<li><b>Embeddings are weak at exact codes and names.</b> Keyword search (BM25) is strong
+there, so real systems use both.</li>
+<li><b>Embeddings only work with the model that made them.</b> Change the model and you
+must re-embed everything.</li>
+</ol>
+<div class="callout key">
+<div class="c-ico">🔑</div>
+<div class="c-body"><div class="c-title">The one idea to remember</div>
+<p><b>Nearest is not the same as relevant.</b> An embedding search answers "what is
+closest". Turning that into "what is useful" needs a minimum score, a keyword partner, or a
+reranker - usually all three.</p></div>
+</div>
+<p><b>Next:</b> <a href="05_vector_databases.html">04 · Vector Databases</a>. Comparing a
+question against every vector works at 10,000 chunks. At 10 million it does not, and that
+is what a vector database fixes.</p>
+
+<div class="page-nav" data-page-nav>
+<a href="02_transformers.html"><div class="dir">← Previous</div><div class="ttl">02 · Transformers</div></a>
+<a class="next" href="05_vector_databases.html"><div class="dir">Next →</div><div class="ttl">04 · Vector Databases</div></a>
+</div>
+
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script src="../assets/app.js?v=20261123b"></script>
+<script src="../assets/sitenav.js?v=20261123b"></script>
+<script src="../assets/enhance.js?v=20260925c"></script>
+<script src="../assets/genai-motion.js?v=20260728a"></script>
+<script src="../assets/glossary.js?v=20261123b"></script>
+</body>
+</html>

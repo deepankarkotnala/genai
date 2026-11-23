@@ -1,0 +1,283 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>14 · LLM Evals | GenAI Mastery</title>
+<!-- Interview Preparation brand metadata -->
+<link rel="icon" href="assets/brand/favicon.svg?v=20260925b" type="image/svg+xml">
+<link rel="icon" href="assets/brand/favicon-32.png?v=20260925b" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="assets/brand/favicon.ico?v=20260925b">
+<link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png?v=20260925c" sizes="180x180">
+<link rel="manifest" href="assets/brand/site.webmanifest?v=20260925b">
+<link rel="mask-icon" href="assets/brand/safari-pinned-tab.svg?v=20260925b" color="#6f47f5">
+<link rel="image_src" href="assets/brand/social-card.png?v=20260925b">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="msapplication-TileColor" content="#1e3a8a">
+<meta name="msapplication-config" content="assets/brand/browserconfig.xml?v=20260925b">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Interview Preparation">
+<meta property="og:title" content="14 · LLM Evals | GenAI Mastery">
+<meta property="og:description" content="How to evaluate LLM and agent applications for production - why vibe testing fails, why LLM evaluation is hard, evaluation methods (rule-based, reference, human, LLM-as-judge), golden datasets, RAG/agent/safety/operational evals, and the interview questions that follow.">
+<meta property="og:image" content="assets/brand/social-card.png?v=20260925b">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Learn GenAI learning platform logo">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="14 · LLM Evals - GenAI Mastery">
+<meta name="twitter:description" content="How to evaluate LLM and agent applications for production - why vibe testing fails, evaluation methods, golden datasets, RAG/agent/safety/operational evals, and interview questions.">
+<meta name="twitter:image" content="assets/brand/social-card.png?v=20260925b">
+<link href="assets/brand/favicon-16.png?v=20260925b" rel="icon" sizes="16x16" type="image/png"/>
+<!-- /Interview Preparation brand metadata -->
+<meta name="description" content="How to evaluate LLM and agent applications for production - why vibe testing fails, why LLM evaluation is hard, evaluation methods (rule-based, reference, human, LLM-as-judge), golden datasets, RAG/agent/safety/operational evals, and the interview questions that follow.">
+<!-- Theme before first paint. Without this the document paints with the light
+     tokens and only flips when app.js runs at the end of <body>, which is a
+     white flash on every navigation in dark mode. Mirrors app.js's getTheme()
+     exactly - same key, same "dark" default - so the pre-paint value can never
+     disagree with what the scripts apply a moment later. Inline and blocking on
+     purpose: an external file would cost a round trip before first paint. -->
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="assets/styles.css?v=20261123b">
+<link href="assets/office-theme.css?v=20260925c" rel="stylesheet"/>
+<link href="assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
+<style>
+  .qa { border:1px solid var(--border); border-radius:var(--radius);
+        padding:14px 18px; margin:14px 0; background:var(--bg-elevated); box-shadow:var(--shadow-card); }
+  .qa .q { font-weight:750; margin:0 0 6px; }
+  .qa .a { margin:0; color:var(--text-secondary); }
+  .case { border:1px solid var(--border); border-radius:var(--radius);
+          padding:14px 18px; background:var(--bg-elevated); box-shadow:var(--shadow-card); }
+  .case h4 { margin:0 0 6px; color:var(--red); }
+  .case .lesson { margin:8px 0 0; font-size:13px; color:var(--text-muted); }
+  .case-grid { display:grid; gap:14px; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); margin:18px 0; }
+  .yt-btn { display:inline-flex; align-items:center; gap:9px; margin:4px 0 8px; padding:10px 16px;
+            border:1px solid var(--border); border-radius:10px; background:var(--bg-elevated);
+            color:var(--text); font-weight:650; font-size:13.5px; text-decoration:none;
+            transition:border-color .15s, transform .1s, box-shadow .15s; }
+  .yt-btn:hover { border-color:#ff0000; transform:translateY(-1px); box-shadow:var(--shadow-sm); text-decoration:none; }
+  .yt-btn svg { flex:none; }
+  .yt-btn .yt-sub { font-weight:500; color:var(--text-muted); font-size:12px; }
+</style>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="assets/curriculum.js?v=20261123c"></script>
+<script defer src="assets/page-nav.js?v=20261123c"></script>
+<link href="assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+</head>
+<body data-curriculum-id="llm-evals" data-page="llm-evals" data-no-concept-lab>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-secsearch placeholder="Jump to a section…  ( / )">
+      </div>
+      <div class="search-results" data-secresults></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Production / <b>14 · LLM Evals</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+
+<div class="eyebrow"><span class="dot"></span> Module 14 · Production track</div>
+<h1>LLM Evals</h1>
+<p class="lead">Evaluation is how you prove an LLM application works, and prove that a change
+did not break it. Interviewers ask because you cannot unit-test a model's answer the way you
+test a function, and they want to hear what you do instead.</p>
+<div class="meta-row">
+<span class="pill blue">⏱ 15–30 min</span>
+<span class="pill">Difficulty · Interview essentials</span>
+<span class="pill purple">Prereq · 05 RAG and 13 Guardrails</span>
+</div>
+
+<h2 id="idea">1 · The idea in one minute</h2>
+<p>An ordinary test checks <code>result == expected</code>. That fails for an LLM for two
+reasons:</p>
+<ul>
+<li><b>Many right answers.</b> The same question can get differently worded answers that are
+all correct, so an exact match fails a good answer.</li>
+<li><b>Many qualities.</b> Correct, supported by the documents, complete, in the right
+format, polite, fast and cheap - not one pass/fail bit.</li>
+</ul>
+<p>Think of marking an essay exam instead of a multiple-choice quiz. You need a marking
+scheme (a <b>rubric</b>), the same set of questions every year so classes can be compared (a
+<b>golden dataset</b>), and a second examiner who spot-checks the marking (<b>human
+review</b>).</p>
+<p><b>You cannot check the exact wording. You check properties of the answer, on a fixed set
+of cases, every time something changes.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 128" role="img" aria-labelledby="ev-t ev-d">
+<title id="ev-t">The evaluation loop</title>
+<desc id="ev-d">A golden set of cases with expected outcomes is run through the application with the new prompt or model. Each result is scored by rules and by a judge model, compared with the previous version, and a gate either lets the change ship or stops it. Every failure found in production becomes a new case in the golden set.</desc>
+<defs>
+<marker id="ah-ev" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker>
+<marker id="ah-evp" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--accent)"></path></marker>
+</defs>
+<path class="loop" d="M810 58 C810 14, 110 14, 90 54" marker-end="url(#ah-evp)"></path>
+<text class="loop-lbl" x="450" y="14">every production failure becomes a new case</text>
+<rect class="box" x="11" y="58" width="158" height="58" rx="12"></rect>
+<rect class="box" x="191" y="58" width="158" height="58" rx="12"></rect>
+<rect class="box" x="371" y="58" width="158" height="58" rx="12"></rect>
+<rect class="box" x="551" y="58" width="158" height="58" rx="12"></rect>
+<rect class="box" x="731" y="58" width="158" height="58" rx="12"></rect>
+<path class="arw" d="M172 87 H186" marker-end="url(#ah-ev)"></path>
+<path class="arw" d="M352 87 H366" marker-end="url(#ah-ev)"></path>
+<path class="arw" d="M532 87 H546" marker-end="url(#ah-ev)"></path>
+<path class="arw" d="M712 87 H726" marker-end="url(#ah-ev)"></path>
+<text class="lbl" x="90" y="83">golden set</text>
+<text class="cap" x="90" y="102">cases + expected</text>
+<text class="lbl" x="270" y="83">run the app</text>
+<text class="cap" x="270" y="102">new prompt/model</text>
+<text class="lbl" x="450" y="83">score</text>
+<text class="cap" x="450" y="102">rules · judge</text>
+<text class="lbl" x="630" y="83">compare</text>
+<text class="cap" x="630" y="102">with last version</text>
+<text class="lbl" x="810" y="83">gate</text>
+<text class="cap" x="810" y="102">ship or stop</text>
+</svg>
+
+<h2 id="components">2 · The parts you must know</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Part</th><th>What it does</th><th>What goes wrong without it</th></tr></thead>
+<tbody>
+<tr><td><b>Golden dataset</b></td><td>A reviewed set of test questions with expected outcomes. 30 to 50 cases is a workable start; include refusals, missing data, ambiguity and attacks</td><td>No fixed yardstick, so you cannot tell whether a change helped</td></tr>
+<tr><td><b>Offline evaluation</b></td><td>Runs the golden set before release</td><td>Changes ship untested, and customers find the regressions</td></tr>
+<tr><td><b>Online evaluation</b></td><td>Scores live traffic: thumbs up or down, escalations to a human, judge scores on a sample</td><td>You never learn how real questions differ from your test set</td></tr>
+<tr><td><b>Rule-based checks</b></td><td>Anything countable: contains the order id, valid JSON, cites a real document, called the right tool</td><td>You pay a judge model to do arithmetic, slower and less reliably</td></tr>
+<tr><td><b>LLM-as-judge</b></td><td>Another LLM scores fuzzy qualities, such as faithfulness or tone, against a written rubric</td><td>Open-ended quality cannot be scored at scale</td></tr>
+<tr><td><b>Human evaluation</b></td><td>Experts score a sample, and their scores are used to check the judge</td><td>Nobody knows whether the judge agrees with people</td></tr>
+<tr><td><b>Trajectory checks</b></td><td>For agents: score the path - which tools ran, how many calls, any forbidden action</td><td>A right answer reached by reading another customer's data passes</td></tr>
+<tr><td><b>Regression gate</b></td><td>Compares with the previous version in CI and fails the build on a drop</td><td>A suite that cannot fail the build is only a report</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>RAG metrics: score the two halves separately</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Half</th><th>Metric</th><th>The question it answers</th></tr></thead>
+<tbody>
+<tr><td>Retrieval</td><td><b>Context precision</b></td><td>Of the chunks retrieved, how many were relevant?</td></tr>
+<tr><td>Retrieval</td><td><b>Context recall</b></td><td>Did retrieval find everything needed to answer?</td></tr>
+<tr><td>Generation</td><td><b>Faithfulness</b> (groundedness)</td><td>Is every claim in the answer supported by the retrieved text?</td></tr>
+<tr><td>Generation</td><td><b>Answer relevance</b></td><td>Does the answer address the question that was asked?</td></tr>
+</tbody>
+</table>
+</div>
+<p>One blended score hides which half broke. <b>High faithfulness with low recall means the
+app is faithfully summarising the wrong documents.</b> Libraries such as RAGAS and DeepEval
+compute these metrics; platforms such as Langfuse, LangSmith and Arize Phoenix store datasets
+and scores.</p>
+
+<h3>LLM-as-judge: its biases, and how to make it trustworthy</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Bias</th><th>What it does</th><th>Counter</th></tr></thead>
+<tbody>
+<tr><td>Position bias</td><td>Prefers whichever answer it saw first in a side-by-side comparison</td><td>Run both orders and average</td></tr>
+<tr><td>Verbosity bias</td><td>Prefers longer answers</td><td>A rubric that rewards correctness and brevity explicitly</td></tr>
+<tr><td>Self-preference</td><td>Rates answers from its own model family higher</td><td>Use a judge from a different model family</td></tr>
+<tr><td>Inconsistency</td><td>Gives different scores to the same answer on different runs</td><td>Temperature 0, structured output with a reason, a written rubric</td></tr>
+</tbody>
+</table>
+</div>
+<p>Before trusting a judge, <b>calibrate it</b>: score about twenty cases by hand, have the
+judge score the same cases, and measure how often they agree. Version the rubric with the
+results, because changing the rubric moves every score.</p>
+
+<h2 id="failures">3 · How it fails, and the fix</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Failure</th><th>What you see</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td>Three examples checked by hand</td><td>A tone tweak drops refusals on unanswerable questions from 12% to 2%, unnoticed for weeks</td><td>A golden set that includes unanswerable questions, run on every change</td></tr>
+<tr><td>One blended score</td><td>The score drops and nobody knows why</td><td>Track retrieval and generation metrics separately</td></tr>
+<tr><td>Judge trusted blindly</td><td>Judge scores look great; users are unhappy</td><td>Calibrate against human labels; compare judge scores with user feedback</td></tr>
+<tr><td>Only the final answer scored</td><td>An agent read three customers' orders to answer about one, and passed</td><td>Trajectory assertions: count and check tool calls</td></tr>
+<tr><td>Looking at the average only</td><td>The mean improved, but a new critical failure appeared</td><td>Check worst cases and failure categories, plus p95 latency and cost</td></tr>
+<tr><td>Nothing versioned</td><td>Quality dropped, and three things changed that week</td><td>Record the code, prompt and rubric versions with every result</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="say">4 · Say this in the interview</h2>
+<div class="callout key">
+<div class="c-ico">🎤</div>
+<div class="c-body"><div class="c-title">A 30-second answer</div>
+<p>"LLM outputs vary and quality has many dimensions, so I test properties rather than exact
+strings. I keep a golden dataset of reviewed cases, including refusals and edge cases, and run
+it offline on every prompt or model change as a gate in CI. I use rule-based checks for
+anything countable and an LLM judge only for fuzzy qualities, calibrated against human labels
+because judges have position, verbosity and self-preference biases. For RAG I score retrieval
+and generation separately - context precision and recall, then faithfulness and answer
+relevance. For agents I also score the trajectory. Online, I track user feedback and sampled
+judge scores, and every production failure becomes a new test case."</p></div>
+</div>
+
+<h2 id="interview">5 · Interview questions</h2>
+<p>Answer each one out loud before you open it.</p>
+<details class="recall"><summary><span class="q-ico">Q</span> Why can't you unit-test an LLM app like normal software? <span class="chev">›</span></summary><div class="a">The same input can produce different, equally valid answers, so exact-match assertions fail on correct output. And quality has many dimensions - factual, grounded, complete, formatted, safe, fast, cheap. You test properties of the output instead, using rules, references, a judge model or people.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What is a golden dataset, and how do you build one? <span class="chev">›</span></summary><div class="a">A curated, reviewed set of representative inputs with expected outcomes, used to score every version the same way. Start with 30 to 50 cases from real questions and domain experts, include hard cases (unanswerable, ambiguous, attacks), and add every production failure as a new case.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What is the difference between offline and online evaluation? <span class="chev">›</span></summary><div class="a">Offline runs the golden set before deployment and gates releases. Online measures live traffic - user feedback, escalations, judge scores on a sample - and catches drift and new kinds of failure. You need both: offline makes shipping safe, online shows whether you are testing the right things.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> How do you evaluate a RAG system? <span class="chev">›</span></summary><div class="a">Separate the two halves. Retrieval: context precision and context recall against known supporting documents. Generation: faithfulness to the retrieved text and relevance to the question, plus citation correctness. That tells you whether a failure is a retrieval problem or a generation problem.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What is LLM-as-judge, and what are its risks? <span class="chev">›</span></summary><div class="a">A second LLM scores outputs against a rubric and gives a score with a reason. Risks: position bias, verbosity bias, self-preference and inconsistent scores. Counter them with a clear rubric, temperature 0, structured output, both orders in pairwise comparisons, and calibration against human-labelled examples.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> How is evaluating an agent different? <span class="chev">›</span></summary><div class="a">You score the trajectory as well as the final answer: task completion, correct tool choice and arguments, number of steps, and no forbidden actions. A correct answer reached through a wrong or unsafe path must fail.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> A new model raises your average score. Do you ship it? <span class="chev">›</span></summary><div class="a">Not on the average alone. Check the worst cases and each failure category, especially safety and factual errors, and compare latency and cost. A higher mean can hide a new critical failure.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> How do evals fit into CI/CD? <span class="chev">›</span></summary><div class="a">Treat a prompt or model change like a code change. The golden set runs automatically in the pipeline, results are compared with the last released version, and the build fails if a key metric drops below its threshold. Every result records the code, prompt and rubric version.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Give a real example of an LLM app failing without proper evaluation. <span class="chev">›</span></summary><div class="a">Air Canada's chatbot invented a refund policy, and in 2024 a Canadian tribunal held the airline responsible for it. In 2023 two New York lawyers were sanctioned for filing ChatGPT-invented case citations. Grounding checks and evaluation on such cases would have caught both.</div></details>
+
+<h2 id="short">6 · In short</h2>
+<ol>
+<li><b>Check properties, not exact strings,</b> on a fixed golden set.</li>
+<li><b>Rules for anything countable; an LLM judge only for fuzzy qualities,</b> calibrated against people.</li>
+<li><b>Score RAG in two halves:</b> retrieval (context precision and recall) and generation (faithfulness and relevance).</li>
+<li><b>For agents, score the path</b> as well as the answer.</li>
+<li><b>Evals are a gate in CI,</b> and every production failure becomes a new case.</li>
+</ol>
+<p><b>Next:</b> <a href="llmops.html">15 · LLMOps &amp; Observability</a> - running all of
+this after launch: versions, traces, cost and feedback.</p>
+
+<div class="page-nav" data-page-nav>
+<a href="guardrails.html"><div class="dir">← Previous</div><div class="ttl">13 · Guardrails</div></a>
+<a class="next" href="llmops.html"><div class="dir">Next →</div><div class="ttl">15 · LLMOps &amp; Observability</div></a>
+</div>
+      
+</main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/app.js?v=20261123b"></script>
+<script src="assets/sitenav.js?v=20261123b"></script>
+<script src="assets/enhance.js?v=20260925c"></script>
+<script src="assets/genai-motion.js?v=20260728a"></script>
+<script src="assets/section-nav.js?v=20260731b"></script>
+</body>
+</html>

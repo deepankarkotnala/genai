@@ -1,0 +1,972 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>05 · RAG, End-to-End | GenAI Mastery</title>
+<!-- Interview Preparation brand metadata -->
+<link rel="icon" href="assets/brand/favicon.svg?v=20260925b" type="image/svg+xml">
+<link rel="icon" href="assets/brand/favicon-32.png?v=20260925b" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="assets/brand/favicon.ico?v=20260925b">
+<link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png?v=20260925c" sizes="180x180">
+<link rel="manifest" href="assets/brand/site.webmanifest?v=20260925b">
+<link rel="mask-icon" href="assets/brand/safari-pinned-tab.svg?v=20260925b" color="#6f47f5">
+<link rel="image_src" href="assets/brand/social-card.png?v=20260925b">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="msapplication-TileColor" content="#1e3a8a">
+<meta name="msapplication-config" content="assets/brand/browserconfig.xml?v=20260925b">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Interview Preparation">
+<meta property="og:title" content="05 · RAG, End-to-End | GenAI Mastery">
+<meta property="og:description" content="A thorough, first-principles walk through every stage of a production Retrieval-Augmented Generation pipeline: data sources, ingestion, cleaning, chunking strategies, embeddings, indexing, query processing, retrieval, scoring, reranking, context selection, prompting, generation, evaluation, architectures and guardrails.">
+<meta property="og:image" content="assets/brand/social-card.png?v=20260925b">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Learn GenAI learning platform logo">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="05 · RAG, End-to-End - GenAI Mastery">
+<meta name="twitter:description" content="A thorough, first-principles walk through every stage of a production Retrieval-Augmented Generation pipeline: data sources, ingestion, cleaning, chunking strategies, embeddings, indexing, query processing, retrieval, scoring, reranking, context selection, prompting, generation, evaluation, architectures and guardrails.">
+<meta name="twitter:image" content="assets/brand/social-card.png?v=20260925b">
+<link href="assets/brand/favicon-16.png?v=20260925b" rel="icon" sizes="16x16" type="image/png"/>
+<!-- /Interview Preparation brand metadata -->
+<meta name="description" content="A thorough, first-principles walk through every stage of a production Retrieval-Augmented Generation pipeline: data sources, ingestion, cleaning, chunking strategies, embeddings, indexing, query processing, retrieval, scoring, reranking, context selection, prompting, generation, evaluation, architectures and guardrails.">
+<!-- Theme before first paint. Without this the document paints with the light
+     tokens and only flips when app.js runs at the end of <body>, which is a
+     white flash on every navigation in dark mode. Mirrors app.js's getTheme()
+     exactly - same key, same "dark" default - so the pre-paint value can never
+     disagree with what the scripts apply a moment later. Inline and blocking on
+     purpose: an external file would cost a round trip before first paint. -->
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="assets/styles.css?v=20261123b">
+<link href="assets/office-theme.css?v=20260925c" rel="stylesheet"/>
+<link href="assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
+<link href="assets/glossary.css?v=20260802b" rel="stylesheet"/>
+<style>
+  /* This standalone page builds its own section sidebar; keep the same look. */
+  .nav .sec-num { font-family: var(--font-mono); }
+  .pipeline { counter-reset: none; }
+  /* compact pipeline rail */
+  .ragflow { display:flex; flex-direction:column; align-items:stretch; gap:0; margin:24px 0; }
+  .ragflow .rf { background:var(--bg-elevated); border:1.5px solid var(--border-strong); border-radius:10px;
+    padding:11px 16px; font-weight:600; font-size:14px; box-shadow:var(--shadow-sm); display:flex; align-items:center; gap:12px; }
+  .ragflow .rf .s { font-family:var(--font-mono); font-size:11px; color:var(--text-muted); background:var(--surface);
+    border:1px solid var(--border); border-radius:5px; padding:1px 6px; flex:none; }
+  .ragflow .rf small { display:block; font-weight:400; color:var(--text-muted); font-size:12px; }
+  .ragflow .rf.accent { border-color:var(--accent); background:var(--accent-soft); }
+  .ragflow .arr { width:2px; height:18px; background:var(--border-strong); align-self:center; }
+  /* Desktop: use the horizontal width - flow the numbered stages into a compact
+     multi-column grid instead of one tall column. Mobile keeps the vertical
+     arrow-connected flow below 861px (this block is off there). */
+  @media (min-width: 861px) {
+    .ragflow { display:grid; grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+               gap:10px; align-items:stretch; margin:20px 0; }
+    .ragflow .arr { display:none; }
+    .ragflow .rf { padding:10px 13px; }
+    .ragflow .rf small { font-size:11.5px; }
+  }
+  .legend { display:flex; gap:14px; flex-wrap:wrap; font-size:12.5px; color:var(--text-muted); margin:8px 0 0; }
+  .legend span { display:inline-flex; align-items:center; gap:6px; }
+  .legend i { width:11px; height:11px; border-radius:3px; display:inline-block; }
+</style>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="assets/curriculum.js?v=20261123c"></script>
+<script defer src="assets/page-nav.js?v=20261123c"></script>
+<link href="assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+</head>
+<body data-curriculum-id="rag-deep-dive" data-page="rag">
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-secsearch placeholder="Jump to a section…  ( / )">
+      </div>
+      <div class="search-results" data-secresults></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Retrieval / <b>05 · RAG, End-to-End</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+
+<div class="eyebrow"><span class="dot"></span> Module 05 · Retrieval track</div>
+<h1>RAG, End-to-End</h1>
+<p class="lead">Module 01 showed that a model only knows what was in its training data.
+Modules 03 and 04 showed how to find text by meaning. RAG - retrieval-augmented
+generation - puts the two together: search your documents first, then let the model answer
+from what it found. It is one of the most-asked topics in GenAI interviews, so this page
+builds it in three levels. Read Level 1 first.</p>
+<div class="meta-row">
+<span class="pill blue">⏱ Study + recall · 3–5 h</span>
+<span class="pill">Difficulty · Beginner to advanced, in three levels</span>
+<span class="pill purple">Prereq · 03 Embeddings, 04 Vector Databases</span>
+</div>
+
+<h3>How to use this page</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Level</th><th>What you get</th><th>Who it is for</th></tr></thead>
+<tbody>
+<tr><td><b>1 · The core idea</b><br/>sections 1-5, about 25 minutes</td><td>What RAG is, the whole pipeline, one question traced end to end, and what happens when the answer is not there</td><td>Everyone. Read this first.</td></tr>
+<tr><td><b>2 · The real version</b><br/>sections 6-11</td><td>Each step in detail, the choices that decide quality, how it fails, how to fix it, and how to measure it</td><td>When Level 1 feels easy. Most interview questions come from here.</td></tr>
+<tr><td><b>3 · Engineering and interviews</b><br/>sections 12-17</td><td>Production practice, RAG vs fine-tuning, advanced variants, interview questions</td><td>Before an interview</td></tr>
+</tbody>
+</table>
+</div>
+
+<p class="bd-choose">Everything on this page comes back to five ideas. Level 1 covers the
+first three.</p>
+<ol>
+<li><b>RAG is search, then answer from what you found.</b> The model answers from text you
+put into the prompt, not from its memory.</li>
+<li><b>There are two pipelines.</b> Indexing runs ahead of time: split, embed, store.
+Querying runs for every question: embed, search, build the prompt, generate.</li>
+<li><b>Retrieval always returns something.</b> A score floor and permission to say "I don't
+know" are what stop invented answers.</li>
+<li><b>Quality is decided before the model runs.</b> Chunking, hybrid search and reranking
+decide whether the right text reaches the prompt.</li>
+<li><b>The two halves fail separately.</b> Measure retrieval (did we find it?) and
+generation (did we use it faithfully?) on their own.</li>
+</ol>
+
+<!-- ================= LEVEL 1 ================= -->
+<div class="level-head" id="level-1"><span class="lv-badge">Level 1</span><span class="lv-title">The core idea</span><span class="lv-meta">About 25 minutes. One real-looking example, start to finish.</span></div>
+
+<!-- ================= 1 ================= -->
+<h2 id="known">1 · What you already know</h2>
+<p>From module 01: a model's knowledge is frozen in its weights at training time. It reads
+only what fits in its context window, and it predicts plausible text - including when it
+does not actually know the answer.</p>
+<p>From module 03: an <b>embedding</b> turns text into a vector, and texts with similar
+meaning get vectors that are close together.</p>
+<p>From module 04: a <b>vector database</b> stores millions of those vectors and finds the
+nearest ones to a query in milliseconds.</p>
+<p><b>This page joins those pieces into one system.</b></p>
+
+<!-- ================= 2 ================= -->
+<h2 id="breaks">2 · The problem: the model has never seen your documents</h2>
+<p>Ask a model "How many weeks of paid leave do I get when I have a baby?" and it cannot know
+your company's answer. Your handbook was never in its training data. So it does what it
+always does and writes something plausible:</p>
+<div class="callout warn">
+<div class="c-ico">⚠️</div>
+<div class="c-body"><div class="c-title">Without RAG</div>
+<p>"Parental leave depends on your country and employer. Many companies offer between 12
+and 26 weeks..." - fluent, generic, and no help to you. Worse, a model sometimes states a
+specific number with full confidence. That is called a <b>hallucination</b>.</p></div>
+</div>
+<p>There are three ways to give a model your knowledge:</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Approach</th><th>How the model gets the knowledge</th><th>Cost of a change</th></tr></thead>
+<tbody>
+<tr><td>Fine-tune</td><td>Train it further on your documents, changing its weights</td><td>Another training run</td></tr>
+<tr><td>Long context</td><td>Paste the whole handbook into every prompt</td><td>Tokens on every request, forever - and it stops working once the handbook no longer fits</td></tr>
+<tr><td><b>RAG</b></td><td>Find the few relevant paragraphs and paste only those</td><td>Re-index the one document that changed</td></tr>
+</tbody>
+</table>
+</div>
+<p><b>RAG wins for knowledge because knowledge changes and weights do not.</b> A policy
+updated this morning is answerable this afternoon. Pasting everything is a fine choice while
+your documents are small and stable; RAG is what you do once they are not.</p>
+
+<!-- ================= 3 ================= -->
+<h2 id="idea">3 · The big idea: look it up, then answer</h2>
+<p>An analogy: a closed-book exam versus an open-book exam. Without RAG, the model answers
+from memory. With RAG, it first finds the right pages, then answers with those pages open in
+front of it - and can tell you which page it used.</p>
+<p>A RAG system has two parts that run at different times:</p>
+
+<svg class="bd-svg" viewBox="0 0 900 232" role="img" aria-labelledby="pl-t pl-d">
+<title id="pl-t">The two RAG pipelines</title>
+<desc id="pl-d">Top row, indexing, runs offline once per document version: documents are split into chunks, each chunk is embedded, and the vector is stored with its text and source. Bottom row, querying, runs for every question: the question is embedded, the store is searched for the nearest chunks, a prompt is built from the question plus those chunks, and the model answers with citations. An arrow shows the search step reading from the store.</desc>
+<defs><marker id="ah-pl" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<text class="loop-lbl" x="370" y="16">indexing - ahead of time, once per document version</text>
+<rect class="box" x="11" y="28" width="158" height="56" rx="12"></rect>
+<rect class="box" x="191" y="28" width="158" height="56" rx="12"></rect>
+<rect class="box" x="371" y="28" width="158" height="56" rx="12"></rect>
+<rect class="box" x="551" y="28" width="158" height="56" rx="12"></rect>
+<path class="arw" d="M172 56 H186" marker-end="url(#ah-pl)"></path>
+<path class="arw" d="M352 56 H366" marker-end="url(#ah-pl)"></path>
+<path class="arw" d="M532 56 H546" marker-end="url(#ah-pl)"></path>
+<text class="lbl" x="90" y="52">documents</text>
+<text class="cap" x="90" y="70">PDF, wiki, tickets</text>
+<text class="lbl" x="270" y="52">split into</text>
+<text class="lbl" x="270" y="70">chunks</text>
+<text class="lbl" x="450" y="52">embed</text>
+<text class="lbl" x="450" y="70">each chunk</text>
+<text class="lbl" x="630" y="52">store vector</text>
+<text class="lbl" x="630" y="70">+ text + source</text>
+<path class="arw" d="M630 86 V108 H450 V134" marker-end="url(#ah-pl)"></path>
+<text class="cap" x="540" y="102">search reads the store</text>
+<text class="loop-lbl" x="170" y="128">querying - every question</text>
+<rect class="box" x="11" y="140" width="158" height="56" rx="12"></rect>
+<rect class="box" x="191" y="140" width="158" height="56" rx="12"></rect>
+<rect class="box" x="371" y="140" width="158" height="56" rx="12"></rect>
+<rect class="box" x="551" y="140" width="158" height="56" rx="12"></rect>
+<rect class="box" x="731" y="140" width="158" height="56" rx="12"></rect>
+<path class="arw" d="M172 168 H186" marker-end="url(#ah-pl)"></path>
+<path class="arw" d="M352 168 H366" marker-end="url(#ah-pl)"></path>
+<path class="arw" d="M532 168 H546" marker-end="url(#ah-pl)"></path>
+<path class="arw" d="M712 168 H726" marker-end="url(#ah-pl)"></path>
+<text class="lbl" x="90" y="173">question</text>
+<text class="lbl" x="270" y="164">embed the</text>
+<text class="lbl" x="270" y="182">question</text>
+<text class="lbl" x="450" y="164">search: nearest</text>
+<text class="lbl" x="450" y="182">chunks</text>
+<text class="lbl" x="630" y="164">prompt = question</text>
+<text class="lbl" x="630" y="182">+ chunks</text>
+<text class="lbl" x="810" y="164">answer +</text>
+<text class="lbl" x="810" y="182">citations</text>
+<text class="cap" x="450" y="222">the model only sees what the search put into the prompt</text>
+</svg>
+
+<ul>
+<li><b>Indexing</b> happens ahead of time. Each document is cut into short passages called
+<b>chunks</b>, each chunk is turned into a vector, and the vector is stored together with
+the chunk's text and where it came from.</li>
+<li><b>Querying</b> happens for every question. The question is turned into a vector, the
+store returns the chunks closest in meaning, and those chunks are pasted into the prompt
+next to the question.</li>
+</ul>
+<p>The model itself is unchanged. <b>RAG is not a new kind of model - it is a way of
+building the prompt.</b></p>
+
+<!-- ================= 4 ================= -->
+<h2 id="example">4 · One question, traced end to end</h2>
+<p>A company has indexed its employee handbook. Here are four of its chunks, each stored
+with its source:</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Chunk</th><th>Source</th><th>Text</th></tr></thead>
+<tbody>
+<tr><td>[1]</td><td>handbook.pdf, p.14, "Parental leave"</td><td>Employees who become parents through birth or adoption receive 16 weeks of fully paid parental leave. Leave must start within 12 months of the birth or adoption. Tell HR at least 8 weeks before you plan to start.</td></tr>
+<tr><td>[2]</td><td>handbook.pdf, p.12, "Sick leave"</td><td>Employees receive 10 days of paid sick leave per year. A doctor's note is required for absences longer than 3 consecutive days.</td></tr>
+<tr><td>[3]</td><td>handbook.pdf, p.20, "Remote work"</td><td>Employees may work remotely up to 3 days a week with their manager's approval.</td></tr>
+<tr><td>[4]</td><td>handbook.pdf, p.31, "Public holidays"</td><td>The office is closed on the public holidays listed below.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Step 1 · Search</h4>
+<p>The question "How many weeks of paid leave do I get when I have a baby?" is embedded and
+compared with every chunk. Each chunk gets a <b>similarity score</b>: higher means closer
+in meaning.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 240" role="img" aria-labelledby="sc-t sc-d">
+<title id="sc-t">Similarity scores against a floor</title>
+<desc id="sc-d">Four chunks are scored against the question. Parental leave scores 0.82 and sick leave 0.61, both above a dashed floor line at 0.50, so they are kept. Remote work scores 0.34 and public holidays 0.29, both below the floor, so they are dropped. The scores are illustrative.</desc>
+<text class="cap" x="450" y="16">similarity to the question (illustrative scores)</text>
+<rect class="box" x="100" y="58.8" width="130" height="131.2" rx="8"></rect>
+<rect class="box" x="300" y="92.4" width="130" height="97.6" rx="8"></rect>
+<rect class="box after" x="500" y="135.6" width="130" height="54.4" rx="8"></rect>
+<rect class="box after" x="700" y="143.6" width="130" height="46.4" rx="8"></rect>
+<path class="arw" d="M60 190 H870"></path>
+<path class="loop" d="M70 110 H870"></path>
+<text class="loop-lbl" x="800" y="102">floor 0.50</text>
+<text class="cap pct" x="165" y="50">0.82</text>
+<text class="cap pct" x="365" y="84">0.61</text>
+<text class="cap pct" x="565" y="127">0.34</text>
+<text class="cap pct" x="765" y="135">0.29</text>
+<text class="lbl" x="165" y="212">[1] parental leave</text>
+<text class="lbl" x="365" y="212">[2] sick leave</text>
+<text class="lbl" x="565" y="212">[3] remote work</text>
+<text class="lbl" x="765" y="212">[4] holidays</text>
+<text class="cap" x="165" y="230">kept</text>
+<text class="cap" x="365" y="230">kept</text>
+<text class="cap" x="565" y="230">dropped</text>
+<text class="cap" x="765" y="230">dropped</text>
+</svg>
+<p>Notice that the question never says "parental" or "birth". Chunk 1 still wins, because
+embeddings compare meaning, not exact words. The <b>floor</b> - a minimum score, here 0.50 -
+drops the two chunks that are plainly unrelated.</p>
+
+<h4>Step 2 · Build the prompt</h4>
+<p>The kept chunks are numbered and pasted into the prompt, under three instructions:</p>
+<pre><code>Answer the question using ONLY the sources below.
+Cite the source number after every claim, like [1].
+If the sources do not contain the answer, reply exactly: NOT_IN_CONTEXT
+
+[1] handbook.pdf, p.14, "Parental leave"
+Employees who become parents through birth or adoption receive 16 weeks
+of fully paid parental leave. Leave must start within 12 months of the
+birth or adoption. Tell HR at least 8 weeks before you plan to start.
+
+[2] handbook.pdf, p.12, "Sick leave"
+Employees receive 10 days of paid sick leave per year. A doctor's note
+is required for absences longer than 3 consecutive days.
+
+Question: How many weeks of paid leave do I get when I have a baby?
+</code></pre>
+<p>All three instructions earn their place: the first keeps the model to your evidence, the
+second makes every claim checkable, and <b>the third gives it a permitted way to say it does
+not know</b>. That third one is the instruction people forget.</p>
+
+<h4>Step 3 · Generate, with citations</h4>
+<div class="callout tip">
+<div class="c-ico">✅</div>
+<div class="c-body"><div class="c-title">With RAG</div>
+<p>"You get 16 weeks of fully paid parental leave [1]. It must start within 12 months of the
+birth, and you need to tell HR at least 8 weeks before it starts [1]."</p></div>
+</div>
+<p>The model ignored chunk 2 because it does not answer the question - it was given evidence,
+not told what to say. The <b>[1]</b> is a <b>citation</b>: anyone can open page 14 and check
+the answer. <b>That traceability is half the value of RAG.</b></p>
+
+<!-- ================= 5 ================= -->
+<h2 id="refuse">5 · When the answer is not there</h2>
+<p>Now ask "Can I bring my dog to the office?" The handbook has no pet policy. But search
+never comes back empty: it returns the closest chunks it has, however far away they are. Here
+the best is remote work at 0.38, and every score is below the 0.50 floor.</p>
+<p>A naive pipeline with no floor sends those chunks to the model anyway:</p>
+
+<svg class="bd-svg" viewBox="0 0 900 175" role="img" aria-labelledby="rf-t rf-d">
+<title id="rf-t">Silent retrieval failure</title>
+<desc id="rf-d">No relevant chunk exists, but four are returned anyway with low scores, the best being 0.38. No floor is checked, the prompt is built from irrelevant text, and the model produces a confident cited answer that is entirely invented.</desc>
+<defs><marker id="ah-rf" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box" x="14" y="62" width="170" height="56" rx="12"></rect>
+<rect class="box fail" x="234" y="62" width="196" height="56" rx="12"></rect>
+<rect class="box after" x="480" y="62" width="170" height="56" rx="12"></rect>
+<rect class="box after" x="700" y="62" width="186" height="56" rx="12"></rect>
+<path class="arw" d="M187 90 H230" marker-end="url(#ah-rf)"></path>
+<path class="arw" d="M433 90 H476" marker-end="url(#ah-rf)"></path>
+<path class="arw" d="M653 90 H696" marker-end="url(#ah-rf)"></path>
+<text class="lbl" x="99" y="84">off-topic</text>
+<text class="lbl" x="99" y="102">question</text>
+<text class="lbl" x="332" y="84">4 chunks, best 0.38</text>
+<text class="lbl" x="332" y="102">no floor checked</text>
+<text class="lbl" x="565" y="84">prompt built</text>
+<text class="lbl" x="565" y="102">from noise</text>
+<text class="lbl" x="793" y="84">invented policy,</text>
+<text class="lbl" x="793" y="102">cited [3]</text>
+<path class="xmark" d="M314 130 L350 156 M350 130 L314 156"></path>
+<text class="cap" x="450" y="170">the citation makes it look verified - it is the most dangerous part of the output</text>
+</svg>
+<p>The model, handed a chunk about remote work and asked about dogs, may write "Pets are
+allowed on remote-work days [3]". Nothing errors. The answer looks checked, and it is made
+up.</p>
+<p>Two guards stop this:</p>
+<ul>
+<li><b>The floor.</b> If no chunk scores above it, skip the model and reply "I couldn't find
+this in the handbook."</li>
+<li><b>The refusal instruction.</b> If weak chunks do get through, the model has a permitted
+answer: NOT_IN_CONTEXT. Your application shows that as "not found", not as an
+answer.</li>
+</ul>
+<p><b>Retrieval always returns something. Deciding whether it deserves to be in the prompt is
+the hard part of RAG.</b></p>
+
+<h3>Check yourself: Level 1</h3>
+<p>Answer each one out loud before you open it.</p>
+<details class="recall"><summary><span class="q-ico">Q</span> Why can't a model answer questions about your company handbook on its own? <span class="chev">›</span></summary><div class="a">It never saw the handbook - its knowledge is frozen in its weights at training time. Asked anyway, it writes something plausible, which can be a confident wrong answer.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Name the two RAG pipelines and when each one runs. <span class="chev">›</span></summary><div class="a">Indexing runs ahead of time, once per document version: split into chunks, embed, store. Querying runs for every question: embed the question, search, build the prompt, generate.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> The question said "have a baby" and the chunk said "parental leave". Why was it still found? <span class="chev">›</span></summary><div class="a">Search compares embeddings, and embeddings capture meaning rather than exact words. "Have a baby" and "become parents through birth" mean nearly the same thing.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What are the three instructions in a grounding prompt? <span class="chev">›</span></summary><div class="a">Answer only from the sources given. Cite the source number for every claim. If the sources do not contain the answer, say so (for example, reply NOT_IN_CONTEXT).</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Why can a confident answer with a citation be worse than no answer? <span class="chev">›</span></summary><div class="a">Search always returns something. Without a floor, irrelevant chunks reach the model, it invents an answer and cites one of them - and the citation makes the invention look verified.</div></details>
+
+<div class="callout tip">
+<div class="c-ico">✅</div>
+<div class="c-body"><div class="c-title">You can stop here</div>
+<p>If you answered those, you can explain RAG to anyone. Level 2 is what interviewers dig
+into: the choices that decide quality, how it fails, and how to measure it.</p></div>
+</div>
+
+<!-- ================= LEVEL 2 ================= -->
+<div class="level-head" id="level-2"><span class="lv-badge">Level 2</span><span class="lv-title">The real version</span><span class="lv-meta">Each step in detail, how it fails, and how to measure it.</span></div>
+
+<!-- ================= 6 ================= -->
+<h2 id="mechanics">6 · The two pipelines, step by step</h2>
+<p><b>Indexing</b> - ahead of time, once per document version:</p>
+<ol>
+<li><b>Load.</b> Read each source into text plus <b>metadata</b>: file, page, section, date,
+who may see it. Metadata set here is what a citation shows later.</li>
+<li><b>Split.</b> Cut the text into chunks, copying the metadata onto each one.</li>
+<li><b>Embed.</b> Turn each chunk into a vector, and record which embedding model did it.
+Vectors from different models cannot be compared.</li>
+<li><b>Store.</b> Write the vector, the chunk text and the metadata under a stable id.</li>
+</ol>
+<p><b>Querying</b> - for every question:</p>
+<ol start="5">
+<li><b>Rewrite</b> (optional). Turn the user's message into a good search query - for
+example, resolve "what about adoption?" using the conversation so far.</li>
+<li><b>Retrieve.</b> Search for the 20-50 most similar chunks, usually by meaning and by
+keyword together (section 7).</li>
+<li><b>Rerank.</b> A slower, more accurate model scores each candidate against the question
+and reorders them.</li>
+<li><b>Cut.</b> Keep the chunks above the floor, up to a token budget - often 3 to 5.</li>
+<li><b>Build the prompt.</b> Number the chunks and add the three instructions from
+section 4.</li>
+<li><b>Generate.</b> Return the answer together with the ids of the chunks it was given.</li>
+</ol>
+
+<svg class="bd-svg" viewBox="0 0 900 110" role="img" aria-labelledby="rg-t rg-d">
+<title id="rg-t">RAG query flow with reranking</title>
+<desc id="rg-d">The question is embedded, the index returns 50 candidate chunks, a reranker reorders them and the best 4 are kept, the surviving chunks are assembled into a prompt, and the model produces an answer with citations back to those chunks.</desc>
+<defs><marker id="ah-rg" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box" x="11" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="191" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="371" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="551" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="731" y="26" width="158" height="58" rx="12"></rect>
+<path class="arw" d="M172 55 H186" marker-end="url(#ah-rg)"></path>
+<path class="arw" d="M352 55 H366" marker-end="url(#ah-rg)"></path>
+<path class="arw" d="M532 55 H546" marker-end="url(#ah-rg)"></path>
+<path class="arw" d="M712 55 H726" marker-end="url(#ah-rg)"></path>
+<text class="lbl" x="90" y="51">question →</text>
+<text class="lbl" x="90" y="69">embed</text>
+<text class="lbl" x="270" y="51">retrieve</text>
+<text class="lbl" x="270" y="69">top 50</text>
+<text class="lbl" x="450" y="51">rerank →</text>
+<text class="lbl" x="450" y="69">keep 4</text>
+<text class="lbl" x="630" y="51">build prompt</text>
+<text class="lbl" x="630" y="69">with evidence</text>
+<text class="lbl" x="810" y="51">answer +</text>
+<text class="lbl" x="810" y="69">citations</text>
+<text class="cap" x="450" y="104">cheap search narrows millions of chunks to 50; the accurate reranker picks the best 4</text>
+</svg>
+<p><b>Retrieve and rerank are separate steps for a reason.</b> Retrieval is cheap and
+approximate, so it can scan millions of chunks. Reranking is accurate and expensive, so it
+only looks at fifty.</p>
+
+<!-- ================= 7 ================= -->
+<h2 id="components">7 · The parts that decide quality</h2>
+<p>Each part below exists because something specific goes wrong without it.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Part</th><th>What it does</th><th>What goes wrong without it</th></tr></thead>
+<tbody>
+<tr><td><b>Chunking</b></td><td>Decides what one vector represents</td><td>Too small: a chunk lacks the context to make sense. Too big: its vector blurs several topics and matches none well.</td></tr>
+<tr><td><b>Metadata</b></td><td>File, page, section, date and permissions on every chunk</td><td>No citations, no filtering by date or team, no access control</td></tr>
+<tr><td><b>Hybrid search</b></td><td>Combines meaning-based search with keyword search</td><td>Exact terms - error codes, product ids, names - get missed</td></tr>
+<tr><td><b>Query rewriting</b></td><td>Turns the user's message into good search queries</td><td>Follow-ups like "what about adoption?" search for the wrong thing</td></tr>
+<tr><td><b>Reranking</b></td><td>Re-scores the top candidates with a more accurate model</td><td>The right chunk is in the top 50 but not in the 4 the model sees</td></tr>
+<tr><td><b>Score floor</b></td><td>Drops chunks below a calibrated score</td><td>Irrelevant chunks reach the model, which invents an answer</td></tr>
+<tr><td><b>Grounding prompt</b></td><td>Only the sources, cite them, refusal allowed</td><td>The model mixes in its own memory, or cannot say "I don't know"</td></tr>
+<tr><td><b>Citations</b></td><td>Each claim points to a numbered source</td><td>Users cannot check answers, and you cannot debug them</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 id="indexing">Indexing choices</h3>
+<h4>Chunk size</h4>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Size</th><th>Good for</th><th>Fails at</th></tr></thead>
+<tbody>
+<tr><td>200–400 tokens</td><td>FAQs, short policies, precise lookup</td><td>Anything needing surrounding context</td></tr>
+<tr><td><b>500–800 tokens</b></td><td>General prose. A common starting point</td><td>Very long procedures</td></tr>
+<tr><td>1,000–1,500 tokens</td><td>Narrative, legal clauses</td><td>Precision - the vector blurs</td></tr>
+</tbody>
+</table>
+</div>
+<p><b>Overlap.</b> Repeat the end of one chunk at the start of the next - typically 10–20% of
+the chunk size - so a sentence cut at a boundary is whole in at least one chunk.</p>
+<p><b>Split on structure.</b> Cut at headings and paragraphs rather than at a fixed character
+count. A recursive splitter tries headings first, then paragraphs, then sentences, and only
+falls back to raw length.</p>
+<p><b>There is no universally best chunk size.</b> Start from a sensible default and measure
+(section 11).</p>
+
+<h3 id="retrieval">Retrieval choices</h3>
+<h4>Hybrid search: meaning plus keywords</h4>
+<p><b>Dense search</b> compares embeddings. It handles paraphrase well - "have a baby"
+finds "parental leave" - but is weak on exact identifiers. <b>Keyword search</b>, usually an
+algorithm called <b>BM25</b>, scores a chunk by how many of the query's words it contains,
+giving extra weight to rare words. Search for error "E-4012" and BM25 finds the one chunk
+with that exact string; dense search may not.</p>
+<p>Hybrid search runs both and merges the two ranked lists. A common way is <b>reciprocal
+rank fusion</b> (RRF): each list gives a chunk 1 ÷ (60 + its rank), and the scores are
+added.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Chunk</th><th>Keyword rank</th><th>Dense rank</th><th>RRF score</th></tr></thead>
+<tbody>
+<tr><td>A</td><td>1</td><td>8</td><td>1/61 + 1/68 = 0.0311</td></tr>
+<tr><td><b>B</b></td><td>3</td><td>2</td><td>1/63 + 1/62 = <b>0.0320</b></td></tr>
+<tr><td>C</td><td>not found</td><td>1</td><td>1/61 = 0.0164</td></tr>
+</tbody>
+</table>
+</div>
+<p>B wins: ranking well in both lists beats coming first in only one. <b>Hybrid search is
+usually the single biggest upgrade over a basic pipeline.</b></p>
+
+<h4>Query rewriting</h4>
+<p>The user's message is often a poor search query. Two common fixes: rewrite a follow-up
+into a standalone question ("what about adoption?" becomes "parental leave for adoption"),
+or expand one question into several searches and merge the results.</p>
+
+<h4>Reranking</h4>
+<p>Search uses a <b>bi-encoder</b>: the question and each chunk are embedded separately, so
+chunk vectors can be computed in advance and search is fast. A reranker is a
+<b>cross-encoder</b>: it reads the question and one chunk together and scores the pair. That
+is far more accurate, but nothing can be computed in advance, so it is only affordable on a
+shortlist. Retrieve 50 cheaply, rerank those, keep the best few.</p>
+
+<h4>Parent-document retrieval and metadata filtering</h4>
+<p><b>Parent-document retrieval</b> searches small chunks for precision, then sends the
+model the larger section each one came from, for context. <b>Metadata filtering</b>
+restricts the search before it runs - by team, date or document type. Done with the user's
+permissions, it is your access control: a user must never retrieve a chunk they are not
+allowed to read.</p>
+
+<h3 id="generating">Generating</h3>
+<p><b>The grounding prompt</b> is the three instructions from section 4. <b>Citations</b>
+should be checked, not trusted: a model can cite the wrong number, so verify that the cited
+chunk actually supports the claim. <b>Order matters</b>: models use information at the start
+and end of a long prompt more reliably than information in the middle, so put the strongest
+chunk first.</p>
+
+<h3 id="correcting">Correcting: CRAG and Self-RAG</h3>
+<p>Basic RAG trusts whatever search returned. Two well-known patterns add checks:</p>
+<ul>
+<li><b>CRAG</b> (corrective RAG) grades the retrieved chunks first. Good chunks are used,
+and can be trimmed to their useful sentences. Bad ones trigger a fallback, such as a web
+search.</li>
+<li><b>Self-RAG</b> also checks the <em>answer</em>: does the question need retrieval at
+all, are the chunks relevant, is every claim supported by them, does the answer address the
+question? A failed check sends it back to rewrite the query and try again.</li>
+</ul>
+
+<svg class="bd-svg" viewBox="0 0 900 195" role="img" aria-labelledby="sr-t sr-d">
+<title id="sr-t">Self-RAG loop</title>
+<desc id="sr-d">A question is retrieved for and the documents are graded, then an answer is generated. The answer is checked for grounding in the evidence and for usefulness. If a check fails the query is rewritten and the cycle repeats, up to three times. If both checks pass the answer is returned.</desc>
+<defs>
+<marker id="ah-sr" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker>
+<marker id="ah-srp" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--accent)"></path></marker>
+</defs>
+<path class="loop" d="M630 60 C630 16, 260 16, 232 56" marker-end="url(#ah-srp)"></path>
+<text class="loop-lbl" x="440" y="14">check failed - rewrite the query and go again, up to 3 times</text>
+<rect class="box" x="14" y="60" width="150" height="56" rx="12"></rect>
+<rect class="box" x="196" y="60" width="170" height="56" rx="12"></rect>
+<rect class="box" x="398" y="60" width="150" height="56" rx="12"></rect>
+<rect class="box" x="580" y="60" width="170" height="56" rx="12"></rect>
+<rect class="box" x="782" y="60" width="104" height="56" rx="12"></rect>
+<path class="arw" d="M167 88 H192" marker-end="url(#ah-sr)"></path>
+<path class="arw" d="M369 88 H394" marker-end="url(#ah-sr)"></path>
+<path class="arw" d="M551 88 H576" marker-end="url(#ah-sr)"></path>
+<path class="arw" d="M753 88 H778" marker-end="url(#ah-sr)"></path>
+<text class="lbl" x="89" y="93">question</text>
+<text class="lbl" x="281" y="83">retrieve +</text>
+<text class="lbl" x="281" y="101">grade docs</text>
+<text class="lbl" x="473" y="93">generate</text>
+<text class="lbl" x="665" y="83">grounded?</text>
+<text class="lbl" x="665" y="101">useful?</text>
+<text class="lbl" x="834" y="93">answer</text>
+<text class="cap" x="450" y="188">built with separate grader calls, each attempt costs about three model calls</text>
+</svg>
+<p>The original Self-RAG research trained one model to emit these checks as special tokens.
+Most production versions run them as separate model calls, which is why the loop needs an
+attempt limit. <b>Both patterns multiply latency and cost - add them only when measurement
+says basic retrieval is not good enough.</b></p>
+
+<!-- ================= 8 ================= -->
+<h2 id="trace">8 · Trace: where the time and money go</h2>
+<p>One question through a hybrid-plus-rerank pipeline. The numbers are typical, not
+universal.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Stage</th><th>In</th><th>Out</th><th>Latency</th><th>Tokens</th></tr></thead>
+<tbody>
+<tr><td>Embed query</td><td>1 question</td><td>1 vector</td><td>15 ms</td><td>~20</td></tr>
+<tr><td>Dense search</td><td>1 vector</td><td>50 ids</td><td>12 ms</td><td> - </td></tr>
+<tr><td>Keyword (BM25) search</td><td>query words</td><td>50 ids</td><td>8 ms</td><td> - </td></tr>
+<tr><td>Fuse</td><td>100 ids</td><td>50 ids</td><td>&lt;1 ms</td><td> - </td></tr>
+<tr><td><b>Rerank</b></td><td>50 pairs</td><td>50 scores</td><td><b>210 ms</b></td><td> - </td></tr>
+<tr><td>Cut on floor + budget</td><td>50 scores</td><td>3 chunks</td><td>&lt;1 ms</td><td> - </td></tr>
+<tr><td><b>Generate</b></td><td>~1,800 tokens in</td><td>~120 tokens out</td><td><b>1,400 ms</b></td><td>1,920</td></tr>
+<tr><td colspan="2"><b>Total</b></td><td>3 chunks, 1 answer</td><td><b>~1.65 s</b></td><td>~1,940</td></tr>
+</tbody>
+</table>
+</div>
+<p>Generation is about 85% of the latency and nearly all of the token cost. <b>Reranking is
+about 13% of the latency and often the largest single gain in answer quality</b> - worth
+knowing before someone proposes removing it to save time.</p>
+
+<!-- ================= 9 ================= -->
+<h2 id="break">9 · Break it: one wrong answer, four possible causes</h2>
+<p>A user reports a wrong answer. Four different failures produce that same symptom, and
+each needs a different fix:</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Failure</th><th>Where it happens</th><th>How you tell</th></tr></thead>
+<tbody>
+<tr><td>The answer is not in the documents</td><td>Nowhere - it never existed</td><td>The top score is below the floor</td></tr>
+<tr><td>It is there but was not retrieved</td><td>Retrieval</td><td>Search the raw documents for it; if it is there, retrieval missed it</td></tr>
+<tr><td>It was retrieved but ranked below the cut</td><td>Ranking</td><td>Look further down the candidate list, or raise the number kept, and check again</td></tr>
+<tr><td>It was in the prompt and the model ignored it</td><td>Generation</td><td>Read the logged prompt: the evidence is there and the answer contradicts it</td></tr>
+</tbody>
+</table>
+</div>
+<p><b>You cannot fix it until you know which one it is</b> - and a pipeline that does not log
+what it retrieved gives you no way to tell.</p>
+
+<!-- ================= 10 ================= -->
+<h2 id="fix">10 · Fix it</h2>
+<ol>
+<li><b>Calibrate a floor.</b> Collect questions you know are answerable and questions you
+know are not. Pick the score that best separates them, enforce it, and re-check it whenever
+the embedding model changes.</li>
+<li><b>Permit refusal.</b> Keep the third instruction, and treat NOT_IN_CONTEXT as a status
+your application handles - never as text shown as an answer.</li>
+<li><b>Verify citations.</b> Check that each cited chunk exists and supports the claim.</li>
+<li><b>Log every request.</b> Question, retrieved chunk ids and scores, prompt version,
+answer. The ids are what let you explain an answer next month.</li>
+<li><b>Measure the two halves separately</b> - next section.</li>
+</ol>
+
+<!-- ================= 11 ================= -->
+<h2 id="chunk-eval">11 · Measuring RAG: did we find it, and did we use it?</h2>
+<p><b>Retrieval recall</b> asks whether the right chunk reached the prompt. <b>Faithfulness</b>
+(also called groundedness) asks whether every claim in the answer is supported by the chunks
+given. Read together, they tell you where to look:</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Faithfulness high</th><th>Faithfulness low</th></tr></thead>
+<tbody>
+<tr><th>Recall high</th><td>Working. Check answer quality.</td><td><b>Fix generation</b>: the prompt or the model</td></tr>
+<tr><th>Recall low</th><td><b>Fix retrieval</b>: chunking, hybrid search, reranking</td><td>Fix retrieval first, then re-measure</td></tr>
+</tbody>
+</table>
+</div>
+<p>Chasing the wrong half is the most common way weeks are lost on a RAG system.</p>
+
+<h3 id="chunk-eval-dataset">Build a small evaluation set</h3>
+<p>Write 50–100 real questions, each with the expected answer and the section that contains
+it - for example "What is the work-from-home policy?" → handbook.pdf, section 4. Include some
+questions the documents cannot answer, so you can test refusal too. When you compare two
+setups, change one thing at a time and keep the questions fixed.</p>
+
+<h3 id="chunk-eval-metrics">The metrics</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Metric</th><th>Question it answers</th><th>Example</th></tr></thead>
+<tbody>
+<tr><td>Recall@K</td><td>Did the right chunk appear in the top K?</td><td>Right chunk in the top 5 for 90 of 100 questions → Recall@5 = 90%</td></tr>
+<tr><td>Precision@K</td><td>How many of the top K are relevant?</td><td>2 of the top 5 relevant → Precision@5 = 40%</td></tr>
+<tr><td>MRR</td><td>How high does the first right chunk appear?</td><td>First right chunk at ranks 1, 2 and 5 → (1 + 0.5 + 0.2) ÷ 3 = 0.57</td></tr>
+<tr><td>Context recall</td><td>Did the chunks contain everything needed?</td><td>The answer needs the leave length and the notice rule; retrieving only one is incomplete</td></tr>
+<tr><td>Context precision</td><td>How much of what was sent is relevant?</td><td>Sick-leave chunks in a parental-leave answer are noise</td></tr>
+<tr><td>Faithfulness</td><td>Is every claim supported by the chunks?</td><td>4 claims, 3 supported → 0.75</td></tr>
+<tr><td>Answer correctness</td><td>Does it match the expected answer?</td><td>Judged against your reference answers</td></tr>
+</tbody>
+</table>
+</div>
+<p>The answer-side metrics are usually scored by a second model acting as a judge. Tools
+such as Ragas and DeepEval automate this - <a href="llm-evals.html">14 · LLM Evals</a> covers evaluation in depth.</p>
+
+<h3 id="chunk-eval-scorecard">Compare setups on one scorecard</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Metric</th><th>A · fixed 500 tokens</th><th>B · by headings, 15% overlap</th><th>C · small chunks + parent</th></tr></thead>
+<tbody>
+<tr><th>Recall@5</th><td>82%</td><td><b>94%</b></td><td>91%</td></tr>
+<tr><th>Precision@5</th><td>61%</td><td>78%</td><td><b>83%</b></td></tr>
+<tr><th>MRR</th><td>0.71</td><td><b>0.86</b></td><td>0.82</td></tr>
+<tr><th>Context recall</th><td>79%</td><td><b>92%</b></td><td>90%</td></tr>
+<tr><th>Answer correctness</th><td>84%</td><td><b>93%</b></td><td>91%</td></tr>
+<tr><th>Faithfulness</th><td>91%</td><td>95%</td><td><b>96%</b></td></tr>
+</tbody>
+</table>
+</div>
+<p>Illustrative numbers. The point is the method: same questions, same embedding model, same
+retrieval settings, one change at a time.</p>
+
+<h3 id="chunk-eval-order">Evaluate in this order</h3>
+<ol>
+<li><b>Did we find it?</b> Recall@K, Precision@K, MRR.</li>
+<li><b>Did we find enough?</b> Context recall.</li>
+<li><b>Was it relevant?</b> Context precision.</li>
+<li><b>Was the answer good?</b> Faithfulness and answer correctness.</li>
+</ol>
+
+<h3>Check yourself: Level 2</h3>
+<details class="recall"><summary><span class="q-ico">Q</span> Why retrieve 50 chunks and rerank them, instead of just retrieving the top 4? <span class="chev">›</span></summary><div class="a">Search is cheap but approximate; the right chunk is often in the top 50 but not the top 4. A cross-encoder reranker is much more accurate but too slow to run over everything, so it reorders the shortlist.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Users search for an error code like "E-4012" and get unrelated chunks. What do you add? <span class="chev">›</span></summary><div class="a">Keyword search (BM25) alongside dense search - hybrid search. Embeddings are weak on exact identifiers; keyword search matches the literal string.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> A RAG answer is wrong. What do you check first? <span class="chev">›</span></summary><div class="a">Whether the right chunk was in the prompt, from the logs. That one check tells you whether it is a retrieval problem (not found, or ranked too low) or a generation problem (found but ignored).</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Retrieval recall is 95% but faithfulness is 70%. Which half do you work on? <span class="chev">›</span></summary><div class="a">Generation. The right evidence is arriving; the model is not sticking to it. Fix the prompt (stricter grounding, refusal allowed) or the model.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> In three test questions, the first correct chunk is at ranks 1, 2 and 5. What is the MRR? <span class="chev">›</span></summary><div class="a">(1/1 + 1/2 + 1/5) ÷ 3 = 1.7 ÷ 3 ≈ 0.57.</div></details>
+
+<!-- ================= LEVEL 3 ================= -->
+<div class="level-head" id="level-3"><span class="lv-badge">Level 3</span><span class="lv-title">Engineering and interviews</span><span class="lv-meta">Production practice, trade-offs and the questions you will be asked.</span></div>
+
+<!-- ================= 12 ================= -->
+<h2 id="state">12 · What is stored, and for how long</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Data</th><th>Where it lives</th><th>How long</th></tr></thead>
+<tbody>
+<tr><td>The index: vectors, chunk text, metadata</td><td>The vector database</td><td>Until the document is re-indexed or deleted. Valid only for the embedding model that built it.</td></tr>
+<tr><td>Question, retrieved chunks, prompt, answer</td><td>Memory, for one request</td><td>Until the response returns</td></tr>
+<tr><td>Conversation history</td><td>Your application, not the RAG pipeline</td><td>As long as the application keeps it</td></tr>
+<tr><td>Logs: question, chunk ids, scores, prompt version</td><td>Your logging system</td><td>Keep them - they are the only way to explain an answer later</td></tr>
+</tbody>
+</table>
+</div>
+<p>Change the embedding model and the whole index must be rebuilt, because old and new
+vectors are not comparable.</p>
+
+<!-- ================= 13 ================= -->
+<h2 id="production">13 · Production version</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Concern</th><th>What you do</th></tr></thead>
+<tbody>
+<tr><td>Two metrics, not one</td><td>Retrieval recall and faithfulness, tracked separately. One number hides which half is broken</td></tr>
+<tr><td>Score floor</td><td>Calibrated on labelled data, enforced in the pipeline, alerted on when the rejection rate moves</td></tr>
+<tr><td>Refusal path</td><td>A distinct status with its own user-facing response. Never a string that looks like an answer</td></tr>
+<tr><td>Authorisation</td><td>Metadata filter at retrieval, derived from the caller's identity. Never filter after the search</td></tr>
+<tr><td>Freshness</td><td>Re-index on document change, and delete chunks when a document is removed. A deleted policy must stop being answerable</td></tr>
+<tr><td>Citations</td><td>Return chunk ids with every answer. Verify the cited numbers exist</td></tr>
+<tr><td>Logging</td><td>Question, retrieved ids, scores, prompt version, token counts, latency per stage</td></tr>
+<tr><td>Cost</td><td>Dominated by generation. Cap context tokens; measure cost per answered question, not per call</td></tr>
+<tr><td>Latency</td><td>Budget per stage. Reranking is 100–300 ms and usually worth it; measure before removing it</td></tr>
+<tr><td>Prompt versioning</td><td>Version the grounding prompt and gate changes on the evaluation set. A one-word edit can move faithfulness several points</td></tr>
+<tr><td>PII</td><td>Redact personal data at indexing, not at generation. Once it is in the index it is retrievable</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ================= 14 ================= -->
+<h2 id="breakdown">14 · RAG vs fine-tuning, side by side</h2>
+<p>The comparison interviewers ask for most, in the six-label format used across the
+course.</p>
+
+<section class="breakdown">
+
+<h3 class="bd-tech"><span class="bd-tag">A</span> RAG</h3>
+
+<h4>Basic level</h4>
+<p class="bd-item"><b class="no-jargon">What it is.</b> A pattern in which the application
+retrieves relevant text at request time and includes it in the prompt, so the model answers
+from supplied evidence rather than from its weights.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It gives a model access to private
+or changing information without retraining it, and makes each answer traceable to a
+source.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b> Index ahead of time; for each
+question embed, retrieve, rerank, build the prompt and generate. The diagram in section 6
+shows the query side.</p>
+
+<h4>Intermediate level</h4>
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> Two pipelines that
+run at different times. <b>Indexing</b>: load, split, embed, store. <b>Querying</b>: embed
+the question, retrieve, optionally rerank with a cross-encoder, assemble the prompt,
+generate, attach citations. The retriever and the generator are separate systems and fail
+separately, which is why they are evaluated separately.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> The index is persistent state,
+keyed by chunk id and valid only for the embedding model that built it. Per request nothing
+persists: the question, the retrieved chunks and the answer live for one call. Conversation
+history is a separate concern the application carries.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> Retrieval
+failure is silent - search always returns something. The model can also ignore correct
+evidence and answer from its weights, which no retrieval fix addresses. Latency is at least
+two network calls, plus 100–300 ms if reranking. Advanced features are hybrid search, query
+rewriting, parent-document retrieval, CRAG and Self-RAG.</p>
+
+<h3 class="bd-tech"><span class="bd-tag">B</span> Fine-tuning</h3>
+
+<h4>Basic level</h4>
+<p class="bd-item"><b class="no-jargon">What it is.</b> Fine-tuning continues training an
+already pre-trained model on a smaller task-specific dataset, changing the weights so the
+model behaves differently.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It is best at changing behaviour,
+format and tone. It is an unreliable way to add facts.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b></p>
+
+<svg class="bd-svg" viewBox="0 0 900 100" role="img" aria-labelledby="ftb-t ftb-d">
+<title id="ftb-t">Fine-tuning flow</title>
+<desc id="ftb-d">Curated example pairs and the pre-trained weights enter a training loop, which produces adapted weights that are evaluated and then deployed. At request time there is no retrieval step at all.</desc>
+<defs><marker id="ah-ftb" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box" x="11" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="191" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="371" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="551" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="731" y="26" width="158" height="58" rx="12"></rect>
+<path class="arw" d="M172 55 H186" marker-end="url(#ah-ftb)"></path>
+<path class="arw" d="M352 55 H366" marker-end="url(#ah-ftb)"></path>
+<path class="arw" d="M532 55 H546" marker-end="url(#ah-ftb)"></path>
+<path class="arw" d="M712 55 H726" marker-end="url(#ah-ftb)"></path>
+<text class="lbl" x="90" y="51">curated</text>
+<text class="lbl" x="90" y="69">example pairs</text>
+<text class="lbl" x="270" y="51">training loop</text>
+<text class="lbl" x="270" y="69">hours to days</text>
+<text class="lbl" x="450" y="51">adapted</text>
+<text class="lbl" x="450" y="69">weights</text>
+<text class="lbl" x="630" y="51">evaluate vs</text>
+<text class="lbl" x="630" y="69">the base model</text>
+<text class="lbl" x="810" y="51">deploy; no</text>
+<text class="lbl" x="810" y="69">retrieval at run time</text>
+</svg>
+
+<h4>Intermediate level</h4>
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> The same forward
+pass, loss and optimizer as pre-training, on far less data. Full fine-tuning updates every
+parameter; <b>LoRA</b> freezes the base model and trains small extra matrices per layer,
+producing an adapter that is a small fraction of the model's size. Preference methods such
+as DPO train on chosen-versus-rejected answer pairs rather than single targets.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> The output is weights. Nothing is
+retrieved at request time and nothing changes between requests until you train again.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> A poor way to
+add facts: the model absorbs the style of the training data while still getting details
+wrong, and there is no citation to check. Every update needs another run. Too much training
+on a narrow dataset degrades general ability. It is excellent at format, tone, domain
+vocabulary and reliable structured output.</p>
+
+<h3 class="bd-diff">The core differences</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>RAG</th><th>Fine-tuning</th><th>Long context</th></tr></thead>
+<tbody>
+<tr><th>Workflow design</th>
+<td>Index ahead of time, retrieve per request. Updating knowledge means re-indexing one document.</td>
+<td>Train offline, serve directly. Updating knowledge means another training run.</td>
+<td>No index. Paste everything into every request, until it stops fitting.</td></tr>
+<tr><th>Inspecting a wrong answer</th>
+<td>You can read exactly what was retrieved and see why. Retrieval failure is silent unless you check it.</td>
+<td>No evidence trail. The only fix is more data and another run.</td>
+<td>Nothing to inspect. Facts buried in the middle of a long context are recalled less reliably.</td></tr>
+<tr><th>Architectural paradigm</th>
+<td>Request-time evidence supply.</td>
+<td>Weight modification.</td>
+<td>Brute-force context stuffing.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 class="bd-short">In short - which one to choose</h3>
+<p class="bd-choose">Choose RAG when:</p>
+<ul>
+<li>The knowledge is private, large, or changes more often than you could retrain.</li>
+<li>Answers must cite a source.</li>
+<li>You need to remove a document and have it stop being answerable immediately.</li>
+</ul>
+<p class="bd-choose">Choose fine-tuning when:</p>
+<ul>
+<li>You need a consistent format or tone that prompting cannot hold.</li>
+<li>Domain vocabulary is unusual enough that the base model misreads the question.</li>
+<li>A smaller tuned model would be cheaper than a large prompted one at your volume.</li>
+</ul>
+<p class="bd-choose bd-avoid">Choose neither when:</p>
+<ul>
+<li>The documents fit in the context window and rarely change. Just paste them.</li>
+<li>You have not tried a better prompt first.</li>
+<li>You are treating them as alternatives - <b>they solve different problems, and production
+systems often use both.</b></li>
+</ul>
+</section>
+
+<!-- ================= 15 ================= -->
+<h2 id="comparison">15 · From basic RAG to Self-RAG</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Basic RAG</th><th>Hybrid + rerank</th><th>CRAG</th><th>Self-RAG</th></tr></thead>
+<tbody>
+<tr><th>Model calls per question</th><td>1</td><td>1</td><td>2–3</td><td>3–9</td></tr>
+<tr><th>Rough latency</th><td>~1.4 s</td><td>~1.65 s</td><td>~3 s</td><td>4–10 s</td></tr>
+<tr><th>Detects bad retrieval</th><td>No</td><td>Only via a floor</td><td><b>Yes, grades it</b></td><td>Yes</td></tr>
+<tr><th>Detects a bad answer</th><td>No</td><td>No</td><td>No</td><td><b>Yes</b></td></tr>
+<tr><th>Can fall back to another source</th><td>No</td><td>No</td><td><b>Yes</b></td><td>Yes</td></tr>
+<tr><th>Needs a graph framework</th><td>No</td><td>No</td><td>Helpful</td><td><b>Yes</b></td></tr>
+<tr><th>Use it when</th><td>Prototype only</td><td><b>The production default</b></td><td>Document coverage is patchy</td><td>Wrong answers are expensive</td></tr>
+</tbody>
+</table>
+</div>
+<p><b>Do not start at Self-RAG.</b> Build hybrid-plus-rerank, measure recall and
+faithfulness, and let those two numbers tell you whether you need the corrective loops -
+each of which multiplies latency and cost. The loops are graphs rather than straight chains,
+which is what <a href="modules/12_langgraph.html">10 · LangGraph</a> is for.</p>
+
+<!-- ================= 16 ================= -->
+<h2 id="interview">16 · Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What is RAG and why use it over fine-tuning? <span class="chev">&rsaquo;</span></summary>
+<div class="collapse-body"><p>RAG retrieves relevant text at request time and puts it in the prompt, so the model answers from supplied evidence rather than its weights. Fine-tuning changes the weights, which changes behaviour and format but is a poor way to add facts. The deciding factor is usually change rate and traceability: a policy updated this morning is answerable this afternoon with RAG, and every answer can cite the chunk it came from. They are not alternatives - production systems often fine-tune for format and use RAG for knowledge.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  Walk me through a RAG pipeline. <span class="chev">&rsaquo;</span></summary>
+<div class="collapse-body"><p>Two pipelines. Indexing, offline: load the source, split into chunks, embed each chunk, store the vector with its text and metadata. Querying, per request: embed the question, retrieve candidates, rerank them with a cross-encoder, keep those above a score floor within a token budget, build a prompt that constrains the model to that evidence and permits refusal, generate, and return the answer with the chunk ids used. The two pipelines run at different times and fail in different ways.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  How do you choose chunk size and overlap? <span class="chev">&rsaquo;</span></summary>
+<div class="collapse-body"><p>Chunk size decides what one vector represents. Too small and the chunk lacks the context to be understood on its own; too large and its vector averages several topics into a direction matching none of them. I start at 500–800 tokens for prose with 10–20% overlap so a sentence split across a boundary survives intact in one chunk, and I split on structure - headings, paragraphs - rather than a character count. Then I measure retrieval recall on a labelled set and adjust, because the right number is corpus-specific and no default survives contact with real documents.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  How do you evaluate a text chunking strategy? <span class="chev">&rsaquo;</span></summary>
+<div class="collapse-body"><p>I wouldn't evaluate chunking in isolation. I would create a representative evaluation dataset of questions and expected source information, run different chunking strategies through the same embedding and retrieval pipeline, and compare retrieval metrics such as Recall@K, Precision@K and MRR, followed by end-to-end metrics such as context recall, context precision, answer correctness and faithfulness.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  Your RAG system gives a wrong answer. How do you debug it? <span class="chev">&rsaquo;</span></summary>
+<div class="collapse-body"><p>First separate the two halves, because four different failures produce the same symptom. Check whether the evidence exists in the corpus at all - grep for it. If it is there, check whether retrieval returned it; if not, that is a chunking, hybrid-search or reranking problem. If it was returned but ranked below the cut, raise k and re-check. If it was in the prompt and the answer contradicts it, that is generation, and the fix is the prompt or the model. I track retrieval recall and groundedness as separate metrics precisely so this question is answerable in one look rather than by guesswork.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  Why add a reranker when you already have similarity search? <span class="chev">&rsaquo;</span></summary>
+<div class="collapse-body"><p>Similarity search uses a bi-encoder: query and document are embedded separately, so documents can be embedded in advance and the search is cheap over millions. A reranker is a cross-encoder that reads the question and the chunk together, which is far more accurate but cannot be precomputed. So you use the cheap one to get 50 candidates out of millions and the expensive one to order those 50. On my measurements that costs about 210 ms and is usually the single largest quality gain in the pipeline.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  How do you stop a RAG system answering when it should not? <span class="chev">&rsaquo;</span></summary>
+<div class="collapse-body"><p>Retrieval always returns something, so the pipeline must decide whether what came back is good enough. Three layers. A score floor calibrated on labelled answerable and unanswerable questions, enforced in code - not guessed. A grounding prompt that explicitly permits refusal, returning a sentinel like NOT_IN_CONTEXT. And a distinct status in the response so "no evidence", "refused" and "answered" are three different things the caller handles differently. The failure I am guarding against is an off-corpus question producing a fluent invented answer with a citation attached, which looks more verified than an uncited one.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  When would you use CRAG or Self-RAG? <span class="chev">&rsaquo;</span></summary>
+<div class="collapse-body"><p>CRAG grades the retrieved evidence as correct, ambiguous or incorrect, and either refines it, supplements it with web search, or replaces it entirely. Self-RAG adds checks on the answer - is it grounded in the evidence, does it address the question - and loops back to rewrite the query if a check fails. I would reach for CRAG when corpus coverage is patchy and an external fallback is acceptable, and Self-RAG when a wrong answer is expensive enough to justify three to nine model calls per query instead of one. Both need bounded attempts, and both are graphs rather than chains, so LangGraph rather than LCEL.</p></div></details>
+<details class="collapse"><summary><span class="pill purple">Staff · design</span>  Design RAG over confidential documents with per-user access control. <span class="chev">&rsaquo;</span></summary>
+<div class="collapse-body"><p>Authorisation belongs at retrieval, as a metadata filter derived from the caller's identity, with the filtered fields payload-indexed - post-filtering means you already searched data the user cannot see, and it also silently breaks top-k. Redact PII at ingestion, not at generation, because once it is in the index it is retrievable. Store the permission attributes on the chunk at index time and re-index when they change; a document losing a permission must stop being retrievable immediately, which means deletion by document id, not a soft flag. Log the question, retrieved chunk ids, scores and prompt version for every answer, since the chunk ids are the only way to explain an answer during an audit months later. Gate prompt and model changes on an eval set measuring retrieval recall and groundedness separately, and alert on the refusal rate - a sudden drop usually means the index broke, not that the questions got easier.</p></div></details>
+<p>For more practice, work through the <a href="interview-labs/rag-interview.html">RAG interview drill</a>
+and the <a href="interview-prep/02-embeddings-rag.html">embeddings and RAG question bank</a>.</p>
+
+<!-- ================= 17 ================= -->
+<h2 id="short">17 · In short, and what comes next</h2>
+<p class="bd-choose">The five ideas from the top of the page. Try to say each one before you
+read it.</p>
+<ol>
+<li><b>RAG is search, then answer from what you found.</b> The model answers from text you
+put into the prompt, not from its memory.</li>
+<li><b>There are two pipelines.</b> Indexing runs ahead of time: split, embed, store.
+Querying runs for every question: embed, search, build the prompt, generate.</li>
+<li><b>Retrieval always returns something.</b> A score floor and permission to say "I don't
+know" are what stop invented answers.</li>
+<li><b>Quality is decided before the model runs.</b> Chunking, hybrid search and reranking
+decide whether the right text reaches the prompt.</li>
+<li><b>The two halves fail separately.</b> Measure retrieval (did we find it?) and
+generation (did we use it faithfully?) on their own.</li>
+</ol>
+<div class="callout key">
+<div class="c-ico">🔑</div>
+<div class="c-body"><div class="c-title">The one idea to remember</div>
+<p><b>RAG is prompt construction with a search step, and every hard problem in it is
+deciding whether the search result deserves to be in the prompt.</b> Chunking, hybrid
+search, reranking, floors, CRAG and Self-RAG are all answers to that one question, at
+increasing cost.</p></div>
+</div>
+<p><b>Next:</b> <a href="modules/08_agents.html">06 · Agentic AI</a> turns retrieval into one
+tool an agent may choose to call, rather than a fixed first step - a different design with
+different failure modes.</p>
+
+<div class="page-nav" data-page-nav>
+<a href="modules/05_vector_databases.html"><div class="dir">← Previous</div><div class="ttl">04 · Vector Databases</div></a>
+<a class="next" href="modules/08_agents.html"><div class="dir">Next →</div><div class="ttl">06 · Agentic AI</div></a>
+</div>
+      
+</main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/app.js?v=20261123b"></script>
+<script src="assets/sitenav.js?v=20261123b"></script>
+<script src="assets/enhance.js?v=20260925c"></script>
+<script src="assets/genai-motion.js?v=20260728a"></script>
+<script src="assets/section-nav.js?v=20260731b"></script>
+<script src="assets/glossary.js?v=20261123b"></script>
+</body>
+</html>

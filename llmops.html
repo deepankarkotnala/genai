@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f4f5f8">
+<title>15 · LLMOps &amp; Observability | GenAI Mastery</title>
+<!-- Interview Preparation brand metadata -->
+<link rel="icon" href="assets/brand/favicon.svg?v=20260925b" type="image/svg+xml">
+<link rel="icon" href="assets/brand/favicon-32.png?v=20260925b" sizes="32x32" type="image/png">
+<link rel="shortcut icon" href="assets/brand/favicon.ico?v=20260925b">
+<link rel="apple-touch-icon" href="assets/brand/apple-touch-icon.png?v=20260925c" sizes="180x180">
+<link rel="manifest" href="assets/brand/site.webmanifest?v=20260925b">
+<link rel="mask-icon" href="assets/brand/safari-pinned-tab.svg?v=20260925b" color="#6f47f5">
+<link rel="image_src" href="assets/brand/social-card.png?v=20260925b">
+<meta name="application-name" content="Interview Preparation">
+<meta name="apple-mobile-web-app-title" content="Interview Prep">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="msapplication-TileColor" content="#1e3a8a">
+<meta name="msapplication-config" content="assets/brand/browserconfig.xml?v=20260925b">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="Interview Preparation">
+<meta property="og:title" content="15 · LLMOps &amp; Observability | GenAI Mastery">
+<meta property="og:description" content="LLMOps for GenAI developer interviews - what it is and how it differs from MLOps, the lifecycle (prompt/model versioning, experiment tracking, deployment, observability, evaluation, cost/latency, guardrails, feedback loops), tooling, and the questions you'll be asked.">
+<meta property="og:image" content="assets/brand/social-card.png?v=20260925b">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Learn GenAI learning platform logo">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="15 · LLMOps &amp; Observability - GenAI Mastery">
+<meta name="twitter:description" content="LLMOps for GenAI developer interviews - lifecycle, versioning, experiment tracking, observability, evaluation, cost/latency, guardrails, tooling and interview questions.">
+<meta name="twitter:image" content="assets/brand/social-card.png?v=20260925b">
+<link href="assets/brand/favicon-16.png?v=20260925b" rel="icon" sizes="16x16" type="image/png"/>
+<!-- /Interview Preparation brand metadata -->
+<meta name="description" content="LLMOps for GenAI developer interviews - what it is and how it differs from MLOps, the lifecycle (prompt/model versioning, experiment tracking, deployment, observability, evaluation, cost/latency, guardrails, feedback loops), tooling, and the questions you'll be asked.">
+<!-- Theme before first paint. Without this the document paints with the light
+     tokens and only flips when app.js runs at the end of <body>, which is a
+     white flash on every navigation in dark mode. Mirrors app.js's getTheme()
+     exactly - same key, same "dark" default - so the pre-paint value can never
+     disagree with what the scripts apply a moment later. Inline and blocking on
+     purpose: an external file would cost a round trip before first paint. -->
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link rel="stylesheet" href="assets/styles.css?v=20261123b">
+<link href="assets/office-theme.css?v=20260925c" rel="stylesheet"/>
+<link href="assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
+<style>
+  .qa { border:1px solid var(--border); border-radius:var(--radius);
+        padding:14px 18px; margin:14px 0; background:var(--bg-elevated); box-shadow:var(--shadow-card); }
+  .qa .q { font-weight:750; margin:0 0 6px; }
+  .qa .a { margin:0; color:var(--text-secondary); }
+  .stage-grid { display:grid; gap:14px; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); margin:18px 0; }
+  .stage { border:1px solid var(--border); border-radius:var(--radius);
+           padding:14px 16px; background:var(--bg-elevated); box-shadow:var(--shadow-card); }
+  .stage h4 { margin:0 0 5px; }
+  .stage p { margin:0; font-size:13px; color:var(--text-secondary); }
+
+  /* Lifecycle diagram: compact horizontal row on desktop; mobile keeps the
+     shared vertical .cssflow layout untouched (below 861px this block is off). */
+  @media (min-width: 861px) {
+    .cssflow.lifecycle { flex-direction: row; flex-wrap: wrap; justify-content: center;
+                         align-items: stretch; gap: 12px 0; margin: 18px 0; }
+    .cssflow.lifecycle .fnode { flex: 1 1 0; min-width: 92px; max-width: 168px;
+                                padding: 9px 10px; font-size: 11.75px; }
+    .cssflow.lifecycle .fnode small { font-size: 10px; margin-top: 1px; }
+    .cssflow.lifecycle .farrow { align-self: center; flex: none;
+                                 width: 18px; height: 2px !important;
+                                 background: linear-gradient(90deg, var(--accent), var(--border-strong)); }
+    .cssflow.lifecycle .farrow::after { top: 50%; bottom: auto; left: auto; right: -1px;
+                                        transform: translateY(-50%);
+                                        border-top: 5px solid transparent;
+                                        border-bottom: 5px solid transparent;
+                                        border-left: 7px solid var(--accent);
+                                        border-right: 0; }
+  }
+</style>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="assets/curriculum.js?v=20261123c"></script>
+<script defer src="assets/page-nav.js?v=20261123c"></script>
+<link href="assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+</head>
+<body data-curriculum-id="llmops" data-page="llmops" data-no-concept-lab>
+<div class="app">
+  <aside class="sidebar">
+    <div class="brand">
+<a class="brand-link" href="index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
+</a>
+</div>
+    <div class="search-wrap">
+      <div class="search-box">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+        <input type="text" data-secsearch placeholder="Jump to a section…  ( / )">
+      </div>
+      <div class="search-results" data-secresults></div>
+    </div>
+    <nav class="nav"></nav>
+  </aside>
+  <div class="backdrop"></div>
+
+  <div class="main">
+    <header class="topbar">
+      <button class="icon-btn menu-btn" aria-label="Menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12h18M3 6h18M3 18h18"/></svg>
+      </button>
+      <div class="crumbs">Production / <b>15 · LLMOps &amp; Observability</b></div>
+      <button class="icon-btn" data-theme-toggle aria-label="Toggle theme"></button>
+    </header>
+
+    <div class="content-wrap">
+      <main class="content">
+
+<div class="eyebrow"><span class="dot"></span> Module 15 · Production track</div>
+<h1>LLMOps &amp; Observability</h1>
+<p class="lead">LLMOps is how you run an LLM application after launch: version everything that
+changes behaviour, test every change, watch production, and feed failures back.
+Observability is the part that shows what each request actually did. Interviewers ask because
+most LLM failures are silent - the app keeps answering, just worse.</p>
+<div class="meta-row">
+<span class="pill blue">⏱ 15–30 min</span>
+<span class="pill">Difficulty · Interview essentials</span>
+<span class="pill purple">Prereq · 14 LLM Evals</span>
+</div>
+
+<h2 id="idea">1 · The idea in one minute</h2>
+<p>In classic MLOps you train the model, so most of the work is datasets, training runs and
+retraining. With LLM apps you usually call a model someone else trained. What changes the
+app's behaviour is the <b>prompt</b>, the <b>model version</b>, its <b>parameters</b>
+(temperature, max tokens) and the <b>retrieval data</b>.</p>
+<p>Think of a restaurant chain. A new recipe is tasted against a fixed tasting menu before it
+reaches the restaurants. Every order ticket records which recipe version was used. And every
+complaint is traced to its ticket, then added to the tasting menu. In an LLM app:</p>
+<ul>
+<li><b>The recipe is the configuration:</b> prompt + model + parameters + data, versioned together.</li>
+<li><b>The tasting menu is the golden set,</b> run as a gate before release (see 14 · LLM Evals).</li>
+<li><b>The order ticket is a trace:</b> a record of one request, step by step, with tokens, cost and time.</li>
+<li><b>The complaint loop is feedback:</b> real failures become new test cases.</li>
+</ul>
+<p><b>A prompt is code. An edit to it is a deploy.</b></p>
+
+<h3>The lifecycle, in five steps</h3>
+<ol>
+<li><b>Version</b> the prompt, model, parameters and data revision together, under one configuration id.</li>
+<li><b>Evaluate</b> that configuration on the golden set.</li>
+<li><b>Gate:</b> compare with the current version, and ship only if it is not worse.</li>
+<li><b>Deploy,</b> stamping the configuration id on every response.</li>
+<li><b>Observe</b> traces, cost, latency and quality scores, and turn real failures into new test cases.</li>
+</ol>
+
+<h3>What a trace looks like</h3>
+<svg class="bd-svg" viewBox="0 0 900 262" role="img" aria-labelledby="ops-t ops-d">
+<title id="ops-t">One traced request</title>
+<desc id="ops-d">A trace covers one whole request and records the user and session. Inside it are spans, one per step: a retrieval span of 180 milliseconds, a generation span for the model call that records the model, 1,950 tokens, 2.1 seconds and its cost, and an output-check span. A user's thumbs-up arrives forty seconds after the request ends and is attached to the same trace as a score.</desc>
+<defs><marker id="ah-opsp" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--accent)"></path></marker></defs>
+<rect class="box" x="20" y="16" width="860" height="36" rx="10"></rect>
+<text class="lbl" x="450" y="39">trace · one request · user and session ids · total time and cost</text>
+<rect class="box" x="40" y="66" width="200" height="32" rx="8"></rect>
+<text class="lbl" x="140" y="87">retrieve · 180 ms</text>
+<rect class="box" x="250" y="108" width="450" height="32" rx="8"></rect>
+<text class="lbl" x="475" y="129">generation · model, 1,950 tokens, 2.1 s, $0.0029</text>
+<rect class="box" x="710" y="150" width="150" height="32" rx="8"></rect>
+<text class="lbl" x="785" y="171">output check</text>
+<rect class="box" x="560" y="200" width="300" height="34" rx="8"></rect>
+<text class="lbl" x="710" y="222">score · thumbs-up, 40 s later</text>
+<path class="loop" d="M866 214 C892 180, 892 80, 872 56" marker-end="url(#ah-opsp)"></path>
+<text class="cap" x="450" y="256">a span is one step · a generation is a span for a model call · a score can arrive after the request ends</text>
+</svg>
+
+<h2 id="components">2 · The parts you must know</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Part</th><th>What it does</th><th>What goes wrong without it</th></tr></thead>
+<tbody>
+<tr><td><b>Prompt versioning</b></td><td>Prompts live in version control, or in a prompt manager with labels such as "production", and are loaded by version</td><td>Nobody can say which edit caused a drop, and there is nothing to roll back to</td></tr>
+<tr><td><b>Model pinning</b></td><td>Uses an exact model version, not an alias such as "latest"</td><td>The provider updates the model and behaviour changes with no deploy of yours</td></tr>
+<tr><td><b>Configuration id</b></td><td>One id for prompt + model + parameters + data revision, stamped on every response</td><td>Finding the cause of a regression is an investigation instead of a lookup</td></tr>
+<tr><td><b>Evaluation gate</b></td><td>The golden set runs in the deploy pipeline and can fail it</td><td>Untested prompt edits reach users</td></tr>
+<tr><td><b>Tracing</b></td><td>Records each request end to end: every step, prompt, answer, tool call, tokens and time</td><td>"It was slow (or wrong) yesterday" cannot be diagnosed</td></tr>
+<tr><td><b>Cost and latency tracking</b></td><td>Tokens and cost per request, per feature and per customer; p95 latency per step</td><td>Surprise bills, and no idea which step is slow</td></tr>
+<tr><td><b>Quality scores</b></td><td>Scores attached to traces from users (thumbs), rules (cited a source?) and a judge model on a sample</td><td>You know what happened but not whether it was any good</td></tr>
+<tr><td><b>Feedback loop and rollback</b></td><td>Real failures become golden-set cases; the previous configuration stays deployable</td><td>The system stops improving, and a bad change stays live while you scramble</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3>The five objects of a tracing tool</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Object</th><th>What it is</th></tr></thead>
+<tbody>
+<tr><td><b>Trace</b></td><td>One whole request, from start to finish. Everything else sits inside it</td></tr>
+<tr><td><b>Span</b></td><td>One step inside the request, such as retrieval or a tool call, with a start and end time. Spans can contain spans</td></tr>
+<tr><td><b>Generation</b></td><td>A span for a model call. It also records the model, the prompt, tokens and cost</td></tr>
+<tr><td><b>Score</b></td><td>A quality number attached to a trace, often long after the request ended</td></tr>
+<tr><td><b>Session and user</b></td><td>Groups traces into one conversation, or into one person's activity</td></tr>
+</tbody>
+</table>
+</div>
+<p>These are Langfuse's names. LangSmith calls each step a "run", and tools built on
+OpenTelemetry, such as Arize Phoenix, call them spans. The ideas are the same. Tools you can
+mention:</p>
+<ul>
+<li><b>Langfuse</b> - open source and self-hostable: tracing, prompt management with labels, datasets and scores.</li>
+<li><b>LangSmith</b> - from the LangChain team: tracing, datasets, evaluations and prompt management.</li>
+<li><b>Arize Phoenix</b> - open source, built on OpenTelemetry: tracing and evaluations.</li>
+</ul>
+<p>A general application-monitoring tool tracks speed and errors. <b>LLM tools add what
+matters most here: token cost, prompt versions, and a place to record that an answer was
+wrong.</b></p>
+
+<h3>What to watch in production</h3>
+<p>Refusal rate, citation rate, thumbs-down rate, escalations to a human, guardrail firing
+rate, cost per answered request, and p95 latency. These move when a prompt regresses, usually
+before anyone complains.</p>
+
+<h2 id="failures">3 · How it fails, and the fix</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Failure</th><th>What you see</th><th>Fix</th></tr></thead>
+<tbody>
+<tr><td>Prompt edited in place</td><td>Quality drops weeks later; nobody knows which change did it</td><td>Version and review prompts, run the eval gate, stamp the configuration id on responses</td></tr>
+<tr><td>Model alias "latest"</td><td>Behaviour changes with no deploy</td><td>Pin the exact version; re-run evals before upgrading; watch deprecation notices</td></tr>
+<tr><td>Tokens not recorded</td><td>Cost per request unknown, and it cannot be reconstructed later</td><td>Capture tokens and cost on every model call from day one</td></tr>
+<tr><td>Batch job or serverless function exits early</td><td>500 results but 487 traces - the last ones are missing</td><td>Tracing SDKs send data in background batches: call flush before the program exits</td></tr>
+<tr><td>Personal data in traces</td><td>Card numbers and birth dates stored in the trace database</td><td>Mask personal data before it is sent, not only in the viewer; set a retention limit</td></tr>
+<tr><td>Only offline scores watched</td><td>Drift is discovered through complaints</td><td>Alerts on production metrics; run the judge on a sample, keep every error trace in full</td></tr>
+</tbody>
+</table>
+</div>
+
+<h2 id="say">4 · Say this in the interview</h2>
+<div class="callout key">
+<div class="c-ico">🎤</div>
+<div class="c-body"><div class="c-title">A 30-second answer</div>
+<p>"LLMOps is MLOps for applications built on models you usually don't train, so the focus
+moves from training pipelines to prompts, model versions, retrieval data, evaluation and
+cost. I version the prompt, model, parameters and data together as one configuration, pin
+exact model versions, and gate every change with a golden-set evaluation in CI. In production
+I trace every request - spans for retrieval, tools and model calls, with tokens, cost and
+latency - and attach quality scores from users, rules and a sampled judge. I watch refusal,
+citation, feedback and cost metrics, mask personal data before traces are stored, and turn
+every real failure into a new test case."</p></div>
+</div>
+
+<h2 id="interview">5 · Interview questions</h2>
+<p>Answer each one out loud before you open it.</p>
+<details class="recall"><summary><span class="q-ico">Q</span> What is LLMOps, and how is it different from MLOps? <span class="chev">›</span></summary><div class="a">LLMOps is MLOps for apps built on foundation models. You usually don't train the model, so the focus moves from training and retraining to versioning prompts and configuration, retrieval data, evaluation, observability, guardrails, and token cost and latency.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Walk me through the LLMOps lifecycle. <span class="chev">›</span></summary><div class="a">Version the configuration, evaluate it on the golden set, gate the release against the current version, deploy with the configuration id stamped on responses, then observe traces, cost and quality - and feed real failures back as new test cases. It is a loop.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Why version prompts and pin model versions? <span class="chev">›</span></summary><div class="a">The prompt defines behaviour, so it needs history, review and rollback like code. Models can change under an alias, and providers retire old versions, so you pin an exact version and re-run evals before moving to a new one.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What does a trace contain, and why do you need one? <span class="chev">›</span></summary><div class="a">One request end to end: each step as a span, every model call with its prompt, answer, tokens, cost and latency, tool calls, and the user and session ids. It is how you debug a bad answer, find the slow step, and attach quality scores to what actually happened.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Where do quality scores come from? <span class="chev">›</span></summary><div class="a">Three places: users (thumbs up or down), rules in code (cited a source, valid JSON), and a judge model grading a sample. Store each under its own name, so you can see when the judge and the users disagree.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Why is tracing sent asynchronously, and what is the catch? <span class="chev">›</span></summary><div class="a">So that recording a request does not slow it down: the SDK buffers data and sends it in background batches. The catch is that a short script or serverless function that exits without calling flush loses its last batch, with no error.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> How do you reduce LLM cost without hurting quality? <span class="chev">›</span></summary><div class="a">Measure a baseline first, then change one thing at a time and re-run evals: trim the context, cap output length, route easy requests to a smaller model, cache repeated prompts and answers, and cut unnecessary agent steps. Stop when quality starts to drop.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> A bigger model scores 2 points higher but costs about 19 times more. What do you do? <span class="chev">›</span></summary><div class="a">Make it a deliberate decision with both numbers on the same golden set. Often the answer is routing: the cheaper model by default, the bigger one only for the hard cases where it actually wins.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What is the data-protection risk of a tracing platform? <span class="chev">›</span></summary><div class="a">Traces store full prompts and answers by default, so anything a user types - card numbers, health details - lands in the trace store. Mask personal data before it is sent, restrict who can view traces, and set a deliberate retention period.</div></details>
+
+<h2 id="short">6 · In short</h2>
+<ol>
+<li><b>A prompt is code:</b> version it, review it, and treat an edit as a deploy.</li>
+<li><b>Pin exact model versions,</b> and stamp a configuration id on every response.</li>
+<li><b>Gate every change</b> with the golden set in CI.</li>
+<li><b>Trace every request:</b> spans, tokens, cost, latency, and quality scores that can arrive later.</li>
+<li><b>Mask personal data before it is stored,</b> and turn every real failure into a test case.</li>
+</ol>
+<p><b>Next:</b> <a href="interview-prep/index.html">the GenAI interview question bank</a> -
+practise answering out loud across every topic in this track.</p>
+
+<div class="page-nav" data-page-nav>
+<a href="llm-evals.html"><div class="dir">← Previous</div><div class="ttl">14 · LLM Evals</div></a>
+<a class="next" href="interview-prep/index.html"><div class="dir">Next →</div><div class="ttl">Interview Questions · GenAI bank</div></a>
+</div>
+      
+</main>
+      <div class="toc-rail"><nav class="toc"></nav></div>
+    </div>
+  </div>
+</div>
+
+<script src="assets/app.js?v=20261123b"></script>
+<script src="assets/sitenav.js?v=20261123b"></script>
+<script src="assets/enhance.js?v=20260925c"></script>
+<script src="assets/genai-motion.js?v=20260728a"></script>
+<script src="assets/section-nav.js?v=20260731b"></script>
+</body>
+</html>

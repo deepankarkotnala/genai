@@ -1,0 +1,858 @@
+<!DOCTYPE html>
+
+<html data-theme="dark" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="#f4f5f8" name="theme-color"/>
+<title>02 · Transformers | GenAI Mastery</title>
+<!-- Interview Preparation brand metadata -->
+<link href="../assets/brand/favicon.svg?v=20260925b" rel="icon" type="image/svg+xml"/>
+<link href="../assets/brand/favicon-32.png?v=20260925b" rel="icon" sizes="32x32" type="image/png"/>
+<link href="../assets/brand/favicon.ico?v=20260925b" rel="shortcut icon"/>
+<link href="../assets/brand/apple-touch-icon.png?v=20260925c" rel="apple-touch-icon" sizes="180x180"/>
+<link href="../assets/brand/site.webmanifest?v=20260925b" rel="manifest"/>
+<link color="#6f47f5" href="../assets/brand/safari-pinned-tab.svg?v=20260925b" rel="mask-icon"/>
+<link href="../assets/brand/social-card.png?v=20260925b" rel="image_src"/>
+<meta content="Learn GenAI" name="application-name"/>
+<meta content="Learn GenAI" name="apple-mobile-web-app-title"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="yes" name="mobile-web-app-capable"/>
+<meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="#2563eb" name="msapplication-TileColor"/>
+<meta content="../assets/brand/browserconfig.xml?v=20260925b" name="msapplication-config"/>
+<meta content="website" property="og:type"/>
+<meta content="Learn GenAI Learning Platform" property="og:site_name"/>
+<meta content="02 · Transformers | GenAI Mastery" property="og:title"/>
+<meta content="The transformer architecture from first principles: tokens to embeddings, self-attention, Q/K/V, multi-head attention, positional encoding, residuals, layernorm, and the decoder stack that powers every LLM." property="og:description"/>
+<meta content="../assets/brand/social-card.png?v=20260925b" property="og:image"/>
+<meta content="1200" property="og:image:width"/>
+<meta content="630" property="og:image:height"/>
+<meta content="Learn GenAI learning platform logo" property="og:image:alt"/>
+<meta content="summary_large_image" name="twitter:card"/>
+<meta content="02 · Transformers - GenAI Mastery" name="twitter:title"/>
+<meta content="The transformer architecture from first principles: tokens to embeddings, self-attention, Q/K/V, multi-head attention, positional encoding, residuals, layernorm, and the decoder stack that powers every LLM." name="twitter:description"/>
+<meta content="../assets/brand/social-card.png?v=20260925b" name="twitter:image"/>
+<link href="../assets/brand/favicon-16.png?v=20260925b" rel="icon" sizes="16x16" type="image/png"/>
+<!-- /Interview Preparation brand metadata -->
+<meta content="The transformer architecture from first principles: tokens to embeddings, self-attention, Q/K/V, multi-head attention, positional encoding, residuals, layernorm, and the decoder stack that powers every LLM." name="description"/>
+<!-- Theme before first paint. Without this the document paints with the light
+     tokens and only flips when app.js runs at the end of <body>, which is a
+     white flash on every navigation in dark mode. Mirrors app.js's getTheme()
+     exactly - same key, same "dark" default - so the pre-paint value can never
+     disagree with what the scripts apply a moment later. Inline and blocking on
+     purpose: an external file would cost a round trip before first paint. -->
+<script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
+<link href="../assets/styles.css?v=20261123b" rel="stylesheet"/>
+<link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
+<link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
+<link href="../assets/glossary.css?v=20260802b" rel="stylesheet"/>
+<!-- Release 2 runtime. The manifest loads first, the renderer second; classic
+     deferred scripts execute in document order after parsing, so the nav slot
+     exists and the manifest is defined before the renderer runs. The authored
+     links inside [data-page-nav] stay in the source and are replaced only after
+     page, route and fragment have all resolved. -->
+<script defer src="../assets/curriculum.js?v=20261123c"></script>
+<script defer src="../assets/page-nav.js?v=20261123c"></script>
+<link href="../assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+</head>
+<body data-curriculum-id="transformers" data-page="02">
+<div class="app">
+<aside class="sidebar">
+<div class="brand">
+<a class="brand-link" href="../index.html" aria-label="Learn GenAI home">
+<span class="brand-mark" aria-hidden="true"><img src="../assets/brand/switch-job-logo.png?v=20260925b" alt=""/></span>
+<div class="brand-text"><strong>Learn GenAI</strong><span>Learning Platform</span></div>
+</a>
+</div>
+<div class="search-wrap">
+<div class="search-box">
+<svg fill="none" height="15" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="15"><circle cx="11" cy="11" r="7"></circle><path d="M21 21l-4.3-4.3"></path></svg>
+<input data-search="" placeholder="Search modules…  ( / )" type="text"/>
+</div>
+<div class="search-results"></div>
+</div>
+<nav class="nav"></nav>
+</aside>
+<div class="backdrop"></div>
+<div class="main">
+<header class="topbar">
+<button aria-label="Menu" class="icon-btn menu-btn">
+<svg fill="none" height="18" stroke="currentColor" stroke-width="2" viewbox="0 0 24 24" width="18"><path d="M3 12h18M3 6h18M3 18h18"></path></svg>
+</button>
+<div class="crumbs">Foundations / <b>02 · Transformers</b></div>
+<button aria-label="Toggle theme" class="icon-btn" data-theme-toggle=""></button>
+</header>
+<div class="content-wrap">
+<main class="content">
+
+<div class="eyebrow"><span class="dot"></span> Module 02 · Foundations track</div>
+<h1>Transformers</h1>
+<p class="lead"><a href="00_basics.html">The Basics</a> told you that attention lets each word look at the other words.
+Module 01 treated the model as one closed box. This page opens the box. It is built in
+three levels: read Level 1 first, and stop there if you like - by the end of it you can
+explain how a transformer works.</p>
+<div class="meta-row">
+<span class="pill blue">⏱ Study + recall · 2.5–4 h</span>
+<span class="pill">Difficulty · Beginner to advanced, in three levels</span>
+<span class="pill purple">Prereq · 01 Foundations of LLMs</span>
+</div>
+
+<h3>How to use this page</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Level</th><th>What you get</th><th>Who it is for</th></tr></thead>
+<tbody>
+<tr><td><b>1 · The core idea</b><br/>sections 1-6, about 30 minutes</td><td>What attention does, how a word decides where to look, and one example worked by hand</td><td>Everyone. Read this first.</td></tr>
+<tr><td><b>2 · The real version</b><br/>sections 7-11</td><td>The full attention step, the parts that make it trainable, and what breaks without them</td><td>When Level 1 feels easy</td></tr>
+<tr><td><b>3 · Engineering and interviews</b><br/>sections 12-16</td><td>Memory at generation time, production practice, comparisons, interview questions</td><td>Optional on a first read</td></tr>
+</tbody>
+</table>
+</div>
+
+<p class="bd-choose">Everything on this page comes back to five ideas. Level 1 covers the
+first three.</p>
+<ol>
+<li><b>Attention is score, softmax, blend.</b> A word scores every earlier word, turns the
+scores into percentages, and takes a weighted mix of what those words carry.</li>
+<li><b>Query, key and value.</b> What a word is looking for, what it offers, and what it
+passes on. All three are learned.</li>
+<li><b>Attention moves information between words; the feed-forward network processes each
+word.</b> Stack that pair many times and you have the whole model.</li>
+<li><b>Attention needs help with order.</b> Position has to be supplied, and the causal
+mask stops a word from reading the words after it.</li>
+<li><b>Cost grows with the square of the length.</b> At serving time the KV cache, not the
+weights, is usually what runs out.</li>
+</ol>
+
+<!-- ================= LEVEL 1 ================= -->
+<div class="level-head" id="level-1"><span class="lv-badge">Level 1</span><span class="lv-title">The core idea</span><span class="lv-meta">About 30 minutes. No maths beyond multiplying and adding.</span></div>
+
+<!-- ================= 1 ================= -->
+<h2 id="known">1 · What you already know</h2>
+<p>From <a href="00_basics.html">The Basics</a>: the word <em>bank</em> means one thing in "He sat on the river bank" and
+another in "He withdrew cash from the bank". Attention is how a model tells them apart.</p>
+<p>From module 01: text becomes tokens, and each token becomes a <b>vector</b> - a list of
+numbers that stands for its meaning. The vectors pass through a stack of layers, and the
+last layer scores every possible next token. Softmax turns those scores into
+probabilities.</p>
+<p><b>This page opens up one of those layers.</b></p>
+<p>One note on wording. The examples here say "word" to stay readable. Models actually
+work on tokens, which are often whole words and sometimes pieces of words. Everything on
+this page works the same either way.</p>
+
+<!-- ================= 2 ================= -->
+<h2 id="breaks">2 · The problem transformers solved</h2>
+<p>Before 2017, language models mostly read text one word at a time. They kept a running
+summary, called the <b>hidden state</b>, and updated it after every word. These were
+<b>recurrent neural networks</b>, or RNNs.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 148" role="img" aria-labelledby="rn-t rn-d">
+<title id="rn-t">RNN execution model</title>
+<desc id="rn-d">One token is read, combined with the current hidden state to produce a new hidden state and an output. The new hidden state feeds back in for the next token, so positions are processed strictly one after another.</desc>
+<defs>
+<marker id="ah-rn" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker>
+<marker id="ah-rnp" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--accent)"></path></marker>
+</defs>
+<path class="loop" d="M690 58 C690 14, 250 14, 220 50" marker-end="url(#ah-rnp)"></path>
+<text class="loop-lbl" x="455" y="14">the hidden state is the only thing carried forward</text>
+<rect class="box" x="11" y="58" width="158" height="58" rx="12"></rect>
+<rect class="box" x="191" y="58" width="158" height="58" rx="12"></rect>
+<rect class="box" x="371" y="58" width="158" height="58" rx="12"></rect>
+<rect class="box" x="551" y="58" width="158" height="58" rx="12"></rect>
+<rect class="box" x="731" y="58" width="158" height="58" rx="12"></rect>
+<path class="arw" d="M172 87 H186" marker-end="url(#ah-rn)"></path>
+<path class="arw" d="M352 87 H366" marker-end="url(#ah-rn)"></path>
+<path class="arw" d="M532 87 H546" marker-end="url(#ah-rn)"></path>
+<path class="arw" d="M712 87 H726" marker-end="url(#ah-rn)"></path>
+<text class="lbl" x="90" y="92">read word t</text>
+<text class="lbl" x="270" y="83">combine with</text>
+<text class="lbl mono" x="270" y="101">h(t-1)</text>
+<text class="lbl mono" x="450" y="92">tanh / gates</text>
+<text class="lbl" x="630" y="83">new state</text>
+<text class="lbl mono" x="630" y="101">h(t)</text>
+<text class="lbl" x="810" y="92">output t</text>
+</svg>
+
+<p>This design has two problems, and better training cannot fix either of them:</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Problem</th><th>Why it happens</th></tr></thead>
+<tbody>
+<tr><td>Slow to train</td><td>Word 400 cannot be processed until word 399 is finished. A GPU with thousands of cores still works through the text one step at a time.</td></tr>
+<tr><td>Forgets distant words</td><td>Everything word 1 contributed has to survive inside one fixed-size summary that is rewritten 399 times. In practice it fades.</td></tr>
+</tbody>
+</table>
+</div>
+<p>Both problems have one cause: <b>information travels from one word to another only by
+passing through every word in between.</b> The transformer removes that. Any word can read
+any earlier word directly, in one step.</p>
+
+<!-- ================= 3 ================= -->
+<h2 id="idea">3 · The big idea: every word looks back at every earlier word</h2>
+<p>Take those two sentences. When the model reaches <em>bank</em>, it lets
+<em>bank</em> look back at every earlier word and decide how much each one matters right
+now. Then the vector for <em>bank</em> is updated with a blend of what those words
+carry.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 300" role="img" aria-labelledby="at-t at-d">
+<title id="at-t">Attention weights for the word bank in two sentences</title>
+<desc id="at-d">Two sentences end in the word bank, and arcs run from bank back to each earlier word, thicker for a larger share of attention. In "He withdrew cash from the bank", bank gives 62 percent to cash, 25 percent to withdrew and 4 to 5 percent to each other word. In "He sat on the river bank", bank gives 72 percent to river, 12 percent to sat and 4 to 8 percent to each other word. The weights are illustrative, not taken from a real model.</desc>
+<path class="att" d="M800 102 Q450 -47 100 102" stroke-width="1.6" stroke-opacity="0.34"></path>
+<path class="att" d="M800 102 Q520 -23 240 102" stroke-width="3.7" stroke-opacity="0.54"></path>
+<path class="att" d="M800 102 Q590 1 380 102" stroke-width="7.4" stroke-opacity="0.90"></path>
+<path class="att" d="M800 102 Q660 24 520 102" stroke-width="1.7" stroke-opacity="0.35"></path>
+<path class="att" d="M800 102 Q730 48 660 102" stroke-width="1.6" stroke-opacity="0.34"></path>
+<text class="lbl word" x="100" y="120">He</text>
+<text class="cap pct" x="100" y="142">4%</text>
+<text class="lbl word" x="240" y="120">withdrew</text>
+<text class="cap pct" x="240" y="142">25%</text>
+<text class="lbl word" x="380" y="120" font-weight="800">cash</text>
+<text class="cap pct" x="380" y="142">62%</text>
+<text class="lbl word" x="520" y="120">from</text>
+<text class="cap pct" x="520" y="142">5%</text>
+<text class="lbl word" x="660" y="120">the</text>
+<text class="cap pct" x="660" y="142">4%</text>
+<text class="lbl word tgt" x="800" y="120">bank</text>
+<text class="cap pct" x="800" y="142">being updated</text>
+<path class="att" d="M800 244 Q450 95 100 244" stroke-width="1.6" stroke-opacity="0.34"></path>
+<path class="att" d="M800 244 Q520 119 240 244" stroke-width="2.4" stroke-opacity="0.42"></path>
+<path class="att" d="M800 244 Q590 143 380 244" stroke-width="2.0" stroke-opacity="0.38"></path>
+<path class="att" d="M800 244 Q660 166 520 244" stroke-width="1.6" stroke-opacity="0.34"></path>
+<path class="att" d="M800 244 Q730 190 660 244" stroke-width="8.4" stroke-opacity="1.00"></path>
+<text class="lbl word" x="100" y="262">He</text>
+<text class="cap pct" x="100" y="284">4%</text>
+<text class="lbl word" x="240" y="262">sat</text>
+<text class="cap pct" x="240" y="284">12%</text>
+<text class="lbl word" x="380" y="262">on</text>
+<text class="cap pct" x="380" y="284">8%</text>
+<text class="lbl word" x="520" y="262">the</text>
+<text class="cap pct" x="520" y="284">4%</text>
+<text class="lbl word" x="660" y="262" font-weight="800">river</text>
+<text class="cap pct" x="660" y="284">72%</text>
+<text class="lbl word tgt" x="800" y="262">bank</text>
+<text class="cap pct" x="800" y="284">being updated</text>
+</svg>
+<p class="bd-item">The percentages are made up for illustration, but the pattern is what
+real models do. Three things to notice:</p>
+<ul>
+<li><b>Same word, different blend.</b> <em>bank</em> leans on <em>cash</em> in the first
+sentence and on <em>river</em> in the second, so it ends up with a different vector - a
+different meaning.</li>
+<li><b>Nobody wrote these rules.</b> The model learned during training which words should
+matter to which.</li>
+<li><b>Every word does this,</b> not just <em>bank</em>, and all of them at the same
+time.</li>
+</ul>
+<p>That is attention. The next two sections show how a word decides where to look, and
+then work one example with real numbers.</p>
+
+<!-- ================= 4 ================= -->
+<h2 id="qkv">4 · Query, key and value: how a word decides where to look</h2>
+<p>From its own vector, every word makes three new vectors, using three matrices the
+model learned in training:</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Plain meaning</th><th>In a library</th><th>For <em>bank</em></th></tr></thead>
+<tbody>
+<tr><th>Query</th><td>What this word is looking for</td><td>What you type into the search box</td><td>"Which earlier words tell me what kind of bank I am?"</td></tr>
+<tr><th>Key</th><td>What this word offers to others</td><td>The label on a book's spine</td><td><em>cash</em>: "I am about money". <em>river</em>: "I am about water".</td></tr>
+<tr><th>Value</th><td>What this word passes on if it is chosen</td><td>What is inside the book</td><td>What <em>cash</em> actually adds to the new vector for <em>bank</em></td></tr>
+</tbody>
+</table>
+</div>
+<p>The lookup works like a search. Compare <em>bank</em>'s query with every earlier word's
+key: a close match gives a high score. Then take mostly the values of the best
+matches.</p>
+<p>Keys and values are separate for the same reason a book's spine label is not the whole
+book. What makes a word easy to find is not the same as what it should pass on.</p>
+<div class="callout note">
+<div class="c-ico">💡</div>
+<div class="c-body"><div class="c-title">The quotes are ours, not the model's</div>
+<p>Real queries and keys are lists of numbers. Nobody tells the model what to look for. It
+ends up with useful queries and keys because they help it predict the next word, and the
+library comparison is only a way to picture that.</p></div>
+</div>
+
+<!-- ================= 5 ================= -->
+<h2 id="worked">5 · Worked example: attention by hand</h2>
+<p>Here is attention with real numbers, small enough to check with a pencil. The word
+<em>bank</em> looks back at three earlier words: <em>withdrew</em>, <em>cash</em> and
+<em>the</em>. Real vectors have dozens of numbers each. These have two.</p>
+<p>The query for <em>bank</em> is <code>[1, 1]</code>.</p>
+
+<h4>Step 1 · Score: compare the query with each key</h4>
+<p>Multiply the two lists number by number and add the results. This is called a
+<b>dot product</b>. A bigger result means a closer match.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Earlier word</th><th>Its key</th><th>Query · key</th><th>Score</th></tr></thead>
+<tbody>
+<tr><td>withdrew</td><td><code>[1, 0]</code></td><td>1×1 + 1×0</td><td><b>1</b></td></tr>
+<tr><td>cash</td><td><code>[1, 1]</code></td><td>1×1 + 1×1</td><td><b>2</b></td></tr>
+<tr><td>the</td><td><code>[1, -1]</code></td><td>1×1 + 1×(-1)</td><td><b>0</b></td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Step 2 · Softmax: turn the scores into percentages</h4>
+<p>Raise <i>e</i> (about 2.718) to the power of each score, then divide each result by
+their total. You met softmax in module 01. It turns any scores into percentages that add
+up to 100, with the biggest score getting the biggest share.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Word</th><th>Score</th><th><span style="text-transform:none"><i>e</i><sup>score</sup></span></th><th>÷ total (11.11)</th><th>Weight</th></tr></thead>
+<tbody>
+<tr><td>withdrew</td><td>1</td><td>2.72</td><td>0.245</td><td><b>24%</b></td></tr>
+<tr><td>cash</td><td>2</td><td>7.39</td><td>0.665</td><td><b>67%</b></td></tr>
+<tr><td>the</td><td>0</td><td>1.00</td><td>0.090</td><td><b>9%</b></td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Step 3 · Blend: mix the values using those weights</h4>
+<p>Multiply each word's value by its weight, then add everything up.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Word</th><th>Weight</th><th>Its value</th><th>Weight × value</th></tr></thead>
+<tbody>
+<tr><td>withdrew</td><td>0.245</td><td><code>[0, 1]</code></td><td><code>[0, 0.245]</code></td></tr>
+<tr><td>cash</td><td>0.665</td><td><code>[1, 0]</code></td><td><code>[0.665, 0]</code></td></tr>
+<tr><td>the</td><td>0.090</td><td><code>[0.5, 0.5]</code></td><td><code>[0.045, 0.045]</code></td></tr>
+<tr><th>Sum</th><td></td><td></td><td><b><code>[0.71, 0.29]</code></b></td></tr>
+</tbody>
+</table>
+</div>
+<p>The new vector for <em>bank</em> is <code>[0.71, 0.29]</code>. Two-thirds of it came
+from <em>cash</em>, because <em>cash</em>'s key matched <em>bank</em>'s query best.
+<b>That is all attention is.</b></p>
+
+<div class="callout key">
+<div class="c-ico">🔑</div>
+<div class="c-body"><div class="c-title">Attention in three words</div>
+<p><b>Score, softmax, blend.</b> Score every earlier word against your query. Turn the
+scores into percentages. Take that mix of their values.</p></div>
+</div>
+
+<p>A real model differs only in size. Its vectors have 64 to 128 numbers per head instead
+of 2. A word also scores itself, as well as the words before it. And thousands of words do
+this at the same time. The three steps do not change.</p>
+
+<details class="collapse"><summary>Optional · check these numbers in Python (nothing to install) <span class="chev">›</span></summary>
+<div class="collapse-body">
+<p>Paste this into any Python 3 prompt. It repeats the three steps above.</p>
+<pre><code>import math
+
+query  = [1, 1]                                    # the query for "bank"
+keys   = {"withdrew": [1, 0], "cash": [1, 1], "the": [1, -1]}
+values = {"withdrew": [0, 1], "cash": [1, 0], "the": [0.5, 0.5]}
+
+# 1 - score: dot product of the query with each key
+scores = {w: sum(q * k for q, k in zip(query, key)) for w, key in keys.items()}
+
+# 2 - softmax: e to the power of each score, divided by the total
+total = sum(math.exp(s) for s in scores.values())
+weights = {w: math.exp(s) / total for w, s in scores.items()}
+
+# 3 - blend: weighted sum of the values
+blend = [sum(weights[w] * values[w][i] for w in values) for i in range(2)]
+
+print(scores)                                       # {'withdrew': 1, 'cash': 2, 'the': 0}
+print({w: round(p, 2) for w, p in weights.items()}) # {'withdrew': 0.24, 'cash': 0.67, 'the': 0.09}
+print([round(x, 2) for x in blend])                 # [0.71, 0.29]
+</code></pre>
+<p>Try changing the query to <code>[1, -1]</code> and predict which word wins before you
+run it.</p>
+</div></details>
+
+<!-- ================= 6 ================= -->
+<h2 id="block">6 · From one word to a whole model</h2>
+<p>Section 5 updated one word. A transformer layer does it for every word at once, then
+adds one more step:</p>
+
+<svg class="bd-svg" viewBox="0 0 900 110" role="img" aria-labelledby="tr-t tr-d">
+<title id="tr-t">Transformer execution model</title>
+<desc id="tr-d">Token vectors gain positional information, then every position produces a query, key and value. Attention scores are computed between all pairs, softmax turns them into weights, and each position takes a weighted sum of the values. The feed-forward network then processes each position.</desc>
+<defs><marker id="ah-tr" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box" x="11" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="191" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="371" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="551" y="26" width="158" height="58" rx="12"></rect>
+<rect class="box" x="731" y="26" width="158" height="58" rx="12"></rect>
+<path class="arw" d="M172 55 H186" marker-end="url(#ah-tr)"></path>
+<path class="arw" d="M352 55 H366" marker-end="url(#ah-tr)"></path>
+<path class="arw" d="M532 55 H546" marker-end="url(#ah-tr)"></path>
+<path class="arw" d="M712 55 H726" marker-end="url(#ah-tr)"></path>
+<text class="lbl" x="90" y="51">word vectors</text>
+<text class="lbl" x="90" y="69">+ position</text>
+<text class="lbl mono" x="270" y="51">Q, K, V</text>
+<text class="lbl" x="270" y="69">for every word</text>
+<text class="lbl" x="450" y="51">score</text>
+<text class="lbl" x="450" y="69">every pair</text>
+<text class="lbl" x="630" y="51">softmax,</text>
+<text class="lbl" x="630" y="69">then blend</text>
+<text class="lbl" x="810" y="51">feed-forward</text>
+<text class="lbl" x="810" y="69">each word alone</text>
+<text class="cap" x="360" y="104">attention: the first four boxes</text>
+</svg>
+
+<ol>
+<li>Each word's vector also carries its position in the text. Level 2 explains why that
+is needed.</li>
+<li>Every word makes its query, key and value.</li>
+<li>Every word's query is scored against every earlier word's key.</li>
+<li>Softmax, then blend, exactly as in section 5.</li>
+<li>Each word's new vector goes through a small neural network on its own, called the
+<b>feed-forward network</b>. This is where the information a word just gathered gets
+processed.</li>
+</ol>
+<p><b>Attention moves information between words; the feed-forward network processes each
+word.</b> That pair is one <b>block</b>.</p>
+<p>A model stacks many identical blocks, each with its own learned weights: 12 in GPT-2
+small, 32 in a typical 7B model. Each block refines the vectors a little more. After the
+last one, every vector is turned into next-token scores, exactly as in module 01.</p>
+<p>This fixes both RNN problems. Every word reads every earlier word directly, so distance
+no longer causes forgetting. And all the words are processed at once, so training no longer
+waits on a chain of steps.</p>
+
+<h3>Check yourself: Level 1</h3>
+<p>Answer each one out loud before you open it. Recalling an answer is what makes it
+stick; re-reading it is not.</p>
+<details class="recall"><summary><span class="q-ico">Q</span> What two problems came from reading text one word at a time? <span class="chev">›</span></summary><div class="a">Training was slow, because each word had to wait for the one before it. And distant words were forgotten, because everything had to survive inside one summary that was rewritten at every word.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Name the three steps of attention, in order. <span class="chev">›</span></summary><div class="a">Score (compare my query with each key), softmax (turn the scores into percentages), blend (take that mix of the values).</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> <span>In "He sat on the river bank", which word does <em>bank</em> attend to most, and what changes because of it?</span> <span class="chev">›</span></summary><div class="a"><em>river</em>. The new vector for <em>bank</em> is mostly a blend of <em>river</em>'s value, so it now means a riverside, not a place that holds money.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What is the difference between a key and a value? <span class="chev">›</span></summary><div class="a">The key is what a word offers to be matched against - it decides <em>whether</em> the word gets picked. The value is what the word passes on once it is picked.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What does the feed-forward network do that attention does not? <span class="chev">›</span></summary><div class="a">Attention moves information between words. The feed-forward network processes each word's vector on its own, after attention has gathered the information.</div></details>
+
+<div class="callout tip">
+<div class="c-ico">✅</div>
+<div class="c-body"><div class="c-title">You can stop here</div>
+<p>If you answered those, you can explain what a transformer does. Level 2 shows the real
+version, and the parts that make it work in practice.</p></div>
+</div>
+
+<!-- ================= LEVEL 2 ================= -->
+<div class="level-head" id="level-2"><span class="lv-badge">Level 2</span><span class="lv-title">The real version</span><span class="lv-meta">The same score, softmax and blend, plus the parts that make it trainable.</span></div>
+
+<!-- ================= 7 ================= -->
+<h2 id="mechanics">7 · Attention, the real version</h2>
+<p>A real model does section 5 for every word at once, using matrix multiplication. The
+input is a table with one row per token: <code>[sequence_length, model_width]</code>.</p>
+<ol>
+<li><b>Vectors and position.</b> Each token becomes a vector, and the model is given each
+token's position. Section 8 shows the two ways to do that.</li>
+<li><b>Q, K and V.</b> Multiply the input by three learned matrices. Every position gets
+its own query, key and value.</li>
+<li><b>Score every pair.</b> Take the dot product of every query with every key,
+including the position's own key. For <i>n</i> tokens that is an <i>n</i> × <i>n</i>
+table of scores.</li>
+<li><b>Scale.</b> Divide every score by the square root of the head width (√64 = 8 in
+GPT-2 small).</li>
+<li><b>Mask the future.</b> Set every score where the key comes <em>after</em> the query to
+minus infinity.</li>
+<li><b>Softmax each row.</b> Each position's scores become weights that add up to 1. The
+masked scores become exactly 0.</li>
+<li><b>Blend.</b> Multiply the weights by V. Each position's output is a weighted sum of
+the values it was allowed to see.</li>
+<li><b>Combine the heads.</b> Several heads did steps 2 to 7 side by side. Join their
+outputs, multiply by one more learned matrix, and add the result back onto the
+input.</li>
+</ol>
+<p>Steps 3, 6 and 7 are the score, softmax and blend you did by hand. Steps 4, 5 and 8 are
+support.</p>
+<p>Steps 2 to 7 happen for all positions at the same time, as matrix multiplications.
+<b>There is no loop over the sequence anywhere</b>, and that is what lets training use the
+whole GPU.</p>
+
+<!-- ================= 8 ================= -->
+<h2 id="components">8 · The supporting parts, and why each exists</h2>
+<p>Each part below is there because something specific goes wrong without it.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Part</th><th>What it does</th><th>What goes wrong without it</th></tr></thead>
+<tbody>
+<tr><td><b>Scaling</b></td><td>Divides scores by √(head width)</td><td>Scores grow with the vector size, softmax puts nearly all the weight on one word, and learning stalls</td></tr>
+<tr><td><b>Causal mask</b></td><td>Hides later words before softmax</td><td>In training, the model could read the very word it is meant to predict, so it would learn nothing useful</td></tr>
+<tr><td><b>Multiple heads</b></td><td>Runs several attentions side by side, each with its own Q, K and V</td><td>One set of weights has to cover every kind of relationship at once</td></tr>
+<tr><td><b>Positional information</b></td><td>Tells the model where each token sits</td><td>Attention compares content only, so word order is lost or blurred (section 10)</td></tr>
+<tr><td><b>Residual connection</b></td><td>Adds each sub-layer's output to its input instead of replacing it</td><td>Deep stacks stop training: the signal, and the learning signal flowing back, fade layer by layer</td></tr>
+<tr><td><b>Normalisation</b></td><td>Rescales each vector to a standard size before each sub-layer</td><td>The numbers drift in size through the stack and training becomes unstable</td></tr>
+<tr><td><b>Feed-forward network</b></td><td>Two linear layers with a non-linearity between them, applied to each position on its own</td><td>The model can gather information but cannot process it. About two-thirds of the parameters live here.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h4>Multiple heads, in numbers</h4>
+<p>In GPT-2 small, the vector width of 768 is split into 12 heads of 64 numbers each.
+Each head runs attention on its own 64 numbers, then the 12 outputs are joined back into
+768. Some heads learn recognisable jobs, such as looking at the previous token or copying
+a pattern that appeared earlier in the text, but many have no clean description.</p>
+
+<h4>Positional information: two ways to supply it</h4>
+<p>The original 2017 transformer <b>added</b> a fixed pattern of sine and cosine waves to
+each token vector before the first block. GPT-2 added a learned pattern instead. Most
+current models use <b>RoPE</b> (rotary position embedding). With RoPE nothing is added to
+the token vector. Instead, inside every attention layer, Q and K are rotated by an angle
+that depends on position, so a score depends on how far apart two tokens are.</p>
+
+<h4>Normalisation: where it goes</h4>
+<p>The original paper normalised <em>after</em> each sub-layer. Modern models normalise
+<em>before</em> it, which trains more stably in deep stacks. Many use RMSNorm, a cheaper
+variant that only rescales.</p>
+
+<h4>The block, in two lines</h4>
+<p>Put together, one modern block is:</p>
+<pre><code>x = x + attention(norm(x))      # words exchange information
+x = x + feed_forward(norm(x))   # each word processes what it gathered
+</code></pre>
+<p>The <code>x +</code> is the residual connection. The stack is this block repeated, each
+copy with its own weights. Nothing changes shape from bottom to top.</p>
+
+<!-- ================= 9 ================= -->
+<h2 id="trace">9 · Trace: the shapes through one block</h2>
+<p>A four-token sequence through one block of GPT-2 small. <code>[4, 768]</code> means 4
+rows, one per token, of 768 numbers each.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Step</th><th>Operation</th><th>Shape in</th><th>Shape out</th><th>Cost</th></tr></thead>
+<tbody>
+<tr><td>1</td><td>embed + position</td><td><code>[4]</code> ids</td><td><code>[4, 768]</code></td><td>a lookup</td></tr>
+<tr><td>2</td><td>project to Q, K, V</td><td><code>[4, 768]</code></td><td>3 × <code>[4, 768]</code></td><td>linear in sequence length</td></tr>
+<tr><td>3</td><td>split into 12 heads</td><td>3 × <code>[4, 768]</code></td><td>3 × 12 × <code>[4, 64]</code></td><td>free - only a reshape</td></tr>
+<tr><td>4</td><td><code>Q @ K.T</code>, per head</td><td>2 × <code>[4, 64]</code></td><td><code>[4, 4]</code></td><td><b>square</b> in sequence length</td></tr>
+<tr><td>5</td><td>scale and mask</td><td><code>[4, 4]</code></td><td><code>[4, 4]</code></td><td>cheap</td></tr>
+<tr><td>6</td><td>softmax</td><td><code>[4, 4]</code></td><td><code>[4, 4]</code></td><td>rows add up to 1</td></tr>
+<tr><td>7</td><td><code>weights @ V</code>, per head</td><td><code>[4, 4]</code>, <code>[4, 64]</code></td><td><code>[4, 64]</code></td><td><b>square</b> in sequence length</td></tr>
+<tr><td>8</td><td>join 12 heads, project, add residual</td><td>12 × <code>[4, 64]</code></td><td><code>[4, 768]</code></td><td>linear</td></tr>
+<tr><td>9</td><td>feed-forward, 768 → 3,072 → 768</td><td><code>[4, 768]</code></td><td><code>[4, 768]</code></td><td>linear, and most of the work at short lengths</td></tr>
+</tbody>
+</table>
+</div>
+<p>Only rows 4 and 7 grow with the square of the length, and they are the whole reason
+long context is expensive. <b>Everything else scales linearly.</b></p>
+
+<!-- ================= 10 ================= -->
+<h2 id="break">10 · Break it</h2>
+<p>Two ways to break a transformer. The first loses meaning; the second loses money.</p>
+
+<h4>Remove positional information</h4>
+<p>Attention compares tokens by content only. Shuffle the input and every token gets the
+same scores as before, just in a different order. In a model that reads in both directions,
+"The dog bit the man" and "The man bit the dog" contain the same tokens, so it cannot tell
+them apart. Nothing raises an error: the model simply loses word order.</p>
+<p>Left-to-right models are a partial exception. The causal mask leaks some order, because
+each position sees a different number of earlier tokens, and research models trained with
+no positional information still pick up word order from it. Current models still supply
+position explicitly, usually with RoPE, partly because it is one of the main levers for
+extending context length.</p>
+
+<h4>Make the input long</h4>
+<p>The second failure is arithmetic, and it is the one that costs money.</p>
+
+<svg class="bd-svg" viewBox="0 0 900 175" role="img" aria-labelledby="qd-t qd-d">
+<title id="qd-t">Quadratic attention cost</title>
+<desc id="qd-d">Doubling the sequence length from one thousand to two thousand tokens quadruples the number of attention score entries, and each further doubling quadruples it again, until a naive implementation runs out of GPU memory.</desc>
+<defs><marker id="ah-qd" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker></defs>
+<rect class="box" x="20" y="66" width="170" height="56" rx="12"></rect>
+<rect class="box" x="250" y="66" width="170" height="56" rx="12"></rect>
+<rect class="box" x="480" y="66" width="170" height="56" rx="12"></rect>
+<rect class="box fail" x="710" y="66" width="170" height="56" rx="12"></rect>
+<path class="arw" d="M193 94 H246" marker-end="url(#ah-qd)"></path>
+<path class="arw" d="M423 94 H476" marker-end="url(#ah-qd)"></path>
+<path class="arw" d="M653 94 H706" marker-end="url(#ah-qd)"></path>
+<text class="lbl" x="105" y="88">1k tokens</text>
+<text class="lbl mono" x="105" y="106">1M entries</text>
+<text class="lbl" x="335" y="88">2k tokens</text>
+<text class="lbl mono" x="335" y="106">4M entries</text>
+<text class="lbl" x="565" y="88">4k tokens</text>
+<text class="lbl mono" x="565" y="106">16M entries</text>
+<text class="lbl" x="795" y="88">8k tokens</text>
+<text class="lbl mono" x="795" y="106">out of memory</text>
+<path class="xmark" d="M777 132 L813 158 M813 132 L777 158"></path>
+<text class="cap" x="450" y="168">each doubling of length multiplies the attention score table by four</text>
+</svg>
+<p>The score table has one entry for every pair of tokens, in every head of every layer.
+With a naive implementation that keeps whole tables in memory, a small GPU runs out long
+before the model's advertised context length.</p>
+
+<!-- ================= 11 ================= -->
+<h2 id="fix">11 · Fix it</h2>
+<p>Positional information goes back in. RoPE is what current models use, because it makes
+the score depend on the distance between two positions rather than on their absolute
+indexes.</p>
+<p>The quadratic cost cannot be removed, only managed. Three levers, in the order you
+should reach for them:</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Lever</th><th>What it changes</th><th>What it costs</th></tr></thead>
+<tbody>
+<tr><td><b>Send less</b></td><td>Retrieve the relevant 2k tokens instead of sending 32k</td><td>A retrieval system - <a href="../rag-deep-dive.html">05 · RAG</a></td></tr>
+<tr><td><b>FlashAttention</b></td><td>Never builds the full score table in memory; same maths, computed in tiles</td><td>Nothing, if your serving stack supports it</td></tr>
+<tr><td><b>Sliding window / GQA</b></td><td>Each position attends to fewer keys, or heads share keys and values</td><td>Some long-range accuracy</td></tr>
+</tbody>
+</table>
+</div>
+<p><b>The first lever is the one engineers skip and the one that helps most.</b> A 16×
+reduction in prompt length is a 256× reduction in attention score work.</p>
+
+<h3>Check yourself: Level 2</h3>
+<details class="recall"><summary><span class="q-ico">Q</span> Why are the scores divided by the square root of the head width? <span class="chev">›</span></summary><div class="a">Dot products grow with the vector size. Unscaled, softmax puts nearly all the weight on one token and learning stalls. Dividing by √(head width) keeps the scores in a range where softmax stays soft.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What does the causal mask do, and why does a left-to-right model need it? <span class="chev">›</span></summary><div class="a">It sets every score for a later token to minus infinity before softmax, so those weights come out as exactly 0. Without it, training would let the model read the token it is supposed to predict.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> <span>GPT-2 small has a width of 768, but <code>Q @ K.T</code> works on <code>[4, 64]</code>. Where did 64 come from?</span> <span class="chev">›</span></summary><div class="a">The width is split across 12 heads: 12 × 64 = 768. Each head runs attention on its own 64 numbers, and the outputs are joined back to 768.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> A prompt grows from 2,000 to 8,000 tokens. Roughly how much bigger is the score table? <span class="chev">›</span></summary><div class="a">16 times. The length is 4 times bigger, and the table grows with the square of the length.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Write one modern transformer block in two lines. <span class="chev">›</span></summary><div class="a"><code>x = x + attention(norm(x))</code>, then <code>x = x + feed_forward(norm(x))</code>. The <code>x +</code> is the residual connection; the norm comes first in modern models.</div></details>
+
+<!-- ================= LEVEL 3 ================= -->
+<div class="level-head" id="level-3"><span class="lv-badge">Level 3</span><span class="lv-title">Engineering and interviews</span><span class="lv-meta">Optional on a first read. Come back when you serve models or prepare for interviews.</span></div>
+
+<!-- ================= 12 ================= -->
+<h2 id="state">12 · The KV cache: memory at generation time</h2>
+<p>Recall the loop from module 01: generate one token, append it, and run the model again.
+Without help, every new token would recompute the keys and values of every earlier
+token.</p>
+<p>It does not have to. Because of the causal mask, earlier tokens never look at later
+ones, so their keys and values never change. Each layer stores them instead: the
+<b>KV cache</b>. A new token computes its own query, key and value, appends its key and
+value to the cache, and compares its one query against everything stored.</p>
+<div class="table-wrap">
+<table>
+<tbody>
+<tr><th>What is stored</th><td>The keys and values of every earlier token, in every layer</td></tr>
+<tr><th>How it grows</th><td>By one entry per layer for every token processed. It never shrinks during a request.</td></tr>
+<tr><th>Where it lives</th><td>In GPU memory, for one request. It is freed when the request finishes.</td></tr>
+<tr><th>How big</th><td>About 0.5 MB per token for a 7B model without GQA, such as Llama 2 7B (2 × 32 layers × 4,096 numbers × 2 bytes). That is about 2 GB at 4,000 tokens - per concurrent request.</td></tr>
+<tr><th>Reuse</th><td>Some servers keep it across requests that share the same prompt prefix. This is called prefix caching.</td></tr>
+</tbody>
+</table>
+</div>
+
+<svg class="bd-svg" viewBox="0 0 900 190" role="img" aria-labelledby="kv-t kv-d">
+<title id="kv-t">The KV cache growing</title>
+<desc id="kv-d">After the prompt is processed the cache holds keys and values for five positions. Each generated token appends one more. The cache never shrinks during a request, so memory grows with every token produced.</desc>
+<rect class="snap" x="10" y="34" width="272" height="118" rx="12"></rect>
+<g class="snap-txt">
+<text class="lbl" x="146" y="60">after the prompt</text>
+<text class="cap mono" x="146" y="88">K,V for 5 positions</text>
+<text class="cap" x="146" y="112">one forward pass</text>
+<text class="cap" x="146" y="134">computed all 5 at once</text>
+</g>
+<rect class="snap" x="314" y="34" width="272" height="118" rx="12"></rect>
+<g class="snap-txt">
+<text class="lbl" x="450" y="60">after token 6</text>
+<text class="cap mono" x="450" y="88">K,V for 6 positions</text>
+<text class="cap" x="450" y="112">1 new query vs 6 keys</text>
+<text class="cap" x="450" y="134">positions 1-5 not recomputed</text>
+</g>
+<rect class="snap" x="618" y="34" width="272" height="118" rx="12"></rect>
+<g class="snap-txt">
+<text class="lbl" x="754" y="60">after token 7</text>
+<text class="cap mono" x="754" y="88">K,V for 7 positions</text>
+<text class="cap" x="754" y="112">memory keeps rising</text>
+<text class="cap" x="754" y="134">freed only at the end</text>
+</g>
+<text class="cap" x="450" y="180">the first pass is compute-bound; every pass after it is memory-bound</text>
+</svg>
+
+<p><b>The KV cache, not the weights, is usually what limits how many users one GPU can
+serve.</b> Grouped-query attention (GQA) lets several heads share one set of keys and
+values, which shrinks the cache several times over.</p>
+
+<!-- ================= 13 ================= -->
+<h2 id="production">13 · Production version</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Concern</th><th>What you do</th></tr></thead>
+<tbody>
+<tr><td>Memory planning</td><td>Weights plus KV cache plus activations. The cache is per concurrent request and is usually what runs out first</td></tr>
+<tr><td>Batching</td><td>Continuous batching keeps the GPU busy across requests of different lengths. It also means results can shift slightly between runs</td></tr>
+<tr><td>Prefill versus decode</td><td>The prompt pass is compute-bound; each generated token is memory-bound. They need different tuning and produce different latency curves</td></tr>
+<tr><td>Prefix caching</td><td>Put the stable part of the prompt first so its KV entries can be reused across requests</td></tr>
+<tr><td>Quantisation</td><td>4-bit weights cut weight memory roughly fourfold. Quantise the KV cache separately - it is often the bigger win</td></tr>
+<tr><td>Long context</td><td>Advertised context length is not free context length. Measure cost and accuracy at your real length before promising it</td></tr>
+<tr><td>Attention kernel</td><td>Use FlashAttention or equivalent. A naive implementation builds the whole score table in memory</td></tr>
+</tbody>
+</table>
+</div>
+
+<!-- ================= 14 ================= -->
+<h2 id="breakdown">14 · Transformer vs RNN, side by side</h2>
+<p>A reference summary of sections 2 to 12, in the six-label format used across the
+course.</p>
+
+<section class="breakdown">
+
+<h3 class="bd-tech"><span class="bd-tag">A</span> Transformer</h3>
+
+<h4>Basic level</h4>
+<p class="bd-item"><b class="no-jargon">What it is.</b> A neural network built from
+identical stacked blocks. Each block has a self-attention step, where every position reads
+every earlier position directly, and a feed-forward step that processes each position on
+its own.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It removes the sequential
+dependency between positions, so a whole sequence can be processed in parallel during
+training and long-range relationships survive intact.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b> All positions move through
+each block together: make Q, K and V, score every pair, softmax, blend, then
+feed-forward. The diagram in section 6 shows it.</p>
+
+<h4>Intermediate level</h4>
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> One block holds
+multi-head self-attention, a two-layer feed-forward network, two normalisation steps and
+two residual connections. Blocks are identical in shape and stacked - 12 in GPT-2 small,
+32 in a typical 7B model - with no change in vector width from bottom to top.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> During training there is no
+state between positions: the whole sequence is one matrix. During generation the KV cache
+stores the keys and values already computed, so each new token attends to them instead of
+recomputing everything.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> Attention
+compares every pair of positions, so compute and memory grow with the <b>square</b> of
+sequence length. The KV cache grows linearly and often dominates GPU memory at long
+context. Mitigations include grouped-query attention, sliding-window attention, and
+FlashAttention, which changes how the same maths is executed rather than the maths
+itself.</p>
+
+<h3 class="bd-tech"><span class="bd-tag">B</span> RNN and LSTM</h3>
+
+<h4>Basic level</h4>
+<p class="bd-item"><b class="no-jargon">What it is.</b> A recurrent neural network
+processes a sequence one position at a time, carrying a fixed-size hidden state vector
+forward from each step to the next.</p>
+<p class="bd-item"><b class="no-jargon">Core purpose.</b> It handles sequences of any
+length with a fixed, small amount of memory and a cost that grows linearly rather than
+quadratically.</p>
+<p class="bd-item"><b class="no-jargon">Execution model.</b> One position at a time:
+combine the token with the hidden state, update the state, emit an output, move on. The
+diagram in section 2 shows it.</p>
+
+<h4>Intermediate level</h4>
+<p class="bd-item"><b class="no-jargon">Architecture under the hood.</b> A plain RNN
+applies one weight matrix to the input and another to the previous hidden state, then a
+non-linearity. An <b>LSTM</b> adds three learned gates - input, forget and output - plus a
+separate cell state, so the network can hold a value across many steps without it being
+rewritten each time. A GRU merges those gates into two.</p>
+<p class="bd-item"><b class="no-jargon">State handling.</b> One hidden vector, overwritten
+at every position. Everything the model knows about all previous tokens must fit in it.
+Nothing else survives between steps.</p>
+<p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> Positions
+cannot be computed in parallel, so training does not scale with GPU width. Gradients
+shrink or explode across long chains, which the LSTM gates reduce rather than remove.
+Modern state-space models such as Mamba revisit the same idea with a formulation that can
+be parallelised during training.</p>
+
+<h3 class="bd-diff">The core differences</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Transformer</th><th>RNN / LSTM</th></tr></thead>
+<tbody>
+<tr><th>Workflow design</th>
+<td>All positions computed together. Path length between any two positions is 1.</td>
+<td>Positions computed in order. Path length between positions <em>i</em> and <em>j</em> is the distance between them.</td></tr>
+<tr><th>Inspecting a wrong answer</th>
+<td>Attention weights can be inspected to see which positions a layer drew on. Treat them as a clue, not an explanation: research has shown they can mislead about why a model produced an answer.</td>
+<td>The hidden state is one opaque vector, so there is not even a per-position clue to inspect.</td></tr>
+<tr><th>Architectural paradigm</th>
+<td>Direct, learned, all-pairs lookup over the sequence.</td>
+<td>A compressed running summary carried forward step by step.</td></tr>
+</tbody>
+</table>
+</div>
+
+<h3 class="bd-short">In short - which one to choose</h3>
+<p class="bd-choose">Use a transformer when:</p>
+<ul>
+<li>You are working with language, which is essentially always in this course.</li>
+<li>Training throughput matters and you have parallel hardware.</li>
+<li>Relationships between distant positions matter.</li>
+</ul>
+<p class="bd-choose">A recurrent model is still reasonable when:</p>
+<ul>
+<li>The sequence is very long and the memory per step must stay constant.</li>
+<li>You are running on a small embedded device with strict memory limits.</li>
+<li>Input arrives continuously and there is no fixed window to attend over.</li>
+</ul>
+<p class="bd-choose bd-avoid">Do not spend time on this comparison when:</p>
+<ul>
+<li>You are choosing an API model. This decision was made for you years ago.</li>
+<li>What you actually need is a longer context, which is a serving question, not an
+architecture one.</li>
+</ul>
+</section>
+
+<!-- ================= 15 ================= -->
+<h2 id="comparison">15 · Other sequence models</h2>
+<div class="table-wrap">
+<table>
+<thead><tr><th></th><th>Transformer</th><th>RNN / LSTM</th><th>CNN</th><th>State-space (Mamba)</th></tr></thead>
+<tbody>
+<tr><th>Cost in sequence length</th><td>Quadratic</td><td>Linear</td><td>Linear</td><td>Linear</td></tr>
+<tr><th>Trains in parallel</th><td>Yes</td><td>No</td><td>Yes</td><td>Yes</td></tr>
+<tr><th>Path between distant positions</th><td>1 step</td><td>One step per position in between</td><td>Several stacked layers; fewer with dilated kernels</td><td>Through the running state, like an RNN</td></tr>
+<tr><th>State at generation</th><td>KV cache, grows</td><td>Fixed vector</td><td>None</td><td>Fixed vector</td></tr>
+<tr><th>Where it is used now</th><td>Every major production LLM</td><td>Small on-device sequence work</td><td>Vision, some audio</td><td>Research, some hybrids</td></tr>
+</tbody>
+</table>
+</div>
+<p>The recurring trade is <b>quadratic cost bought long-range accuracy</b>. Every
+alternative in that table gives some accuracy back to get linear cost, and so far none has
+displaced the transformer for language.</p>
+
+<!-- ================= 16 ================= -->
+<h2 id="interview">16 &middot; Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What problem did the transformer solve over RNNs? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>RNNs processed tokens sequentially (slow, un-parallelizable) and struggled with long-range dependencies due to vanishing gradients. The transformer uses self-attention to connect any two tokens directly in one parallel step, enabling both long-range modeling and GPU-efficient training.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  In attention, what are Q, K, and V? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Three learned linear projections of each token's embedding. <strong>Query</strong> = what this token is looking for; <strong>Key</strong> = what each token offers for matching; <strong>Value</strong> = the information each token contributes. Output = softmax(Q·Kᵀ/√d)·V - a relevance-weighted blend of values.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  Why divide attention scores by √dₖ? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>In high dimensions, dot products have large variance (∝ dₖ), pushing softmax toward a near one-hot distribution where gradients vanish. Scaling by √dₖ normalizes the variance, keeping the softmax soft and the model trainable.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  Why do residual connections matter for deep transformers? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Each sub-layer computes <code>x + f(x)</code>. The identity path lets gradients flow directly to earlier layers (avoiding vanishing gradients) and lets each block learn a <em>refinement</em> rather than a full transformation, making 100+ layer stacks trainable.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  Your model degrades when prompts exceed ~8k tokens. Why, and what are your options? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Likely exceeding the trained context length - positional encodings are extrapolating to unseen positions, and attention quality drops (lost-in-the-middle). Options: switch to a longer-context model; apply RoPE scaling/interpolation; reduce input via better retrieval/chunking (<a href="../rag-deep-dive.html">RAG, End-to-End</a>); summarize or compress context; or use sliding-window/long-context architectures. Measure with a needle-in-haystack eval before/after.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  Explain the KV cache in terms of the causal mask. <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Because of the causal mask, token <em>i</em>'s keys/values never depend on future tokens and never change once computed. So during autoregressive generation we cache each token's K and V; generating token <em>t+1</em> only requires computing its own Q and attending over the cached K/V - turning per-step cost from O(t²) recompute into O(t). The cache size grows linearly with context, which is the dominant inference memory cost (mitigated by GQA/paged attention).</p></div></details>
+<details class="collapse"><summary><span class="pill purple">Staff · design</span>  Design an inference-serving layer to maximize throughput for a 70B model. <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Use a server like vLLM/TGI exploiting architectural facts: <strong>continuous batching</strong> (interleave requests at token granularity since each step is independent), <strong>paged KV cache</strong> (non-contiguous KV blocks → near-zero memory fragmentation, more concurrency), <strong>FlashAttention</strong> kernels, <strong>tensor/pipeline parallelism</strong> across GPUs for the large FFN/attention matmuls, <strong>quantization</strong> (e.g. FP8/INT8) to fit weights and speed matmuls, and <strong>GQA</strong> models to shrink the cache. Add prefix/prompt caching for shared system prompts. Tune the batch/context tradeoff against the O(n²) attention curve and your latency SLO.</p></div></details>
+
+<!-- ================= 17 ================= -->
+<h2 id="short">17 · In short, and what comes next</h2>
+<p class="bd-choose">The five ideas from the top of the page. Try to say each one before
+you read it.</p>
+<ol>
+<li><b>Attention is score, softmax, blend.</b> A word scores every earlier word, turns the
+scores into percentages, and takes a weighted mix of what those words carry.</li>
+<li><b>Query, key and value.</b> What a word is looking for, what it offers, and what it
+passes on. All three are learned.</li>
+<li><b>Attention moves information between words; the feed-forward network processes each
+word.</b> Stack that pair many times and you have the whole model.</li>
+<li><b>Attention needs help with order.</b> Position has to be supplied, and the causal
+mask stops a word from reading the words after it.</li>
+<li><b>Cost grows with the square of the length.</b> At serving time the KV cache, not the
+weights, is usually what runs out.</li>
+</ol>
+<div class="callout key">
+<div class="c-ico">🔑</div>
+<div class="c-body"><div class="c-title">The one idea to remember</div>
+<p><b>Attention moves information between positions; the feed-forward network does the
+work at each one.</b> Every other part of the block - residuals, norms, multiple heads,
+positional information - exists to make those two operations trainable and
+order-aware.</p></div>
+</div>
+<p><b>Next:</b> <a href="04_embeddings.html">03 · Embeddings</a>. Attention compares vectors inside the model; embeddings use the same idea outside it, turning whole pieces of text into vectors so you can search them by meaning. That is the first step towards giving a model your own documents.</p>
+
+<div class="page-nav" data-page-nav>
+<a href="01_foundations.html"><div class="dir">← Previous</div><div class="ttl">01 · Foundations of LLMs</div></a>
+<a class="next" href="04_embeddings.html"><div class="dir">Next →</div><div class="ttl">03 · Embeddings</div></a>
+</div>
+
+</main>
+<div class="toc-rail"><nav class="toc"></nav></div>
+</div>
+</div>
+</div>
+<script src="../assets/app.js?v=20261123b"></script>
+<script src="../assets/sitenav.js?v=20261123b"></script>
+<script src="../assets/enhance.js?v=20260925c"></script>
+<script src="../assets/genai-motion.js?v=20260728a"></script>
+<script src="../assets/glossary.js?v=20261123b"></script>
+</body>
+</html>
