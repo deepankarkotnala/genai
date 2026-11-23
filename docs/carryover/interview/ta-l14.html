@@ -1,0 +1,36 @@
+<h2 id="interview">8 · Interview practice</h2>
+
+        <h3>Two-minute answer - "How would you deploy this agent?"</h3>
+        <div class="callout note"><div class="c-ico">🎤</div><div class="c-body">
+        <p>"Stateless service, stateful run. Run state lives in a store rather than in memory, so any process can serve any request - which makes horizontal scaling and crash recovery the same mechanism. State is written before the work starts and after every step.</p>
+        <p>The API is submit-and-poll, because a degraded run can take a minute and a blocking endpoint would be killed by the load balancer with the run lost. Resume <em>restores</em> state rather than replaying - replaying would re-execute anything with a side effect, which is the double-payment problem arriving through the recovery path. If it can't restore safely, it escalates with the facts it has.</p>
+        <p>The approval gate becomes real here: preparing a refund returns 202 with an idempotency key, and a human approves via a separate request, possibly hours later. The token is minted in the service by an authenticated human, never by the agent.</p>
+        <p>Every response carries the prompt and toolset version, so an answer is attributable to a configuration - and a run started under one prompt refuses to resume under another, because that blend is a behaviour no trace explains.</p>
+        <p>What I'd flag as not done: the store is a directory of files rather than a database sharing a transaction boundary with the payment, and there's no concurrency control on a single run."</p></div></div>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> System design · Take this agent to 10,000 tickets a day across three regions. <span class="chev">›</span></summary><div class="a">
+        <p>Stateless workers behind a queue rather than synchronous HTTP - submit puts a job on the queue, workers pull, state goes to a shared store. That gives back-pressure, retries and horizontal scale for free, and it matches the fact that runs are already asynchronous.</p>
+        <p><strong>Regional:</strong> state and data residency per region, since ticket bodies are customer data; a model endpoint per region for latency and compliance. Version prompts globally but roll out per region so a bad change is contained.</p>
+        <p><strong>Capacity:</strong> at 10k/day with 15% reaching the agent, that's ~1,500 runs - small. The real constraint is provider rate limits and burst, so a queue with concurrency limits per model matters more than instance count.</p>
+        <p><strong>Recovery:</strong> a worker dies mid-run, the job returns to the queue, and the next worker resumes from stored state rather than restarting - which requires idempotency on every side effect, not just refunds.</p>
+        <p>Then the operational floor: SLOs on resolution rate and p99, alerting on escalation and override rates, cost budget per run, and a runbook for each. And I'd name the piece I'd fix first: the ledger and the payment need one transaction boundary.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Debugging · A worker crashed mid-run. What happens next? <span class="chev">›</span></summary><div class="a">
+        <p>Depends entirely on what was persisted and whether a side effect was in flight - those two questions come before anything else.</p>
+        <p>If state was written after each step, the next worker loads it and continues from the established facts. If a refund had been <em>prepared</em>, no money moved and the approval is still pending, so resume is safe. If a refund had been <em>executed</em> and the crash happened before the ledger write, the idempotency key makes the retry safe - that gap is my known exposure and I'd name it.</p>
+        <p>What must not happen is replay from zero, because that re-executes side effects. And a run that cannot be resumed safely - version drift, corrupt state - should be abandoned to a human with its facts rather than restarted.</p>
+        <p>Then the systemic answer: reconciliation against the payment provider, so a crash-window discrepancy is found by a job rather than by a customer.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Coding · Add durable state to an agent loop. <span class="chev">›</span></summary><div class="a">
+        <p>A record with run id, goal, step, established facts, attempted tools, status and version fields. Write before starting and after every step. Atomic write - temp file then rename - so a crash cannot leave a half-written document. Load-and-continue on resume, never replay. Validate the run id before it touches the filesystem.</p>
+        <p>Say while writing: "written before the work, so a crash still leaves a record a run began"; "atomic, because a half-written state file is worse than none"; "restore not replay, because side effects"; and "version fields so a resume across a prompt change can be refused".</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · When would you adopt a framework? <span class="chev">›</span></summary><div class="a">
+        <p>When it owns something genuinely fiddly that I would otherwise maintain. For me that is durable state, resumability and human-in-the-loop interrupts - LangGraph's checkpointer territory, and precisely the part I hand-rolled in this lesson.</p>
+        <p>What would not convince me is naming control flow. ReAct is twenty lines; routing is a classification call and a filtered tool list. A framework that gives those class names has added a dependency and a migration path, not capability.</p>
+        <p>And I would keep certain things regardless of framework: policy in code, the approval gate, the eval suite, the threat model. No framework provides those, and they are what make the agent safe rather than merely working.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · What are your SLOs, and what happens when one breaches? <span class="chev">›</span></summary><div class="a">
+        <p>Three: resolution rate without human intervention, p99 end-to-end latency, and cost per resolved ticket. Deliberately not "uptime" - the service being up tells you nothing about whether the agent is working.</p>
+        <p>Runbook per breach. <em>Resolution rate drops:</em> check escalation reasons first, since a dependency failing shows up here before it shows up as an error; then diff against the last prompt or toolset version. <em>p99 rises:</em> check step-count distribution and retry rate before blaming the model. <em>Cost rises:</em> check prompt-token growth per step, which catches prompt bloat and broken prefix caching.</p>
+        <p>And the meta-point: each of these is a <em>ratio</em>, so it moves with health rather than with traffic. Error counts move with traffic and will train people to ignore the channel.</p></div></details>

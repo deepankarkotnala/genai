@@ -1,0 +1,15 @@
+<h2 id="interview">15 &middot; Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What does a timeout actually bound? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>How long your process waits. It does not stop the work on the other side. The call you gave up on may still be running and may still complete, which is why a retry after a timeout needs the operation to be idempotent.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  Which errors are safe to retry? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Transient ones: a timeout, a 429, a 5xx, a dropped connection. Never a 400 or a validation error, because the same request will fail the same way and the retry only spends money and time.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  Why must escalation never fail? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>It is the fallback for every other failure. If escalation does a lookup or calls an external system, it can fail exactly when everything else has already failed. A fallible fallback is not a fallback, so escalate should validate its own arguments and nothing else.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  What is the difference between a repeat and an oscillation? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>A repeat is the same call with the same arguments again. An oscillation is two calls alternating: A, B, A, B. A check that compares only against the previous call never fires on an oscillation, because every call differs from the one before it. Detecting it needs a window of four.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  Your agent is looping in production. Walk through your response. <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Stop the bleeding first: the step limit and the cost budget should already cap it, so confirm they are set and firing. Then read a trace of one looping run and identify whether it is a repeat or an oscillation. Repeats usually mean a tool returns an error the model cannot act on. Oscillation usually means two instructions conflict. Fix the cause, keep the guard.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  What is partial failure, and why does nobody plan for it? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>A call that succeeds and returns incomplete data - three of five records, or a field that is null because an upstream service was degraded. It does not raise, so no error handler sees it. The agent treats partial data as complete and answers confidently. The fix is for tools to report completeness explicitly.</p></div></details>
+
+<!-- ================= 16 ================= -->

@@ -1,0 +1,15 @@
+<h2 id="interview">15 &middot; Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What does the model see of your tool? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Three things: the name, the description, and the parameter schema. It never sees your Python. Those three are serialised into the prompt, and the model chooses from them alone.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  Why is the tool description called prompt engineering? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Because it is text in the prompt that decides behaviour. A description that says what comes back, when to reach for the tool, and what an identifier looks like gets the tool selected correctly. "Gets an order" does not.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  The model asked for a tool with a bad argument. Whose job is it to catch that? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Yours. The model requests a call; it does not perform one. Validate the arguments against the schema before dispatch, and return the validation error to the model as a tool result rather than raising. A recoverable error is information the next decision can use.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  When should tool calls run in parallel? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>When every argument is known before any call runs and the results do not affect each other. If one call's argument comes from another call's result, they must run in order. Parallel calls also make partial failure normal, so the caller must decide what to do with two results and one error.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  Where is the trust boundary in a tool result? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Inside it, not around it. The shape of the result comes from your code and is trusted. The content can be text a customer wrote, so a trusted tool delivers untrusted text into the model's context. Treat the content as untrusted input regardless of which tool returned it.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  How do you stop a tool result from taking over the context window? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Cap it where it is produced. A tool that can return 40,000 characters should truncate, paginate or summarise before returning. Trimming the prompt later is too late, because the goal and earlier findings have already been crowded out by one document.</p></div></details>
+
+<!-- ================= 16 ================= -->

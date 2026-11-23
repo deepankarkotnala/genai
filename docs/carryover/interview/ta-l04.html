@@ -1,0 +1,33 @@
+<h2 id="interview">10 · Interview practice</h2>
+
+        <h3>Two-minute answer - "Explain ReAct, and when you'd use something else."</h3>
+        <div class="callout note"><div class="c-ico">🎤</div><div class="c-body">
+        <p>"ReAct interleaves reasoning and acting: the model picks one action, my code runs it, the result goes back into the conversation, and it decides again. It's adaptive, which is the only reason to use an agent rather than a workflow - step two can depend on what step one returned.</p>
+        <p>The cost is one model call per step. So when the steps are knowable up front I'd use plan-and-execute instead: two calls regardless of plan length, and I can show the plan to a human before anything runs. Its weakness is that the plan is made in ignorance - in our triage agent, a plan that includes 'look up the order' will call it even on a ticket with no order, because the order id only exists inside the ticket body.</p>
+        <p>In practice I'd combine them: route first with one cheap classification call to narrow the tool set, ReAct for the genuinely open cases, and reflection only on output a customer will read, because it roughly doubles cost. And I'd measure that before paying for it."</p></div></div>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> System design · Your agent averages 8 steps and costs too much. Reduce it without losing quality. <span class="chev">›</span></summary><div class="a">
+        <p>Get the trajectory distribution first - you cannot cut what you have not measured. Then, in order of payoff:</p>
+        <p><strong>Route.</strong> One cheap call to classify, then a narrowed tool set. Often the easy majority does not need the agent at all.</p>
+        <p><strong>Collapse tool calls.</strong> Eight steps often means several separate lookups that could be one coarser tool. Each round trip is a model call; merging two tools removes one.</p>
+        <p><strong>Model routing.</strong> Cheap model for gathering, strong model for the final judgement (Lesson 11).</p>
+        <p><strong>Cache.</strong> Repeated prefixes across runs are what prompt caching is for.</p>
+        <p><strong>Drop reflection</strong> unless evaluation shows it earning its keep.</p>
+        <p>Then the discipline: set a cost ceiling per run and alert on breaches, so this does not recur silently.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Debugging · An agent using plan-and-execute keeps calling a tool with obviously wrong arguments. Why? <span class="chev">›</span></summary><div class="a">
+        <p>Almost certainly unresolved plan placeholders. The plan was written before any tool ran, so it refers to values that did not exist yet - "the order from the ticket" - and the executor substituted something to make the call go through.</p>
+        <p>Check whether the executor resolves references from earlier results, or whether it passes the plan's prose through as an argument. Then look for the cascade: a bad argument produces a bad result, which is used to build the next call. The visible symptom is usually two or three steps downstream of the cause.</p>
+        <p>Fixes, cheapest first: validate arguments and reject placeholder-looking values; have the planner emit typed slots referencing step outputs; re-plan when a step fails; or switch to ReAct for this task, since a plan that cannot be written in advance is a signal the task is not plannable.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Coding · Implement routing, from scratch, in 10 minutes. <span class="chev">›</span></summary><div class="a">
+        <p>One classification call with a constrained output ("reply with exactly one word from this list"), validate the answer against your route map and fall back to a default if it is not in it, then run the normal loop with the tool list filtered to that route.</p>
+        <p>Say while writing: "I validate the route rather than trusting the string" and "the fallback is a real route, not an exception". A router that crashes on an unexpected word has moved the failure rather than handled it.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · How do you decide whether reflection is worth its cost? <span class="chev">›</span></summary><div class="a">
+        <p>Make it an A/B on a golden set, not a judgement call. Run with and without reflection, score both on the outcome metrics that matter, and compare against the cost and latency delta. Reflection typically helps most where the failure mode is "incomplete" and least where it is "confidently wrong", because a model cannot critique what it cannot see.</p>
+        <p>If it wins on only some ticket types, apply it selectively - reflect on refund recommendations, skip it on password resets. Selective application is usually where the real win is.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · A colleague wants to add a fifth pattern for every new problem. What do you say? <span class="chev">›</span></summary><div class="a">
+        <p>That patterns are control flow, so each one is cheap to write and expensive to <em>own</em>: another path to test, trace, evaluate and explain at 3 a.m. The question is not "does this pattern help sometimes" but "does it help enough to justify a permanent branch".</p>
+        <p>I'd want a measured win on the golden set, a named owner, and an answer to what it does when its assumption breaks - the way plan-and-execute breaks on unplannable tasks. Absent those, prefer tuning the tool descriptions and the router, which usually moves the number more than a new pattern does.</p></div></details>

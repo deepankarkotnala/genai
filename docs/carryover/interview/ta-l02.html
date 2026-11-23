@@ -1,0 +1,34 @@
+<h2 id="interview">7 · Interview practice</h2>
+
+        <h3>Two-minute answer - "Explain how an agent works."</h3>
+        <div class="callout note"><div class="c-ico">🎤</div><div class="c-body">
+        <p>"An agent is a loop around a model with tools. Each turn, the model sees the goal plus every result so far and picks one next action. My code executes it, appends the result to the conversation, and calls the model again. It ends when the model produces an answer or when a step limit stops it.</p>
+        <p>Two details I'd flag. The step limit isn't a safety net, it's the actual bound - if termination depends on the model choosing to stop, the loop isn't bounded. And tool failures go back into the conversation as results rather than raised as exceptions, because a missing record is information the agent can act on, whereas an exception just ends the run.</p>
+        <p>The reason to use the loop instead of a workflow is that the second step can depend on what the first one returned. In our triage agent the order id only exists inside the ticket body, so nothing could have looked it up in advance."</p></div></div>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> System design · Support wants automated triage for 10,000 tickets a day. Agent or workflow? <span class="chev">›</span></summary><div class="a">
+        <p>Start by refusing the false choice: most of that volume is a workflow, and the agent earns its place on the remainder.</p>
+        <p>Classify first with one cheap model call. Tickets matching known shapes - password reset, invoice copy, delivery status - go down deterministic paths: fast, auditable, roughly free. Route only the ambiguous or multi-step ones to the agent.</p>
+        <p>Then the numbers, because at 10k/day they dominate. Each agent step is a round trip; 4 steps at 2s is 8s per ticket plus 4× the token cost of a single call. If the agent handles 15% that's 1,500 runs a day, which is a budget you can state. Add per-run step and cost ceilings, and make escalation a first-class outcome rather than a failure.</p>
+        <p>The trap: "use an agent for everything" signals you haven't costed it.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Debugging · An agent in production runs 40 steps and times out. Walk me through it. <span class="chev">›</span></summary><div class="a">
+        <p>Get the trace and look at the <em>sequence</em>, not the final output. Four patterns and their fixes:</p>
+        <p><strong>Identical repeated calls</strong> - same tool, same arguments. Usually a failing tool whose error the agent can't act on, or state that conflates "not tried" with "tried and failed". Fix: track attempted calls; on a repeat, stop or escalate.</p>
+        <p><strong>Two-call oscillation</strong> - A, B, A, B. The agent has contradictory instructions or a tool result it can't interpret. Fix: detect a repeated cycle, and check the tool descriptions.</p>
+        <p><strong>Genuine drift</strong> - plausible but unrelated calls. The goal has been diluted by 40 steps of tool output in the context window. Fix: compaction (Lesson 6) and a tighter step budget.</p>
+        <p><strong>Missing termination</strong> - it has the answer and keeps going. The system prompt never said what "done" looks like, or there's no way to signal it.</p>
+        <p>Then the real answer: 40 steps means <code>max_steps</code> was too high or absent. A 4-step task should never have a 40-step budget - a limit that only trips after the damage is a limit in name only.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Coding · Implement a tool-calling loop from scratch in 15 minutes. No framework. <span class="chev">›</span></summary><div class="a">
+        <p>Ship these, in this order: the message list; the bounded <code>for</code> loop; call the model; branch on tool-call vs final answer; dispatch through a dictionary (never <code>getattr</code> or <code>eval</code> on a model-supplied name); catch tool errors and feed them back; append both the decision and the result; return a result object carrying <em>why</em> it stopped.</p>
+        <p>Say out loud while writing: "the step limit bounds the loop", "a dictionary lookup means a hallucinated tool name is a clean error", "the error goes back to the model rather than up the stack".</p>
+        <p>Common failures: <code>while True</code>; dispatching with <code>eval</code>; letting a tool exception escape; and returning only a string, so the caller can't tell a finished run from a truncated one.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · How do you set <code>max_steps</code> for a real workload? <span class="chev">›</span></summary><div class="a">
+        <p>Measure, don't guess. Run the golden set, take the distribution of steps for successful runs, and set the limit a little above the tail - say p99 plus a small margin. Our triage agent finishes in 3–4 steps, so 6 is generous and 40 would be negligent.</p>
+        <p>Then make it not a single number: budget by <em>cost</em> and <em>wall-clock</em> as well as steps, because one expensive step can cost more than five cheap ones. Alert on the rate of limit-hits - a rise means either the tasks changed or the agent regressed, and both are worth knowing before a customer tells you.</p></div></details>
+
+        <details class="recall"><summary><span class="q-ico">Q</span> Senior follow-up · The same tool call is issued three times in one run. Is that a bug? <span class="chev">›</span></summary><div class="a">
+        <p>Depends on idempotency and on whether the arguments changed. Three identical reads are wasteful but harmless - still worth fixing, since it usually means the result isn't reaching the model in a usable form. Three calls with <em>different</em> arguments may be legitimate investigation.</p>
+        <p>Three identical <em>writes</em> are an incident. That's why Lesson 8 attaches an idempotency key to the refund path: the fix isn't "stop the agent repeating itself", it's "make the repeat harmless". Prevention at the loop layer and protection at the tool layer are different defences, and irreversible actions need both.</p></div></details>

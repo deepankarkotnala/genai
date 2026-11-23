@@ -1,0 +1,15 @@
+<h2 id="interview">15 &middot; Interview preparation</h2>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  What is the difference between state and memory? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>State belongs to one run: where the agent is, what it has gathered, what budget remains. It is discarded when the run ends. Memory outlives the run - what you know about this customer from last month. The test: if it would be wrong to still have this tomorrow, it is state.</p></div></details>
+<details class="collapse"><summary><span class="pill green">Beginner</span>  Why do long agent runs get worse rather than failing cleanly? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Each step appends a tool result to the same finite window. Twenty steps in, the original goal is a small fraction of what the model reads, so the signal that should drive the next decision is diluted by earlier output.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  What does it mean to cap a tool result at the source? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>The tool truncates, paginates or summarises before returning, so an oversized result never enters the message list. Trimming the prompt afterwards is too late: the budget was already spent and earlier findings were already crowded out.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  What is compaction, and what does it cost? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Replacing the oldest turns with a short summary, keeping the goal and the most recent turns verbatim. It costs a model call, and whatever the summary omits is gone permanently. Compact only when the alternative is exceeding the window.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  How would you decide what belongs in long-term memory? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Only facts that are still true and still useful after the run ends, and that would change a future answer. A customer's stated preference qualifies. A half-finished investigation does not. Write with a source and a timestamp, and have a rule for superseding a fact that later contradicts it.</p></div></details>
+<details class="collapse"><summary><span class="pill amber">Senior</span>  A customer says your agent 'forgot' something from last week. How do you diagnose it? <span class="chev">›</span></summary>
+<div class="collapse-body"><p>Establish first whether it was ever written. Most reported memory failures are writes that never happened, not reads that failed. Then check the retrieval key: memory keyed by session rather than by customer is unreachable from a new conversation. Then check whether compaction summarised it away.</p></div></details>
+
+<!-- ================= 16 ================= -->
