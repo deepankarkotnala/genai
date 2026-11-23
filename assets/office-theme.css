@@ -1,0 +1,3993 @@
+/* ==========================================================================
+   Interview Preparation - Office-inspired reading workspace
+   Flat, compact, responsive, and intentionally low-distraction.
+   This file is loaded after all section-specific styles.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Typefaces - self-hosted so the portal keeps working offline.
+   Inter carries UI, headings, and prose; JetBrains Mono carries code and the
+   letterspaced uppercase eyebrow labels. Both are the variable (wght axis)
+   cuts, so one file per style covers every weight the theme asks for and
+   `font-weight: 650` resolves to a real 650 instead of snapping to bold.
+   Files live in assets/fonts/ and the URLs below resolve relative to this
+   stylesheet, so pages in subdirectories load them without rewriting paths.
+   -------------------------------------------------------------------------- */
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(fonts/inter-latin-wght-normal.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: normal;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(fonts/inter-latin-ext-wght-normal.woff2) format("woff2");
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7,
+    U+02DD-02FF, U+0304, U+0308, U+0329, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF,
+    U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF;
+}
+@font-face {
+  font-family: "Inter";
+  font-style: italic;
+  font-weight: 100 900;
+  font-display: swap;
+  src: url(fonts/inter-latin-wght-italic.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: normal;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url(fonts/jetbrains-mono-latin-wght-normal.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+@font-face {
+  font-family: "JetBrains Mono";
+  font-style: italic;
+  font-weight: 100 800;
+  font-display: swap;
+  src: url(fonts/jetbrains-mono-latin-wght-italic.woff2) format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA,
+    U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193,
+    U+2212, U+2215, U+FEFF, U+FFFD;
+}
+
+:root {
+  --font-sans: "Inter", "Segoe UI Variable", "Segoe UI", system-ui, -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: "JetBrains Mono", "Cascadia Code", "SFMono-Regular", Consolas, monospace;
+  /* The face for running prose. A serif was tried here and rejected: this is
+     a technical portal sitting next to code, and it should read clean and
+     plain rather than book-like. Prose now shares Inter with the headings and
+     UI so the whole page reads as one typographic system - the earlier
+     `system-ui`-first stack existed only to avoid a download, and that reason
+     is gone since Inter is self-hosted above and works offline. The system
+     stack stays behind it as the fallback if the font files ever go missing. */
+  --font-read: "Inter", system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+    "Helvetica Neue", Arial, sans-serif;
+
+  --bg: #f3f4f6;
+  --bg-subtle: #ffffff;
+  --bg-elevated: #ffffff;
+  --bg-solid: #ffffff;
+  --bg-code: #202329;
+  --surface: #f8f9fb;
+  --surface-strong: #f3f5f7;
+  --glass: #ffffff;
+  --glass-strong: #ffffff;
+  --glass-line: #e0e3e8;
+  --border: #e2e5eb;
+  --border-strong: #cbd2dc;
+  --text: #1f232b;
+  --text-secondary: #333946;
+  --text-muted: #64748b;
+  --text-inverse: #ffffff;
+  /* Headings get their own token so dark mode can dial them back without
+     touching body copy. In light mode they match deep charcoal. */
+  --heading: #111827;
+
+  /* Office 365 (Excel) is the single accent. Purple has been retired: the
+     whole accent family now points at the Excel green so no component renders
+     purple. --purple/--purple-soft are kept as aliases for legacy references. */
+  --accent: #107c41;
+  --accent-hover: #0c6135;
+  --accent-strong: #0c6135;
+  --accent-soft: #eaf6ef;
+  --accent-ring: rgba(16, 124, 65, .22);
+  --accent-glow: transparent;
+  --excel: #107c41;
+  --excel-soft: #eaf6ef;
+
+  --green: #107c41;
+  --green-soft: #eaf6ef;
+  --blue: #2f6fed;
+  --blue-soft: #edf3ff;
+  --amber: #9a6700;
+  --amber-soft: #fff6dc;
+  --red: #b42318;
+  --red-soft: #fff0ee;
+  --purple: #107c41;
+  --purple-soft: #eaf6ef;
+
+  --shadow-sm: 0 2px 8px rgba(22, 27, 35, .05), 0 1px 2px rgba(22, 27, 35, .03);
+  --shadow-md: 0 8px 24px rgba(22, 27, 35, .09), 0 2px 6px rgba(22, 27, 35, .04);
+  --shadow-lg: 0 14px 36px rgba(22, 27, 35, .14), 0 4px 12px rgba(22, 27, 35, .06);
+  --card-hover-shadow: 0 8px 24px rgba(22, 27, 35, .09), 0 2px 6px rgba(22, 27, 35, .04);
+  --shadow-card: 0 2px 8px rgba(22, 27, 35, .05), 0 1px 2px rgba(22, 27, 35, .03);
+
+  /* SIDEBAR GEOMETRY - one source of truth.
+     `--sidebar-w` had been declared seven times across two files (four of them
+     inside `@media (min-width: 861px)` blocks in styles.css) and every one of
+     them was dead: this file loads later and media queries add no specificity,
+     so the last plain `:root` declaration won on every screen. The narrow-
+     desktop step that meant to drop the rail to 184px between 861 and 1080px
+     never applied. They are gone; this is the only declaration.
+     from the *unscaled* `--sidebar-w` and so floated ~25px out in the gutter,
+     detached from the edge it was supposed to be dragging.
+
+     The distinction that fixes it:
+       --sidebar-w      layout width - what the resizer stores and JS writes
+       --sidebar-track  what you actually see, after density scaling
+     Anything positioned against the sidebar's visible edge uses the track. */
+  --sb-panel: rgba(255, 255, 255, .88);
+  --ease: cubic-bezier(.4, 0, .2, 1);
+  --sidebar-w: 17.5rem;
+  --density: .9;
+  --sidebar-track: calc(var(--sidebar-w) * var(--density));
+  /* No-JS fallback for the mobile drawer; sitenav.js overwrites it on <html>
+     once the reader drags it. Without a value here `min(98vw, var(--x))` is
+     invalid at parse time and the width silently falls back to another rule. */
+  --mobile-sidebar-w: 318px;
+  --toc-w: 15.625rem;
+  --content-max: 65rem;
+  --reading-line: 86ch;
+  --reader-line-length: 86ch;
+  --reader-content-width: 65rem;
+  --header-h: 42px;
+  --ribbon-h: 38px;
+  --radius: 18px;
+  --radius-card: 18px;
+  --radius-sm: 10px;
+  --radius-lg: 22px;
+
+  --fs-base: 14.5px;
+  /* Was clamp(31px, 3vw, 44px) - at 44px the title dwarfed the lead below
+     it. Still clearly the largest thing on the page, no longer a poster. */
+  --fs-h1: clamp(26px, 2.05vw, 33px);
+  --fs-h2: 20.5px;
+  --fs-h3: 15px;
+  --fs-lead: clamp(15px, 1.2vw, 17px);
+  /* Hero titles used to be their own, larger scale. They are now the same
+     size as any other page title, so the token is an alias rather than a
+     second scale - legacy rules referencing it land on the right size even
+     where they still win the cascade. */
+  --fs-hero: var(--fs-h1);
+}
+
+html[data-theme="dark"] {
+  --sb-panel: rgba(32, 35, 41, .86);
+  --bg: #17191e;
+  --bg-subtle: #202329;
+  --bg-elevated: #202329;
+  --bg-solid: #202329;
+  --bg-code: #15171b;
+  --surface: #24272e;
+  --surface-strong: #292d34;
+  --glass: #202329;
+  --glass-strong: #202329;
+  --glass-line: #30343c;
+  --border: #30343c;
+  --border-strong: #3d424c;
+  --text: #e1e3e8;
+  --text-secondary: #b6bbc5;
+  --text-muted: #8f96a3;
+  --text-inverse: #17191e;
+  /* Large, heavy type reads brighter than its hex value, so headings sit a
+     step below --text: 12.1:1 on --bg instead of 14.2:1. Still past AAA. */
+  --heading: #d2d6de;
+
+  --accent: #62b982;
+  --accent-hover: #7cc99a;
+  --accent-strong: #7cc99a;
+  --accent-soft: #20382a;
+  --accent-ring: rgba(98, 185, 130, .22);
+  --excel: #62b982;
+  --excel-soft: #20382a;
+
+  --green: #62b982;
+  --green-soft: #20382a;
+  --blue: #83a8ff;
+  --blue-soft: #232f47;
+  --amber: #d8ae61;
+  --amber-soft: #3a3020;
+  --red: #ee938b;
+  --red-soft: #402725;
+  --purple: #62b982;
+  --purple-soft: #20382a;
+
+  --shadow-sm: 0 2px 8px rgba(0, 0, 0, .28), 0 1px 2px rgba(0, 0, 0, .18);
+  --shadow-md: 0 8px 26px rgba(0, 0, 0, .42), 0 2px 6px rgba(0, 0, 0, .25);
+  --shadow-lg: 0 16px 42px rgba(0, 0, 0, .54), 0 4px 14px rgba(0, 0, 0, .32);
+  --card-hover-shadow: 0 8px 26px rgba(0, 0, 0, .42), 0 2px 6px rgba(0, 0, 0, .25);
+  --shadow-card: 0 2px 8px rgba(0, 0, 0, .28), 0 1px 2px rgba(0, 0, 0, .18);
+}
+
+html,
+body {
+  background: var(--bg) !important;
+}
+
+body {
+  min-width: 320px;
+  color: var(--text);
+  font-family: var(--font-sans);
+  font-size: var(--fs-base);
+  line-height: 1.55;
+  background-image: none !important;
+  transition: none;
+  /* Inter is a variable font with an optical-size-sensitive design; letting the
+     browser pick the grade keeps small UI text from looking thin and large
+     headings from looking clotted. Grayscale smoothing matches the crisp,
+     lightly-weighted look Inter is drawn for rather than macOS's default
+     subpixel bolding. */
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body::before,
+body::after {
+  content: none !important;
+  display: none !important;
+}
+
+::selection { background: var(--accent-soft); color: var(--text); }
+
+a { color: var(--accent); }
+a:hover { color: var(--accent-hover); text-shadow: none !important; }
+
+/* --- Application shell -------------------------------------------------- */
+.app {
+  min-height: 100vh;
+  grid-template-columns: var(--sidebar-track) minmax(0, 1fr);
+  isolation: auto;
+}
+
+.sidebar {
+  position: sticky;
+  top: 0;
+  align-self: start;
+  width: auto;
+  zoom: var(--density);
+  height: calc(100vh / var(--density));
+  padding: 1.25rem 1rem;
+  overflow-x: hidden;
+  overflow-y: auto;
+  border: 0;
+  border-right: 1px solid var(--border);
+  border-radius: 0;
+  background: var(--sb-panel) !important;
+  box-shadow: none;
+  -webkit-backdrop-filter: blur(1.125rem);
+  backdrop-filter: blur(1.125rem);
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+  z-index: 20;
+}
+.sidebar::-webkit-scrollbar { width: 0.5rem; }
+.sidebar::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 0.5rem; }
+
+.sidebar::before,
+.sidebar::after { content: none !important; display: none !important; }
+
+.brand {
+  display: flex;
+  align-items: center;
+  gap: 0.6875rem;
+  margin-bottom: 1.25rem;
+  padding: 0;
+  background: transparent !important;
+  border: 0 !important;
+  border-bottom: 0 !important;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+
+.brand > a,
+.brand > .brand-link {
+  display: flex;
+  align-items: center;
+  gap: 0.6875rem !important;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+.brand-mark {
+  width: 2.25rem !important;
+  height: 2.25rem !important;
+  flex: 0 0 2.25rem;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border: 0 !important;
+  border-radius: 0.5rem !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.brand-mark::before,
+.brand-mark::after { content: none !important; display: none !important; }
+.brand-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: none;
+}
+.brand-text { min-width: 0; line-height: 1.25; }
+.brand-text strong {
+  display: block;
+  font-size: 0.875rem !important;
+  font-weight: 700 !important;
+  line-height: 1.25 !important;
+  letter-spacing: -.01em !important;
+  color: var(--text);
+}
+.brand-text span {
+  display: block;
+  margin-top: 2px;
+  color: var(--text-muted);
+  font-size: 0.75rem !important;
+  line-height: 1.2 !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+  text-transform: none;
+}
+
+.search-wrap {
+  position: relative;
+  top: auto !important;
+  z-index: auto !important;
+  padding: 0 !important;
+  margin: 0 0 0.5rem !important;
+  background: transparent !important;
+}
+.search-box,
+.sb-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  height: auto;
+  min-height: 2.25rem;
+  margin: 0 0 0.25rem;
+  padding: 0.5625rem 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--surface);
+  box-shadow: none !important;
+  transition: border-color .2s var(--ease), box-shadow .2s var(--ease), background .2s var(--ease);
+}
+.search-box:focus-within,
+.sb-search:focus-within {
+  border-color: var(--accent) !important;
+  background: var(--bg-elevated) !important;
+  box-shadow: 0 0 0 0.25rem var(--accent-ring) !important;
+}
+.search-box input,
+.sb-search input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font-family: inherit;
+  font-size: 0.8125rem;
+}
+.search-box input:focus,
+.sb-search input:focus { outline: none; }
+.search-box input::placeholder,
+.sb-search input::placeholder { color: var(--text-muted); }
+.search-box svg,
+.sb-icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  width: 14px;
+  height: 14px;
+  color: var(--text-muted);
+}
+.search-results,
+.sb-results {
+  position: static;
+  margin: 0.25rem 0 0;
+  padding: 0.25rem 0 1rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+}
+.search-result,
+.sb-hit {
+  position: relative;
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+  margin: 1px 0;
+  padding: 0.5rem 0.625rem 0.5rem 0.75rem;
+  border-radius: 0.625rem;
+  color: var(--text-secondary);
+  font-size: 0.78125rem;
+  line-height: 1.4;
+  text-decoration: none;
+  transition: background .18s var(--ease), color .18s var(--ease), transform .18s var(--ease);
+}
+.search-result:hover,
+.sb-hit:hover {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  text-decoration: none;
+  transform: translateX(2px);
+}
+.search-result.is-active,
+.sb-hit.is-active {
+  background: var(--excel-soft) !important;
+  color: var(--text) !important;
+}
+.search-result.is-active::before,
+.sb-hit.is-active::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.375rem;
+  bottom: 0.375rem;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--excel);
+}
+.sr-group,
+.sb-num {
+  flex: none;
+  color: var(--excel);
+  font-family: var(--font-mono);
+  font-size: 0.59375rem;
+  font-weight: 700;
+}
+
+.nav.sitenav,
+.nav { padding: 0 0 2rem; }
+.sidebar,
+.sidebar * {
+  text-align: left !important;
+}
+
+.navgroup { margin: 0; border: 0 !important; }
+.navgroup + .navgroup { border-top: 1px solid var(--border) !important; margin-top: 0.25rem; padding-top: 0.25rem; }
+
+.navgroup-head,
+.navgroup-direct .navgroup-head {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-start !important;
+  gap: 0.625rem !important;
+  width: 100% !important;
+  min-height: 2.125rem;
+  padding: 0.5625rem 0.625rem;
+  border: 0 !important;
+  border-radius: 0.625rem;
+  color: #2b2f3a;
+  background: transparent !important;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 550;
+  line-height: 1.3;
+  cursor: pointer;
+  text-align: left !important;
+  letter-spacing: 0;
+  box-shadow: none !important;
+  transition: background .18s var(--ease), color .18s var(--ease), transform .18s var(--ease);
+}
+[data-theme="dark"] .navgroup-head,
+[data-theme="dark"] .navgroup-direct .navgroup-head { color: #d1d5df; }
+.navgroup-head:hover,
+.navgroup-direct .navgroup-head:hover {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  transform: translateX(2px);
+}
+.navgroup.open > .navgroup-head,
+.navgroup-direct.open > .navgroup-head {
+  background: var(--accent-soft) !important;
+  color: var(--text) !important;
+  transform: none;
+}
+
+.navgroup-head .ng-copy,
+.ng-copy {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  text-align: left !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.navgroup-head .ng-label,
+.ng-label {
+  display: block !important;
+  width: 100% !important;
+  text-align: left !important;
+  font-size: 0.8125rem;
+  font-weight: 550;
+  color: inherit;
+  letter-spacing: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.navgroup-head .ng-mk {
+  flex: none;
+  display: grid;
+  place-items: center;
+  min-width: 1.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: 1px solid var(--border) !important;
+  border-radius: 0.4375rem;
+  color: var(--text-secondary) !important;
+  background: var(--bg-elevated) !important;
+  font-family: inherit;
+  font-size: 0.625rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  box-shadow: none !important;
+}
+.navgroup.open > .navgroup-head .ng-mk {
+  color: var(--accent) !important;
+  border-color: var(--accent-ring) !important;
+  background: var(--bg-elevated) !important;
+}
+
+.navgroup-head .ng-chev {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--text-muted);
+  opacity: .6;
+  transition: transform .2s ease;
+}
+.navgroup.open > .navgroup-head .ng-chev {
+  transform: rotate(90deg);
+  color: var(--accent);
+  opacity: 1;
+}
+
+.navgroup-body { padding: 0.25rem 0 0.5rem 0.5rem; }
+
+.nav-label,
+.nav-track,
+.sb-sec,
+.nav-group-label {
+  margin: 1.25rem 0.5rem 0.5rem;
+  padding: 0;
+  color: var(--text-muted);
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.nav-label:first-child,
+.nav-track:first-child,
+.sb-sec:first-child,
+.nav-group-label:first-child { margin-top: 0.625rem; }
+
+.nav a,
+.nav-item,
+.nav-link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  min-height: 0;
+  padding: 0.5625rem 0.625rem;
+  border: 0;
+  border-radius: 0.625rem;
+  color: #2b2f3a;
+  font-family: inherit;
+  font-size: 0.8125rem;
+  font-weight: 450;
+  line-height: 1.3;
+  text-decoration: none;
+  box-shadow: none !important;
+  transition: background .18s var(--ease), color .18s var(--ease), transform .18s var(--ease);
+}
+[data-theme="dark"] .nav a,
+[data-theme="dark"] .nav-item,
+[data-theme="dark"] .nav-link {
+  color: #d1d5df;
+}
+.nav a:hover,
+.nav-item:hover,
+.nav-link:hover {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  text-decoration: none;
+  transform: translateX(2px);
+}
+.nav a.active,
+.nav-item.active,
+.nav-link.active,
+.nav-link[aria-current="page"] {
+  color: var(--text) !important;
+  background: var(--accent-soft) !important;
+  font-weight: 600;
+  transform: none;
+  box-shadow: none !important;
+}
+
+/* Left active marker animation */
+.nav a::before,
+.nav-item::before,
+.nav-link::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.4375rem;
+  bottom: 0.4375rem;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--accent);
+  box-shadow: none !important;
+  opacity: 0;
+  transform: scaleY(.34);
+  transform-origin: center;
+  transition: transform .24s var(--ease), opacity .2s ease;
+}
+.nav a:hover::before,
+.nav-item:hover::before,
+.nav-link:hover::before { opacity: .45; transform: scaleY(.7); }
+.nav a.active::before,
+.nav-item.active::before,
+.nav-link.active::before,
+.nav-link[aria-current="page"]::before { opacity: 1; transform: scaleY(1); }
+
+.nav .num,
+.nav-num,
+.nav-link .nav-num {
+  flex: none;
+  display: grid;
+  place-items: center;
+  min-width: 1.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  padding: 0;
+  border: 1px solid var(--border) !important;
+  border-radius: 0.4375rem;
+  color: var(--text-secondary) !important;
+  background: var(--bg-elevated) !important;
+  font-family: inherit;
+  font-size: 0.625rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  box-shadow: none !important;
+}
+.nav a.active .num,
+.nav-item.active .num,
+.nav-link.active .nav-num,
+.nav-link[aria-current="page"] .nav-num {
+  color: var(--accent) !important;
+  border-color: var(--accent-ring) !important;
+  background: var(--bg-elevated) !important;
+}
+
+.nav-chev {
+  flex: none;
+  display: grid;
+  place-items: center;
+  min-width: 1.5rem;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4375rem;
+  background: var(--bg-elevated) !important;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  line-height: 1;
+}
+.nav-link[aria-current="page"] .nav-chev {
+  color: var(--accent) !important;
+  border-color: var(--accent-ring) !important;
+}
+
+.ng-blurb { display: none !important; }
+
+/* Resizers matching interview_prep */
+.sidebar-resizer,
+.toc-resizer {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  width: 0.625rem;
+  z-index: 65;
+  cursor: col-resize;
+  background: transparent;
+  transition: background 0.15s ease;
+}
+/* The 10px strip is only the grab area and stays transparent. What shows on
+   hover / drag is a hairline drawn down its centre, which sits on the panel
+   edge - painting the whole strip made a thick, loud bar. */
+.sidebar-resizer::after,
+.toc-resizer::after {
+  content: "" !important;
+  display: block !important;
+  position: absolute;
+  top: 0 !important;
+  bottom: 0;
+  left: 50% !important;
+  width: 2px !important;
+  height: auto !important;
+  border-radius: 0 !important;
+  background: var(--accent) !important;
+  box-shadow: none !important;
+  opacity: 0 !important;
+  transform: translateX(-50%) !important;
+  transition: opacity .15s ease !important;
+}
+.sidebar-resizer:hover::after,
+.toc-resizer:hover::after,
+.sidebar-resizer:focus-visible::after,
+.toc-resizer:focus-visible::after,
+body.sidebar-resizing .sidebar-resizer::after,
+body.resizing-left .left-resizer::after,
+body.resizing-left .sidebar-resizer::after,
+body.resizing-toc .toc-resizer::after,
+body.resizing-right .right-resizer::after,
+body.resizing-right .toc-resizer::after {
+  opacity: .55 !important;
+}
+.sidebar-resizer:not(.right-resizer):not(.toc-resizer),
+.left-resizer {
+  left: calc(var(--sidebar-track, var(--sidebar-w)) - 0.3125rem);
+  right: auto !important;
+}
+.toc-resizer,
+.right-resizer {
+  top: calc(var(--header-h) + var(--ribbon-h, 0px));
+  bottom: 0;
+  right: calc(var(--toc-w) - 0.3125rem);
+  left: auto !important;
+}
+body.sidebar-resizing,
+body.resizing-left,
+body.resizing-right,
+body.resizing-toc {
+  user-select: none;
+  cursor: col-resize;
+}
+
+.main { min-width: 0; background: var(--bg); }
+.topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  height: var(--header-h);
+  min-height: var(--header-h);
+  padding: 0 12px;
+  gap: 4px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated) !important;
+  box-shadow: none !important;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.topbar .crumbs {
+  min-width: 0;
+  flex: 1;
+  margin-left: 3px;
+  /* Keeps the focus/theme controls hard against the right edge even where a
+     narrow breakpoint caps the crumbs width and flex-grow stops filling. */
+  margin-right: auto;
+  color: var(--text-muted);
+  font-size: 12.5px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.topbar .crumbs b { color: var(--text-secondary); font-weight: 600; }
+.icon-btn,
+.home-btn,
+.focus-btn,
+.reader-btn {
+  width: auto;
+  min-width: 28px;
+  height: 28px;
+  min-height: 28px;
+  padding: 0 7px;
+  gap: 5px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  color: var(--text-secondary);
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+  font-size: 12px;
+}
+.icon-btn { width: 28px; padding: 0; }
+.icon-btn svg,
+.home-btn svg,
+.focus-btn svg { width: 15px; height: 15px; stroke-width: 1.65; }
+.icon-btn:hover,
+.home-btn:hover,
+.focus-btn:hover,
+.reader-btn:hover {
+  border-color: var(--border);
+  color: var(--text);
+  background: var(--surface) !important;
+  transform: none !important;
+}
+.home-lbl,
+.focus-lbl { font-size: 11.5px; }
+
+/* Office-style ribbon, inserted by enhance.js. */
+.office-ribbon {
+  position: sticky;
+  top: var(--header-h);
+  z-index: 35;
+  min-height: var(--ribbon-h);
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+.office-ribbon a,
+.office-ribbon button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 0;
+  color: var(--text-secondary);
+  background: transparent;
+  font: 500 11.5px/1 var(--font-sans);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.office-ribbon a:hover,
+.office-ribbon button:hover { color: var(--text); background: var(--bg-elevated); }
+.office-ribbon a.active { color: var(--text); font-weight: 650; }
+.office-ribbon a.active::after {
+  content: "";
+  position: absolute;
+  left: 9px;
+  right: 9px;
+  bottom: 0;
+  height: 2px;
+  background: var(--excel);
+}
+.office-ribbon .ribbon-spacer { flex: 1; }
+.office-ribbon .ribbon-status {
+  align-self: center;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  height: 24px;
+  padding: 0 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text-muted);
+  background: var(--bg-elevated);
+  font-size: 11.5px;
+  white-space: nowrap;
+}
+.office-ribbon .ribbon-status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--excel);
+}
+
+/* --- Reading layout ----------------------------------------------------- */
+.content-wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--toc-w);
+  gap: 0;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 1.5rem clamp(1rem, 2.5vw, 2.5rem) 3.5rem;
+}
+.content {
+  width: 100%;
+  max-width: var(--content-max);
+  margin: 0 auto;
+  padding: clamp(2rem, 3.5vw, 3.5rem) clamp(1.75rem, 4vw, 3.75rem) 4rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-card, 16px);
+  box-shadow: var(--shadow-sm);
+  line-height: 1.68;
+}
+.content > p,
+.content > ul,
+.content > ol,
+.content > blockquote,
+.content .lead { max-width: 100%; }
+
+.content h1 {
+  max-width: 100%;
+  margin: 0 0 12px;
+  color: var(--heading);
+  font-size: var(--fs-h1);
+  line-height: 1.1;
+  letter-spacing: -.035em;
+  font-weight: 680;
+}
+.content h2 {
+  position: relative;
+  margin: 31px 0 14px;
+  padding: 0 0 8px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  color: var(--heading);
+  font-size: var(--fs-h2);
+  line-height: 1.3;
+  letter-spacing: -.012em;
+  font-weight: 650;
+  scroll-margin-top: calc(var(--header-h) + var(--ribbon-h) + 14px);
+}
+.content h2:first-of-type { margin-top: 24px; padding-top: 0; border-top: 0; }
+.content h2::before {
+  content: none !important;
+  display: none !important;
+}
+.content h2.is-current { color: var(--heading) !important; }
+.content h3 {
+  margin: 22px 0 7px;
+  color: var(--heading);
+  font-size: var(--fs-h3);
+  line-height: 1.35;
+  letter-spacing: -.01em;
+  font-weight: 650;
+  scroll-margin-top: calc(var(--header-h) + var(--ribbon-h) + 14px);
+}
+.content h4 { margin: 17px 0 6px; color: var(--heading); font-size: 14px; font-weight: 650; }
+.content p { margin: 0 0 14px; color: var(--text-secondary); line-height: 1.68; }
+.content ul,
+.content ol { margin: 0 0 16px; padding-left: 21px; color: var(--text-secondary); line-height: 1.68; }
+.content li { margin: 4px 0; }
+.content strong { color: var(--heading); font-weight: 650; }
+.lead { margin: 12px 0 18px; color: var(--text-secondary); font-size: var(--fs-lead); line-height: 1.65; }
+
+.content p code,
+.content li code,
+.content dd code,
+.content dt code {
+  padding: 2px 6px;
+  border-radius: 4px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  color: var(--excel);
+  font-size: 0.88em;
+}
+.eyebrow {
+  width: fit-content;
+  margin-bottom: 9px;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  color: var(--accent);
+  background: transparent;
+  font-size: 11px;
+  font-weight: 750;
+  letter-spacing: .075em;
+}
+.eyebrow .dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+  background: var(--accent);
+  box-shadow: none !important;
+  animation: none !important;
+}
+.pill,
+.chip,
+.tag {
+  min-height: 27px;
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text-secondary);
+  background: var(--bg-elevated) !important;
+  box-shadow: none !important;
+  font-size: 11.5px;
+  font-weight: 550;
+}
+/* The meta row under a lesson title used to be a joined segmented strip: gap 0,
+   a -1px margin per chip to collapse the shared borders, and squared inner
+   corners. At three chips of unequal length that read as one crowded block with
+   seams rather than three separate facts, so each chip now stands on its own.
+   The full treatment is in the LESSON META CHIPS section at the end of this
+   file, next to the responsive rules it depends on. */
+.pill.blue,.pill.green,.pill.purple,.pill.amber,.pill.red { color: var(--text-secondary); }
+
+/* Right-rail motion is matched to the interview_prep portal (assets/portal.css
+   RIGHT RAIL): its --ease is this curve, where this theme's --ease is the
+   flatter Material one, so the rail carries its own token. */
+.toc-rail,
+.toc { --toc-ease: cubic-bezier(.2, .8, .2, 1); }
+.toc-rail {
+  position: sticky;
+  top: calc(var(--header-h) + var(--ribbon-h, 0px));
+  align-self: start;
+  height: calc(100vh - var(--header-h) - var(--ribbon-h, 0px));
+  padding: 1.125rem 1rem;
+  overflow: auto;
+  border-left: 1px solid var(--border);
+  background: var(--sb-panel) !important;
+  -webkit-backdrop-filter: blur(1.125rem);
+  backdrop-filter: blur(1.125rem);
+  z-index: 20;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border-strong) transparent;
+}
+.toc-rail::-webkit-scrollbar { width: 0.5rem; }
+.toc-rail::-webkit-scrollbar-thumb { background: var(--border-strong); border-radius: 0.5rem; }
+
+.toc {
+  position: static;
+  top: auto;
+  max-height: none;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent !important;
+  box-shadow: none !important;
+  backdrop-filter: none;
+}
+.toc-book-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+  padding: 0 0.5rem;
+  border-bottom: 0 !important;
+}
+.toc-kicker,
+.toc-title {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 0.625rem;
+  font-weight: 800;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+.toc-book-head strong {
+  display: block;
+  margin-top: 0.1875rem;
+  color: var(--text);
+  font-size: 0.75rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+.toc-top {
+  flex: none;
+  display: inline-grid;
+  place-items: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4375rem;
+  color: var(--text-muted);
+  background: var(--bg-elevated);
+  font-size: 0.75rem;
+  cursor: pointer;
+  transition: color .18s var(--ease), border-color .18s var(--ease), background .18s var(--ease);
+}
+.toc-top:hover {
+  border-color: var(--accent-ring);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+.toc-filter {
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  height: 1.875rem;
+  margin: 0 0 0.5rem;
+  padding: 0 0.5625rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--surface);
+  color: var(--text-muted);
+  transition: border-color .18s ease, background .18s ease;
+}
+.toc-filter:focus-within {
+  border-color: var(--accent);
+  background: var(--bg-elevated);
+  box-shadow: 0 0 0 1px var(--accent) !important;
+}
+.toc-filter svg {
+  flex: none;
+  width: 0.8125rem;
+  height: 0.8125rem;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  color: var(--text-muted);
+}
+.toc-filter input {
+  flex: 1;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  font: 0.75rem/1.2 var(--font-sans, inherit);
+}
+.toc-filter input:focus { outline: none; }
+.toc-filter input::placeholder { color: var(--text-muted); }
+.toc-list { max-height: none; overflow: visible; padding-right: 0; }
+
+.toc a,
+.toc.toc-textbook a {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr);
+  align-items: start;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.5rem 0.5625rem 0.5rem 0.6875rem;
+  border: 0;
+  border-radius: 0.5625rem;
+  color: #1a1d24;
+  background: transparent !important;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  text-decoration: none;
+  transform: none !important;
+  transition: background .18s var(--toc-ease), color .18s var(--toc-ease), transform .18s var(--toc-ease);
+}
+[data-theme="dark"] .toc a,
+[data-theme="dark"] .toc.toc-textbook a {
+  color: #e2e8f0;
+}
+
+.toc a::before,
+.toc.toc-textbook a::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.375rem;
+  bottom: 0.375rem;
+  width: 2px;
+  border-radius: 2px;
+  background: var(--excel);
+  box-shadow: none;
+  opacity: 0;
+  transform: scaleY(.34);
+  transform-origin: center;
+  transition: transform .24s var(--toc-ease), opacity .2s ease;
+}
+.toc a:hover,
+.toc.toc-textbook a:hover {
+  color: var(--text) !important;
+  background: var(--surface) !important;
+  text-decoration: none;
+  transform: translateX(-2px) !important;
+}
+.toc a:hover::before,
+.toc.toc-textbook a:hover::before { opacity: .45; transform: scaleY(.7); }
+
+/* Click-only highlight (no scroll spy), as in interview_prep. .active eases in
+   quickly; when app.js / portal-page.js remove it, .toc-fade carries a slower
+   transition so it dissolves. No weight change, so the label never reflows
+   mid-animation. */
+.toc a.active,
+.toc.toc-textbook a.active {
+  color: var(--text) !important;
+  background: var(--accent-soft) !important;
+  transform: none !important;
+  box-shadow: none !important;
+  transition: background .3s var(--toc-ease), color .3s var(--toc-ease), transform .18s var(--toc-ease);
+}
+.toc a.active::before,
+.toc.toc-textbook a.active::before {
+  opacity: 1; transform: scaleY(1); box-shadow: none;
+  transition: transform .3s var(--toc-ease), opacity .3s ease;
+}
+.toc a.toc-fade,
+.toc.toc-textbook a.toc-fade { transition: background .9s ease, color .9s ease, transform .18s var(--toc-ease); }
+.toc a.toc-fade::before,
+.toc.toc-textbook a.toc-fade::before { transition: transform .9s ease, opacity .9s ease; }
+
+.toc-num {
+  color: var(--excel);
+  font-family: var(--font-mono);
+  font-size: 0.59375rem;
+  font-weight: 700;
+  line-height: 1.75;
+}
+.toc a.active .toc-num,
+.toc.toc-textbook a.active .toc-num { color: var(--accent); }
+.toc-label { white-space: normal; }
+.toc-empty { padding: 0.625rem 0.5625rem; color: var(--text-muted); font-size: 0.75rem; }
+.toc-toggle { display: none; }
+
+/* --- Flat document components ----------------------------------------- */
+.hero,
+.card,
+.quiz,
+.demo,
+.collapse,
+.recall,
+.progress-card,
+.page-nav a,
+.callout,
+.table-wrap,
+.diagram,
+.readmap,
+.concept-lab,
+.interview-card,
+.ih-card,
+.gp-card,
+.prep-card {
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius) !important;
+  background: var(--bg-elevated) !important;
+  background-image: none !important;
+  box-shadow: var(--shadow-sm) !important;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  transform: none !important;
+}
+
+.hero::before,.hero::after,
+.card::before,.card::after,
+.callout::before,.callout::after,
+.quiz::before,.quiz::after,
+.demo::before,.demo::after,
+.diagram::before,.diagram::after,
+.readmap::before,.readmap::after,
+.concept-lab::before,.concept-lab::after,
+.glass-spotlight::before,.glass-spotlight::after {
+  content: none !important;
+  display: none !important;
+  opacity: 0 !important;
+}
+
+/* Cancels the glass layer's hover lift on the containers that are NOT clickable
+   - a quiz, a demo, a diagram, a readmap, a concept lab. Nothing here is an
+   affordance, so nothing here moves or blooms. The clickable surfaces
+   (.card, .module-card, .prep-topic-card, .page-nav a) are deliberately absent:
+   their hover is the single --card-hover-shadow rule in the CARDS section. */
+.quiz:hover,
+.demo:hover,
+.diagram:hover,
+.readmap:hover,
+.concept-lab:hover {
+  border-color: var(--border-strong) !important;
+  box-shadow: var(--shadow-sm) !important;
+  transform: none !important;
+}
+
+.hero {
+  margin: 0 0 24px;
+  padding: 25px 26px;
+  text-align: left;
+  overflow: hidden;
+}
+.hero h1 { max-width: 100%; margin-left: 0; margin-right: 0; color: var(--heading); font-size: var(--fs-hero) !important; }
+.hero .lead { max-width: 100%; margin-left: 0; margin-right: 0; }
+.hero .grad {
+  color: var(--accent);
+  background: none !important;
+  -webkit-background-clip: initial !important;
+  background-clip: initial !important;
+  -webkit-text-fill-color: currentColor !important;
+}
+.hero .meta-row { justify-content: flex-start !important; }
+.hero-orbit,
+.hero-spark,
+.hero-grid { display: none !important; }
+
+.grid { gap: 14px; }
+.card { padding: 18px 20px; overflow: hidden; }
+.card h3,.card h4 { margin-top: 0; }
+.card .ico {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  margin: 0 0 12px;
+  border: 0;
+  border-radius: 50%;
+  color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: none;
+  font-size: 15px;
+  line-height: 1;
+}
+.card p { font-size: 14px; line-height: 1.55; }
+
+/* Callouts are plain lifted cards: a hairline border on all four sides and a
+   bottom-weighted shadow. No coloured left accent bar - the variant now shows
+   up only in the icon tile, which keeps tip/note/warn/danger distinguishable
+   without a stripe cutting down the edge of the card. */
+.callout {
+  gap: 12px;
+  padding: 16px 18px;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-card, 18px) !important;
+  background: var(--bg-elevated) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+.callout .c-ico {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  flex: none;
+  border: 0;
+  border-radius: 50%;
+  background: var(--surface);
+  font-size: 15px;
+}
+.callout.key .c-ico,
+.callout.tip .c-ico { border-color: transparent; background: var(--excel-soft); color: var(--excel); }
+.callout.note .c-ico { border-color: transparent; background: var(--blue-soft); color: var(--blue); }
+.callout.warn .c-ico { border-color: transparent; background: var(--amber-soft); color: var(--amber); }
+.callout.danger .c-ico { border-color: transparent; background: var(--red-soft); color: var(--red); }
+.callout .c-title { margin-bottom: 3px; color: var(--text); font-size: 14px; }
+.callout p { margin: 0; font-size: 13.5px; }
+
+.readmap { padding: 18px 19px; }
+.rm-head { margin-bottom: 4px; }
+.rm-head .ico { width: 24px; height: 24px; border-radius: 5px; font-size: 13px; box-shadow: none; }
+.rm-sub { font-size: 13px; }
+.readmap ol { gap: 0; }
+.readmap li { border-top: 1px solid var(--border); }
+.readmap li:first-child { border-top: 0; }
+.rm-link {
+  min-height: 0;
+  padding: 10px 5px;
+  border: 0 !important;
+  border-radius: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  transform: none !important;
+}
+.rm-link:hover { padding-left: 8px; background: var(--surface) !important; }
+.rm-why { font-size: 12.5px; }
+
+.quiz { padding: 15px 16px; box-shadow: none !important; }
+.quiz .q { font-size: 13.5px; }
+.quiz .opt {
+  margin: 5px 0;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  background: var(--surface);
+  font-size: 12.5px;
+  box-shadow: none;
+  transform: none !important;
+}
+.quiz .opt:hover { border-color: var(--border-strong); background: var(--bg-elevated); transform: none !important; }
+.quiz .opt.correct { border-color: var(--green); background: var(--green-soft); }
+.quiz .opt.wrong { border-color: var(--red); background: var(--red-soft); }
+.quiz .explain { font-size: 12.5px; }
+
+.collapse,
+.recall { box-shadow: none !important; }
+.collapse > summary,
+.recall > summary { padding: 11px 13px; font-size: 13px; }
+.collapse-body,
+.recall .a { padding: 0 13px 12px; font-size: 13px; }
+
+.demo { padding: 16px; }
+.demo-title { font-size: 13px; }
+.demo-controls button,
+.btn,
+.mini-btn {
+  min-height: 29px;
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  box-shadow: none !important;
+  transform: none !important;
+  font-size: 11.5px;
+}
+.demo-controls button:hover,
+.btn:hover,
+.mini-btn:hover { border-color: var(--text-muted); color: var(--text); transform: none !important; }
+.btn.primary,
+.mini-btn.primary { border-color: var(--excel); background: var(--excel); color: #fff; }
+
+.table-wrap { overflow: auto; box-shadow: none !important; }
+table { border-collapse: separate; border-spacing: 0; font-size: 12.5px; }
+th,td { padding: 9px 11px; border-color: var(--border) !important; }
+th {
+  color: var(--text-muted);
+  background: var(--surface) !important;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+td { color: var(--text-secondary); background: var(--bg-elevated); }
+tr:hover td { background: var(--surface); }
+
+pre,
+.code-block {
+  border: 1px solid #343840 !important;
+  border-radius: 7px !important;
+  background: var(--bg-code) !important;
+  box-shadow: none !important;
+}
+pre { padding: 14px 15px; font-size: 12.5px; line-height: 1.58; }
+code { border-radius: 4px; font-size: .88em; }
+.copy-btn { border-radius: 4px; box-shadow: none !important; }
+
+.page-nav { gap: 11px; padding-top: 18px; }
+/* The nav cards carry the same resting shadow as every other card now, so the
+   footer row reads as cards rather than as outlined boxes. */
+.page-nav a { padding: 13px 14px; box-shadow: var(--shadow-card) !important; }
+/* Hover is not declared here. It comes from the single card-hover rule in the
+   CARDS section, which .page-nav a is now part of. */
+.page-nav .pn-progress, .page-nav .pn-notice { font-size: 11.5px; }
+.page-nav .dir { font-size: 9.5px; letter-spacing: .07em; }
+.page-nav .ttl { font-size: 12.5px; line-height: 1.36; }
+
+/* Diagrams keep their teaching animations, but use restrained Office colors. */
+.diagram {
+  margin: 21px 0;
+  padding: 18px;
+  overflow: auto;
+  background: var(--surface) !important;
+  box-shadow: none !important;
+}
+.diagram svg { position: relative; z-index: 1; }
+.diagram-caption { margin-top: 11px; color: var(--text-muted); font-size: 11.5px; }
+.flow-node,
+.flow-node-accent,
+.concept-node .node-shell { filter: none !important; }
+.flow-node { fill: var(--bg-elevated) !important; stroke: var(--border-strong) !important; stroke-width: 1.2 !important; }
+.flow-node-accent { fill: var(--accent-soft) !important; stroke: var(--accent) !important; stroke-width: 1.2 !important; }
+.flow-label { fill: var(--text) !important; font-size: 13px !important; font-weight: 650 !important; }
+.flow-sub { fill: var(--text-muted) !important; font-size: 11px !important; }
+.flow-arrow,.ln,.concept-link { stroke: var(--text-muted) !important; }
+.concept-particle,
+.concept-signal { fill: var(--accent) !important; filter: none !important; }
+/* Arrowheads are drawn with a hardcoded fill in the injected SVG; force green. */
+.concept-canvas marker path,
+.diagram marker path { fill: var(--excel) !important; }
+.concept-lab {
+  grid-template-columns: minmax(250px, .78fr) minmax(360px, 1.22fr);
+  gap: 14px;
+  padding: 14px;
+  overflow: hidden;
+  box-shadow: none !important;
+}
+.concept-copy { padding: 19px 20px; }
+.concept-copy h3 { font-size: 19.5px; letter-spacing: -.02em; }
+.concept-copy > p { font-size: 13px; }
+.concept-canvas {
+  min-height: 240px;
+  padding: 22px;
+  border: 1px solid var(--border);
+  border-radius: calc(var(--radius) - 2px);
+  background: var(--surface) !important;
+}
+.concept-kicker { color: var(--accent); font-size: 9px; }
+.concept-chip {
+  padding: 4px 7px;
+  border: 1px solid var(--border);
+  border-radius: 5px;
+  color: var(--text-secondary);
+  background: var(--surface);
+  box-shadow: none;
+  font-size: 11px;
+}
+.concept-chip i { box-shadow: none; }
+.concept-node .node-shell { fill: var(--bg-elevated) !important; stroke: var(--border-strong) !important; }
+.concept-node.is-accent .node-shell { fill: var(--accent-soft) !important; stroke: var(--accent) !important; }
+.concept-node .node-badge { fill: var(--accent) !important; }
+.concept-node .node-title { fill: var(--text) !important; }
+.concept-node .node-sub { fill: var(--text-muted) !important; }
+.concept-orb { opacity: .18 !important; filter: none !important; }
+.cssflow,.ragflow { gap: 8px; }
+.cssflow .fnode,.ragflow .rf {
+  border: 1px solid var(--border-strong) !important;
+  border-radius: 6px !important;
+  background: var(--bg-elevated) !important;
+  box-shadow: none !important;
+  transform: none;
+}
+.cssflow .fnode.accent,.ragflow .rf.accent { border-color: var(--accent) !important; background: var(--accent-soft) !important; }
+.cssflow .farrow,.ragflow .arr { color: var(--text-muted); }
+
+/* --- Desktop: flows run left-to-right instead of stacking -----------------
+   A 6-step .cssflow costs ~600px of vertical space when stacked. On desktop
+   we lay it out as a centred, wrapping row: steps shrink/grow to fit the
+   available width, and when there is no horizontal room left the remaining
+   steps wrap onto the next line rather than forcing a horizontal scrollbar.
+   Deliberately gated at min-width 861px - mobile (<=860px) keeps the shared
+   vertical stack, which is the correct reading order on a narrow screen. */
+@media (min-width: 861px) {
+  /* Diagrams scale down to the reading column instead of overflowing it - 
+     every diagram carries a viewBox, so height follows the aspect ratio.
+     Desktop only: on mobile the SVGs stay full-size and scroll, because
+     shrinking a 980-wide diagram to 340px makes its labels unreadable. */
+  .diagram svg { max-width: 100%; height: auto; }
+
+  .cssflow {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: stretch;
+    gap: 10px 0;
+    margin: 18px 0;
+  }
+  .cssflow .fnode {
+    flex: 1 1 132px;
+    min-width: 0 !important;
+    max-width: 190px;
+    padding: 9px 11px !important;
+    font-size: 13px;
+    line-height: 1.34;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .cssflow .fnode small { font-size: 11.5px; line-height: 1.3; margin-top: 3px; }
+  .cssflow .farrow {
+    flex: 0 0 auto;
+    align-self: center;
+    width: 17px;
+    height: 2px !important;
+    background: linear-gradient(90deg, var(--border-strong), var(--accent));
+  }
+  /* Point the arrowhead right (the base rule builds a downward triangle). */
+  .cssflow .farrow::after {
+    top: 50%;
+    bottom: auto;
+    left: auto;
+    right: -1px;
+    transform: translateY(-50%);
+    border-top: 5px solid transparent;
+    border-bottom: 5px solid transparent;
+    border-left: 7px solid var(--accent);
+    border-right: 0;
+  }
+  /* The reveal animation grows arrows along their length: width, not height. */
+  .cssflow.flow-anim .farrow {
+    height: 2px !important;
+    width: 0 !important;
+    transition: opacity .48s ease, transform .55s var(--ease-out), width .38s var(--ease-out);
+  }
+  .cssflow.flow-anim.flow-in .farrow { height: 2px !important; width: 17px !important; }
+}
+
+@keyframes flow-accent-breathe {
+  50% { transform: translateY(-1px); box-shadow: none; }
+}
+@keyframes concept-token-pick {
+  0%,25%,100% { transform: scale(1); filter: none; }
+  45%,65% { transform: scale(1.08); filter: none; }
+}
+@keyframes orb-breathe { 50% { transform: scale(1.035); opacity: .34; } }
+
+/* Reveal motion remains functional but quiet. */
+.soft-reveal { transform: translateY(5px); transition-duration: .35s; }
+.soft-reveal.in-view { transform: none; }
+.card[data-reveal] { opacity: 1; transform: none; }
+.card[data-reveal].reveal { animation: none; }
+
+.reading-progress {
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  border-radius: 0;
+  background: var(--excel);
+  box-shadow: none;
+  z-index: 200;                 /* sit above the sticky header/ribbon */
+}
+.scroll-top {
+  width: 34px;
+  height: 34px;
+  right: 18px;
+  bottom: 18px;
+  border: 1px solid var(--border-strong);
+  border-radius: 6px;
+  color: var(--text-secondary);
+  background: var(--bg-elevated);
+  box-shadow: var(--shadow-sm);
+  transform: translateY(8px);
+}
+.scroll-top.show { transform: none; }
+.scroll-top:hover { color: var(--text); border-color: var(--text-muted); transform: none; }
+
+/* =========================================================================
+   Focus mode - ONE canonical implementation for every page in the portal.
+
+   Shape: a single compact navigation bar pinned to the very top of the
+   viewport, the exit control and theme toggle docked inside that bar, and a
+   reading canvas that fills the screen with generous padding on both sides.
+
+   Two page families carry their workspace links in different elements:
+     - portal pages   -> `.office-ribbon`, injected below the breadcrumb row
+     - DSA chapters   -> `.topbar` itself (`.dsa-workspace-nav` lives in it)
+   Rather than styling those two cases separately, everything below targets
+   `.focus-nav` - a marker class that enhance.js puts on whichever element is
+   actually the navigation bar. That way there is exactly one set of rules to
+   keep in step, and a page cannot drift out of parity by belonging to a
+   different family. enhance.js also moves the exit control and the theme
+   toggle into that bar, so they never float over the lesson.
+   ========================================================================= */
+body.focus-mode { --nav-bar-h: 48px; }
+
+/* Chrome-less reading surface: every rail, overlay and footer steps aside. */
+body.focus-mode .sidebar,
+body.focus-mode .sidebar-resizer,
+body.focus-mode .toc-resizer,
+body.focus-mode .backdrop,
+body.focus-mode .toc-rail,
+body.focus-mode .toc,
+body.focus-mode .reading-progress,
+body.focus-mode .scroll-top,
+body.focus-mode .site-footer { display: none !important; }
+body.focus-mode .app { grid-template-columns: minmax(0, 1fr); }
+body.focus-mode .main { grid-column: 1; width: 100%; min-width: 0; }
+
+/* Sticky offsets are derived from these two vars, so they have to describe
+   the one bar that survives. On portal pages the breadcrumb row folds away
+   (it would otherwise leave an empty strip above the navigation); on DSA
+   chapters the top bar *is* the navigation, so there is no ribbon to count. */
+body.has-ribbon.focus-mode { --header-h: 0px; --ribbon-h: var(--nav-bar-h); }
+body.has-ribbon.focus-mode .topbar:not(.focus-nav) { display: none !important; }
+body.focus-mode:not(.has-ribbon) { --header-h: var(--nav-bar-h); --ribbon-h: 0px; }
+
+/* The navigation bar itself. */
+body.focus-mode .focus-nav {
+  position: sticky;
+  inset: 0 auto auto;
+  top: 0;
+  z-index: 90;
+  display: flex;
+  align-items: stretch;
+  width: 100%;
+  height: var(--nav-bar-h);
+  min-height: var(--nav-bar-h);
+  margin: 0;
+  padding: 0 clamp(12px, 1.8vw, 28px);
+  gap: 2px;
+  border: 0;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  pointer-events: auto;
+}
+/* Breadcrumbs, the sidebar toggle and the status chip are noise once the
+   lesson is the only thing on screen; the workspace links are the point. */
+body.focus-mode .focus-nav > .crumbs,
+body.focus-mode .focus-nav > .menu-btn,
+body.focus-mode .focus-nav > .home-btn,
+body.focus-mode .focus-nav .ribbon-status { display: none !important; }
+body.focus-mode .focus-nav > .dsa-workspace-nav { display: flex !important; }
+/* Without the breadcrumb filler the links need something to push the exit
+   control to the far end of the bar. */
+body.focus-mode .focus-nav > .ribbon-spacer { display: block; flex: 1 1 auto; }
+
+/* The workspace links are the only navigation left on screen in focus mode, so
+   they carry a size up from the dense breadcrumb-row treatment. */
+body.focus-mode .focus-nav > a,
+body.focus-mode .focus-nav > .dsa-workspace-nav > a {
+  padding: 0 13px;
+  font-size: 13.5px;
+  font-weight: 550;
+}
+body.focus-mode .focus-nav > a.active,
+body.focus-mode .focus-nav > .dsa-workspace-nav > a.active { font-weight: 650; }
+
+/* Exit control and theme toggle, docked in the bar as quiet flat buttons in
+   the same idiom as the workspace links. */
+body.focus-mode .focus-nav > .focus-btn,
+body.focus-mode .focus-nav > [data-theme-toggle] {
+  position: static;
+  inset: auto;
+  z-index: auto;
+  align-self: center;
+  flex: 0 0 auto;
+  height: 28px;
+  min-height: 28px;
+  border: 1px solid transparent !important;
+  border-radius: 5px;
+  background: transparent !important;
+  box-shadow: none !important;
+  opacity: 1;
+}
+body.focus-mode .focus-nav > .focus-btn {
+  display: inline-flex !important;
+  gap: 5px;
+  padding: 0 9px;
+  color: var(--excel) !important;
+  font-size: 12px;
+  font-weight: 560;
+}
+body.focus-mode .focus-nav > [data-theme-toggle] {
+  display: grid !important;
+  width: 28px;
+  padding: 0;
+  color: var(--text-secondary);
+}
+body.focus-mode .focus-nav > .focus-btn:hover,
+body.focus-mode .focus-nav > [data-theme-toggle]:hover {
+  border-color: var(--border) !important;
+  background: var(--surface) !important;
+}
+body.focus-mode .focus-nav > .focus-btn svg { width: 15px; height: 15px; color: var(--excel); }
+body.focus-mode .focus-nav > .focus-btn .focus-lbl { display: inline !important; font-size: 12px; }
+
+/* Full-bleed canvas: the rails are gone, so the lesson uses the whole screen
+   rather than sitting in a centred column. */
+body.focus-mode .content-wrap {
+  grid-template-columns: minmax(0, 1fr);
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 1.5rem clamp(1rem, 3vw, 3rem) 3.5rem;
+}
+/* Focus mode used to run edge to edge. On a wide monitor that produced lines
+   of 200+ characters, which is unreadable - so the canvas is now capped at a
+   comfortable measure and centred, with generous gutters either side. The cap
+   is a variable the reader controls from the Display panel (Text width). */
+/* Measures are the outer box; the gutter is inside it (border-box), so the
+   text column is roughly measure minus 2x gutter. On a 2560px screen that
+   gives about 68 / 93 / 137 characters per line for narrow / medium / wide,
+   against 287 before this change. */
+body.focus-mode {
+  --focus-measure: 90rem;   /* default standard in focus mode (1440px) */
+  --focus-gutter: clamp(20px, 5vw, 100px);
+}
+body.focus-mode[data-focus-width="standard"],
+body.focus-mode[data-focus-width="medium"],
+body.focus-mode[data-focus-width="narrow"] { --focus-measure: 90rem; }
+body.focus-mode[data-focus-width="wide"]   { --focus-measure: 115rem; } /* wide (1840px) */
+body.focus-mode[data-focus-width="full"]   { --focus-measure: none; }
+
+html[data-reading-width="default"] body.focus-mode .content,
+html[data-reading-width="standard"] body.focus-mode .content,
+body.focus-mode[data-focus-width="standard"] .content,
+body.focus-mode[data-focus-width="medium"] .content {
+  max-width: 90rem !important;
+}
+
+html[data-reading-width="wide"] body.focus-mode .content,
+body.focus-mode[data-focus-width="wide"] .content {
+  max-width: 115rem !important;
+}
+
+html[data-reading-width="full"] body.focus-mode .content,
+body.focus-mode[data-focus-width="full"] .content {
+  max-width: none !important;
+  width: 100% !important;
+}
+
+body.focus-mode .content {
+  width: 100%;
+  max-width: var(--focus-measure);
+  margin-inline: auto;
+  padding: clamp(24px, 3vw, 44px) var(--focus-gutter) 88px;
+}
+/* At "Full" the measure is uncapped, so the gutter alone has to keep text off
+   the screen edge - widen it rather than letting the first character sit on
+   the bezel. */
+body.focus-mode[data-focus-width="full"] .content { --focus-gutter: clamp(20px, 4vw, 104px); }
+
+/* Prose stretches with everything else. Several base rules cap the reading
+   measure (`--reading-line`, `--reader-line-length`, `.content h1` at 900px,
+   `.lead` at 86ch), which left paragraphs at roughly a third of the canvas
+   while the tables and cards beside them went edge to edge. Focus mode clears
+   all of those so a lesson reads as one consistent column width. */
+body.focus-mode .content > p,
+body.focus-mode .content > ul,
+body.focus-mode .content > ol,
+body.focus-mode .content > dl,
+body.focus-mode .content > blockquote,
+body.focus-mode .content > .lead,
+body.focus-mode .content > h1,
+body.focus-mode .content > h2,
+body.focus-mode .content > h3,
+body.focus-mode .content > h4 { max-width: none; }
+
+/* The focus bar's own Narrow/Medium/Wide/Full strip has been retired: the
+   Display panel in the top bar owns text width everywhere and maps its choice
+   onto data-focus-width, so one setting drives both layouts. */
+
+@media (max-width: 760px) {
+  body.focus-mode { --nav-bar-h: 42px; }
+  body.focus-mode .focus-nav { padding-inline: 8px; }
+  body.focus-mode .focus-nav > .focus-btn { width: 30px; padding: 0; }
+  body.focus-mode .focus-nav > .focus-btn .focus-lbl { display: none !important; }
+  body.focus-mode .content { max-width: none; padding: 24px clamp(16px, 5vw, 24px) 72px; }
+}
+
+/* --- Mobile and tablet -------------------------------------------------- */
+.mobile-nav-intro,
+.mobile-nav-close { display: none; }
+
+@media (max-width: 1180px) {
+  :root { --toc-w: 194px; }
+  .content { padding-left: 34px; padding-right: 34px; }
+}
+
+@media (max-width: 980px) {
+  .toc-resizer { display: none !important; }
+  .content-wrap {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 0.75rem clamp(0.75rem, 3vw, 1.25rem) 3rem;
+    gap: 0.75rem;
+  }
+  /* On mobile the chapter TOC is a compact "Jump to section" dropdown rather
+     than a horizontal side-scrolling strip: a single tidy bar that shows the
+     current section and expands to a tap-to-jump list, so it no longer eats
+     horizontal-scroll space or push the page down. */
+  .toc-rail {
+    position: sticky;
+    top: calc(var(--header-h) + var(--ribbon-h));
+    z-index: 24;
+    grid-row: 1;
+    height: auto;
+    padding: 7px 12px;
+    margin-bottom: 0.625rem;
+    border: 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    overflow: visible;
+    transition: transform .28s ease, opacity .24s ease;
+  }
+  .content {
+    margin: 0.625rem auto 2.5rem;
+    padding: 1.75rem 1.25rem 3rem;
+    border-radius: 14px;
+  }
+  /* Scroll-down hides the bar, scroll-up brings it back (app.js /
+     portal-page.js toggle this class). */
+  .toc-rail.toc-rail-hidden {
+    transform: translateY(-120%);
+    opacity: 0;
+    pointer-events: none;
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .toc-rail { transition: none; }
+  }
+  .toc {
+    position: relative;
+    display: block !important;
+  }
+  .toc-book-head,
+  .toc-filter { display: none; }
+
+  /* Collapsed bar */
+  .toc-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    min-height: 36px;
+    padding: 7px 10px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: var(--bg-elevated);
+    color: var(--text-secondary);
+    font: 600 12px/1.25 var(--font-sans);
+    cursor: pointer;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .toc-toggle-ico { flex: none; width: 15px; height: 15px; color: var(--excel); }
+  .toc-toggle-label {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: left;
+  }
+  .toc-toggle-caret { flex: none; width: 15px; height: 15px; color: var(--text-muted); transition: transform .18s ease; }
+  .toc-open .toc-toggle { border-color: var(--border-strong); }
+  .toc-open .toc-toggle-caret { transform: rotate(180deg); }
+
+  /* Expanded list - an overlay dropdown so it never pushes content down */
+  .toc-list {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: calc(100% + 6px);
+    max-height: min(62vh, 440px);
+    padding: 6px;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    box-shadow: var(--shadow-lg);
+    scrollbar-width: thin;
+  }
+  .toc-open .toc-list { display: block; }
+  .toc a {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    min-height: 36px;
+    margin: 1px 0;
+    padding: 7px 9px 7px 12px;
+    border: 0;
+    border-radius: 7px;
+    background: transparent;
+    white-space: normal;
+  }
+  /* No hover slide inside the dropdown: on a touch screen it only fires as a
+     stuck state after a tap (interview_prep does the same). */
+  .toc a:hover,
+  .toc.toc-textbook a:hover { transform: none !important; }
+  .toc a.active,
+  .toc.toc-textbook a.active {
+    color: var(--accent) !important;
+    background: var(--excel-soft) !important;
+    box-shadow: none !important;
+  }
+  .toc-empty { display: none !important; }
+  .content { grid-row: 2; padding-top: 20px; }
+}
+
+@media (max-width: 860px) {
+  :root {
+    --header-h: 42px;
+    --ribbon-h: 36px;
+    --fs-base: 14.5px;
+    --fs-h1: clamp(24px, 6.1vw, 30px);
+    --fs-h2: 19.5px;
+    --fs-h3: 15px;
+    --fs-hero: clamp(31px, 9vw, 42px);
+    /* The density scaling is a desktop measure: it buys back screen on a wide
+       canvas. A phone drawer is already sized as a fraction of the viewport, so
+       shrinking it again only makes the tap targets smaller. Setting the factor
+       to 1 here neutralises the `zoom` and the height correction together, and
+       --sidebar-track collapses to --sidebar-w, which is what the drawer rules
+       below already assume. */
+    --density: 1;
+  }
+  .app { display: block; }
+  .main { width: 100%; }
+  .sidebar {
+    position: fixed;
+    inset: 0 auto 0 0;
+    z-index: 80;
+    width: min(88vw, 324px);
+    height: 100dvh;
+    padding: 0;
+    border: 0;
+    border-right: 1px solid var(--border);
+    border-radius: 0 8px 8px 0;
+    background: var(--bg-subtle) !important;
+    box-shadow: var(--shadow-lg);
+    transform: translateX(-103%);
+    transition: transform .22s ease;
+  }
+  .app.nav-open .sidebar { transform: translateX(0); animation: none !important; }
+  .brand {
+    min-height: 52px;
+    padding: 0 10px 0 12px;
+    border-radius: 0;
+  }
+  .brand-mark { width: 30px; height: 30px; border-radius: 7px; }
+  .brand-text strong { font-size: 14px; }
+  .brand-text span { font-size: 11.5px; }
+  .mobile-nav-close {
+    width: 30px;
+    height: 30px;
+    display: grid;
+    place-items: center;
+    border: 1px solid var(--border);
+    border-radius: 5px;
+    color: var(--text-secondary);
+    background: var(--surface);
+    box-shadow: none;
+  }
+  .mobile-nav-intro {
+    display: block;
+    margin: 8px 10px 5px;
+    padding: 12px 13px;
+    border: 1px solid var(--border);
+    border-radius: 7px;
+    color: var(--text);
+    background: var(--surface) !important;
+    box-shadow: none;
+  }
+  .mobile-nav-intro::after { content: none !important; display: none !important; }
+  .mobile-nav-eyebrow { margin-bottom: 3px; color: var(--excel); font-size: 8.5px; }
+  .mobile-nav-intro strong { color: var(--text); font-size: 14px; }
+  .mobile-nav-intro p { margin: 3px 0 0; color: var(--text-muted); font-size: 11.5px; }
+  .search-wrap { top: 52px; padding: 7px 10px; }
+  .nav.sitenav,.nav { padding-bottom: max(26px, env(safe-area-inset-bottom)); }
+  .sidebar-resizer { display: none !important; }
+  .toc-resizer { display: none !important; }
+
+  .backdrop {
+    z-index: 70;
+    background: rgba(17, 20, 26, .38);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+  .app.nav-open .backdrop { display: block; }
+
+  .topbar { padding: 0 8px; }
+  .topbar .crumbs { font-size: 12px; }
+  .home-lbl,.focus-lbl { display: none; }
+  .home-btn,.focus-btn { width: 28px; padding: 0; }
+
+  .office-ribbon {
+    min-height: var(--ribbon-h);
+    padding: 0 7px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: none;
+  }
+  .office-ribbon::-webkit-scrollbar { display: none; }
+  .office-ribbon a { padding: 0 9px; font-size: 11.5px; }
+  .office-ribbon .ribbon-spacer,
+  .office-ribbon .ribbon-status { display: none; }
+
+  .content {
+    margin: 0.75rem auto 3rem;
+    padding: 1.85rem 1.25rem 3.5rem;
+    border-radius: 14px;
+  }
+  .content h1 { max-width: 100%; }
+  .hero { padding: 20px 18px; }
+  .grid-2,.grid-3,.grid-4 { grid-template-columns: 1fr !important; }
+  .concept-lab { grid-template-columns: 1fr; gap: 0; padding: 0; }
+  .concept-copy { padding: 17px 17px 13px; }
+  .concept-canvas { display: none; }
+  .concept-mobile-steps { display: block; border-top: 1px solid var(--border); background: var(--surface); }
+  .concept-step-mobile { padding: 10px 14px; border-top: 1px solid var(--border); }
+  .concept-step-mobile:first-child { border-top: 0; }
+  .concept-step-mobile b { width: 25px; height: 25px; border-radius: 5px; background: var(--accent); font-size: 9px; }
+  .concept-step-mobile strong { font-size: 13px; }
+  .concept-step-mobile span { font-size: 11.5px; }
+  .diagram { padding: 13px; }
+  .page-nav a { flex-basis: 100%; }
+  .page-nav > span:empty { display: none; }
+}
+
+@media (max-width: 620px) {
+  .content-wrap {
+    padding: 0.5rem 0.625rem 2.5rem;
+  }
+  .toc-rail {
+    margin-bottom: 0.5rem;
+  }
+  .content {
+    margin: 0.5rem auto 2.5rem;
+    padding: 1.65rem 1.1rem 2.5rem;
+    border-radius: 12px;
+  }
+  .hero { padding: 18px 15px; }
+  .content h2 { margin-top: 27px; }
+  /* The chips used to scroll sideways here, which hid the difficulty and the
+     prerequisites off the right edge of a phone with nothing to say so. Three
+     short facts wrap into two lines instead - see LESSON META CHIPS. */
+  .card { padding: 14px; }
+  .readmap { padding: 14px; }
+  .rm-link { grid-template-columns: 1fr; gap: 3px; }
+  .table-wrap { margin-left: 0; margin-right: 0; }
+}
+
+@media (max-width: 430px) {
+  .sidebar { width: min(92vw, 318px); }
+  .office-ribbon a { padding: 0 8px; }
+  .content-wrap {
+    padding: 0.375rem 0.5rem 2rem;
+  }
+  .content {
+    margin: 0.375rem auto 2rem;
+    padding: 1.5rem 1rem 2.5rem;
+    border-radius: 10px;
+  }
+}
+
+@media (hover: none) {
+  .card:hover,.card.hover:hover,.page-nav a:hover,.rm-link:hover { border-color: var(--border) !important; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,*::before,*::after { scroll-behavior: auto !important; }
+  .sidebar,.soft-reveal,.flow-anim .fnode,.flow-anim .rf,.flow-anim .farrow,.flow-anim .arr,
+  .concept-node,.concept-link,.concept-signal,.concept-token,.concept-system-node { animation: none !important; transition: none !important; }
+}
+
+@media print {
+  .office-ribbon { display: none !important; }
+}
+
+/* Final compatibility refinements for legacy portal components. */
+.readmap ol { gap: 0; }
+.readmap li { position: relative; border-top: 1px solid var(--border); }
+.readmap li:nth-child(-n + 2) { border-top: 0; }
+.rm-link {
+  padding: 10px 8px 10px 42px !important;
+  min-height: 100%;
+}
+.rm-link::before {
+  left: 8px !important;
+  top: 10px !important;
+  width: 25px !important;
+  height: 22px !important;
+  border: 1px solid var(--border);
+  border-radius: 5px !important;
+  color: var(--accent) !important;
+  background: var(--accent-soft) !important;
+  box-shadow: none !important;
+  font-size: 9px !important;
+}
+.rm-link:hover { padding-left: 42px !important; }
+.rm-ttl { font-size: 12.5px; }
+.rm-link .tag { min-height: 22px; padding: 2px 7px; }
+
+.navgroup,
+.navgroup-head,
+.navgroup-direct,
+.navgroup-direct .navgroup-head {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.navgroup + .navgroup { border-top: 1px solid var(--border) !important; }
+.navgroup-head .ng-mk,
+.navgroup.open > .navgroup-head .ng-mk,
+.navgroup-direct.open > .navgroup-head .ng-mk {
+  color: var(--text-muted) !important;
+  border-color: var(--border) !important;
+  background: var(--bg-elevated) !important;
+  box-shadow: none !important;
+}
+.navgroup.open > .navgroup-head .ng-mk { color: var(--excel) !important; }
+.ng-direct-arrow {
+  width: auto !important;
+  height: auto !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  color: var(--text-muted) !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+
+.mobile-nav-stats,
+.mobile-nav-intro .mobile-nav-actions,
+.mobile-nav-intro .mobile-nav-chips { display: none !important; }
+
+@media (max-width: 860px) {
+  .sidebar {
+    background: var(--bg-subtle) !important;
+  }
+  .sidebar .nav.sitenav,
+  .sidebar .nav {
+    padding: 0.5rem 0.625rem max(2rem, env(safe-area-inset-bottom)) !important;
+  }
+  .sidebar .navgroup {
+    margin: 0 !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
+  .sidebar .navgroup + .navgroup {
+    border-top: 1px solid var(--border) !important;
+    margin-top: 0.25rem !important;
+    padding-top: 0.25rem !important;
+  }
+  .sidebar,
+  .sidebar * {
+    text-align: left !important;
+  }
+  .sidebar .navgroup-head,
+  .sidebar .navgroup-direct .navgroup-head {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    text-align: left !important;
+    gap: 0.625rem !important;
+    width: 100% !important;
+    min-height: 2.125rem !important;
+    height: auto !important;
+    margin: 0 !important;
+    padding: 0.5625rem 0.625rem !important;
+    border: 0 !important;
+    border-radius: 0.625rem !important;
+    color: #2b2f3a !important;
+    background: transparent !important;
+    font-family: inherit !important;
+    font-size: 0.8125rem !important;
+    font-weight: 550 !important;
+    line-height: 1.3 !important;
+    letter-spacing: 0 !important;
+    box-shadow: none !important;
+    transform: none !important;
+  }
+  [data-theme="dark"] .sidebar .navgroup-head,
+  [data-theme="dark"] .sidebar .navgroup-direct .navgroup-head {
+    color: #d1d5df !important;
+  }
+  .sidebar .navgroup-head:hover {
+    background: var(--surface) !important;
+    color: var(--text) !important;
+  }
+  .sidebar .navgroup.open > .navgroup-head,
+  .sidebar .navgroup-direct.open > .navgroup-head {
+    background: var(--accent-soft) !important;
+    color: var(--text) !important;
+    font-weight: 600 !important;
+    box-shadow: none !important;
+  }
+  .sidebar .navgroup-head .ng-copy {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: flex-start !important;
+    justify-content: center !important;
+    text-align: left !important;
+    min-width: 0 !important;
+    flex: 1 1 auto !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+  .sidebar .navgroup-head .ng-label,
+  .sidebar .ng-label {
+    display: block !important;
+    width: 100% !important;
+    text-align: left !important;
+    font-size: 0.8125rem !important;
+    font-weight: 550 !important;
+    color: inherit !important;
+    letter-spacing: 0 !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+  }
+  .sidebar .navgroup-head .ng-mk,
+  .sidebar .navgroup.open > .navgroup-head .ng-mk,
+  .sidebar .navgroup-direct.open > .navgroup-head .ng-mk {
+    flex: none !important;
+    display: grid !important;
+    place-items: center !important;
+    min-width: 1.5rem !important;
+    width: 1.5rem !important;
+    height: 1.5rem !important;
+    padding: 0 !important;
+    border: 1px solid var(--border) !important;
+    border-radius: 0.4375rem !important;
+    color: var(--text-secondary) !important;
+    background: var(--bg-elevated) !important;
+    font-family: inherit !important;
+    font-size: 0.625rem !important;
+    font-weight: 600 !important;
+    font-variant-numeric: tabular-nums !important;
+    box-shadow: none !important;
+  }
+  .sidebar .navgroup.open > .navgroup-head .ng-mk,
+  .sidebar .navgroup-direct.open > .navgroup-head .ng-mk {
+    color: var(--accent) !important;
+    border-color: var(--accent-ring) !important;
+    background: var(--bg-elevated) !important;
+  }
+  .sidebar .navgroup-head .ng-chev {
+    margin-left: auto !important;
+    width: 14px !important;
+    height: 14px !important;
+    padding: 0 !important;
+    border-radius: 0 !important;
+    background: transparent !important;
+    font-size: 12px !important;
+    color: var(--text-muted) !important;
+    opacity: .6 !important;
+    transition: transform .2s ease !important;
+  }
+  .sidebar .navgroup.open > .navgroup-head .ng-chev {
+    transform: rotate(90deg) !important;
+    color: var(--accent) !important;
+    opacity: 1 !important;
+  }
+  .sidebar .navgroup-body {
+    padding: 0.25rem 0 0.5rem 0.5rem !important;
+  }
+  .sidebar .nav a,
+  .sidebar .nav-item,
+  .sidebar .nav-link {
+    position: relative !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 0.625rem !important;
+    min-height: 0 !important;
+    padding: 0.5625rem 0.625rem !important;
+    border: 0 !important;
+    border-radius: 0.625rem !important;
+    color: var(--text-secondary) !important;
+    font-family: inherit !important;
+    font-size: 0.8125rem !important;
+    font-weight: 450 !important;
+    line-height: 1.3 !important;
+    text-decoration: none !important;
+    box-shadow: none !important;
+  }
+  .sidebar .nav a:hover,
+  .sidebar .nav-item:hover,
+  .sidebar .nav-link:hover {
+    background: var(--surface) !important;
+    color: var(--text) !important;
+  }
+  .sidebar .nav a.active,
+  .sidebar .nav-item.active,
+  .sidebar .nav-link.active {
+    color: var(--text) !important;
+    background: var(--accent-soft) !important;
+    font-weight: 600 !important;
+  }
+  .sidebar .nav-label,
+  .sidebar .nav-track,
+  .sidebar .sb-sec,
+  .sidebar .nav-group-label {
+    margin: 1rem 0.5rem 0.375rem !important;
+    padding: 0 !important;
+    color: var(--text-muted) !important;
+    font-size: 0.625rem !important;
+    font-weight: 750 !important;
+    letter-spacing: .12em !important;
+    text-transform: uppercase !important;
+  }
+  .mobile-nav-intro { min-height: 0; }
+  .mobile-nav-intro p { max-width: 30ch; }
+  .readmap li:nth-child(2) { border-top: 1px solid var(--border); }
+}
+.mobile-nav-meta { display: none !important; }
+@media (max-width: 980px) {
+  .toc-rail { display: block !important; }
+}
+
+/* Learn GenAI brand ------------------------------------------------------- */
+.brand > .brand-link {
+  display: flex;
+  align-items: center;
+  gap: 0.6875rem;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+.brand > .brand-link:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 0.5rem;
+}
+.brand-mark,
+html[data-theme="dark"] .brand-mark {
+  width: 2.25rem !important;
+  height: 2.25rem !important;
+  flex: 0 0 2.25rem;
+  padding: 0 !important;
+  overflow: hidden;
+  border: 0 !important;
+  border-radius: 0.5rem !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
+.brand-mark img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: none;
+}
+.brand-text strong {
+  font-size: 0.875rem !important;
+  font-weight: 700 !important;
+  letter-spacing: -.01em !important;
+}
+.brand-text span {
+  font-size: 0.75rem !important;
+  font-weight: 500 !important;
+  letter-spacing: 0 !important;
+}
+
+/* Concept cards match the hub catalogue cards (.ih-page-card) ------------- */
+.content .card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  padding: 18px 20px;
+  overflow: hidden;
+  border: 1px solid var(--border) !important;
+  border-radius: var(--radius-card, 18px) !important;
+  background: var(--bg-elevated) !important;
+  box-shadow: var(--shadow-sm) !important;
+  transition: transform .2s ease, box-shadow .2s ease, border-color .2s ease;
+}
+/* Unified card hover across all content cards */
+.content .card:hover {
+  border-color: var(--border-strong) !important;
+  box-shadow: var(--card-hover-shadow) !important;
+  transform: translateY(-2px) !important;
+}
+.content .card > * { position: relative; }
+.content .card .ico {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  margin: 0 0 12px;
+  border: 0;
+  border-radius: 50%;
+  color: var(--accent);
+  background: var(--accent-soft);
+  box-shadow: none;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1;
+}
+/* Font sizes stay under the reader controls (--reader-* in styles.css); only
+   spacing, colour and rhythm are matched to the hub cards here. */
+.content .card h3,
+.content .card h4 {
+  margin: 0 0 6px !important;
+  color: var(--text);
+  line-height: 1.3;
+}
+.content .card p {
+  margin: 0;
+  color: var(--text-muted);
+  line-height: 1.45;
+}
+.content .card p + p { margin-top: 7px; }
+
+@media (max-width: 620px) {
+  .content .card { padding: 15px 16px; border-radius: 16px !important; }
+}
+@media (hover: none) {
+  .content .card:hover {
+    transform: none !important;
+    border-color: var(--border) !important;
+    box-shadow: var(--shadow-sm) !important;
+  }
+}
+
+/* =========================================================================
+   Term dialogs - an "additional read" for a single word in the prose.
+
+   A `.term-link` button sits inline in the sentence and opens the native
+   `<dialog>` named by its `data-term-dialog`. Using `<dialog>` + `showModal()`
+   means the browser supplies the top-layer stacking, the backdrop, Esc to
+   close and the focus trap, so enhance.js only has to wire the click. It also
+   renders above the focused reading canvas without any z-index bookkeeping.
+   ========================================================================= */
+.term-link {
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-bottom: 1px dashed var(--accent);
+  border-radius: 2px;
+  background: none;
+  color: var(--accent);
+  font: inherit;
+  font-weight: 600;
+  cursor: help;
+}
+.term-link:hover { border-bottom-style: solid; background: var(--accent-soft); }
+.term-link:focus-visible { outline: 2px solid var(--accent-ring); outline-offset: 2px; }
+.term-link::after {
+  content: "ⓘ";
+  margin-left: 2px;
+  font-size: .82em;
+  vertical-align: baseline;
+}
+
+.term-dialog {
+  width: min(560px, calc(100vw - 32px));
+  max-height: min(80vh, 720px);
+  padding: 0;
+  overflow: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--bg-elevated);
+  color: var(--text);
+  box-shadow: var(--shadow-lg);
+}
+.term-dialog::backdrop { background: rgba(16, 19, 26, .46); }
+.term-dialog-head {
+  position: sticky;
+  top: 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--border);
+  background: var(--bg-elevated);
+}
+.term-dialog-head > div { flex: 1 1 auto; min-width: 0; }
+.term-dialog-eyebrow {
+  display: block;
+  margin-bottom: 3px;
+  color: var(--accent);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.term-dialog h2 { margin: 0; font-size: 18.5px; font-weight: 700; letter-spacing: -.01em; }
+.term-dialog-close {
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: none;
+  color: var(--text-muted);
+  font-size: 17px;
+  line-height: 1;
+  cursor: pointer;
+}
+.term-dialog-close:hover { border-color: var(--border); background: var(--surface); color: var(--text); }
+.term-dialog-body { padding: 14px 18px 18px; }
+.term-dialog-body > :first-child { margin-top: 0; }
+.term-dialog-body > :last-child { margin-bottom: 0; }
+.term-dialog-body p { margin: 0 0 10px; color: var(--text-secondary); font-size: 14.5px; line-height: 1.62; }
+.term-dialog-body strong { color: var(--text); font-weight: 650; }
+.term-dialog-body h3 {
+  margin: 16px 0 6px;
+  color: var(--text);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+.term-dialog-body ul { margin: 0 0 10px; padding-left: 17px; }
+.term-dialog-body li {
+  margin-bottom: 6px;
+  color: var(--text-secondary);
+  font-size: 14.5px;
+  line-height: 1.58;
+}
+.term-dialog-body .term-dialog-note {
+  margin: 14px 0 0;
+  padding: 11px 13px;
+  border-left: 3px solid var(--accent);
+  border-radius: 0 7px 7px 0;
+  background: var(--surface);
+  color: var(--text-secondary);
+  font-size: 14px;
+  line-height: 1.58;
+}
+
+@media (max-width: 520px) {
+  .term-dialog { width: calc(100vw - 20px); }
+  .term-dialog-head { padding: 14px 14px 10px; }
+  .term-dialog-body { padding: 12px 14px 16px; }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .term-dialog[open] { animation: termDialogIn .16s var(--ease-out, ease-out); }
+  @keyframes termDialogIn {
+    from { opacity: 0; transform: translateY(6px) scale(.99); }
+    to { opacity: 1; transform: none; }
+  }
+}
+
+/* =========================================================================
+   ONE TYPE SCALE - final normalisation layer
+   -------------------------------------------------------------------------
+   Every page family had grown its own heading scale and reading width, so
+   Home, Learn, Practice and Interview each rendered at a visibly different
+   size even though they share a design. The worst offenders were:
+     .hero h1        -> --fs-hero, capped at 13ch so it wrapped oddly
+     .ih-hero h1     -> its own clamp(42px, 6vw, 73px)
+     .gp-hero h1     -> browser default
+     .ih-content     -> 1180px while everything else used 1040px
+   Those rules are spread across five stylesheets and a dozen media queries,
+   so this layer states the intended result once, last, and wins outright.
+   `!important` is deliberate here: this block is the single source of truth
+   for page-title size and reading width, and it has to beat legacy rules it
+   cannot practically delete one by one.
+   ========================================================================= */
+
+/* --- Page title: one size on every page, hero or not ------------------- */
+/* The `* var(--reading-scale)` factor on every size below is what lets the
+   Display panel's text-size setting through this layer. Without it the layer
+   would pin headings at the theme size and only body copy would respond, so
+   "larger text" would change the paragraphs and leave the titles behind. The
+   factor is 1 unless the reader has chosen otherwise. */
+.hero h1,
+.ih-hero h1,
+.gp-hero h1,
+.dsa-chead h1,
+.dsa-hero h2,
+.content > h1,
+.prep-content > h1 {
+  font-size: calc(var(--fs-h1) * var(--reading-scale)) !important;
+  max-width: none !important;
+  line-height: 1.16 !important;
+  letter-spacing: -.022em !important;
+}
+
+/* --- Lead paragraph directly under the title --------------------------- */
+.hero > .lead,
+.ih-hero > p,
+.gp-hero > p,
+.content > .lead,
+.prep-content > .lead,
+.dsa-chead .dsa-outcome {
+  /* Was calc(var(--fs-lead) * scale) = 19.4px against body prose at 17.9px.
+     The lead now matches body size and is distinguished by colour and
+     position rather than by being larger. */
+  font-size: var(--reader-font-size) !important;
+  line-height: 1.62;
+}
+
+/* --- Section headings -------------------------------------------------- */
+.content > h2,
+.prep-content > h2,
+.ih-content > h2 { font-size: calc(var(--fs-h2) * var(--reading-scale)) !important; }
+.content > h3,
+.prep-content > h3,
+.ih-content > h3 { font-size: calc(var(--fs-h3) * var(--reading-scale)) !important; }
+
+/* --- Reading width: one token everywhere ------------------------------- */
+/* Focus mode owns its own measure (--focus-measure), so it is excluded rather
+   than fought with. The regular layout keeps a single !important cap, but the
+   token behind it is no longer a constant: the Display panel's Standard /
+   Wide / Full choice is written to html[data-reading-width] and redefines
+   --content-max below, so one control drives the measure in BOTH layouts
+   without punching a hole in this layer. */
+body:not(.focus-mode) .content,
+body:not(.focus-mode) .ih-content,
+body:not(.focus-mode) .prep-content {
+  max-width: var(--content-max, 65rem) !important;
+  margin-inline: auto !important;
+}
+
+/* The three steps of the Text width control, in the regular layout. */
+@media (min-width: 981px) {
+  html[data-reading-width="default"],
+  html[data-reading-width="standard"] { --content-max: 65rem; }
+  html[data-reading-width="wide"],
+  html[data-reading-width="full"] body:not(.focus-mode) { --content-max: 82.5rem; }
+  html[data-reading-width="full"] body.focus-mode { --content-max: none; }
+}
+
+@media (min-width: 981px) {
+  html[data-reading-width="full"] body:not(.focus-mode) .content {
+    padding-left: clamp(24px, 3.4vw, 88px);
+    padding-right: clamp(24px, 3.4vw, 88px);
+  }
+  html[data-reading-width="full"] body:not(.focus-mode) .content-wrap,
+  html[data-reading-width="full"] body:not(.focus-mode) .ih-content-wrap {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+  html[data-reading-width="full"] body:not(.focus-mode) .toc-rail,
+  html[data-reading-width="full"] body:not(.focus-mode) .toc-resizer { display: none !important; }
+}
+
+/* --- Horizontal alignment: same column on every page ------------------- */
+@media (min-width: 981px) {
+  body:not(.focus-mode) .content-wrap,
+  body:not(.focus-mode) .ih-content-wrap {
+    grid-template-columns: minmax(0, 1fr) var(--toc-w) !important;
+    max-width: none !important;
+    padding-inline: 0 !important;
+  }
+}
+
+/* --- Prose fills the reading column ------------------------------------- */
+body:not(.focus-mode) .content > p,
+body:not(.focus-mode) .content > ul,
+body:not(.focus-mode) .content > ol,
+body:not(.focus-mode) .content > dl,
+body:not(.focus-mode) .content > blockquote,
+body:not(.focus-mode) .content > .lead {
+  max-width: 86ch !important;
+}
+
+html[data-reading-width="narrow"] body:not(.focus-mode) .content > p,
+html[data-reading-width="narrow"] body:not(.focus-mode) .content > ul,
+html[data-reading-width="narrow"] body:not(.focus-mode) .content > ol,
+html[data-reading-width="narrow"] body:not(.focus-mode) .content > dl,
+html[data-reading-width="narrow"] body:not(.focus-mode) .content > blockquote,
+html[data-reading-width="narrow"] body:not(.focus-mode) .content > .lead {
+  max-width: min(100%, var(--reader-line-length, 80ch)) !important;
+}
+
+/* =========================================================================
+   CHAPTER TOP BAR - responsive redesign
+   =========================================================================
+   The bar is two stacked rows that together form one piece of chrome:
+
+     row 1 (.topbar)         menu   Foundations / 01 · Foundations of LLMs   [ Offline-ready ]  Home  Focus  theme
+     row 2 (.office-ribbon)  Overview   Learn   Practice   Interview
+                             ^^^^^^^^ active marker
+
+   What changed and why:
+   - The two rows now read as one unit. Each used to draw its own 1px bottom
+     rule over a different background, so the header looked like two unrelated
+     strips; the ribbon now shares the bar's surface and only the lower edge
+     carries a rule.
+   - The breadcrumb is structured markup (structureCrumbs in enhance.js), so a
+     phone can drop the ancestor instead of truncating the whole trail
+     mid-word - the chapter title is the part the reader actually needs.
+   - The offline chip moved up from the ribbon, leaving the ribbon as tabs
+     only, which is what lets it scroll cleanly in a 360px viewport.
+   - Every control keeps a >= 36px touch target on small screens, where the
+     28px desktop density sits below the practical minimum.
+
+   Scoping note: focus mode restyles whichever row survives as `.focus-nav`,
+   and those rules live further up this file, so everything structural here is
+   scoped to `body:not(.focus-mode)` and cannot leak into that state.
+   ========================================================================= */
+:root {
+  --header-h: 3.25rem;
+  --topbar-pad: clamp(1rem, 2.5vw, 2.5rem);
+}
+
+.topbar,
+body:not(.focus-mode) .topbar {
+  position: sticky;
+  top: 0;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  width: 100%;
+  margin: 0;
+  height: var(--header-h, 3.25rem);
+  min-height: var(--header-h, 3.25rem);
+  padding: 0 var(--topbar-pad, 1.25rem);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--bg-elevated) 88%, transparent) !important;
+  backdrop-filter: blur(0.875rem) saturate(150%);
+  -webkit-backdrop-filter: blur(0.875rem) saturate(150%);
+  border-bottom: 1px solid var(--border) !important;
+  box-shadow: none;
+  transition: box-shadow .2s ease, background .2s ease;
+}
+body.is-scrolled .topbar {
+  box-shadow: 0 1px 0 var(--border), 0 0.375rem 1.125rem -0.75rem rgba(15, 23, 42, .28) !important;
+}
+[data-theme="dark"] body.is-scrolled .topbar {
+  box-shadow: 0 1px 0 var(--border), 0 0.375rem 1.125rem -0.75rem rgba(0, 0, 0, .45) !important;
+}
+
+.crumbs,
+.topbar .crumbs,
+body:not(.focus-mode) .topbar .crumbs {
+  flex: 1;
+  min-width: 0;
+  margin-left: 0.1875rem;
+  margin-right: auto;
+  display: flex;
+  align-items: center;
+  gap: 0.375rem;
+  color: var(--text-muted);
+  font-size: 0.78125rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.crumbs a,
+.topbar .crumbs a {
+  color: var(--text-secondary);
+  text-decoration: none;
+  transition: color .16s ease;
+}
+.crumbs a:hover,
+.topbar .crumbs a:hover {
+  color: var(--text);
+}
+.crumbs span,
+.topbar .crumbs span {
+  color: var(--text-muted);
+}
+.crumbs b,
+.crumbs .crumb-current,
+.topbar .crumbs b,
+.topbar .crumbs .crumb-current {
+  color: var(--text) !important;
+  font-weight: 600;
+}
+.topbar-spacer {
+  margin-left: auto;
+  flex: 1;
+}
+
+.menu-btn,
+.topbar .menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 1.875rem;
+  height: 1.875rem;
+  min-height: 1.875rem;
+  padding: 0;
+  border: 1px solid transparent !important;
+  border-radius: 0.4375rem;
+  background: transparent !important;
+  color: var(--text-secondary);
+  cursor: pointer;
+  box-shadow: none !important;
+  transform: none !important;
+  transition: color .16s ease, background .16s ease, border-color .16s ease;
+}
+.menu-btn:hover,
+.topbar .menu-btn:hover {
+  border-color: var(--border) !important;
+  color: var(--text);
+  background: var(--surface) !important;
+}
+.menu-btn svg {
+  width: 1.0625rem;
+  height: 1.0625rem;
+  stroke-width: 1.8;
+}
+
+.home-btn,
+.focus-btn,
+.reader-btn,
+.topbar .home-btn,
+.topbar .focus-btn,
+.topbar .reader-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: auto;
+  min-width: 1.75rem;
+  height: 1.875rem;
+  min-height: 1.875rem;
+  padding: 0 0.4375rem;
+  gap: 0.3125rem;
+  border: 1px solid transparent !important;
+  border-radius: 0.4375rem;
+  color: var(--text-secondary);
+  background: transparent !important;
+  font: 600 0.75rem/1 var(--font-sans, inherit);
+  white-space: nowrap;
+  cursor: pointer;
+  text-decoration: none;
+  box-shadow: none !important;
+  transform: none !important;
+  transition: color .16s ease, background .16s ease, border-color .16s ease;
+}
+.home-btn:hover,
+.focus-btn:hover,
+.reader-btn:hover,
+.topbar .home-btn:hover,
+.topbar .focus-btn:hover,
+.topbar .reader-btn:hover {
+  border-color: var(--border) !important;
+  color: var(--text);
+  background: var(--surface) !important;
+  text-decoration: none;
+}
+.home-btn:focus-visible,
+.focus-btn:focus-visible,
+.reader-btn:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+.home-btn svg,
+.focus-btn svg {
+  width: 0.9375rem;
+  height: 0.9375rem;
+  stroke-width: 1.65;
+}
+.home-lbl,
+.focus-lbl,
+.reader-lbl {
+  font-size: 0.71875rem;
+  font-weight: 600;
+}
+.focus-btn[aria-pressed="true"],
+.reader-btn[aria-expanded="true"] {
+  color: var(--accent) !important;
+  border-color: var(--border) !important;
+  background: var(--surface) !important;
+}
+
+.topbar .theme-btn,
+.theme-btn,
+.topbar [data-theme-toggle] {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: 1.875rem;
+  height: 1.875rem;
+  min-height: 1.875rem;
+  padding: 0;
+  border: 1px solid transparent !important;
+  border-radius: 0.4375rem;
+  background: transparent !important;
+  color: var(--text-secondary);
+  box-shadow: none !important;
+  transform: none !important;
+  cursor: pointer;
+  transition: color .16s ease, background .16s ease, border-color .16s ease;
+}
+.topbar .theme-btn:hover,
+.theme-btn:hover,
+.topbar [data-theme-toggle]:hover {
+  border-color: var(--border) !important;
+  color: var(--text);
+  background: var(--surface) !important;
+}
+.theme-btn svg,
+.topbar [data-theme-toggle] svg {
+  width: 1.0625rem;
+  height: 1.0625rem;
+}
+
+.reader-glyph {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 0.3125rem;
+  font-weight: 680;
+  font-size: 0.875rem;
+  line-height: 1;
+  letter-spacing: -.01em;
+}
+.reader-glyph i {
+  font-size: 0.65625rem;
+  font-style: normal;
+  font-weight: 640;
+}
+.reader-wrap {
+  position: relative;
+  display: inline-flex;
+  flex: none;
+}
+.reader-btn {
+  position: relative;
+}
+
+@media (min-width: 861px) and (max-width: 1120px) {
+  .home-lbl,
+  .focus-lbl { display: none; }
+  .home-btn,
+  .focus-btn { width: 1.875rem; min-width: 1.875rem; padding: 0; }
+}
+
+@media (max-width: 860px) {
+  :root {
+    --header-h: 3rem;
+    --topbar-pad: 0.75rem;
+  }
+  .home-lbl,
+  .focus-lbl,
+  .reader-lbl { display: none; }
+  .home-btn,
+  .focus-btn,
+  .reader-btn { width: 1.875rem; min-width: 1.875rem; padding: 0; justify-content: center; }
+}
+
+.office-ribbon,
+.dsa-workspace-nav {
+  display: none !important;
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  body:not(.focus-mode) .topbar { background: var(--bg-elevated) !important; }
+}
+
+/* =========================================================================
+   DISPLAY SETTINGS - text size and text width
+   =========================================================================
+   Two settings behind one button in the top bar: a dropdown anchored under
+   the trigger on desktop and tablet, a bottom sheet on phones. enhance.js
+   writes html[data-reading-size] and html[data-reading-width]; everything
+   below is driven by those two attributes, and the inline pre-paint script in
+   each page's <head> sets them before first paint so a lesson never reflows
+   from default to the reader's choice after load.
+
+   TEXT SIZE works by scaling the theme's own type tokens rather than by
+   re-stating every font-size. `--reading-scale` is declared on `.content`, so
+   it inherits to every descendant, and each rule that reads `var(--fs-h2)` &c
+   inside the reading column lands on a scaled value while the sidebar, top bar
+   and ribbon keep the root values. Only the handful of components that hard-
+   code a px size (tables, code, cards, callouts, quizzes) need restating.
+   ========================================================================= */
+/* Five steps, evenly spaced. The default is the smallest step on desktop ("xs")
+   and the second smallest on a phone ("s") - a wide column reads comfortably at
+   the bottom of the ladder and fits far more on screen, while a ~360px column
+   at that multiplier drops to about 30 characters a line.
+
+   The bare `:root` values below are the no-JavaScript path: they mirror those
+   two defaults so the page is right before the pre-paint script runs, and stays
+   right if scripting is off entirely. They are (0,1,0), so every explicit
+   `html[data-reading-size="…"]` rule (0,1,1) still outranks them whatever the
+   order - a reader's stored choice is never overridden by the media query. */
+:root { --reading-scale: 1.14; }
+html[data-reading-size="xs"] { --reading-scale: .88; }
+html[data-reading-size="s"]  { --reading-scale: 1; }
+html[data-reading-size="m"]  { --reading-scale: 1.14; }
+html[data-reading-size="l"]  { --reading-scale: 1.28; }
+html[data-reading-size="xl"] { --reading-scale: 1.42; }
+
+@media (max-width: 860px) {
+  :root { --reading-scale: 1.00; }
+  html[data-reading-size="xs"] { --reading-scale: .82; }
+  html[data-reading-size="s"]  { --reading-scale: .90; }
+  html[data-reading-size="m"]  { --reading-scale: 1.00; }
+  html[data-reading-size="l"]  { --reading-scale: 1.12; }
+  html[data-reading-size="xl"] { --reading-scale: 1.24; }
+}
+
+html[data-reading-size],
+html:root {
+  --fs-base: calc(0.90625rem * var(--reading-scale));
+  --fs-h1:   calc(clamp(1.5rem, 2.05vw, 2.0625rem) * var(--reading-scale));
+  --fs-h2:   calc(1.28125rem * var(--reading-scale));
+  --fs-h3:   calc(0.9375rem * var(--reading-scale));
+  --fs-lead: calc(clamp(0.9375rem, 1.2vw, 1.0625rem) * var(--reading-scale));
+  --reader-font-size: calc(0.90625rem * var(--reading-scale));
+}
+
+@media (max-width: 860px) {
+  html[data-reading-size],
+  html:root {
+    --fs-base: calc(0.90625rem * var(--reading-scale));
+    --fs-h1:   calc(clamp(1.35rem, 5.5vw, 1.65rem) * var(--reading-scale));
+    --fs-h2:   calc(1.15rem * var(--reading-scale));
+    --fs-h3:   calc(0.92rem * var(--reading-scale));
+    --fs-lead: calc(0.95rem * var(--reading-scale));
+    --reader-font-size: calc(0.90625rem * var(--reading-scale));
+  }
+}
+.content { font-size: var(--reader-font-size); }
+.content h4 { font-size: calc(14px * var(--reading-scale)); }
+/* Components inside the reading column with their own px sizes. Anything not
+   listed here (p, li, td, dd, blockquote) inherits from `.content`.
+
+   This block sets the scale but no longer settles the ladder: the CARDS section
+   at the end of this file (1a–1c) is where the sizes of the components that sit
+   in a box - cards, callouts, `<details>` headers, tables - are decided against
+   each other rather than one at a time, and it comes later. The declarations it
+   supersedes are left standing so this list still reads as the complete
+   inventory of components that carry a size of their own. */
+.content table { font-size: calc(12.5px * var(--reading-scale)); }
+.content pre { font-size: calc(12.5px * var(--reading-scale)); }
+.content .card p { font-size: calc(13px * var(--reading-scale)); }
+.content .callout .c-title { font-size: calc(13.5px * var(--reading-scale)); }
+.content .callout p { font-size: calc(13px * var(--reading-scale)); }
+.content .quiz .q { font-size: calc(13.5px * var(--reading-scale)); }
+.content .quiz .explain { font-size: calc(12.5px * var(--reading-scale)); }
+.content .recall > summary,
+.content .recall .a { font-size: calc(13px * var(--reading-scale)); }
+.content .demo-title { font-size: calc(13px * var(--reading-scale)); }
+
+/* ---- ALIGNMENT: ragged-right by default, justified on request ----
+   Left-aligned is the default and justification is opt-in, via
+   html[data-reading-align="justify"]. Forced justification shipped briefly as
+   the house style and was wrong for this portal: without hyphenation the
+   browser can only pay for a flush right edge out of the word spaces, and the
+   narrower the measure the more it has to charge - a phone column or a card is
+   where it looks worst, and those are most of the reading. An even word space
+   and a ragged edge is the safer default; the flush edge is one tap away for
+   readers who prefer it.
+
+   Justification applies to running prose only - headings, code, tables and
+   chips keep their own alignment, and justifying a two-word table cell only
+   opens gaps. The exceptions immediately below tie with these selectors on
+   specificity and come later in the file, which is what pulls narrow contexts
+   back to ragged-right even when justification is on.
+
+   Words are never split. Automatic hyphenation was tried and rejected: it
+   produced breaks like "nor- / mally" mid-paragraph, and a hyphen the reader
+   has to reassemble costs more than the tighter spacing buys. `hyphens: manual`
+   leaves the browser to distribute the slack between words instead, and still
+   honours an explicit &shy; if content ever wants one. */
+@media (min-width: 861px) {
+  html[data-reading-align="justify"] .content > p,
+  html[data-reading-align="justify"] .ih-content > p,
+  html[data-reading-align="justify"] .prep-content > p {
+    text-align: justify;
+    text-justify: inter-word;
+    hyphens: manual;
+    -webkit-hyphens: manual;
+  }
+}
+
+@media (max-width: 860px) {
+  html[data-reading-align="justify"] .content p,
+  html[data-reading-align="justify"] .content li,
+  html[data-reading-align="justify"] .content dd,
+  html[data-reading-align="justify"] .content blockquote,
+  html[data-reading-align="justify"] .content .lead,
+  html[data-reading-align="justify"] .hero p,
+  html[data-reading-align="justify"] .hero .lead,
+  html[data-reading-align="justify"] .ih-content p,
+  html[data-reading-align="justify"] .prep-content p,
+  html[data-reading-align="justify"] .card p,
+  .content, .content p, .content li, .content dd, .content blockquote,
+  .hero p, .ih-content p, .prep-content p, .card p, .callout, .callout p {
+    text-align: left !important;
+    text-justify: auto !important;
+  }
+}
+
+/* Cards, callouts, lists, metadata, and narrow contexts ALWAYS remain left-aligned (ragged-right) */
+.content .grid .card p,
+.content .grid .card li,
+.content .card p,
+.content .card li,
+.content .callout,
+.content .callout p,
+.content .quiz .opt,
+.content .recall .a,
+.content .timeline .step p,
+.content .rm-why,
+.content td, .content th,
+.content pre, .content pre p,
+.content .pill, .content .chip, .content .tag, .content .eyebrow,
+.content figcaption, .content .diagram-caption,
+.content .meta-row p, .content .page-nav p, .content .toc p,
+.content .quiz .opt, .content .demo-controls p, .content .demo-title,
+.content .timeline .step p,
+.hero .meta-row p { text-align: left !important; }
+
+/* One exception to "never break a word": a token longer than the column has to
+   break somewhere or it overflows. `break-word` only engages when the token
+   cannot fit on a line of its own, so ordinary words are untouched - long URLs
+   and code identifiers are the whole target. */
+.content code,
+.content a { overflow-wrap: break-word; }
+
+/* ---- READING TYPEFACE ----
+   Serif for the words you read in sequence, sans for everything you scan or
+   click: headings, navigation, chips, tables, code. The pairing is the oldest
+   trick in documentation design - the serif slows the eye down just enough for
+   paragraphs, and the sans keeps structure crisp. Line height rises slightly
+   with it, because serifs at this size want a little more air. */
+.content p,
+.content li,
+.content dd,
+.content blockquote,
+.content .lead,
+.hero p,
+.hero .lead,
+.ih-content p,
+.ih-content li,
+.ih-content .lead,
+.prep-content p,
+.prep-content li,
+.prep-content .lead {
+  font-family: var(--font-read);
+  line-height: 1.65;
+}
+/* Code is monospace, full stop - an earlier revision of this block sent it
+   through --font-sans and quietly de-monospaced every inline snippet. */
+.content pre, .content code, .content kbd, .content samp { font-family: var(--font-mono); }
+/* Everything else that is scanned rather than read keeps the UI sans. */
+.content td, .content th,
+.content .pill, .content .chip, .content .eyebrow, .content figcaption,
+.content .diagram-caption, .content .quiz .opt, .content .demo-title,
+.content .demo-controls, .content .page-nav, .content .toc {
+  font-family: var(--font-sans);
+}
+/* ---- TEXT WIDTH ----
+   Focus mode only. Outside it, `body:not(.focus-mode) .content` is pinned to
+   --content-max with !important by the ONE TYPE SCALE layer above, which is
+   the single source of truth for reading width across five stylesheets. The
+   four steps therefore had nothing to change in the normal layout: Cozy and
+   Standard rendered identically, and Wide and Full only removed the contents
+   rail while the column stayed at 1040px. Rather than punch a hole in that
+   layer, the control is offered where the measure genuinely varies - focus
+   mode, which the layer excludes and which owns --focus-measure (see the
+   data-focus-width map in applyReadingSettings). */
+
+/* ---- Trigger ---- */
+.reader-wrap { position: relative; display: inline-flex; flex: none; }
+/* Matches the Home and Focus labels. styles.css already hides it below 861px,
+   which is where the bar switches to icon-only controls. */
+.topbar .reader-lbl { font-size: 11.5px; }
+/* The "Aa" mark. Baseline-aligned rather than centred, so the pair reads as
+   one glyph the way it would in running text. */
+.reader-glyph {
+  display: inline-flex;
+  align-items: baseline;
+  gap: .5px;
+  font-weight: 680;
+  font-size: 14px;
+  line-height: 1;
+  letter-spacing: -.01em;
+}
+.reader-glyph i { font-size: 10.5px; font-style: normal; font-weight: 640; }
+/* A dot instead of a filled button: it says "you have changed something here"
+   without turning a settings control into a permanent accent in the bar. */
+.reader-btn.is-custom::after {
+  content: "";
+  position: absolute;
+  top: 5px;
+  right: 5px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--excel);
+}
+
+/* ---- Panel: dropdown form ---- */
+.reader-popover {
+  position: fixed;
+  top: 3.75rem;
+  right: 1rem;
+  z-index: 120;
+  width: min(20rem, calc(100vw - 1.25rem));
+  padding: 0.875rem 0.9375rem 0.9375rem;
+  border: 1px solid var(--border);
+  border-radius: 0.75rem;
+  background: var(--bg-elevated);
+  box-shadow: 0 1.125rem 2.75rem rgba(17, 20, 26, .18);
+  opacity: 0;
+  visibility: hidden;
+  transform: translateY(-0.375rem);
+  transition: opacity .16s ease, transform .16s ease, visibility .16s;
+}
+.reader-popover.open { opacity: 1; visibility: visible; transform: none; }
+.reader-head { display: flex; align-items: center; justify-content: space-between; gap: 0.625rem; }
+.reader-popover h3 { margin: 0; color: var(--heading); font-size: 0.90625rem; font-weight: 650; }
+.reader-popover > p { margin: 0.1875rem 0 0.8125rem; color: var(--text-muted); font-size: 0.75rem; line-height: 1.5; }
+.reader-close {
+  display: grid;
+  place-items: center;
+  width: 1.625rem;
+  height: 1.625rem;
+  border: 1px solid transparent;
+  border-radius: 0.375rem;
+  color: var(--text-muted);
+  background: transparent;
+  cursor: pointer;
+}
+.reader-close:hover { border-color: var(--border); color: var(--text); background: var(--surface); }
+.reader-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.625rem;
+  padding: 0.5625rem 0;
+  border-top: 1px solid var(--border);
+}
+.reader-row:first-of-type { border-top: 0; padding-top: 0; }
+/* Text width is a focus-mode setting (see TEXT WIDTH above), and even there it
+   needs a canvas wider than the text - below 861px the column is the viewport.
+   Hiding the row rather than disabling it keeps the panel honest: a control
+   that cannot do anything is not shown. */
+.reader-row-width { display: none; }
+@media (min-width: 861px) {
+  .reader-row-width { display: flex; }
+}
+/* Outside focus mode: only Standard and Wide are offered */
+body:not(.focus-mode) .reader-popover [data-reader-width] button[data-value="full"] {
+  display: none !important;
+}
+.reader-row > span { flex: none; color: var(--text-secondary); font-size: 0.78125rem; font-weight: 600; }
+.reader-segment {
+  display: inline-flex;
+  gap: 2px;
+  padding: 2px;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--surface);
+}
+.reader-segment button {
+  min-width: 1.75rem;
+  height: 1.625rem;
+  padding: 0 0.375rem;
+  border: 0;
+  border-radius: 0.375rem;
+  color: var(--text-secondary);
+  background: transparent;
+  font: 600 0.71875rem/1 var(--font-sans, inherit);
+  cursor: pointer;
+  transition: color .14s ease, background .14s ease;
+}
+.reader-segment button:hover { color: var(--text); background: var(--bg-elevated); }
+.reader-segment button.active { color: #fff; background: var(--accent); }
+.reader-segment button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+/* The text-size choices are the same letter at five sizes - the control shows
+   what it does rather than naming it. */
+.reader-segment .sz-1 { font-size: 0.6875rem; }
+.reader-segment .sz-2 { font-size: 0.78125rem; }
+.reader-segment .sz-3 { font-size: 0.875rem; }
+.reader-segment .sz-4 { font-size: 0.96875rem; }
+.reader-segment .sz-5 { font-size: 1.0625rem; }
+.reader-reset {
+  width: 100%;
+  height: 1.875rem;
+  margin-top: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  color: var(--text-secondary);
+  background: var(--surface);
+  font: 600 0.75rem/1 var(--font-sans, inherit);
+  cursor: pointer;
+  transition: color .14s ease, border-color .14s ease, background .14s ease;
+}
+.reader-reset:hover:not(:disabled) { border-color: var(--text-muted); color: var(--text); background: var(--bg-elevated); }
+.reader-reset:disabled { opacity: .45; cursor: default; }
+
+.reader-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 110;
+  background: rgba(17, 20, 26, .34);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .18s ease, visibility .18s;
+}
+/* The scrim is for the sheet form only. On a pointer device the dropdown
+   closes on outside-click without dimming the lesson behind it. */
+.reader-scrim.open { opacity: 0; visibility: hidden; }
+
+/* ---- Panel: bottom-sheet form ---- */
+@media (max-width: 620px) {
+  .reader-popover {
+    top: auto !important;
+    right: 0 !important;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    padding: 1rem 1rem calc(1.125rem + env(safe-area-inset-bottom));
+    border-width: 1px 0 0;
+    border-radius: 1rem 1rem 0 0;
+    transform: translateY(0.875rem);
+    transform-origin: bottom center;
+  }
+  .reader-popover.open { transform: none; }
+  .reader-row { flex-direction: column; align-items: stretch; gap: 0.5rem; padding: 0.75rem 0; }
+  .reader-segment { width: 100%; }
+  .reader-segment button { flex: 1; min-width: 0; height: 38px; }
+  .reader-close { width: 32px; height: 32px; }
+  .reader-reset { height: 38px; margin-top: 14px; }
+  .reader-scrim.open { opacity: 1; visibility: visible; }
+  body.reader-open { overflow: hidden; }
+}
+
+/* ---- Focus mode ---- */
+/* The control docks into the focus bar next to the exit button, in the same
+   quiet idiom as the workspace links. */
+body.focus-mode .focus-nav > .reader-wrap { align-self: center; flex: 0 0 auto; }
+body.focus-mode .focus-nav > .reader-wrap .reader-btn {
+  height: 28px;
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  background: transparent;
+}
+body.focus-mode .focus-nav > .reader-wrap .reader-btn:hover {
+  border-color: var(--border);
+  color: var(--text);
+  background: var(--bg-elevated);
+}
+@media (max-width: 760px) {
+  body.focus-mode .focus-nav > .reader-wrap .reader-btn { width: 30px; padding: 0; }
+  body.focus-mode .focus-nav > .reader-wrap .reader-lbl { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .reader-popover, .reader-scrim { transition: none; }
+}
+
+/* =========================================================================
+   TYPE COLOUR - headings and bold step down from black
+   =========================================================================
+   Light mode ran headings at #20232b, near enough to black that a lesson read
+   as a stack of hard black slabs over mid-grey body copy. Everything below
+   softens that into one hierarchy, each step a token mix so the two themes
+   work from their own pair rather than from hard-coded hex:
+
+     heading   mix(--text 72%)   #2D313B light   (headings, h1-h4, card and
+                                                  callout titles)
+     bold      mix(--text 55%)   #363A45 light   (--prose-strong, below)
+     body      --text-secondary  #505665 light
+
+   Only light mode is restated. Dark already dials headings back a step from
+   --text on purpose - large, heavy type reads brighter than its hex value - 
+   and dimming them further would cost legibility rather than buy calm.
+
+   `--heading` is the single token every heading in the portal already reads,
+   so softening it there covers h1-h4, hero titles, card titles and the section
+   headings on every page family at once. The component titles listed after it
+   are the ones that were wired to `--text` instead and so had been left out.
+   ========================================================================= */
+html[data-theme="light"],
+html:not([data-theme]) {
+  --heading: color-mix(in srgb, var(--text) 72%, var(--text-secondary));
+}
+
+/* Titles that read as headings but were coloured from --text directly. */
+.content .callout .c-title,
+.content .quiz .q,
+.content .recall > summary,
+.content .collapse > summary,
+.content .demo-title,
+.content .rm-head { color: var(--heading); }
+
+/* =========================================================================
+   PROSE EMPHASIS - bold inside a lesson
+   =========================================================================
+   Body copy is `--text-secondary` and bold was `--heading` at weight 650, so
+   every emphasised phrase jumped from mid-grey to near-black. In a paragraph
+   with three or four bold terms that reads as a page of headlines: the eye is
+   pulled to the bold and the sentence around it goes quiet.
+
+   Bold now sits one clear step above body copy instead of at the far end of
+   the scale - a grey bold, at 600 rather than 650. The mix is expressed in
+   tokens, so light and dark both work from their own pair: in light it lands
+   near #353945 against #505665 body, in dark near #cfd3da against #b6bbc5.
+
+   Every prose column in the portal carries `.content` (the hub, prep, ATS and
+   Google sections add a second class to the same element), so this one scope
+   covers all of them - while leaving `.brand-text strong`, `.crumbs b` and the
+   accent-coloured `.prep-*`/`.ats-*` figures alone. Those either sit outside
+   `.content` or win on specificity.
+   ========================================================================= */
+:root { --prose-strong: color-mix(in srgb, var(--text) 55%, var(--text-secondary)); }
+
+.content strong,
+.content b,
+.content dt {
+  color: var(--prose-strong);
+  font-weight: 600;
+}
+/* styles.css lightens every `strong` to #dde2e9 in dark mode, which is close
+   to pure white against mid-grey body copy - the same over-emphasis the rule
+   above is undoing, so it has to be answered explicitly. */
+html[data-theme="dark"] .content strong,
+html[data-theme="dark"] .content b,
+html[data-theme="dark"] .content dt { color: var(--prose-strong); }
+
+/* Bold inside a heading, a chip or a button is structural, not emphasis: those
+   already carry their own colour and weight, and greying them would fight it. */
+.content h1 strong, .content h2 strong, .content h3 strong, .content h4 strong,
+.content .pill strong, .content .eyebrow strong, .content button strong,
+.content a strong, .content .card > h3 b {
+  color: inherit;
+  font-weight: inherit;
+}
+
+/* =========================================================================
+   LESSON META CHIPS - the row under a lesson title
+   =========================================================================
+       [ ⏱ Study + practice · 8–12 h ]  [ Difficulty · Beginner→Intermediate ]
+       [ Prereq · Python, basic ML ]
+
+   Three separate facts, so three separate chips. They were previously joined
+   into one segmented strip (gap 0, -1px margins, squared inner corners), which
+   at three unequal lengths read as a single crowded block with seams down it.
+
+   Each chip now has its own border, its own radius and real space around it.
+   The effort chip carries a quiet accent tint because it is the fact a reader
+   scans for first; the rest stay neutral, which keeps one accent on screen
+   rather than a row of competing colours. `.pill` is used in cards and other
+   components too, so every rule here is scoped to `.meta-row`.
+   ========================================================================= */
+.meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  /* Row gap slightly under the column gap: wrapped lines then read as one
+     group instead of drifting apart. */
+  gap: 7px 8px;
+  margin: 15px 0 26px;
+  padding: 0;
+  overflow: visible;
+}
+.meta-row .pill {
+  margin: 0;
+  min-height: 30px;
+  padding: 0 12px;
+  gap: 7px;
+  border: 1px solid var(--border);
+  border-radius: 9px;
+  color: var(--text-secondary);
+  background: var(--surface) !important;
+  /* Scales with the Display panel's text-size setting, like the prose it
+     annotates; `--reader-meta-size` is the legacy token this replaces. */
+  font-size: calc(12px * var(--reading-scale));
+  font-weight: 550;
+  line-height: 1.25;
+  letter-spacing: .002em;
+  white-space: nowrap;
+}
+/* The effort/time chip (always the first `.pill.blue` in the markup - every
+   page family uses that class for the "⏱ … h" fact). */
+.meta-row .pill.blue {
+  border-color: color-mix(in srgb, var(--excel) 26%, var(--border));
+  color: var(--accent-strong) !important;
+  background: var(--excel-soft) !important;
+  font-weight: 600;
+}
+/* claude-agent.html styles its first chip as white text on a purple gradient,
+   from before purple was retired. The base `.pill` rule in this file forces
+   `background: var(--bg-elevated) !important`, so the gradient was already
+   gone and only the white text survived - the chip read as blank space. It
+   joins the neutral set, leaving one accent chip per row. */
+.meta-row .pill.anthropic {
+  border-color: var(--border) !important;
+  color: var(--text-secondary) !important;
+}
+
+/* Long values ("Prereq · Python, basic ML") must be allowed to wrap rather
+   than push the row into a horizontal scroll on a narrow screen. */
+@media (max-width: 860px) {
+  .meta-row { gap: 6px 7px; margin: 13px 0 22px; }
+  .meta-row .pill {
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: 8px;
+    font-size: calc(11.5px * var(--reading-scale));
+    white-space: normal;
+  }
+}
+
+@media (max-width: 430px) {
+  .meta-row { gap: 6px; }
+  .meta-row .pill { min-height: 26px; padding: 3px 9px; }
+}
+
+/* =========================================================================
+   CARDS - readable body text, and one hover: a diffused shadow
+   =========================================================================
+   1. Card body copy was --text-muted (#7B8290) at 14.8px against prose at
+      --text-secondary (#505665) / 18.9px, so every card read as fine print - 
+      the "too light" complaint. Card text is body text: it takes the prose
+      colour, and a size one step below prose rather than two.
+   2. Hover is a single effect for every card on every page: the card lifts in
+      light only - a wide, soft, diffused shadow - with nothing moving, no
+      colour wash, and no text inversion.
+
+      This replaces an earlier "hover fill" (a green seed in the bottom-right
+      corner growing to fill the card, with the text inverting to white on top
+      of it). It was too loud, and its resting seed collided with the chip in
+      that corner. Removed rather than tuned. The rules that supported it - 
+      the ::before fill layer, the white-ink inversions in both themes, the
+      chip-on-green treatment, the `isolation`/`z-index` scaffolding - are gone
+      with it, so anything looking for them is looking at stale CSS.
+
+      Because a shadow needs no clipping and no stacking context, the only
+      thing left to suppress is the *other* hover effects the older stylesheets
+      declare (lifts, shadow bumps, sideways nudges); see section 3.
+   ========================================================================= */
+
+/* ---- 1. Card and component body text reads like prose ---- */
+.content .card p,
+.content .callout p,
+.content .quiz .q,
+.content .recall > summary,
+.content .recall .a,
+.content .demo-title,
+.module-card p,
+.prep-topic-card p {
+  color: var(--text-secondary);
+  /* One clear step below body prose, and ragged-right (above) so it does not
+     read loose in a narrow column. */
+  font-size: calc(14.2px * var(--reading-scale));
+  line-height: 1.55;
+}
+/* A callout spans the full column, so it keeps body-prose size - it is prose
+   in a box, not a card. */
+.content .callout p { font-size: var(--reader-font-size); line-height: 1.62; }
+
+/* ---- 1b. On a phone the column has one text size, not three ----
+   The size ladder above (prose > callout > card) reads as deliberate on a wide
+   screen, where a card genuinely is a narrower thing sitting in a grid beside
+   the prose. Below 861px `.grid-2` / `.grid-3` collapse to one column, so a
+   card, a callout and a paragraph are all the same full-width block in the same
+   measure - and the step between them stops signalling anything and reads as
+   three arbitrary sizes stacked on top of each other. Worse, the card and the
+   callout also disagreed on leading (1.55 against 1.62), so a callout following
+   a card looked both larger and looser for no reason the reader can see.
+
+   One size and one leading for every text block in the column. The narrow-
+   measure argument for the smaller card step is a desktop argument; it does not
+   survive the grid collapsing. */
+@media (max-width: 860px) {
+  /* Body text only. The titles (.card h4, .c-title, .recall summary) keep their
+     own step so the weight-plus-size hierarchy inside a box survives. */
+  .content .card p,
+  .content .card li,
+  .content .callout p,
+  .content .recall .a,
+  .content .quiz .q {
+    font-size: var(--reader-font-size);
+    line-height: 1.62;
+  }
+}
+
+/* ---- 1c. One ladder, and everything on it moves with the size control ----
+   1b raised the body text inside every box to prose size and stopped there, on
+   the grounds that "the titles keep their own step". They do keep it - but the
+   step was measured against the old, smaller body size, so raising the body
+   moved the titles *under* the text they head. That is the size-jumble the
+   Study Plan reads as, and it is not only a phone problem: two of the four
+   cases below are worse on a wide screen than on a narrow one, because the
+   sizes come from tokens that the reading-scale never reaches at all.
+
+     - A callout title sits at 13.5px over a callout paragraph at 15.7px
+       (11.9 over 13.8 on desktop), so a box is titled in fine print.
+     - A `<details>` summary - the header over a whole table - comes from
+       styles.css's legacy `--reader-h4-size` clamp, also under body text. That
+       token belongs to the retired four-step text-size scale
+       ("small"/"large"/"xl"), so on the current five-step one it never moves
+       when the reader changes size: the summary is frozen at 14px on a phone
+       and 13.2px on a desktop while the prose under it runs from 13.8px to
+       22.3px. At the top of the scale a section header is two thirds the size
+       of its own body copy.
+     - `th` comes from the same stranded family, `--reader-th-size`, and is
+       frozen the same way. On a phone it lands a hair *under* its own `td`
+       (12.2 against 12.5) and on a desktop a hair *over* it (11.3 against
+       11.0): either way the header row carries no hierarchy, and it drifts
+       further out with every step of the size control.
+     - Table cells are the widest gap: 12.5px of table against 15.7px of prose
+       (11.0 against 13.8 on desktop), two steps down for no reason a reader
+       can see.
+
+   So, one ladder for the whole reading column, at every width: box and section
+   titles step above the body they head - the size the card headings below
+   already use, which is what makes a card, a callout and a `<details>` header
+   finally agree; table cells step one below it, alongside card copy, because
+   they are scanned rather than read; a header cell steps below the data it
+   labels. Every size is `calc(… * var(--reading-scale))`, never a bare px and
+   never a legacy token, so the whole ladder moves together when the reader
+   changes text size - which is precisely what the tokens above got wrong.
+
+   Table cells close to one step below prose rather than to parity because a
+   phone table cannot take full body size: measured at 360px, the Study Plan's
+   three columns stop fitting the column at 15.7px and start scrolling
+   sideways, and the prose column drops to three words a line. 14.2px is the
+   step the theme already gives dense, scanned copy. */
+.content .callout .c-title,
+.content .collapse > summary,
+.content .recall > summary,
+.content .demo-title { font-size: calc(16.5px * var(--reading-scale)); }
+
+.content table { font-size: calc(14.2px * var(--reading-scale)); }
+.content th { font-size: calc(11.8px * var(--reading-scale)); }
+
+/* Larger cells need the width back, and on a phone the only place left to take
+   it from is the padding around them: 11px of side padding per cell was tuned
+   for 12.5px text. Measured on the Study Plan at 360px - the narrowest width
+   the portal targets - this is what keeps all four of its tables inside the
+   column at the larger text instead of scrolling sideways, the widest of them
+   landing at exactly the available width. The two inside a `<details>` pay for
+   the disclosure box's own inset as well, so they get the tightest measure on
+   the page and the box gives most of that inset up; below 360px they still
+   scroll, but less far than they do today. Vertical padding is untouched - the
+   rows keep their air. */
+@media (max-width: 620px) {
+  .content th,
+  .content td { padding: 9px 8px; }
+  .content .collapse .collapse-body { padding-left: 6px; padding-right: 6px; }
+}
+
+/* A card title smaller than its own body text is the giveaway that these were
+   sized independently; the title steps back above it. */
+.content .card h3,
+.content .card h4,
+.module-card h3 { font-size: calc(16.5px * var(--reading-scale)); }
+
+/* ---- 1d. The components that never got onto the ladder at all ----
+   1a–1c fixed the sizes that were *wrong relative to each other*. These are the
+   ones that were never in the system: bare px, set once when the component was
+   written, so they sit below the ladder at every width and stay put when the
+   reader changes text size. Measured inside `.content` at 360px they were the
+   only prose left under 14px on any page in the portal.
+
+   The reading-order list on the hub is the worst of them and the one a reader
+   notices first, because it is the first thing under the fold on the home page:
+   fourteen row titles at 12.5px and eighteen descriptions at 12.5px, against
+   15.7px prose in the same column - and on a phone `.rm-link` is already one
+   column (see the 620px block above), so a row is a full-width block in the
+   same measure as the paragraph above it, which is exactly the case 1b settled
+   for cards. A row title takes the title step; a description takes the
+   dense-copy step, and on a phone it joins the body text like every other
+   block. `.rm-ttl` sits at (0,1,0) in both stylesheets, hence the `.content`
+   scope here rather than a bare class.
+
+   A quiz explanation is body copy the reader reads once and slowly, so it takes
+   the same step as the card and callout copy around it, not two below it. Prep
+   meta lines ("16 questions · 12–18 h · start here") stay quieter than body
+   copy, as the rule below has always intended - but quiet is a colour and a
+   size *step*, not a frozen 12px. */
+.content .rm-ttl,
+.content .prep-source-grid strong { font-size: calc(16.5px * var(--reading-scale)); }
+.content .rm-why,
+.content .quiz .explain,
+.content .prep-source-grid span { font-size: calc(14.2px * var(--reading-scale)); }
+.content .prep-topic-meta { font-size: calc(12.5px * var(--reading-scale)); }
+
+@media (max-width: 860px) {
+  /* Same argument as 1b: in a one-column phone layout these are full-width
+     blocks of body text in the body measure. (`.prep-source-grid` collapses to
+     one column at 720px, so below that it is the same case again.) */
+  .content .rm-why,
+  .content .quiz .explain { font-size: var(--reader-font-size); line-height: 1.62; }
+}
+@media (max-width: 720px) {
+  .content .prep-source-grid span { font-size: var(--reader-font-size); line-height: 1.62; }
+}
+
+/* Meta lines stay quieter than body copy, but not invisible. */
+.prep-topic-meta,
+.module-card .mc-num { color: var(--text-muted); }
+
+/* ---- 2a. At rest, a card chip is a label, not a filled chip ---- */
+/* The base `.pill` rule above paints every chip with `--bg-elevated` and a
+   border. Inside a card that chip is only ever a call to action ("Start here →",
+   "Open →"), and the filled box around it competes with the card's own panel,
+   so at rest it is bare text and the panel arrives on hover. Padding and border
+   width are unchanged between the two states - only the paint moves - so the
+   text never shifts under the pointer. `!important` answers the base rule's own
+   !important, not emphasis. */
+.card .pill,
+.module-card .pill,
+.prep-topic-card .pill {
+  background: transparent !important;
+  border-color: transparent !important;
+  /* A card is a column flex container, so a chip as a direct child stretches
+     across it - invisible while the chip is transparent, but on hover the panel
+     arrived as a full-width bar. The chip hugs its text instead. */
+  align-self: flex-start;
+}
+/* `color` and `transform` are here because styles.css's
+   `.module-card:hover .pill:not(.green)` still paints the chip white and slides
+   it 3px - that rule was written for the green fill this section replaced, and
+   white ink on the elevated panel is invisible. */
+.card:hover .pill, .card.is-hovered .pill, .card:focus-visible .pill,
+.module-card:hover .pill, .module-card.is-hovered .pill, .module-card:focus-visible .pill,
+.prep-topic-card:hover .pill, .prep-topic-card.is-hovered .pill, .prep-topic-card:focus-visible .pill {
+  color: var(--text-secondary) !important;
+  background: var(--bg-elevated) !important;
+  border-color: var(--border) !important;
+  transform: none !important;
+}
+
+/* ---- 3. The hover: one diffused shadow, on every card ---- */
+/* `--card-hover-shadow` (defined with the other shadow tokens at the top of
+   this file, per theme) is the whole effect. Nothing moves: the older
+   stylesheets declare a hover lift in three places - `.content .card:hover`
+   above in this file and `.card:hover` / `.card.hover:hover` in styles.css,
+   each with its own shadow bump - plus a sideways nudge on card headings, a
+   scaling decorative blob on `.prep-topic-card::before`, and a drifting circle
+   on `.module-card::after`. All of them are cancelled so a hover reads as a
+   single gesture rather than four.
+
+   Specificity: the lift at `.content .card:hover` is itself `!important`, so
+   `!important` alone does not win - among !important declarations specificity
+   still decides. `:is(.card.hover, …)` contributes the specificity of its most
+   specific argument (two classes), which puts this selector at 0-3-0 against
+   that rule's 0-2-1.
+
+   The list is every card class the pages actually use: `.card` (which
+   `.card.hover`, `a.card` and `.card.danger-card` all build on), `.module-card`
+   and `.prep-topic-card` (which `.scenario-card` builds on). `.card.hover` is
+   in the list for its specificity, described above, not for extra coverage.
+
+   `.is-hovered` is a forced state used for visual checks; `:focus-visible`
+   gives keyboard users the same affordance. `.is-soon` is the greyed-out
+   "coming soon" card - not a target, so it keeps its flat resting state. */
+/* `.page-nav a` joined this list on 2026-08-04. It is a card the reader clicks,
+   so it belongs to the one hover gesture; before that it carried its own
+   `--shadow-md` bump, which was a second hover vocabulary for no reason.
+   `.card.hover` still carries the specificity, so the selector stays 0-4-0. */
+:is(.card, .card.hover, a.card, .module-card,
+    .prep-topic-card, .scenario-card, .ih-page-card, .ih-hub-card, .ih-track-card):not(.is-soon):is(:hover, .is-hovered, :focus-visible) {
+  box-shadow: var(--card-hover-shadow) !important;
+  transform: translateY(-2px) !important;
+  border-color: var(--border-strong) !important;
+}
+/* The nudges and decorations the shadow replaces. */
+.card:hover h3, .card:hover h4,
+.card.hover:hover h3, .card.hover:hover h4,
+.prep-topic-card:hover h3 { transform: none; }
+.module-card::after, .module-card:hover::after { content: none; }
+.prep-topic-card::before,
+.prep-topic-card:hover::before { transform: none; }
+.prep-topic-card:hover .prep-card-arrow { transform: none; }
+/* styles.css tints the prep card's surface green on hover; the shadow is the
+   whole signal now, so the surface holds still. */
+.prep-topic-card:hover,
+.prep-topic-card:focus-visible { background: var(--prep-surface) !important; }
+
+/* The transition lives in genai-motion.css (`box-shadow var(--gm-dur) ease`)
+   for these classes, and in `.content .card`'s own shorthand above; both
+   already cover box-shadow, so the shadow fades rather than snapping. Under
+   reduced motion the shadow simply is, or is not. */
+@media (prefers-reduced-motion: reduce) {
+  :is(.card, .module-card, .prep-topic-card) { transition: none !important; }
+}
+/* Touch devices have no pointer to leave, so a hover style applied by a tap
+   sticks until the next tap elsewhere. `:active` in genai-motion.css is the
+   press feedback there. */
+@media (hover: none) {
+  :is(.card, .card.hover, .module-card, .prep-topic-card):hover {
+    box-shadow: var(--shadow-sm) !important;
+  }
+  .page-nav a:hover { box-shadow: var(--pn-drop) !important; }
+}
+
+/* =========================================================================
+   PAGE NAV - navigation cards
+   -------------------------------------------------------------------------
+   Same physical card language as all cards on the page (same solid elevated
+   background, same 18px border radius, same clean border), with an elevated
+   resting and hover shadow to ground the final navigational action.
+   ========================================================================= */
+.page-nav {
+  --pn-drop:
+    0 4px 14px rgba(22, 27, 35, .08),
+    0 1px 3px rgba(22, 27, 35, .04);
+  --pn-drop-hover:
+    0 12px 32px rgba(22, 27, 35, .14),
+    0 4px 10px rgba(22, 27, 35, .06);
+}
+html[data-theme="dark"] .page-nav {
+  --pn-drop:
+    0 4px 18px rgba(0, 0, 0, .38),
+    0 1px 3px rgba(0, 0, 0, .20);
+  --pn-drop-hover:
+    0 14px 38px rgba(0, 0, 0, .52),
+    0 4px 12px rgba(0, 0, 0, .30);
+}
+
+.page-nav a[href] {
+  position: relative;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-width: 0;
+  overflow: hidden;
+  padding: 0.625rem 1rem !important;
+  border-radius: var(--radius-card, 10px) !important;
+  border: 1px solid var(--border) !important;
+  background: var(--bg-elevated) !important;
+  box-shadow: var(--pn-drop) !important;
+  color: inherit;
+  font-family: var(--font-sans) !important;
+  transform: translateY(0) !important;
+  transition:
+    transform var(--gm-dur-fast, .18s) var(--gm-ease, ease),
+    box-shadow var(--gm-dur, .22s) ease,
+    border-color var(--gm-dur, .22s) ease,
+    background var(--gm-dur, .22s) ease !important;
+}
+
+.page-nav a[href]::before,
+.page-nav a[href]::after {
+  content: none !important;
+  display: none !important;
+}
+
+.page-nav a[href].pn-secondary {
+  background: var(--bg-elevated) !important;
+  border-color: var(--border) !important;
+  box-shadow: var(--shadow-sm) !important;
+}
+
+.page-nav .pn-progress,
+.page-nav .pn-notice {
+  flex: 0 0 100%;
+  margin: 0 0 0.25rem;
+  color: var(--text-muted);
+  font-family: var(--font-sans) !important;
+  font-size: 0.6875rem !important;
+  font-weight: 500 !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+}
+
+.page-nav .dir,
+.page-nav .pn-dir {
+  color: var(--excel) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 0.6875rem !important;
+  font-weight: 600 !important;
+  letter-spacing: .06em !important;
+  text-transform: uppercase !important;
+  line-height: 1.2 !important;
+  flex: 0 0 auto !important;
+  white-space: nowrap !important;
+}
+.page-nav .ttl,
+.page-nav .pn-ttl {
+  margin: 0 !important;
+  color: var(--heading) !important;
+  font-family: var(--font-sans) !important;
+  font-size: 0.875rem !important;
+  font-weight: 500 !important;
+  line-height: 1.25 !important;
+  flex: 1 1 auto !important;
+  text-align: right !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  white-space: nowrap !important;
+}
+.page-nav .pn-num {
+  color: var(--text-muted) !important;
+  font-family: var(--font-mono) !important;
+  font-size: 0.6875rem !important;
+  font-weight: 600 !important;
+}
+
+.page-nav a[href]:not(.is-soon):is(:hover, .is-hovered, :focus-visible) {
+  transform: translateY(-3px) !important;
+  border-color: rgba(16, 124, 65, .35) !important;
+  box-shadow: var(--pn-drop-hover) !important;
+}
+
+.page-nav a[href]:active {
+  transform: translateY(-1px) !important;
+  box-shadow: var(--pn-drop) !important;
+}
+
+@media (hover: none) {
+  .page-nav a[href]:not(.is-soon):hover {
+    transform: translateY(0) !important;
+    border-color: var(--border) !important;
+    box-shadow: var(--pn-drop) !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .page-nav a[href] { transition: box-shadow .01ms, border-color .01ms !important; }
+  .page-nav a[href]:not(.is-soon):is(:hover, .is-hovered, :focus-visible),
+  .page-nav a[href]:active { transform: translateY(0) !important; }
+}
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  .page-nav a[href] { background: var(--bg-elevated) !important; }
+}
+
+html[data-reading-width="full"] .toc-resizer { display: none !important; }
