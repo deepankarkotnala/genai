@@ -34,7 +34,7 @@
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
 <script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20261123b" rel="stylesheet"/>
+<link href="../assets/styles.css?v=20261124a" rel="stylesheet"/>
 <link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <!-- Release 2 runtime. The manifest loads first, the renderer second; classic
@@ -42,9 +42,9 @@
      exists and the manifest is defined before the renderer runs. The authored
      links inside [data-page-nav] stay in the source and are replaced only after
      page, route and fragment have all resolved. -->
-<script defer src="../assets/curriculum.js?v=20261123c"></script>
-<script defer src="../assets/page-nav.js?v=20261123c"></script>
-<link href="../assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+<script defer src="../assets/curriculum.js?v=20261124a"></script>
+<script defer src="../assets/page-nav.js?v=20261124a"></script>
+<link href="../assets/ir-theme.css?v=20261124a" rel="stylesheet"/>
 </head>
 <body data-curriculum-id="py-p2" data-page="pyint-data-structures" data-prep-section="interview">
 <div class="app">
@@ -221,10 +221,10 @@ Counter(&quot;listen&quot;) == Counter(&quot;silent&quot;)    # True</code></pre
 <div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p><code>a | b</code> since Python 3.9 returns a new merged dict, with <code>b</code> winning on conflicts; <code>a |= b</code> merges in place. <code>{**a, **b}</code> does the same and works on older versions. Note that all of these merge only the top level - nested dicts are replaced wholesale, not combined.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p><code>a | b</code> on 3.9+, or <code>{**a, **b}</code>. Right side wins, and only the top level is merged.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How would you write a recursive deep merge?</div></div></details>
 <details class="prep-question" data-question="how do you iterate over a dictionary safely while changing it?" data-tags="dict iteration gotcha">
 <summary><span class="prep-q-no">27</span><span class="prep-q-title">How do you iterate over a dictionary safely while changing it?<span class="prep-tags"><span>dict</span><span>iteration</span><span>gotcha</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
-<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>You cannot - mutating a dict during iteration raises <code>RuntimeError: dictionary changed size during iteration</code>. Iterate over a snapshot instead, with <code>list(d.items())</code>, or build a new dict with a comprehension and replace the old one. The comprehension is usually clearer and avoids the whole class of bug.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>safe_iter.py</span><button class="copy-btn">Copy</button></div><pre><code># Deleting from a dict while looping over it raises RuntimeError.
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>It depends on the change. Reassigning the value of a key that already exists is safe. Adding or deleting keys - anything that changes the dict's size - raises <code>RuntimeError: dictionary changed size during iteration</code>. For those, iterate over a snapshot instead, with <code>list(d.items())</code>, or build a new dict with a comprehension and replace the old one. The comprehension is usually clearer and avoids the whole class of bug.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>safe_iter.py</span><button class="copy-btn">Copy</button></div><pre><code># Deleting from a dict while looping over it raises RuntimeError.
 # Instead, build a fresh dict and rebind the name: no mutation
 # happens while the comprehension is reading the original.
-d = {k: v for k, v in d.items() if v is not None}</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>You cannot mutate while iterating. Iterate over <code>list(d.items())</code> or rebuild with a comprehension.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Does the same restriction apply to lists?</div></div></details>
+d = {k: v for k, v in d.items() if v is not None}</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Updating existing values is fine; adding or removing keys while iterating raises RuntimeError. Iterate over <code>list(d.items())</code> or rebuild with a comprehension.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Does the same restriction apply to lists?</div></div></details>
 <details class="prep-question" data-question="what is the difference between dict.keys() and list(dict.keys())?" data-tags="dict views">
 <summary><span class="prep-q-no">28</span><span class="prep-q-title">What is the difference between <code>dict.keys()</code> and <code>list(dict.keys())</code>?<span class="prep-tags"><span>dict</span><span>views</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p><code>keys()</code> returns a view - a live window onto the dict that reflects later changes and costs no memory. Wrapping it in <code>list()</code> takes a snapshot you can safely iterate while mutating. Views also support set operations, so <code>a.keys() &amp; b.keys()</code> gives shared keys directly.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>keys() is a live view that costs nothing and supports set operations; list() makes an independent snapshot.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What would <code>a.keys() - b.keys()</code> give you?</div></div></details>
@@ -249,9 +249,9 @@ for k, v in d.items():
 </div>
 </div>
 <script src="../assets/app.js?v=20261123b"></script>
-<script src="../assets/sitenav.js?v=20261123b"></script>
+<script src="../assets/sitenav.js?v=20261124a"></script>
 <script src="../assets/enhance.js?v=20260925c"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
-<script src="../assets/interview-prep.js?v=20260925a"></script>
+<script src="../assets/interview-prep.js?v=20261124a"></script>
 </body>
 </html>

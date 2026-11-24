@@ -42,7 +42,7 @@
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
 <script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link rel="stylesheet" href="assets/styles.css?v=20261123b">
+<link rel="stylesheet" href="assets/styles.css?v=20261124a">
 <link href="assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <style>
@@ -55,9 +55,9 @@
      exists and the manifest is defined before the renderer runs. The authored
      links inside [data-page-nav] stay in the source and are replaced only after
      page, route and fragment have all resolved. -->
-<script defer src="assets/curriculum.js?v=20261123c"></script>
-<script defer src="assets/page-nav.js?v=20261123c"></script>
-<link href="assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+<script defer src="assets/curriculum.js?v=20261124a"></script>
+<script defer src="assets/page-nav.js?v=20261124a"></script>
+<link href="assets/ir-theme.css?v=20261124a" rel="stylesheet"/>
 </head>
 <body data-curriculum-id="memory" data-page="memory">
 <div class="app">
@@ -101,6 +101,24 @@ again. Interviewers ask about it because the common answers - "use a bigger cont
 <span class="pill blue">⏱ 15–30 min</span>
 <span class="pill">Difficulty · Interview essentials</span>
 <span class="pill purple">Prereq · 05 RAG and 06 Agentic AI</span>
+</div>
+
+<p class="bd-choose">Everything on this page comes back to five ideas.</p>
+<ol>
+<li><b>The model is stateless.</b> Every appearance of memory is your code resending or retrieving text.</li>
+<li><b>Short-term memory is the prompt; long-term memory is a store</b> outside the model, keyed by user and tenant.</li>
+<li><b>Memory is a write decision.</b> Keep only what is still true tomorrow and changes a future answer.</li>
+<li><b>Retrieve a few relevant facts, and supersede old ones,</b> or the store turns into noise.</li>
+<li><b>A memory store holds personal data:</b> retention limits and delete-by-user are part of the design.</li>
+</ol>
+
+<div class="callout key memory-hook" id="memory-hook">
+<div class="c-ico">🧠</div>
+<div class="c-body"><div class="c-title">Memory hook</div>
+<p><b>RAM, diary, encyclopedia, muscle memory.</b> Working memory is RAM - small, fast and wiped
+when the session ends. Episodic memory is a diary of what happened, semantic memory is an
+encyclopedia of facts about the user, and procedural memory is muscle memory: the system prompt
+and tools that say how the job is done.</p></div>
 </div>
 
 <h2 id="breaks">1 · The idea in one minute</h2>
@@ -186,6 +204,28 @@ back.</b></p>
 </table>
 </div>
 
+<h3>Worked example: twenty turns in an 8,000-token window</h3>
+<p>A support chat runs on a model with an 8,000-token context window. 1,000 tokens are
+reserved for the answer, so the prompt may use <b>7,000</b>. The system prompt and tool
+definitions - procedural memory - take <b>1,200</b> and are sent on every turn. Each turn
+(the user's message plus the reply) averages <b>350</b> tokens.</p>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Turn</th><th>What happens</th><th>Where it lives</th></tr></thead>
+<tbody>
+<tr><td>1-16</td><td>Every earlier turn is resent. At turn 16 the prompt is 1,200 + 16 × 350 = 6,800 tokens</td><td>Short-term (working) memory, in the prompt</td></tr>
+<tr><td>3</td><td>"Please email me, don't call." Passes the write filter and supersedes the old "prefers phone"</td><td>Long-term, <b>semantic</b>: a fact about the user</td></tr>
+<tr><td>9</td><td>Refund for order 4471 approved, ₹2,350</td><td>Long-term, <b>episodic</b>: written as a one-line record at the end of the session</td></tr>
+<tr><td>12</td><td>"I'm comparing two plans right now." Task state, wrong to still hold tomorrow</td><td>Not stored</td></tr>
+<tr><td>17</td><td>1,200 + 17 × 350 = 7,150 tokens: over the 7,000 budget. Turns 1-11 become a 400-token running summary that copies "4471" and "₹2,350" word for word; the last 6 turns stay verbatim</td><td>Short-term: summary plus recent turns</td></tr>
+<tr><td>20</td><td>The prompt is 1,200 (system) + 400 (summary) + 2,100 (last 6 turns) + about 150 (retrieved facts) ≈ 3,850 tokens</td><td>Short-term, now well inside the budget</td></tr>
+<tr><td>21 (next week, new session)</td><td>"Any update on my refund?" The chat history is empty. Retrieval by user and tenant brings back the episodic refund record and the semantic "prefers email" fact</td><td>Long-term, retrieved into the new prompt</td></tr>
+</tbody>
+</table>
+</div>
+<p>Without the summary, turn 20 would need 8,200 tokens and the call would fail or be silently
+trimmed. Without the long-term store, turn 21 would start from nothing.</p>
+
 <h3>Three things that are not long-term memory</h3>
 <ul>
 <li><b>A bigger context window.</b> More text fits into one call. Nothing survives to the next
@@ -211,6 +251,15 @@ be updated per conversation, and cannot delete one person's data on request.</li
 </tbody>
 </table>
 </div>
+
+<h3>Check yourself</h3>
+<p>Answer each one out loud before you open it. Recalling an answer is what makes it
+stick; re-reading it is not.</p>
+<details class="recall"><summary><span class="q-ico">Q</span> In the twenty-turn example, why does the chat overflow at turn 17? <span class="chev">›</span></summary><div class="a">The prompt budget is 7,000 tokens (8,000 minus 1,000 reserved for the answer). At turn 17 the system prompt plus every earlier turn is 1,200 + 17 × 350 = 7,150 tokens.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What goes into the prompt at turn 20, after summarising? <span class="chev">›</span></summary><div class="a">The system prompt and tools, a running summary of the older turns, the last six turns verbatim, and a few retrieved facts - about 3,850 tokens instead of 8,200.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> <span>"Please email me, don't call." Which memory type is it, and what happens to the old phone preference?</span> <span class="chev">›</span></summary><div class="a">A semantic fact about the user, written to the long-term store under their user and tenant. It supersedes the older phone preference at write time, so retrieval never returns both.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> <span>A user says "I'm comparing two plans right now." Should that be stored?</span> <span class="chev">›</span></summary><div class="a">No. It is task state - it would be wrong to still hold it tomorrow - so it stays in the conversation and is never written to long-term memory.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> A week later the user opens a new chat. Where does the assistant's knowledge of them come from? <span class="chev">›</span></summary><div class="a">Not from the chat history, which is empty. It comes from retrieval: facts keyed by user and tenant in the long-term store, such as the episodic refund record and the semantic email preference.</div></details>
 
 <h2 id="say">4 · Say this in the interview</h2>
 <div class="callout key">
@@ -239,6 +288,8 @@ deletion."</p></div>
 <details class="recall"><summary><span class="q-ico">Q</span> Design memory for a multi-tenant assistant. <span class="chev">›</span></summary><div class="a">Key every fact by tenant and user, and put the tenant in the query itself rather than filtering afterwards. Store a source and timestamp with each fact, supersede contradictions at write time, expire stale facts, cap how many facts are retrieved, and make delete-by-user a single operation, because data-protection law will require it.</div></details>
 
 <h2 id="short">6 · In short</h2>
+<p class="bd-choose">The five ideas from the top of the page. Try to say each one before
+you read it.</p>
 <ol>
 <li><b>The model is stateless.</b> Every appearance of memory is your code resending or retrieving text.</li>
 <li><b>Short-term memory is the prompt; long-term memory is a store</b> outside the model, keyed by user and tenant.</li>
@@ -246,6 +297,7 @@ deletion."</p></div>
 <li><b>Retrieve a few relevant facts, and supersede old ones,</b> or the store turns into noise.</li>
 <li><b>A memory store holds personal data:</b> retention limits and delete-by-user are part of the design.</li>
 </ol>
+<p class="review-link">🔁 <a href="review.html?topic=memory">Review this topic's cards</a> - tomorrow, in 3 days, in a week and in 3 weeks.</p>
 <p><b>Next:</b> <a href="modules/10_langchain.html">09 · LangChain</a> - the framework most
 teams use to wire prompts, models, retrieval and memory together.</p>
 
@@ -261,7 +313,7 @@ teams use to wire prompts, models, retrieval and memory together.</p>
 </div>
 
 <script src="assets/app.js?v=20261123b"></script>
-<script src="assets/sitenav.js?v=20261123b"></script>
+<script src="assets/sitenav.js?v=20261124a"></script>
 <script src="assets/enhance.js?v=20260925c"></script>
 <script src="assets/genai-motion.js?v=20260728a"></script>
 <script src="assets/section-nav.js?v=20260731b"></script>

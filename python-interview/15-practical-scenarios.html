@@ -34,7 +34,7 @@
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
 <script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20261123b" rel="stylesheet"/>
+<link href="../assets/styles.css?v=20261124a" rel="stylesheet"/>
 <link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <!-- Release 2 runtime. The manifest loads first, the renderer second; classic
@@ -42,9 +42,9 @@
      exists and the manifest is defined before the renderer runs. The authored
      links inside [data-page-nav] stay in the source and are replaced only after
      page, route and fragment have all resolved. -->
-<script defer src="../assets/curriculum.js?v=20261123c"></script>
-<script defer src="../assets/page-nav.js?v=20261123c"></script>
-<link href="../assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+<script defer src="../assets/curriculum.js?v=20261124a"></script>
+<script defer src="../assets/page-nav.js?v=20261124a"></script>
+<link href="../assets/ir-theme.css?v=20261124a" rel="stylesheet"/>
 </head>
 <body data-curriculum-id="py-p15" data-page="pyint-practical-scenarios" data-prep-section="interview">
 <div class="app">
@@ -80,7 +80,7 @@
 
 <details class="prep-question" data-question="you have a csv with 1 crore records and you need to read it and feed it to an llm with minimal latency. how would you do it?" data-tags="scale batching high-frequency">
 <summary><span class="prep-q-no">01</span><span class="prep-q-title">You have a CSV with 1 crore records and you need to feed it to an LLM with minimal latency. How would you do it?<span class="prep-tags"><span>scale</span><span>batching</span><span>high-frequency</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
-<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>First push back on the premise: ten million rows should almost never all reach the model. Ask what the task is, then cut the volume - filter to rows that actually need judgement, deduplicate near-identical rows, and handle whatever a rule or a small classifier can handle. In most real versions of this problem that removes 90% of the calls, which beats any amount of clever plumbing.</p><p>For what remains: never load the file, stream it. Read in chunks with PyArrow or Polars, or query it in place with DuckDB. Pack many rows into one request rather than one row per request, because per-call overhead dominates at this volume. Then run those requests concurrently with a bounded number of workers, retry on rate limits with exponential backoff, and write results out incrementally with a checkpoint so a crash at row nine million does not restart the job. If the work is not interactive, use the provider's batch API - usually around half the price for a slower turnaround.</p><p>Say clearly which latency you are optimising. Total wall-clock for the whole file is a throughput problem, solved with concurrency and batching. Latency for one row is a different problem, solved with a smaller model, a shorter prompt and caching. Conflating the two is the mistake this question is designed to catch.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>bulk_llm.py</span><button class="copy-btn">Copy</button></div><pre><code>import asyncio, itertools
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>First push back on the premise: ten million rows should almost never all reach the model. Ask what the task is, then cut the volume - filter to rows that actually need judgement, deduplicate near-identical rows, and handle whatever a rule or a small classifier can handle. In most real versions of this problem that removes 90% of the calls, which beats any amount of clever plumbing.</p><p>For what remains: never load the file, stream it. Read in chunks with PyArrow or Polars, or query it in place with DuckDB. Pack many rows into one request rather than one row per request, because per-call overhead dominates at this volume. Then run those requests concurrently with a bounded number of workers, retry on rate limits with exponential backoff, and write results out incrementally with a checkpoint so a crash at row nine million does not restart the job. If the work is not interactive, use the provider's batch API - usually around half the price for a slower turnaround.</p><p>Say clearly which latency you are optimising. Total wall-clock for the whole file is a throughput problem, solved with concurrency and batching. Latency for one row is a different problem, solved with a smaller model, a shorter prompt and caching. Conflating the two is the mistake this question is designed to catch.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>bulk_llm.py</span><button class="copy-btn">Copy</button></div><pre><code>import asyncio, itertools, random
 import pyarrow.csv as pv
 
 MAX_CONCURRENT = 20     # tuned to the provider rate limit, not to your CPU
@@ -97,17 +97,27 @@ def grouped(iterable, n):
     while chunk := list(itertools.islice(it, n)):
         yield chunk
 
-async def run(path, call_llm, sink):
+async def run(path, call_llm, sink, dead_letter, attempts=5):
     sem = asyncio.Semaphore(MAX_CONCURRENT)
 
     async def worker(group):
-        async with sem:                      # backoff lives inside call_llm,
-            return await call_llm(group)     # outside the semaphore slot
+        for i in range(attempts):
+            try:
+                async with sem:                  # hold a slot only for the call itself
+                    return await call_llm(group)
+            except RateLimitError:
+                if i == attempts - 1:
+                    raise
+            await asyncio.sleep(2 ** i + random.uniform(0, 1))   # backoff outside the slot
 
     for wave in grouped(grouped(stream_rows(path), ROWS_PER_CALL), MAX_CONCURRENT * 4):
-        for result in await asyncio.gather(*(worker(g) for g in wave),
-                                          return_exceptions=True):
-            sink(result)                     # append + checkpoint offset
+        results = await asyncio.gather(*(worker(g) for g in wave),
+                                       return_exceptions=True)
+        for group, result in zip(wave, results):
+            if isinstance(result, BaseException):
+                dead_letter(group, result)       # record for a re-run; never mark it done
+            else:
+                sink(result)                     # append + checkpoint offset
 </code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>First I would cut the volume - filter, deduplicate, and let rules handle what does not need a model. For the rest, stream the file in chunks rather than loading it, pack multiple rows per request, run a bounded number of concurrent workers with backoff on 429s, and checkpoint output so a failure resumes. If it is not interactive, the batch API halves the cost. And I would ask which latency matters: whole-file throughput and single-row latency are different problems.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What if the file is 10 billion rows instead?</div></div></details>
 
 <details class="prep-question" data-question="how do you decide the batch size and concurrency for that job?" data-tags="scale tuning">
@@ -120,32 +130,28 @@ async def run(path, call_llm, sink):
 
 <details class="prep-question" data-question="you need to make 1000 llm api calls without hitting rate limits. how do you write that?" data-tags="asyncio reliability high-frequency">
 <summary><span class="prep-q-no">04</span><span class="prep-q-title">You need to make 1000 LLM API calls without hitting rate limits. How do you write that?<span class="prep-tags"><span>asyncio</span><span>reliability</span><span>high-frequency</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
-<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>These calls are I/O-bound, so asyncio, not multiprocessing. Bound concurrency with an <code>asyncio.Semaphore</code>, and wrap each call in retry-with-exponential-backoff-and-jitter - jitter matters, because without it every retry lands at the same instant and you re-trigger the limit. Put the backoff sleep <em>inside</em> the request function but the semaphore around it, so a task that is sleeping between retries is not holding a slot other work could use.</p><p>Two refinements worth naming. Rate limits are usually two-dimensional - requests per minute and tokens per minute - and a long-prompt workload hits the token limit first, so a token-bucket that estimates prompt size gives you better throughput than counting requests. And read the response headers: most providers return remaining quota and a reset time, so you can pace proactively instead of discovering the limit by failing. In production use the provider SDK's built-in retry or a library like <code>tenacity</code> rather than hand-rolling it.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>bounded_calls.py</span><button class="copy-btn">Copy</button></div><pre><code>import asyncio, random
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>These calls are I/O-bound, so asyncio, not multiprocessing. Bound concurrency with an <code>asyncio.Semaphore</code>, and wrap each call in retry-with-exponential-backoff-and-jitter - jitter matters, because without it every retry lands at the same instant and you re-trigger the limit. Take the semaphore around each <em>attempt</em>, not around the whole retry loop, so a task that is sleeping between retries is not holding a slot other work could use.</p><p>Two refinements worth naming. Rate limits are usually two-dimensional - requests per minute and tokens per minute - and a long-prompt workload hits the token limit first, so a token-bucket that estimates prompt size gives you better throughput than counting requests. And read the response headers: most providers return remaining quota and a reset time, so you can pace proactively instead of discovering the limit by failing. In production use the provider SDK's built-in retry or a library like <code>tenacity</code> rather than hand-rolling it.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>bounded_calls.py</span><button class="copy-btn">Copy</button></div><pre><code>import asyncio, random
 
-async def with_backoff(fn, *args, attempts=5):
+async def with_backoff(fn, *args, sem, attempts=5):
     for i in range(attempts):
         try:
-            return await fn(*args)
+            async with sem:                    # hold a slot only for the call itself
+                return await fn(*args)
         except RateLimitError as exc:
             if i == attempts - 1:
                 raise
             wait = getattr(exc, "retry_after", None) or 2 ** i
-            await asyncio.sleep(wait + random.uniform(0, 1))   # jitter
+            await asyncio.sleep(wait + random.uniform(0, 1))   # jitter; slot is free while sleeping
 
 async def run_all(prompts, call, limit=20):
     sem = asyncio.Semaphore(limit)
-
-    async def one(p):
-        async with sem:
-            return await with_backoff(call, p)
-
-    return await asyncio.gather(*(one(p) for p in prompts),
+    return await asyncio.gather(*(with_backoff(call, p, sem=sem) for p in prompts),
                                 return_exceptions=True)
 </code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>It is I/O-bound, so asyncio with a semaphore to cap in-flight requests, and exponential backoff with jitter on 429s. I would respect the <code>Retry-After</code> header rather than guessing, and note that limits are usually tokens-per-minute as well as requests-per-minute, so for long prompts I would pace on estimated tokens. In production I would use the SDK's retry rather than writing my own.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Why is <code>return_exceptions=True</code> there, and what do you do with the failures?</div></div></details>
 
 <details class="prep-question" data-question="you need to embed 5 million text chunks. how long does that take and how do you speed it up?" data-tags="embeddings scale">
 <summary><span class="prep-q-no">05</span><span class="prep-q-title">You need to embed 5 million text chunks. How long does that take, and how do you speed it up?<span class="prep-tags"><span>embeddings</span><span>scale</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
-<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Do the arithmetic out loud - interviewers want to see you estimate. A hosted embedding endpoint taking a few hundred texts per request at a few requests per second is hours to days serially; with fifty concurrent workers it comes down to something like an hour. That estimate, and the fact that you produced one, is most of the answer.</p><p>Speed-ups, cheapest first. Deduplicate - a real corpus is often 10–30% near-duplicate chunks, and hashing the normalised text removes that work entirely. Cache by content hash so a re-run after a pipeline bug does not re-embed everything. Batch to the endpoint's maximum. Then either fan out concurrently against a hosted API, or self-host a small embedding model on one GPU, where throughput is usually far better per rupee at this volume. Store as float16 or use a model with Matryoshka-style truncatable dimensions if index size is the binding constraint. And make the job resumable - at five million chunks something will fail halfway, and the difference between a checkpointed pipeline and a non-checkpointed one is a day of your life.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>I would estimate first: batched and serial it is days, with fifty concurrent workers roughly an hour. Then deduplicate by content hash, which typically removes 10–30% of the work, cache embeddings by that hash so re-runs are free, batch at the endpoint maximum, and consider self-hosting a small embedding model on a GPU since throughput per rupee is better at this scale. Most importantly, checkpoint it - something will fail at chunk three million.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Six months later you want to switch embedding models. What does that cost you?</div></div></details>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Do the arithmetic out loud - interviewers want to see you estimate. A hosted embedding endpoint taking a few hundred texts per request at a few requests per second is hours to days serially; with fifty concurrent workers the request side comes down to something like an hour. Then check the token quota, because it is usually the real ceiling: five million chunks at about 400 tokens each is roughly 2 billion tokens, so at a limit of 1 million tokens per minute the job takes at least 33 hours however many workers you run. That estimate, and the fact that you produced one, is most of the answer.</p><p>Speed-ups, cheapest first. Deduplicate - a real corpus is often 10–30% near-duplicate chunks, and hashing the normalised text removes that work entirely. Cache by content hash so a re-run after a pipeline bug does not re-embed everything. Batch to the endpoint's maximum. Then either fan out concurrently against a hosted API, or self-host a small embedding model on one GPU, where throughput is usually far better per rupee at this volume. Store as float16 or use a model with Matryoshka-style truncatable dimensions if index size is the binding constraint. And make the job resumable - at five million chunks something will fail halfway, and the difference between a checkpointed pipeline and a non-checkpointed one is a day of your life.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>I would estimate first: batched and serial it is days; fifty concurrent workers get the request side to about an hour, but 2 billion tokens against the tokens-per-minute quota is usually the real limit. Then deduplicate by content hash, which typically removes 10–30% of the work, cache embeddings by that hash so re-runs are free, batch at the endpoint maximum, and consider self-hosting a small embedding model on a GPU since throughput per rupee is better at this scale. Most importantly, checkpoint it - something will fail at chunk three million.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Six months later you want to switch embedding models. What does that cost you?</div></div></details>
 
 </section>
 
@@ -326,9 +332,9 @@ def validate(sql: str) -&gt; str:
 </div>
 </div>
 <script src="../assets/app.js?v=20261123b"></script>
-<script src="../assets/sitenav.js?v=20261123b"></script>
+<script src="../assets/sitenav.js?v=20261124a"></script>
 <script src="../assets/enhance.js?v=20260925c"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
-<script src="../assets/interview-prep.js?v=20260925a"></script>
+<script src="../assets/interview-prep.js?v=20261124a"></script>
 </body>
 </html>

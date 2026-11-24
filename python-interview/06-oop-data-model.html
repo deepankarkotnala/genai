@@ -34,7 +34,7 @@
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
 <script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20261123b" rel="stylesheet"/>
+<link href="../assets/styles.css?v=20261124a" rel="stylesheet"/>
 <link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <!-- Release 2 runtime. The manifest loads first, the renderer second; classic
@@ -42,9 +42,9 @@
      exists and the manifest is defined before the renderer runs. The authored
      links inside [data-page-nav] stay in the source and are replaced only after
      page, route and fragment have all resolved. -->
-<script defer src="../assets/curriculum.js?v=20261123c"></script>
-<script defer src="../assets/page-nav.js?v=20261123c"></script>
-<link href="../assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+<script defer src="../assets/curriculum.js?v=20261124a"></script>
+<script defer src="../assets/page-nav.js?v=20261124a"></script>
+<link href="../assets/ir-theme.css?v=20261124a" rel="stylesheet"/>
 </head>
 <body data-curriculum-id="py-p6" data-page="pyint-oop-data-model" data-prep-section="interview">
 <div class="app">
@@ -219,13 +219,15 @@ Money(50) + 70             # TypeError - refused on purpose</code></pre></div><d
 <div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p><code>__getattribute__</code> intercepts <em>every</em> attribute access, so overriding it is easy to get wrong and trivially causes infinite recursion. <code>__getattr__</code> is only called when normal lookup has already failed, which makes it the safe hook for proxies, lazy loading and dynamic attributes.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p><code>__getattribute__</code> runs on every access and is dangerous; <code>__getattr__</code> only runs on failed lookups and is the safe hook.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> How would you use <code>__getattr__</code> to build a proxy object?</div></div></details>
 <details class="prep-question" data-question="what is a dataclass, and when would you use one?" data-tags="dataclass modern python high-frequency">
 <summary><span class="prep-q-no">20</span><span class="prep-q-title">What is a dataclass, and when would you use one?<span class="prep-tags"><span>dataclass</span><span>modern python</span><span>high-frequency</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
-<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p><code>@dataclass</code> generates <code>__init__</code>, <code>__repr__</code> and <code>__eq__</code> from typed field declarations, so a data-holding class is five lines instead of thirty. Use <code>frozen=True</code> to make it immutable and hashable, and <code>field(default_factory=list)</code> for mutable defaults - a plain <code>= []</code> is rejected outright, which is Python protecting you from the shared-default bug.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>dataclass.py</span><button class="copy-btn">Copy</button></div><pre><code>from dataclasses import dataclass, field
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p><code>@dataclass</code> generates <code>__init__</code>, <code>__repr__</code> and <code>__eq__</code> from typed field declarations, so a data-holding class is five lines instead of thirty. Use <code>frozen=True</code> to make it immutable and hashable - hashable only if every field is too, so a <code>list</code> field makes <code>hash()</code> raise <code>TypeError</code> - and <code>field(default_factory=list)</code> for mutable defaults - a plain <code>= []</code> is rejected outright, which is Python protecting you from the shared-default bug.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>dataclass.py</span><button class="copy-btn">Copy</button></div><pre><code>from dataclasses import dataclass, field
 
 @dataclass(frozen=True, slots=True)
 class Chunk:
     text: str
     score: float = 0.0
-    tags: list[str] = field(default_factory=list)</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>It generates init, repr and eq from typed fields. frozen=True makes it immutable and hashable; use default_factory for mutable defaults.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> When would you choose Pydantic over a dataclass?</div></div></details>
+    tags: list[str] = field(default_factory=list)
+    # frozen, but hash(chunk) raises TypeError because of the list;
+    # use tags: tuple[str, ...] = () if you need it in a set or as a dict key</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>It generates init, repr and eq from typed fields. frozen=True makes it immutable, and hashable when all its fields are hashable; use default_factory for mutable defaults.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> When would you choose Pydantic over a dataclass?</div></div></details>
 <details class="prep-question" data-question="what is the difference between a dataclass and a pydantic model?" data-tags="dataclass pydantic practical">
 <summary><span class="prep-q-no">21</span><span class="prep-q-title">What is the difference between a dataclass and a Pydantic model?<span class="prep-tags"><span>dataclass</span><span>pydantic</span><span>practical</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>A dataclass records types but never checks them - pass a string where an <code>int</code> is declared and nothing complains. Pydantic validates and coerces at runtime, produces structured errors, and serialises to and from JSON. Use dataclasses for internal objects you already trust, and Pydantic at the boundary: API payloads, config files, LLM structured output.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Dataclasses declare types, Pydantic enforces them at runtime. Dataclasses inside, Pydantic at the boundary.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What is the performance cost of Pydantic validation on a hot path?</div></div></details>
@@ -243,9 +245,9 @@ class Chunk:
 </div>
 </div>
 <script src="../assets/app.js?v=20261123b"></script>
-<script src="../assets/sitenav.js?v=20261123b"></script>
+<script src="../assets/sitenav.js?v=20261124a"></script>
 <script src="../assets/enhance.js?v=20260925c"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
-<script src="../assets/interview-prep.js?v=20260925a"></script>
+<script src="../assets/interview-prep.js?v=20261124a"></script>
 </body>
 </html>

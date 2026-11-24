@@ -42,7 +42,7 @@
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
 <script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link rel="stylesheet" href="assets/styles.css?v=20261123b">
+<link rel="stylesheet" href="assets/styles.css?v=20261124a">
 <link href="assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <link href="assets/glossary.css?v=20260802b" rel="stylesheet"/>
@@ -78,9 +78,9 @@
      exists and the manifest is defined before the renderer runs. The authored
      links inside [data-page-nav] stay in the source and are replaced only after
      page, route and fragment have all resolved. -->
-<script defer src="assets/curriculum.js?v=20261123c"></script>
-<script defer src="assets/page-nav.js?v=20261123c"></script>
-<link href="assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+<script defer src="assets/curriculum.js?v=20261124a"></script>
+<script defer src="assets/page-nav.js?v=20261124a"></script>
+<link href="assets/ir-theme.css?v=20261124a" rel="stylesheet"/>
 </head>
 <body data-curriculum-id="rag-deep-dive" data-page="rag">
 <div class="app">
@@ -153,6 +153,14 @@ decide whether the right text reaches the prompt.</li>
 <li><b>The two halves fail separately.</b> Measure retrieval (did we find it?) and
 generation (did we use it faithfully?) on their own.</li>
 </ol>
+
+<div class="callout key memory-hook" id="memory-hook">
+<div class="c-ico">🧠</div>
+<div class="c-body"><div class="c-title">Memory hook</div>
+<p><b>The 4 Nots: Not there, Not found, Not ranked, Not used.</b> When an answer is wrong,
+walk them in order: the answer was not in the documents, retrieval did not find it, ranking
+cut it, or the model did not use it. Each has its own fix - section 9.</p></div>
+</div>
 
 <!-- ================= LEVEL 1 ================= -->
 <div class="level-head" id="level-1"><span class="lv-badge">Level 1</span><span class="lv-title">The core idea</span><span class="lv-meta">About 25 minutes. One real-looking example, start to finish.</span></div>
@@ -489,6 +497,10 @@ the chunk size - so a sentence cut at a boundary is whole in at least one chunk.
 <p><b>Split on structure.</b> Cut at headings and paragraphs rather than at a fixed character
 count. A recursive splitter tries headings first, then paragraphs, then sentences, and only
 falls back to raw length.</p>
+<p><b>A chunk must fit the embedding model's input limit.</b> Many classic embedding models
+stop at 512 tokens, some at 256, and anything longer is silently cut off before it is
+embedded - so a 1,200-token chunk on a 512-token model is searched by its first 512 tokens
+only. Check the limit before you pick a size.</p>
 <p><b>There is no universally best chunk size.</b> Start from a sensible default and measure
 (section 11).</p>
 
@@ -513,7 +525,8 @@ added.</p>
 </table>
 </div>
 <p>B wins: ranking well in both lists beats coming first in only one. <b>Hybrid search is
-usually the single biggest upgrade over a basic pipeline.</b></p>
+often one of the two biggest upgrades over a basic pipeline - reranking is the other.</b>
+Which helps more depends on your data, so measure both.</p>
 
 <h4>Query rewriting</h4>
 <p>The user's message is often a poor search query. Two common fixes: rewrite a follow-up
@@ -549,11 +562,12 @@ and can be trimmed to their useful sentences. Bad ones trigger a fallback, such 
 search.</li>
 <li><b>Self-RAG</b> also checks the <em>answer</em>: does the question need retrieval at
 all, are the chunks relevant, is every claim supported by them, does the answer address the
-question? A failed check sends it back to rewrite the query and try again.</li>
+question? In most production versions, a failed check sends it back to rewrite the query
+and try again.</li>
 </ul>
 
 <svg class="bd-svg" viewBox="0 0 900 195" role="img" aria-labelledby="sr-t sr-d">
-<title id="sr-t">Self-RAG loop</title>
+<title id="sr-t">Self-RAG-style loop, as production versions usually build it</title>
 <desc id="sr-d">A question is retrieved for and the documents are graded, then an answer is generated. The answer is checked for grounding in the evidence and for usefulness. If a check fails the query is rewritten and the cycle repeats, up to three times. If both checks pass the answer is returned.</desc>
 <defs>
 <marker id="ah-sr" markerWidth="9" markerHeight="9" refX="8" refY="3.2" orient="auto"><path d="M0 0 L8 3.2 L0 6.4 z" fill="var(--text-muted)"></path></marker>
@@ -579,9 +593,12 @@ question? A failed check sends it back to rewrite the query and try again.</li>
 <text class="lbl" x="834" y="93">answer</text>
 <text class="cap" x="450" y="188">built with separate grader calls, each attempt costs about three model calls</text>
 </svg>
-<p>The original Self-RAG research trained one model to emit these checks as special tokens.
-Most production versions run them as separate model calls, which is why the loop needs an
-attempt limit. <b>Both patterns multiply latency and cost - add them only when measurement
+<p>The original Self-RAG paper works differently. It trained one model to emit these checks
+as special <b>reflection tokens</b> - Retrieve, IsRel, IsSup and IsUse - which decide when
+to retrieve and pick the best-supported answer segment. The paper does not rewrite the
+query. The rewrite-and-retry loop above is the common production variant (the LangGraph
+tutorial builds this one), which runs the checks as separate model calls - which is why the
+loop needs an attempt limit. <b>Both patterns multiply latency and cost - add them only when measurement
 says basic retrieval is not good enough.</b></p>
 
 <!-- ================= 8 ================= -->
@@ -604,8 +621,8 @@ universal.</p>
 </table>
 </div>
 <p>Generation is about 85% of the latency and nearly all of the token cost. <b>Reranking is
-about 13% of the latency and often the largest single gain in answer quality</b> - worth
-knowing before someone proposes removing it to save time.</p>
+about 13% of the latency and often one of the largest gains in answer quality</b>, alongside
+hybrid search - worth knowing before someone proposes removing it to save time.</p>
 
 <!-- ================= 9 ================= -->
 <h2 id="break">9 · Break it: one wrong answer, four possible causes</h2>
@@ -666,7 +683,7 @@ setups, change one thing at a time and keep the questions fixed.</p>
 <table>
 <thead><tr><th>Metric</th><th>Question it answers</th><th>Example</th></tr></thead>
 <tbody>
-<tr><td>Recall@K</td><td>Did the right chunk appear in the top K?</td><td>Right chunk in the top 5 for 90 of 100 questions → Recall@5 = 90%</td></tr>
+<tr><td>Recall@K</td><td>Did the right chunk appear in the top K? (With one right chunk per question this is also called hit rate. It is not the vector-database recall@K, which compares the index with exact search.)</td><td>Right chunk in the top 5 for 90 of 100 questions → Recall@5 = 90%</td></tr>
 <tr><td>Precision@K</td><td>How many of the top K are relevant?</td><td>2 of the top 5 relevant → Precision@5 = 40%</td></tr>
 <tr><td>MRR</td><td>How high does the first right chunk appear?</td><td>First right chunk at ranks 1, 2 and 5 → (1 + 0.5 + 0.2) ÷ 3 = 0.57</td></tr>
 <tr><td>Context recall</td><td>Did the chunks contain everything needed?</td><td>The answer needs the leave length and the notice rule; retrieving only one is incomplete</td></tr>
@@ -907,19 +924,19 @@ which is what <a href="modules/12_langgraph.html">10 · LangGraph</a> is for.</p
 <details class="collapse"><summary><span class="pill green">Beginner</span>  Walk me through a RAG pipeline. <span class="chev">&rsaquo;</span></summary>
 <div class="collapse-body"><p>Two pipelines. Indexing, offline: load the source, split into chunks, embed each chunk, store the vector with its text and metadata. Querying, per request: embed the question, retrieve candidates, rerank them with a cross-encoder, keep those above a score floor within a token budget, build a prompt that constrains the model to that evidence and permits refusal, generate, and return the answer with the chunk ids used. The two pipelines run at different times and fail in different ways.</p></div></details>
 <details class="collapse"><summary><span class="pill blue">Intermediate</span>  How do you choose chunk size and overlap? <span class="chev">&rsaquo;</span></summary>
-<div class="collapse-body"><p>Chunk size decides what one vector represents. Too small and the chunk lacks the context to be understood on its own; too large and its vector averages several topics into a direction matching none of them. I start at 500–800 tokens for prose with 10–20% overlap so a sentence split across a boundary survives intact in one chunk, and I split on structure - headings, paragraphs - rather than a character count. Then I measure retrieval recall on a labelled set and adjust, because the right number is corpus-specific and no default survives contact with real documents.</p></div></details>
+<div class="collapse-body"><p>Chunk size decides what one vector represents. Too small and the chunk lacks the context to be understood on its own; too large and its vector averages several topics into a direction matching none of them. I start at 500–800 tokens for prose with 10–20% overlap so a sentence split across a boundary survives intact in one chunk, check that this fits the embedding model's input limit (many classic models stop at 512 tokens and silently cut the rest), and I split on structure - headings, paragraphs - rather than a character count. Then I measure retrieval recall on a labelled set and adjust, because the right number is corpus-specific and no default survives contact with real documents.</p></div></details>
 <details class="collapse"><summary><span class="pill blue">Intermediate</span>  How do you evaluate a text chunking strategy? <span class="chev">&rsaquo;</span></summary>
 <div class="collapse-body"><p>I wouldn't evaluate chunking in isolation. I would create a representative evaluation dataset of questions and expected source information, run different chunking strategies through the same embedding and retrieval pipeline, and compare retrieval metrics such as Recall@K, Precision@K and MRR, followed by end-to-end metrics such as context recall, context precision, answer correctness and faithfulness.</p></div></details>
 <details class="collapse"><summary><span class="pill blue">Intermediate</span>  Your RAG system gives a wrong answer. How do you debug it? <span class="chev">&rsaquo;</span></summary>
 <div class="collapse-body"><p>First separate the two halves, because four different failures produce the same symptom. Check whether the evidence exists in the corpus at all - grep for it. If it is there, check whether retrieval returned it; if not, that is a chunking, hybrid-search or reranking problem. If it was returned but ranked below the cut, raise k and re-check. If it was in the prompt and the answer contradicts it, that is generation, and the fix is the prompt or the model. I track retrieval recall and groundedness as separate metrics precisely so this question is answerable in one look rather than by guesswork.</p></div></details>
 <details class="collapse"><summary><span class="pill blue">Intermediate</span>  Why add a reranker when you already have similarity search? <span class="chev">&rsaquo;</span></summary>
-<div class="collapse-body"><p>Similarity search uses a bi-encoder: query and document are embedded separately, so documents can be embedded in advance and the search is cheap over millions. A reranker is a cross-encoder that reads the question and the chunk together, which is far more accurate but cannot be precomputed. So you use the cheap one to get 50 candidates out of millions and the expensive one to order those 50. On my measurements that costs about 210 ms and is usually the single largest quality gain in the pipeline.</p></div></details>
+<div class="collapse-body"><p>Similarity search uses a bi-encoder: query and document are embedded separately, so documents can be embedded in advance and the search is cheap over millions. A reranker is a cross-encoder that reads the question and the chunk together, which is far more accurate but cannot be precomputed. So you use the cheap one to get 50 candidates out of millions and the expensive one to order those 50. In the illustrative trace in section 8 that costs about 210 ms - measure your own - and it is often one of the largest quality gains in the pipeline, alongside hybrid search.</p></div></details>
 <details class="collapse"><summary><span class="pill amber">Senior</span>  How do you stop a RAG system answering when it should not? <span class="chev">&rsaquo;</span></summary>
 <div class="collapse-body"><p>Retrieval always returns something, so the pipeline must decide whether what came back is good enough. Three layers. A score floor calibrated on labelled answerable and unanswerable questions, enforced in code - not guessed. A grounding prompt that explicitly permits refusal, returning a sentinel like NOT_IN_CONTEXT. And a distinct status in the response so "no evidence", "refused" and "answered" are three different things the caller handles differently. The failure I am guarding against is an off-corpus question producing a fluent invented answer with a citation attached, which looks more verified than an uncited one.</p></div></details>
 <details class="collapse"><summary><span class="pill amber">Senior</span>  When would you use CRAG or Self-RAG? <span class="chev">&rsaquo;</span></summary>
-<div class="collapse-body"><p>CRAG grades the retrieved evidence as correct, ambiguous or incorrect, and either refines it, supplements it with web search, or replaces it entirely. Self-RAG adds checks on the answer - is it grounded in the evidence, does it address the question - and loops back to rewrite the query if a check fails. I would reach for CRAG when corpus coverage is patchy and an external fallback is acceptable, and Self-RAG when a wrong answer is expensive enough to justify three to nine model calls per query instead of one. Both need bounded attempts, and both are graphs rather than chains, so LangGraph rather than LCEL.</p></div></details>
+<div class="collapse-body"><p>CRAG grades the retrieved evidence as correct, ambiguous or incorrect, and either refines it, supplements it with web search, or replaces it entirely. Self-RAG adds checks on the answer - is it grounded in the evidence, does it address the question. In the paper one trained model emits these as reflection tokens and picks the best-supported answer; production versions usually run them as separate grader calls and loop back to rewrite the query if a check fails. I would reach for CRAG when corpus coverage is patchy and an external fallback is acceptable, and Self-RAG when a wrong answer is expensive enough to justify three to nine model calls per query instead of one. Both need bounded attempts, and both are graphs rather than chains, so LangGraph rather than LCEL.</p></div></details>
 <details class="collapse"><summary><span class="pill purple">Staff · design</span>  Design RAG over confidential documents with per-user access control. <span class="chev">&rsaquo;</span></summary>
-<div class="collapse-body"><p>Authorisation belongs at retrieval, as a metadata filter derived from the caller's identity, with the filtered fields payload-indexed - post-filtering means you already searched data the user cannot see, and it also silently breaks top-k. Redact PII at ingestion, not at generation, because once it is in the index it is retrievable. Store the permission attributes on the chunk at index time and re-index when they change; a document losing a permission must stop being retrievable immediately, which means deletion by document id, not a soft flag. Log the question, retrieved chunk ids, scores and prompt version for every answer, since the chunk ids are the only way to explain an answer during an audit months later. Gate prompt and model changes on an eval set measuring retrieval recall and groundedness separately, and alert on the refusal rate - a sudden drop usually means the index broke, not that the questions got easier.</p></div></details>
+<div class="collapse-body"><p>Authorisation belongs at retrieval, as a metadata filter derived from the caller's identity, with the filtered fields payload-indexed - post-filtering means you already searched data the user cannot see, and it also silently breaks top-k. Redact PII at ingestion, not at generation, because once it is in the index it is retrievable. Store the permission attributes - ACL or group ids - on each chunk at index time, resolve the caller's groups at query time, and filter on them before any evidence reaches the model. When a document's permissions change, update the chunk metadata at once so the filter excludes it immediately; deletion by document id is for documents that are actually removed (vector databases already exclude deleted or soft-deleted records from search). Log the question, retrieved chunk ids, scores and prompt version for every answer, since the chunk ids are the only way to explain an answer during an audit months later. Gate prompt and model changes on an eval set measuring retrieval recall and groundedness separately, and alert on the refusal rate - a sudden drop usually means the index broke, not that the questions got easier.</p></div></details>
 <p>For more practice, work through the <a href="interview-labs/rag-interview.html">RAG interview drill</a>
 and the <a href="interview-prep/02-embeddings-rag.html">embeddings and RAG question bank</a>.</p>
 
@@ -947,6 +964,7 @@ deciding whether the search result deserves to be in the prompt.</b> Chunking, h
 search, reranking, floors, CRAG and Self-RAG are all answers to that one question, at
 increasing cost.</p></div>
 </div>
+<p class="review-link">🔁 <a href="review.html?topic=rag-deep-dive">Review this topic's cards</a> - tomorrow, in 3 days, in a week and in 3 weeks.</p>
 <p><b>Next:</b> <a href="modules/08_agents.html">06 · Agentic AI</a> turns retrieval into one
 tool an agent may choose to call, rather than a fixed first step - a different design with
 different failure modes.</p>
@@ -963,10 +981,10 @@ different failure modes.</p>
 </div>
 
 <script src="assets/app.js?v=20261123b"></script>
-<script src="assets/sitenav.js?v=20261123b"></script>
+<script src="assets/sitenav.js?v=20261124a"></script>
 <script src="assets/enhance.js?v=20260925c"></script>
 <script src="assets/genai-motion.js?v=20260728a"></script>
 <script src="assets/section-nav.js?v=20260731b"></script>
-<script src="assets/glossary.js?v=20261123b"></script>
+<script src="assets/glossary.js?v=20261124a"></script>
 </body>
 </html>

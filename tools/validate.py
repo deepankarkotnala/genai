@@ -252,10 +252,11 @@ def check_routes(rep: Report, man: dict, ids: dict[str, set]):
     rep.add("draft-routes-have-no-sections", "fail", not draft_sections,
             "Stage 2a forbids section selections in draft routes", draft_sections)
 
-    # Release 2 activated Full alone; Release 3 activates all three. The exact
-    # set is asserted by check_route_shape -- this one only pins the count.
+    # Release 2 activated Full alone; Release 3 activated three routes; on
+    # 2026-11-24 Sprint and Job-Ready were removed, so Full is the only route at
+    # every stage. The exact set is asserted by check_route_shape.
     active = sorted(rid for rid, r in man["routes"].items() if r["status"] == "active")
-    want = 3 if STAGES.index(rep.stage) >= STAGES.index("3") else 1
+    want = 1
     rep.add("active-route-count", "fail", len(active) == want,
             "%d active route(s), expected %d: %s" % (len(active), want, ", ".join(active) or "none"))
 
@@ -745,7 +746,9 @@ def check_route_shape(rep: Report, man: dict):
                 if s2["page"] in hidden:
                     problems.append("%s routes through retired page %r" % (rid, s2["page"]))
 
-    expected_active = ["full", "interview-sprint", "job-ready"] if r3 else ["full"]
+    # 2026-11-24: the portal became a single-path learning platform; Interview
+    # Sprint and Job-Ready were removed, so every stage expects Full alone.
+    expected_active = ["full"]
     active = sorted(rid for rid, v in routes.items() if v["status"] == "active")
     if active != expected_active:
         problems.append("active routes %s, expected %s" % (active, expected_active))
@@ -771,7 +774,7 @@ def check_route_shape(rep: Report, man: dict):
         if r3 and rid != "full" and steps and steps[0] != "beginner-basics":
             problems.append("%s starts with %r, expected beginner-basics" % (rid, steps[0]))
         # Release 4 sizes; the exact order is enforced against routes-focus.json above.
-        want_size = {"full": 42, "interview-sprint": 24, "job-ready": 16}.get(rid)
+        want_size = {"full": 42}.get(rid)
         if r3 and want_size is not None and len(steps) != want_size:
             problems.append("%s has %d steps, expected %d" % (rid, len(steps), want_size))
 
@@ -1367,6 +1370,17 @@ DRILL_PAGE = "interview-prep/03-agents-mcp.html"
 DRILL_ANCHOR = "middleware-identity-interview"
 
 
+def check_review_in_sync(rep: Report):
+    """review.html is generated from the topic pages' "Check yourself" questions
+    and Memory hook boxes by tools/make-review.py. A topic edit that is not
+    followed by a regeneration would leave the review cards stale."""
+    proc = subprocess.run([sys.executable, os.path.join(ROOT, "tools", "make-review.py"), "--check"],
+                          capture_output=True, text=True, encoding="utf-8")
+    msg = (proc.stdout or proc.stderr or "").strip().splitlines()
+    rep.add("review-in-sync", "fail", proc.returncode == 0,
+            msg[-1] if msg else "make-review.py --check produced no output")
+
+
 def check_job_ready_insertion(rep: Report, man: dict):
     """Release 3.1 put mcp-module into Job-Ready. Release 4 rebuilt every route
     (see routes-focus.json, enforced by route-shape); what survives of the 3.1
@@ -1530,9 +1544,12 @@ def check_rewritten_pages(rep: Report, pages: list[str]):
         have = set(re.findall(r'<h2 id="([^"]+)"', src))
         # Layered pages (Level 1/2/3 banners, the beginner-first format adopted
         # on 2026-11-23) fold "Without the technology" into "What breaks now".
+        # Since 2026-11-24 they may also drop "State and data flow" where the
+        # table was filler (e.g. LangChain, Production): a learning page keeps
+        # only sections that teach something.
         layered = 'class="level-head"' in src
         for sid, title in REWRITE_SECTIONS:
-            if layered and sid == "without":
+            if layered and sid in ("without", "state"):
                 continue
             if sid not in have:
                 missing_sec.append("%s: no <h2 id=\"%s\"> (%s)" % (rel, sid, title))
@@ -1616,6 +1633,7 @@ def main() -> int:
     check_js(rep)
     check_python_snippets(rep, pages)
     check_rewritten_pages(rep, pages)
+    check_review_in_sync(rep)
     check_baseline(rep, man)
     check_tests(rep, args.skip_tests)
 

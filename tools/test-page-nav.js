@@ -208,7 +208,15 @@ section("10 · Invalid and draft routes");
   eq("and is not resolvable",
     M.resolveRoute({ route: "sprint" }, null, "embeddings").source, "invalid");
   eq("an active route IS resolvable",
-    M.resolveRoute({ route: "interview-sprint" }, null, "beginner-basics").source, "url");
+    M.resolveRoute({ route: "full" }, null, "embeddings").source, "url");
+  // 2026-11-24: Interview Sprint and Job-Ready were removed. Old links and
+  // stale storage must degrade safely, never resolve.
+  ["interview-sprint", "job-ready"].forEach((gone) => {
+    eq("removed route " + gone + " in the URL is invalid",
+      M.resolveRoute({ route: gone }, null, "embeddings").source, "invalid");
+    eq("removed route " + gone + " left in storage is ignored",
+      M.resolveRoute({}, gone, "embeddings").source, "none");
+  });
 
   const hostile = nav("embeddings", { route: "<img src=x onerror=alert(1)>" });
   eq("hostile value still resolves as invalid", hostile.state, "2");
@@ -640,7 +648,7 @@ section("16 · Storage lifecycle");
   eq("an unregistered route writes nothing", st.getItem("gp.route"), null);
   st = fakeStorage();
   run("beginner-basics", "?route=interview-sprint", st);
-  eq("a newly activated route is persisted", st.getItem("gp.route"), "interview-sprint");
+  eq("a removed route is never persisted", st.getItem("gp.route"), null);
 
   // 3 · a failed render writes nothing
   st = fakeStorage();
@@ -980,31 +988,26 @@ section("19 · Stage 2d parity sweep - all 150 registered pages");
 }
 
 /* ===================================================================== */
-section("20 · Release 3 - three active routes");
+section("20 · One active route (Full)");
 {
   const R = CURRICULUM.routes;
   const active = Object.keys(R).filter((k) => R[k].status === "active").sort();
-  eq("exactly three active routes", active, ["full", "interview-sprint", "job-ready"]);
+  eq("exactly one active route", active, ["full"]);
   eq("Full opens with Foundations then Neural Networks",
     R.full.steps.slice(0, 2).map((s) => s.page), ["llm-foundations", "genai-g0"]);
-  // Release 4 sizes; the exact order is pinned by baselines/routes-focus.json (section 22)
+  // Release 4 size; the exact order is pinned by baselines/routes-focus.json (section 22)
   eq("Full has 42 steps", R.full.steps.length, 42);
-  eq("Interview Sprint has 24 steps", R["interview-sprint"].steps.length, 24);
-  eq("Job-Ready has 16 steps", R["job-ready"].steps.length, 16);
-  ok("Sprint and Job-Ready start at Basics",
-    ["interview-sprint", "job-ready"].every((r) => R[r].steps[0].page === "beginner-basics"));
   ok("no active route carries section assignments",
     active.every((r) => R[r].steps.every((s) => !("sections" in s))));
   ok("no active route repeats a page", active.every((r) => {
     const p = R[r].steps.map((s) => s.page);
     return p.length === new Set(p).size;
   }));
-  ok("all three finish at study-plan",
+  ok("the route finishes at study-plan",
     active.every((r) => R[r].finish.page === "study-plan"));
-  ok("Basics is a numbered step on Sprint and Job-Ready, a preflight only on Full",
+  ok("Basics is a preflight on Full, not a numbered step",
     R.full.preflight[0] === "beginner-basics" &&
-    !R.full.steps.some((s) => s.page === "beginner-basics") &&
-    R["interview-sprint"].preflight.length === 0 && R["job-ready"].preflight.length === 0);
+    !R.full.steps.some((s) => s.page === "beginner-basics"));
 
   // first / middle / final step of every route
   active.forEach((rid) => {
@@ -1044,61 +1047,33 @@ section("20 · Release 3 - three active routes");
       qs(byRole(ctl, "route-start").href).get("route") === rid);
   });
 
-  // Basics: numbered step 01 on the two shorter routes, preflight on Full
+  // Basics: preflight on Full
   eq("Basics is state 9 on Full", nav("beginner-basics", { route: "full" }).state, "9");
-  ["interview-sprint", "job-ready"].forEach((rid) => {
-    const m = nav("beginner-basics", { route: rid });
-    eq("Basics is step 01 on " + rid, [m.state, m.stepIndex], ["3", 1]);
-  });
 }
 
-section("21 · Release 3 - switching, cursors and leakage");
+section("21 · Removed routes, cursors and leakage");
 {
   const R = CURRICULUM.routes;
-  // the URL wins over storage on every switch
-  [["full", "interview-sprint"], ["interview-sprint", "job-ready"], ["job-ready", "full"]]
-    .forEach(([from, to]) => {
-      const page = R[to].steps[1].page;
-      const r = M.resolveRoute({ route: to }, from, page);
-      eq(from + " -> " + to + ": URL is authoritative", [r.id, r.source], [to, "url"]);
-      const m = nav(page, { route: to }, from);
-      eq(from + " -> " + to + ": navigation comes from the new route", m.routeId, to);
-      eq(from + " -> " + to + ": step index is the new route's",
-        m.stepIndex, R[to].steps.findIndex((s) => s.page === page) + 1);
-      ok(from + " -> " + to + ": links carry the new route",
-        (m.actions || []).every((a) => qs(a.href).get("route") === to));
-    });
+  // old bookmarks to the removed routes resolve as invalid, with no prev/next
+  ["interview-sprint", "job-ready"].forEach((gone) => {
+    const m = nav("embeddings", { route: gone });
+    eq("route=" + gone + " is invalid", m.state, "2");
+    ok("route=" + gone + " offers no prev/next",
+      !(m.actions || []).some((a) => a.role === "prev" || a.role === "next"));
+  });
+  // a stale stored removed route does not hydrate a route onto a page
+  ["interview-sprint", "job-ready"].forEach((gone) => {
+    const m = nav("embeddings", {}, gone);
+    ok("stored " + gone + " gives no route context", !m.routeId);
+  });
 
-  // a cursor from the previous route cannot survive the switch
-  const strandedPage = "transformers";                     // Full step 03, not in Sprint
-  ok("the stranded page is not in Interview Sprint",
-    !R["interview-sprint"].steps.some((s) => s.page === strandedPage));
-  const sprintFirst = R["interview-sprint"].steps[3].page;
-  const carried = nav(sprintFirst, { route: "interview-sprint", resume: strandedPage });
-  eq("a foreign cursor is rejected and the page resolves in the new route",
-    carried.state, "3");
+  // a cursor naming a page outside the route cannot survive
+  const offRoute = "py-p5";
+  const carried = nav(R.full.steps[3].page, { route: "full", resume: offRoute });
+  eq("a foreign cursor is rejected and the page resolves in Full", carried.state, "3");
   ok("the foreign cursor is scheduled for removal", carried.stripResume === true);
   ok("no generated link carries the foreign cursor",
     (carried.actions || []).every((a) => !qs(a.href).has("resume")));
-
-  // detour and return inside a route other than Full
-  const bank = "genai-g4";
-  const inSprint = R["interview-sprint"].steps.map((s) => s.page);
-  if (inSprint.includes(bank)) {
-    const m = nav(bank, { route: "interview-sprint" });
-    const sec = (m.secondary || []).find((a) => a.role === "collection-next");
-    if (sec) {
-      eq("a Sprint bank page creates its own cursor",
-        qs(sec.href).get("resume"), bank);
-      eq("and keeps the Sprint route", qs(sec.href).get("route"), "interview-sprint");
-      const away = nav(sec.pageId, { route: "interview-sprint", resume: bank });
-      eq("the detour resolves as 4a inside Sprint", away.state, "4a");
-      const back = byRole(away, "route-return");
-      eq("returning targets the step after the cursor",
-        back.pageId, inSprint[inSprint.indexOf(bank) + 1]);
-    }
-  }
-  ok("Sprint detour path exercised", true);
 
   // invalid and unknown routes
   ["nonsense", "sprint", ""].forEach((bad) => {
@@ -1108,7 +1083,7 @@ section("21 · Release 3 - switching, cursors and leakage");
 
   // No active route leaks onto the off-route Python bank. (The DSA and
   // Machine Learning tracks this used to check were deleted on 2026-11-23.)
-  ["interview-sprint", "job-ready", "full"].forEach((rid) => {
+  ["full"].forEach((rid) => {
     ["py-p5", "py-p12"].forEach((pid) => {
       const bare = nav(pid, {}, rid);
       ok(rid + " does not hydrate onto " + pid,
@@ -1122,18 +1097,15 @@ section("21 · Release 3 - switching, cursors and leakage");
     });
   });
   eq("optional-track pages never receive route context",
-    new URL(SYN.linkToPage("syn-optional", { routeId: "interview-sprint" })).search, "");
+    new URL(SYN.linkToPage("syn-optional", { routeId: "full" })).search, "");
 }
 
 /* ===================================================================== */
-section("22 · Release 4 - the focused routes and MCP's place in them");
+section("22 · Release 4 - the focused route and MCP's place in it");
 {
-  /* Release 3.1 inserted mcp-module into Job-Ready between ta-l14 and
-     langgraph-asyncio (fixture baselines/job-ready-r3.json). Release 4 rebuilt
-     every route and both neighbours left the curriculum path, so that premise
-     no longer exists. The approved order now lives in baselines/routes-focus.json;
-     this section holds the live manifest and the runtime to it, with MCP as the
-     probe that was the subject of the old insertion test. */
+  /* The approved order lives in baselines/routes-focus.json; this section
+     holds the live manifest and the runtime to it, with MCP as the probe.
+     Since 2026-11-24 only the Full route exists. */
   const fs = require("fs");
   const R = CURRICULUM.routes;
   const focus = JSON.parse(fs.readFileSync(
@@ -1145,43 +1117,29 @@ section("22 · Release 4 - the focused routes and MCP's place in them");
     eq(rid + " matches routes-focus.json", R[rid].steps.map((s) => s.page), focus[rid]);
   });
 
-  const jr = focus["job-ready"];
-  const at = jr.indexOf("mcp-module");
-  eq("mcp-module appears once in Job-Ready", jr.filter((p) => p === "mcp-module").length, 1);
+  const full = focus.full;
+  const at = full.indexOf("mcp-module");
+  eq("mcp-module appears once in Full", full.filter((p) => p === "mcp-module").length, 1);
   eq("mcp-module sits between Agentic AI and Memory",
-    jr.slice(at - 1, at + 2), ["agentic-ai", "mcp-module", "memory"]);
-  eq("mcp-module is Job-Ready step 8", at + 1, 8);
+    full.slice(at - 1, at + 2), ["agentic-ai", "mcp-module", "memory"]);
 
   // navigation around it
-  const m = nav("mcp-module", { route: "job-ready" });
+  const m = nav("mcp-module", { route: "full" });
   eq("it is an ordinary numbered step", m.state, "3");
-  eq("its position is 8 of 16", [m.stepIndex, m.stepCount], [8, 16]);
+  eq("mcp-module under Full is step 11 of 42", [m.stepIndex, m.stepCount], [11, 42]);
   eq("Previous is agentic-ai", byRole(m, "prev").pageId, "agentic-ai");
   eq("Continue is memory", byRole(m, "next").pageId, "memory");
   const links = (m.actions || []).concat(m.secondary || []);
-  ok("every generated link keeps route=job-ready",
-    links.length > 0 && links.every((a) => qs(a.href).get("route") === "job-ready"),
+  ok("every generated link keeps route=full",
+    links.length > 0 && links.every((a) => qs(a.href).get("route") === "full"),
     links.map((a) => a.href).join(" "));
 
   // its neighbours agree, from both sides
   eq("agentic-ai continues into mcp-module",
-    byRole(nav("agentic-ai", { route: "job-ready" }), "next").pageId, "mcp-module");
+    byRole(nav("agentic-ai", { route: "full" }), "next").pageId, "mcp-module");
   eq("memory comes back to mcp-module",
-    byRole(nav("memory", { route: "job-ready" }), "prev").pageId, "mcp-module");
-  eq("agentic-ai is step 7 of 16",
-    [nav("agentic-ai", { route: "job-ready" }).stepIndex,
-      nav("agentic-ai", { route: "job-ready" }).stepCount], [7, 16]);
-
-  // the same page under the other two routes reports their own positions
-  eq("mcp-module under Sprint is step 9 of 24",
-    [nav("mcp-module", { route: "interview-sprint" }).stepIndex,
-      nav("mcp-module", { route: "interview-sprint" }).stepCount], [9, 24]);
-  eq("mcp-module under Full is step 11 of 42",
-    [nav("mcp-module", { route: "full" }).stepIndex,
-      nav("mcp-module", { route: "full" }).stepCount], [11, 42]);
-  eq("those positions match the fixture",
-    [focus["interview-sprint"].indexOf("mcp-module") + 1, focus.full.indexOf("mcp-module") + 1],
-    [9, 11]);
+    byRole(nav("memory", { route: "full" }), "prev").pageId, "mcp-module");
+  eq("that position matches the fixture", at + 1, 11);
 
   // every step of every route resolves to its own numbered position
   Object.keys(focus).forEach((rid) => {

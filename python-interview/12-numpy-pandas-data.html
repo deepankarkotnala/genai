@@ -34,7 +34,7 @@
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
 <script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20261123b" rel="stylesheet"/>
+<link href="../assets/styles.css?v=20261124a" rel="stylesheet"/>
 <link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <!-- Release 2 runtime. The manifest loads first, the renderer second; classic
@@ -42,9 +42,9 @@
      exists and the manifest is defined before the renderer runs. The authored
      links inside [data-page-nav] stay in the source and are replaced only after
      page, route and fragment have all resolved. -->
-<script defer src="../assets/curriculum.js?v=20261123c"></script>
-<script defer src="../assets/page-nav.js?v=20261123c"></script>
-<link href="../assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+<script defer src="../assets/curriculum.js?v=20261124a"></script>
+<script defer src="../assets/page-nav.js?v=20261124a"></script>
+<link href="../assets/ir-theme.css?v=20261124a" rel="stylesheet"/>
 </head>
 <body data-curriculum-id="py-p12" data-page="pyint-numpy-pandas-data" data-prep-section="interview">
 <div class="app">
@@ -109,11 +109,12 @@ out = np.where(arr &gt; 0, arr * 2, 0)</code></pre></div><div class="prep-say"><
 <div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p><code>loc</code> selects by label and its slices are inclusive of the end point. <code>iloc</code> selects by integer position and its slices exclude the end, like normal Python. Confusion arises when the index is itself integers, because then a label looks like a position - which is exactly why explicit <code>loc</code> or <code>iloc</code> beats bare bracket indexing.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>loc is label-based with an inclusive end; iloc is position-based with an exclusive end. Always be explicit about which you mean.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What is chained indexing and why does it warn?</div></div></details>
 <details class="prep-question" data-question="what is the settingwithcopywarning and how do you fix it?" data-tags="pandas gotcha high-frequency">
 <summary><span class="prep-q-no">08</span><span class="prep-q-title">What is the SettingWithCopyWarning and how do you fix it?<span class="prep-tags"><span>pandas</span><span>gotcha</span><span>high-frequency</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
-<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>It means you assigned to something that might be a view of another DataFrame, so Pandas cannot tell whether the write will land where you expect. It is caused by chained indexing like <code>df[df.a > 0]["b"] = 1</code>. Fix it by doing the selection and assignment in one <code>loc</code> call, or by taking an explicit <code>.copy()</code> when you meant a new frame.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>setting_copy.py</span><button class="copy-btn">Copy</button></div><pre><code># warns, may silently do nothing
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>It means you assigned to something that might be a view of another DataFrame, so Pandas cannot tell whether the write will land where you expect. It is caused by chained indexing like <code>df[df.a > 0]["b"] = 1</code>. Fix it by doing the selection and assignment in one <code>loc</code> call, or by taking an explicit <code>.copy()</code> when you meant a new frame.</p><p>Version note: pandas 3.0 makes Copy-on-Write the default. The warning is gone, and a chained assignment like the one above <em>never</em> writes to the original - it always modifies a temporary copy. The fix is the same single <code>loc</code> call on the original frame.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>setting_copy.py</span><button class="copy-btn">Copy</button></div><pre><code># pandas 2.x: warns, may silently do nothing
+# pandas 3.0 (Copy-on-Write): never updates df
 df[df.score &gt; 0][&quot;flag&quot;] = True
 
 # correct
-df.loc[df.score &gt; 0, &quot;flag&quot;] = True</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>It comes from chained indexing where the write may hit a temporary copy. Use a single <code>loc</code> assignment, or copy explicitly.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Why can the chained version silently do nothing?</div></div></details>
+df.loc[df.score &gt; 0, &quot;flag&quot;] = True</code></pre></div><div class="prep-say"><strong>Say this in 30 seconds</strong><p>It comes from chained indexing where the write may hit a temporary copy. Use a single <code>loc</code> assignment, or copy explicitly. In pandas 3.0 Copy-on-Write is the default, so the chained write never reaches the original at all.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Why can the chained version silently do nothing?</div></div></details>
 <details class="prep-question" data-question="how does groupby work?" data-tags="pandas groupby high-frequency">
 <summary><span class="prep-q-no">09</span><span class="prep-q-title">How does <code>groupby</code> work?<span class="prep-tags"><span>pandas</span><span>groupby</span><span>high-frequency</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Split, apply, combine: rows are split into groups by key, a function runs on each group, and the results are stitched back together. <code>agg</code> reduces each group to one row, <code>transform</code> returns a value per original row - useful for group means broadcast back - and <code>filter</code> keeps or drops whole groups. Knowing which of the three you need is the actual skill.</p><div class="code-block" data-reveal=""><div class="code-head"><span class="lang"><span class="dots"><i></i><i></i><i></i></span>groupby.py</span><button class="copy-btn">Copy</button></div><pre><code>df.groupby(&quot;dept&quot;)[&quot;salary&quot;].agg([&quot;mean&quot;, &quot;count&quot;])
@@ -173,9 +174,9 @@ df[&quot;band&quot;] = np.where(df[&quot;score&quot;] &gt; 8, &quot;high&quot;, 
 </div>
 </div>
 <script src="../assets/app.js?v=20261123b"></script>
-<script src="../assets/sitenav.js?v=20261123b"></script>
+<script src="../assets/sitenav.js?v=20261124a"></script>
 <script src="../assets/enhance.js?v=20260925c"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
-<script src="../assets/interview-prep.js?v=20260925a"></script>
+<script src="../assets/interview-prep.js?v=20261124a"></script>
 </body>
 </html>

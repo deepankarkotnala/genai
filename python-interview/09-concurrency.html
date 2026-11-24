@@ -34,7 +34,7 @@
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
 <script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20261123b" rel="stylesheet"/>
+<link href="../assets/styles.css?v=20261124a" rel="stylesheet"/>
 <link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <!-- Release 2 runtime. The manifest loads first, the renderer second; classic
@@ -42,9 +42,9 @@
      exists and the manifest is defined before the renderer runs. The authored
      links inside [data-page-nav] stay in the source and are replaced only after
      page, route and fragment have all resolved. -->
-<script defer src="../assets/curriculum.js?v=20261123c"></script>
-<script defer src="../assets/page-nav.js?v=20261123c"></script>
-<link href="../assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+<script defer src="../assets/curriculum.js?v=20261124a"></script>
+<script defer src="../assets/page-nav.js?v=20261124a"></script>
+<link href="../assets/ir-theme.css?v=20261124a" rel="stylesheet"/>
 </head>
 <body data-curriculum-id="py-p9" data-page="pyint-concurrency" data-prep-section="interview">
 <div class="app">
@@ -95,7 +95,7 @@ with ProcessPoolExecutor() as pool:
 <div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Concurrency is dealing with many things at once by interleaving them - progress is made on several tasks, but not necessarily at the same instant. Parallelism is doing many things at literally the same instant on multiple cores. Asyncio gives concurrency on one thread; multiprocessing gives real parallelism.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Concurrency interleaves tasks, parallelism runs them simultaneously on multiple cores. Asyncio is concurrency; multiprocessing is parallelism.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> Can you have parallelism without concurrency?</div></div></details>
 <details class="prep-question" data-question="what is free-threaded python, and does it remove the gil?" data-tags="gil modern python senior">
 <summary><span class="prep-q-no">04</span><span class="prep-q-title">What is free-threaded Python, and does it remove the GIL?<span class="prep-tags"><span>gil</span><span>modern python</span><span>senior</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
-<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>PEP 703 added an experimental build of CPython, from 3.13, that runs without the GIL, so threads can execute Python bytecode in parallel. It is being rolled out gradually because removing the GIL costs single-threaded speed and requires C extensions to be made thread-safe. Knowing it exists shows you follow the language; assuming it is the default in production does not.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>An experimental no-GIL build from Python 3.13 under PEP 703. Real, but still opt-in, and extensions must be made thread-safe.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What would you have to change in your code if the GIL disappeared?</div></div></details>
+<div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>PEP 703 added a build of CPython that runs without the GIL, so threads can execute Python bytecode in parallel. It arrived as experimental in 3.13, and from 3.14 it is officially supported (PEP 779) - but it is still a separate build you install on purpose (<code>python3.14t</code>), not the default interpreter. It is being rolled out gradually because removing the GIL costs some single-threaded speed and requires C extensions to be made thread-safe. Knowing it exists shows you follow the language; assuming it is the default in production does not.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>A no-GIL build of CPython under PEP 703: experimental in 3.13, officially supported from 3.14. Real, but still a separate opt-in build, and extensions must be made thread-safe.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What would you have to change in your code if the GIL disappeared?</div></div></details>
 <details class="prep-question" data-question="why does multiprocessing help where threading does not?" data-tags="multiprocessing gil">
 <summary><span class="prep-q-no">05</span><span class="prep-q-title">Why does multiprocessing help where threading does not?<span class="prep-tags"><span>multiprocessing</span><span>gil</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer"><div class="prep-answer-label">Simple answer</div><p>Each process is a separate Python interpreter with its own GIL and its own memory, so they genuinely run on different cores at the same time. The cost is that starting processes is slow and nothing is shared - every argument and result must be pickled and copied between them. That overhead is why multiprocessing loses on small tasks and wins on big ones.</p><div class="prep-say"><strong>Say this in 30 seconds</strong><p>Each process has its own interpreter and GIL, so they use real cores. The cost is startup time and pickling data between them.</p></div><div class="prep-follow"><strong>Likely follow-up:</strong> What kinds of objects cannot be sent to a worker process?</div></div></details>
@@ -186,9 +186,9 @@ if __name__ == &quot;__main__&quot;:
 </div>
 </div>
 <script src="../assets/app.js?v=20261123b"></script>
-<script src="../assets/sitenav.js?v=20261123b"></script>
+<script src="../assets/sitenav.js?v=20261124a"></script>
 <script src="../assets/enhance.js?v=20260925c"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
-<script src="../assets/interview-prep.js?v=20260925a"></script>
+<script src="../assets/interview-prep.js?v=20261124a"></script>
 </body>
 </html>

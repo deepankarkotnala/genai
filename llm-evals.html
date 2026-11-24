@@ -42,7 +42,7 @@
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
 <script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link rel="stylesheet" href="assets/styles.css?v=20261123b">
+<link rel="stylesheet" href="assets/styles.css?v=20261124a">
 <link href="assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <style>
@@ -68,9 +68,9 @@
      exists and the manifest is defined before the renderer runs. The authored
      links inside [data-page-nav] stay in the source and are replaced only after
      page, route and fragment have all resolved. -->
-<script defer src="assets/curriculum.js?v=20261123c"></script>
-<script defer src="assets/page-nav.js?v=20261123c"></script>
-<link href="assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+<script defer src="assets/curriculum.js?v=20261124a"></script>
+<script defer src="assets/page-nav.js?v=20261124a"></script>
+<link href="assets/ir-theme.css?v=20261124a" rel="stylesheet"/>
 </head>
 <body data-curriculum-id="llm-evals" data-page="llm-evals" data-no-concept-lab>
 <div class="app">
@@ -113,6 +113,24 @@ test a function, and they want to hear what you do instead.</p>
 <span class="pill blue">⏱ 15–30 min</span>
 <span class="pill">Difficulty · Interview essentials</span>
 <span class="pill purple">Prereq · 05 RAG and 13 Guardrails</span>
+</div>
+
+<p class="bd-choose">Everything on this page comes back to five ideas.</p>
+<ol>
+<li><b>Check properties, not exact strings,</b> on a fixed golden set.</li>
+<li><b>Rules for anything countable; an LLM judge only for fuzzy qualities,</b> calibrated against people.</li>
+<li><b>Score RAG in two halves:</b> retrieval (context precision and recall) and generation (faithfulness and relevance).</li>
+<li><b>For agents, score the path</b> as well as the answer.</li>
+<li><b>Evals are a gate in CI,</b> and every production failure becomes a new case.</li>
+</ol>
+
+<div class="callout key memory-hook" id="memory-hook">
+<div class="c-ico">🧠</div>
+<div class="c-body"><div class="c-title">Memory hook</div>
+<p><b>First, Long, Mine, Moody</b> - the four biases of an LLM judge: position, verbosity,
+self-preference and inconsistency. Picture a tired examiner who favours the first essay in the
+pile, the longest one, the ones in their own handwriting, and marks differently depending on
+mood.</p></div>
 </div>
 
 <h2 id="idea">1 · The idea in one minute</h2>
@@ -203,13 +221,16 @@ and scores.</p>
 <tr><td>Position bias</td><td>Prefers whichever answer it saw first in a side-by-side comparison</td><td>Run both orders and average</td></tr>
 <tr><td>Verbosity bias</td><td>Prefers longer answers</td><td>A rubric that rewards correctness and brevity explicitly</td></tr>
 <tr><td>Self-preference</td><td>Rates answers from its own model family higher</td><td>Use a judge from a different model family</td></tr>
-<tr><td>Inconsistency</td><td>Gives different scores to the same answer on different runs</td><td>Temperature 0, structured output with a reason, a written rubric</td></tr>
+<tr><td>Inconsistency</td><td>Gives different scores to the same answer on different runs</td><td>Low temperature where the model allows it (0 reduces variation but does not guarantee identical output, and some reasoning models do not accept it), structured output with a reason, a written rubric, and averaging several runs</td></tr>
 </tbody>
 </table>
 </div>
-<p>Before trusting a judge, <b>calibrate it</b>: score about twenty cases by hand, have the
-judge score the same cases, and measure how often they agree. Version the rubric with the
-results, because changing the rubric moves every score.</p>
+<p>Before trusting a judge, <b>calibrate it</b>: score 100 to 200 cases by hand, have the
+judge score the same cases, and measure agreement with Cohen's kappa, not raw agreement.
+Twenty cases is too few - at 85% agreement the margin of error is about ±16 points - and
+raw agreement flatters a judge when most answers are good, because "pass" is right most of
+the time by default. Version the rubric with the results, because changing the rubric
+moves every score.</p>
 
 <h2 id="failures">3 · How it fails, and the fix</h2>
 <div class="table-wrap">
@@ -225,6 +246,15 @@ results, because changing the rubric moves every score.</p>
 </tbody>
 </table>
 </div>
+
+<h3>Check yourself</h3>
+<p>Answer each one out loud before you open it. Recalling an answer is what makes it
+stick; re-reading it is not.</p>
+<details class="recall"><summary><span class="q-ico">Q</span> In the essay-exam picture, what are the marking scheme, the same questions every year, and the second examiner? <span class="chev">›</span></summary><div class="a">The rubric, the golden dataset, and human review that spot-checks the marking.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Name the four judge biases, and one counter for each. <span class="chev">›</span></summary><div class="a">Position: run both orders and average. Verbosity: a rubric that rewards correctness and brevity. Self-preference: a judge from a different model family. Inconsistency: low temperature where allowed, structured output with a reason, and averaging several runs.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> How do you calibrate a judge before trusting it? <span class="chev">›</span></summary><div class="a">Label 100 to 200 cases by hand, have the judge score the same cases, and measure agreement with Cohen's kappa. Twenty cases is too few - about ±16 points of error - and raw agreement flatters a judge when most answers are good.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Faithfulness is high but context recall is low. What is happening? <span class="chev">›</span></summary><div class="a">The app is faithfully summarising the wrong documents. Generation is fine; retrieval did not find what the answer needed.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> A tone tweak dropped refusals on unanswerable questions from 12% to 2%. Why did nobody notice, and what is the fix? <span class="chev">›</span></summary><div class="a">Only three examples were checked by hand, and none was unanswerable. The fix is a golden set that includes unanswerable questions, run on every change.</div></details>
 
 <h2 id="say">4 · Say this in the interview</h2>
 <div class="callout key">
@@ -246,13 +276,15 @@ judge scores, and every production failure becomes a new test case."</p></div>
 <details class="recall"><summary><span class="q-ico">Q</span> What is a golden dataset, and how do you build one? <span class="chev">›</span></summary><div class="a">A curated, reviewed set of representative inputs with expected outcomes, used to score every version the same way. Start with 30 to 50 cases from real questions and domain experts, include hard cases (unanswerable, ambiguous, attacks), and add every production failure as a new case.</div></details>
 <details class="recall"><summary><span class="q-ico">Q</span> What is the difference between offline and online evaluation? <span class="chev">›</span></summary><div class="a">Offline runs the golden set before deployment and gates releases. Online measures live traffic - user feedback, escalations, judge scores on a sample - and catches drift and new kinds of failure. You need both: offline makes shipping safe, online shows whether you are testing the right things.</div></details>
 <details class="recall"><summary><span class="q-ico">Q</span> How do you evaluate a RAG system? <span class="chev">›</span></summary><div class="a">Separate the two halves. Retrieval: context precision and context recall against known supporting documents. Generation: faithfulness to the retrieved text and relevance to the question, plus citation correctness. That tells you whether a failure is a retrieval problem or a generation problem.</div></details>
-<details class="recall"><summary><span class="q-ico">Q</span> What is LLM-as-judge, and what are its risks? <span class="chev">›</span></summary><div class="a">A second LLM scores outputs against a rubric and gives a score with a reason. Risks: position bias, verbosity bias, self-preference and inconsistent scores. Counter them with a clear rubric, temperature 0, structured output, both orders in pairwise comparisons, and calibration against human-labelled examples.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What is LLM-as-judge, and what are its risks? <span class="chev">›</span></summary><div class="a">A second LLM scores outputs against a rubric and gives a score with a reason. Risks: position bias, verbosity bias, self-preference and inconsistent scores. Counter them with a clear rubric, low temperature (which reduces but does not remove variation), structured output, both orders in pairwise comparisons, and calibration against 100-200 human-labelled examples measured with Cohen's kappa.</div></details>
 <details class="recall"><summary><span class="q-ico">Q</span> How is evaluating an agent different? <span class="chev">›</span></summary><div class="a">You score the trajectory as well as the final answer: task completion, correct tool choice and arguments, number of steps, and no forbidden actions. A correct answer reached through a wrong or unsafe path must fail.</div></details>
 <details class="recall"><summary><span class="q-ico">Q</span> A new model raises your average score. Do you ship it? <span class="chev">›</span></summary><div class="a">Not on the average alone. Check the worst cases and each failure category, especially safety and factual errors, and compare latency and cost. A higher mean can hide a new critical failure.</div></details>
 <details class="recall"><summary><span class="q-ico">Q</span> How do evals fit into CI/CD? <span class="chev">›</span></summary><div class="a">Treat a prompt or model change like a code change. The golden set runs automatically in the pipeline, results are compared with the last released version, and the build fails if a key metric drops below its threshold. Every result records the code, prompt and rubric version.</div></details>
 <details class="recall"><summary><span class="q-ico">Q</span> Give a real example of an LLM app failing without proper evaluation. <span class="chev">›</span></summary><div class="a">Air Canada's chatbot invented a refund policy, and in 2024 a Canadian tribunal held the airline responsible for it. In 2023 two New York lawyers were sanctioned for filing ChatGPT-invented case citations. Grounding checks and evaluation on such cases would have caught both.</div></details>
 
 <h2 id="short">6 · In short</h2>
+<p class="bd-choose">The five ideas from the top of the page. Try to say each one before
+you read it.</p>
 <ol>
 <li><b>Check properties, not exact strings,</b> on a fixed golden set.</li>
 <li><b>Rules for anything countable; an LLM judge only for fuzzy qualities,</b> calibrated against people.</li>
@@ -260,6 +292,7 @@ judge scores, and every production failure becomes a new test case."</p></div>
 <li><b>For agents, score the path</b> as well as the answer.</li>
 <li><b>Evals are a gate in CI,</b> and every production failure becomes a new case.</li>
 </ol>
+<p class="review-link">🔁 <a href="review.html?topic=llm-evals">Review this topic's cards</a> - tomorrow, in 3 days, in a week and in 3 weeks.</p>
 <p><b>Next:</b> <a href="llmops.html">15 · LLMOps &amp; Observability</a> - running all of
 this after launch: versions, traces, cost and feedback.</p>
 
@@ -275,7 +308,7 @@ this after launch: versions, traces, cost and feedback.</p>
 </div>
 
 <script src="assets/app.js?v=20261123b"></script>
-<script src="assets/sitenav.js?v=20261123b"></script>
+<script src="assets/sitenav.js?v=20261124a"></script>
 <script src="assets/enhance.js?v=20260925c"></script>
 <script src="assets/genai-motion.js?v=20260728a"></script>
 <script src="assets/section-nav.js?v=20260731b"></script>

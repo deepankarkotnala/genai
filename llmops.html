@@ -42,7 +42,7 @@
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
 <script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link rel="stylesheet" href="assets/styles.css?v=20261123b">
+<link rel="stylesheet" href="assets/styles.css?v=20261124a">
 <link href="assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <style>
@@ -80,9 +80,9 @@
      exists and the manifest is defined before the renderer runs. The authored
      links inside [data-page-nav] stay in the source and are replaced only after
      page, route and fragment have all resolved. -->
-<script defer src="assets/curriculum.js?v=20261123c"></script>
-<script defer src="assets/page-nav.js?v=20261123c"></script>
-<link href="assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+<script defer src="assets/curriculum.js?v=20261124a"></script>
+<script defer src="assets/page-nav.js?v=20261124a"></script>
+<link href="assets/ir-theme.css?v=20261124a" rel="stylesheet"/>
 </head>
 <body data-curriculum-id="llmops" data-page="llmops" data-no-concept-lab>
 <div class="app">
@@ -126,6 +126,23 @@ most LLM failures are silent - the app keeps answering, just worse.</p>
 <span class="pill blue">⏱ 15–30 min</span>
 <span class="pill">Difficulty · Interview essentials</span>
 <span class="pill purple">Prereq · 14 LLM Evals</span>
+</div>
+
+<p class="bd-choose">Everything on this page comes back to five ideas.</p>
+<ol>
+<li><b>A prompt is code:</b> version it, review it, and treat an edit as a deploy.</li>
+<li><b>Pin exact model versions,</b> and stamp a configuration id on every response.</li>
+<li><b>Gate every change</b> with the golden set in CI.</li>
+<li><b>Trace every request:</b> spans, tokens, cost, latency, and quality scores that can arrive later.</li>
+<li><b>Mask personal data before it is stored,</b> and turn every real failure into a test case.</li>
+</ol>
+
+<div class="callout key memory-hook" id="memory-hook">
+<div class="c-ico">🧠</div>
+<div class="c-body"><div class="c-title">Memory hook</div>
+<p><b>See it, pin it, price it, fix it</b> - trace every request, version the configuration,
+track cost, and feed failures back. In the restaurant chain below: the order ticket, the recipe
+version, the bill, and the complaint that becomes a new dish on the tasting menu.</p></div>
 </div>
 
 <h2 id="idea">1 · The idea in one minute</h2>
@@ -234,6 +251,15 @@ before anyone complains.</p>
 </table>
 </div>
 
+<h3>Check yourself</h3>
+<p>Answer each one out loud before you open it. Recalling an answer is what makes it
+stick; re-reading it is not.</p>
+<details class="recall"><summary><span class="q-ico">Q</span> In the restaurant chain, what are the recipe, the tasting menu, the order ticket and the complaint loop? <span class="chev">›</span></summary><div class="a">The recipe is the configuration (prompt, model, parameters and data, versioned together), the tasting menu is the golden set, the order ticket is a trace, and the complaint loop turns real failures into new test cases.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> You did not train the model. What changes your app's behaviour? <span class="chev">›</span></summary><div class="a">The prompt, the model version, its parameters such as temperature and max tokens, and the retrieval data.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Name the five objects of a tracing tool. <span class="chev">›</span></summary><div class="a">Trace (one whole request), span (one step inside it), generation (a span for a model call, with tokens and cost), score (a quality number, often added later), and session and user (which group traces together).</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> A batch job wrote 500 results but only 487 traces. What happened? <span class="chev">›</span></summary><div class="a">Tracing SDKs send data in background batches, and the program exited before the last batch was sent. Call flush before the program exits.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Which production metrics usually move before anyone complains about a prompt regression? <span class="chev">›</span></summary><div class="a">Refusal rate, citation rate, thumbs-down rate, escalations to a human, guardrail firing rate, cost per answered request, and p95 latency.</div></details>
+
 <h2 id="say">4 · Say this in the interview</h2>
 <div class="callout key">
 <div class="c-ico">🎤</div>
@@ -261,6 +287,8 @@ every real failure into a new test case."</p></div>
 <details class="recall"><summary><span class="q-ico">Q</span> What is the data-protection risk of a tracing platform? <span class="chev">›</span></summary><div class="a">Traces store full prompts and answers by default, so anything a user types - card numbers, health details - lands in the trace store. Mask personal data before it is sent, restrict who can view traces, and set a deliberate retention period.</div></details>
 
 <h2 id="short">6 · In short</h2>
+<p class="bd-choose">The five ideas from the top of the page. Try to say each one before
+you read it.</p>
 <ol>
 <li><b>A prompt is code:</b> version it, review it, and treat an edit as a deploy.</li>
 <li><b>Pin exact model versions,</b> and stamp a configuration id on every response.</li>
@@ -268,6 +296,7 @@ every real failure into a new test case."</p></div>
 <li><b>Trace every request:</b> spans, tokens, cost, latency, and quality scores that can arrive later.</li>
 <li><b>Mask personal data before it is stored,</b> and turn every real failure into a test case.</li>
 </ol>
+<p class="review-link">🔁 <a href="review.html?topic=llmops">Review this topic's cards</a> - tomorrow, in 3 days, in a week and in 3 weeks.</p>
 <p><b>Next:</b> <a href="interview-prep/index.html">the GenAI interview question bank</a> -
 practise answering out loud across every topic in this track.</p>
 
@@ -283,7 +312,7 @@ practise answering out loud across every topic in this track.</p>
 </div>
 
 <script src="assets/app.js?v=20261123b"></script>
-<script src="assets/sitenav.js?v=20261123b"></script>
+<script src="assets/sitenav.js?v=20261124a"></script>
 <script src="assets/enhance.js?v=20260925c"></script>
 <script src="assets/genai-motion.js?v=20260728a"></script>
 <script src="assets/section-nav.js?v=20260731b"></script>
