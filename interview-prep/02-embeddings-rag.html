@@ -43,7 +43,7 @@
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
 <script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20261123b" rel="stylesheet"/>
+<link href="../assets/styles.css?v=20261124a" rel="stylesheet"/>
 <link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <!-- Release 2 runtime. The manifest loads first, the renderer second; classic
@@ -51,9 +51,9 @@
      exists and the manifest is defined before the renderer runs. The authored
      links inside [data-page-nav] stay in the source and are replaced only after
      page, route and fragment have all resolved. -->
-<script defer src="../assets/curriculum.js?v=20261123c"></script>
-<script defer src="../assets/page-nav.js?v=20261123c"></script>
-<link href="../assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+<script defer src="../assets/curriculum.js?v=20261124a"></script>
+<script defer src="../assets/page-nav.js?v=20261124a"></script>
+<link href="../assets/ir-theme.css?v=20261124a" rel="stylesheet"/>
 </head>
 <body data-curriculum-id="genai-g2" data-page="prep-rag" data-prep-section="interview">
 <div class="app">
@@ -97,77 +97,77 @@
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>An embedding is a dense numerical representation learned so that items with related meaning are near one another in vector space. We use it for semantic retrieval, clustering, deduplication and recommendation. The embedding model, input formatting and domain language must match the task, and quality should be tested on real query-document pairs.</p>
 <div class="prep-say"><strong>30-second version</strong><p>An embedding converts meaning into coordinates so related items can be found by distance. Its usefulness is task- and domain-dependent.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> How would you evaluate two embedding models for an enterprise corpus?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> How would you evaluate two embedding models for an enterprise corpus?</summary><div class="a">Build a labelled set of, for example, 100–300 real user queries, each mapped to the chunks that answer it. Embed the corpus with each model and compare recall@5, recall@10 and MRR on that set, including your hard cases - acronyms, product codes, other languages. Then weigh the quality gain against vector size, price per million tokens, latency and whether you can self-host; public MTEB scores only give you the shortlist.</div></details>
 </div></details>
 <details class="prep-question" data-question="cosine similarity, dot product or euclidean distance - which should you use?" data-tags="similarity vector-search">
 <summary><span class="prep-q-no">02</span><span class="prep-q-title">Cosine similarity, dot product or Euclidean distance - which should you use?<span class="prep-tags"><span>similarity</span><span>vector-search</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>The correct metric is the one the embedding model was trained for. Cosine compares direction and ignores magnitude; dot product retains magnitude and is efficient, especially with normalized vectors; Euclidean measures geometric distance. I follow model guidance and verify ranking quality empirically rather than choosing by habit.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Match the index metric to the embedding model, then verify recall and ranking on representative queries.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> What changes if vectors are normalized?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> What changes if vectors are normalized?</summary><div class="a">Once every vector has length 1, cosine similarity and dot product give exactly the same ranking, and Euclidean distance ranks the same way too, because for unit vectors ‖a − b‖² = 2 − 2(a·b). So you can use the cheapest operation, usually the dot product, without changing results. Normalise at both indexing and query time, or the scores are not comparable.</div></details>
 </div></details>
 <details class="prep-question" data-question="how do you choose a chunking strategy?" data-tags="chunking documents trade-off">
 <summary><span class="prep-q-no">03</span><span class="prep-q-title">How do you choose a chunking strategy?<span class="prep-tags"><span>chunking</span><span>documents</span><span>trade-off</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>I start from how users ask questions and how much context is needed to answer them. I preserve semantic boundaries such as headings, clauses or table rows, include useful metadata, and use controlled overlap only when relationships cross boundaries. I then compare retrieval recall, answer quality and token cost across chunk sizes.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Chunk for retrieval units, not arbitrary character counts. Preserve meaning, attach metadata and tune with end-to-end evaluation.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> How would you chunk tables, code or scanned PDFs?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> How would you chunk tables, code or scanned PDFs?</summary><div class="a">Tables: keep each table, or each row with its header repeated, as one chunk - often converted to Markdown so column names travel with the values. Code: split on functions or classes with a syntax-aware splitter rather than by characters, and attach the file path and signature as metadata. Scanned PDFs: run OCR or a layout-aware parser first and check extraction quality on a sample, then chunk by headings - no chunking strategy fixes bad OCR.</div></details>
 </div></details>
 <details class="prep-question" data-question="when would you choose a dedicated vector database versus postgresql with pgvector?" data-tags="vector-db pgvector architecture">
 <summary><span class="prep-q-no">04</span><span class="prep-q-title">When would you choose a dedicated vector database versus PostgreSQL with pgvector?<span class="prep-tags"><span>vector-db</span><span>pgvector</span><span>architecture</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>Pgvector is attractive when the corpus and traffic fit PostgreSQL, metadata joins matter, and operational simplicity is valuable. A dedicated vector database can offer easier horizontal scaling, advanced filtering, hybrid features and specialized index operations. I decide from scale, query patterns, consistency requirements and team operations - not benchmark headlines alone.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Use pgvector for simplicity and relational integration; choose a dedicated engine when vector scale or search features justify another system.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> What measurements would trigger a migration?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> What measurements would trigger a migration?</summary><div class="a">Sustained p95 search latency above budget even after tuning, recall at your target latency falling below threshold, index builds or vacuums that block writes, or memory pressure as the vector count heads into the tens of millions. Selective filtered queries that still return too few rows with iterative scans enabled are another signal. Migrate on measured pain against an SLO, not on a vendor benchmark.</div></details>
 </div></details>
 <details class="prep-question" data-question="how does hnsw work at a high level?" data-tags="hnsw ann index">
 <summary><span class="prep-q-no">05</span><span class="prep-q-title">How does HNSW work at a high level?<span class="prep-tags"><span>hnsw</span><span>ann</span><span>index</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>HNSW builds a multi-layer proximity graph. Search starts in sparse upper layers to move quickly toward the target region, then explores denser lower layers for accurate neighbors. Parameters trade memory, build time, query latency and recall, so they must be tuned with the real corpus and filters.</p>
 <div class="prep-say"><strong>30-second version</strong><p>HNSW is a navigable graph: coarse layers find the region, dense layers refine the nearest neighbors. Faster search costs memory and approximate recall.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> Compare HNSW with an inverted-file index.</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> Compare HNSW with an inverted-file index.</summary><div class="a">HNSW is a layered graph: fast, high recall and supports incremental inserts, but memory-hungry because it stores neighbour links alongside the vectors. IVF groups vectors around, for example, about √N centroids and searches only the nprobe nearest clusters; it uses less memory, especially combined with product quantisation (IVF-PQ), but needs a training step and loses recall as data drifts away from the original clusters. HNSW is the usual default; IVF-PQ suits very large, memory-constrained indexes.</div></details>
 </div></details>
 <details class="prep-question" data-question="what is hybrid search and why is it useful?" data-tags="hybrid-search bm25 retrieval">
 <summary><span class="prep-q-no">06</span><span class="prep-q-title">What is hybrid search and why is it useful?<span class="prep-tags"><span>hybrid-search</span><span>bm25</span><span>retrieval</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>Hybrid search combines lexical retrieval, which is strong for exact terms, identifiers and rare names, with dense retrieval, which captures semantic similarity. Scores can be fused using rank-based methods such as reciprocal rank fusion, then reranked. It is especially useful in enterprise data containing acronyms, product codes and natural-language concepts.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Combine keyword precision with semantic recall, then fuse and rerank. Enterprise corpora usually need both.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> How do you combine scores from different retrievers?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> How do you combine scores from different retrievers?</summary><div class="a">Raw BM25 scores and cosine similarities sit on different scales, so adding them is meaningless. Reciprocal rank fusion uses ranks only: each document scores the sum of 1/(k + rank) across retrievers, with k usually 60 - so a document ranked 1st and 3rd (0.032) beats one ranked 2nd in a single list (0.016). Weighted fusion after normalising each list also works, but the weights need tuning on labelled queries.</div></details>
 </div></details>
 <details class="prep-question" data-question="what is reranking, and where does it fit?" data-tags="reranking latency quality">
 <summary><span class="prep-q-no">07</span><span class="prep-q-title">What is reranking, and where does it fit?<span class="prep-tags"><span>reranking</span><span>latency</span><span>quality</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>A first-stage retriever cheaply returns a broad candidate set. A cross-encoder or specialized reranker then jointly examines the query and each candidate to produce a better order. Because it is more expensive, I apply it to a small top-k and measure whether the quality gain justifies added latency.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Retrieve broadly and cheaply; rerank a small candidate set more accurately. It improves precision at a latency cost.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> How do you choose retrieval k and reranking k?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> How do you choose retrieval k and reranking k?</summary><div class="a">Retrieval k controls recall: pick the smallest k at which recall on your labelled set stops improving, often 20–100 candidates. Reranking k controls what reaches the model: usually 3–10 chunks, limited by the context budget and by reranker latency, which grows roughly linearly with the number of candidates scored. Tune both on the same eval set and judge by answer quality, not retrieval metrics alone.</div></details>
 </div></details>
 <details class="prep-question" data-question="a rag system is returning poor documents. how do you debug it?" data-tags="debugging retrieval observability">
 <summary><span class="prep-q-no">08</span><span class="prep-q-title">A RAG system is returning poor documents. How do you debug it?<span class="prep-tags"><span>debugging</span><span>retrieval</span><span>observability</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>I first separate retrieval failure from generation failure. I inspect the exact query, filters, access scope, chunk text, retrieved ranks and scores; compare lexical and dense results; and check ingestion, OCR, metadata and embedding-version drift. Then I run a labeled retrieval set using recall@k or MRR before changing the prompt.</p><ul><li>Create a small set of queries with known relevant chunks.</li><li>Inspect misses by category instead of averaging them away.</li><li>Version corpus, chunks and embeddings together.</li></ul>
 <div class="prep-say"><strong>30-second version</strong><p>Log the query and retrieved evidence, test retrieval independently, and fix ingestion, chunking, filters or ranking before touching generation.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> What if recall is good but answers are still wrong?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> What if recall is good but answers are still wrong?</summary><div class="a">Then the evidence reached the model but was not used: check context order (the key chunk buried in the middle), too many distracting chunks, a prompt that does not demand grounding, truncated context, or a model too weak for the reasoning required. Measure faithfulness per claim to see whether the model ignored or contradicted the context. Fixes include reranking down to fewer, better chunks, quote-then-answer prompting, or a stronger model for that query type.</div></details>
 </div></details>
 <details class="prep-question" data-question="when is long-context prompting better than rag?" data-tags="long-context rag trade-off">
 <summary><span class="prep-q-no">09</span><span class="prep-q-title">When is long-context prompting better than RAG?<span class="prep-tags"><span>long-context</span><span>rag</span><span>trade-off</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>It can be better for a small number of bounded documents when cross-document reasoning matters, the entire input fits comfortably, freshness is handled elsewhere and latency or cost remains acceptable. RAG is better for large, frequently changing or permissioned corpora. A hybrid can retrieve a document set and then use a larger context for synthesis.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Use long context for bounded, coherent material; use RAG for scale, freshness, permissions and targeted evidence.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> What is the “lost in the middle” concern?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> What is the “lost in the middle” concern?</summary><div class="a">Models tend to use information at the start and end of a long context better than information in the middle, so a correct passage placed 10th of 20 can be ignored. Newer long-context models show the effect less, but it has not disappeared. In practice: send fewer, reranked chunks, put the most relevant first, and test with needle-in-a-haystack style evals at your real context length.</div></details>
 </div></details>
 <details class="prep-question" data-question="which metrics would you use to evaluate rag? how do you evaluate a rag system end to end?" data-tags="evaluation rag llm-as-judge">
 <summary><span class="prep-q-no">10</span><span class="prep-q-title">Which metrics would you use to evaluate RAG?<span class="prep-tags"><span>evaluation</span><span>rag</span><span>llm-as-judge</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>I evaluate retrieval separately using recall@k, MRR or nDCG; generation using groundedness, answer correctness, completeness and citation accuracy; and product behavior using task success, latency and cost. I use human-reviewed test cases, deterministic checks where possible and carefully calibrated LLM judges, then monitor real-query slices in production.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Measure retrieval, generation and product outcome separately so you know what to fix. Add latency, cost and safety - not only answer quality.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> How do you prevent an LLM judge from hiding regressions?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> How do you prevent an LLM judge from hiding regressions?</summary><div class="a">Calibrate the judge against 100–200 human-labelled answers, track agreement with Cohen's kappa, and re-check it whenever the judge model or its prompt changes. Pin the judge model version so it does not drift with the system under test, prefer per-claim or pairwise judgements to a single 1–10 score, and slice results by query type so an average cannot hide a drop in one category. Keep deterministic checks for anything that does not need a judge.</div></details>
 </div></details>
 <details class="prep-question" data-question="what is faithfulness, and how do you measure whether an answer is grounded in the retrieved context? groundedness" data-tags="evaluation faithfulness llm-as-judge">
 <summary><span class="prep-q-no">11</span><span class="prep-q-title">What is faithfulness, and how do you measure whether an answer is grounded in the retrieved context?<span class="prep-tags"><span>evaluation</span><span>faithfulness</span><span>llm-as-judge</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>Faithfulness, also called groundedness, asks a narrow question: is every claim in the answer supported by the retrieved context? It does not ask whether the answer is true - an answer can be faithful to an outdated policy. I split the answer into atomic claims, have a judge model check each claim against the context, and score supported claims divided by total claims. Per-claim scoring shows exactly which sentence was invented, where paragraph-level judging is mush. I validate the judge against about 50 hand-labelled answers before trusting it, and sample production traffic rather than judging every response.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Faithfulness = supported claims ÷ total claims, judged per claim against the retrieved context. Faithful but wrong means retrieval found the wrong document; unfaithful means the model invented despite good context.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> Faithfulness is 0.98 and users report wrong answers. Where is the bug?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> Faithfulness is 0.98 and users report wrong answers. Where is the bug?</summary><div class="a">Faithfulness only says the answer matches the retrieved context - so the context itself is wrong. Retrieval is finding an outdated, superseded or wrong document: a stale index, a withdrawn policy still searchable, or a missing filter for version or region. Measure answer correctness against references and context relevance alongside faithfulness, because a perfectly faithful answer built on the wrong document is still wrong.</div></details>
 </div></details></section>
 
 <div class="page-nav" data-page-nav><a href="01-llm-foundations-prompting.html"><div class="dir">← Previous</div><div class="ttl">LLM Foundations &amp; Prompting</div></a><a class="next" href="03-agents-mcp.html"><div class="dir">Next →</div><div class="ttl">Agents, Tool Use, LangGraph &amp; MCP</div></a></div>
@@ -177,9 +177,9 @@
 </div>
 </div>
 <script src="../assets/app.js?v=20261123b"></script>
-<script src="../assets/sitenav.js?v=20261123b"></script>
+<script src="../assets/sitenav.js?v=20261124a"></script>
 <script src="../assets/enhance.js?v=20260925c"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
-<script src="../assets/interview-prep.js?v=20260925a"></script>
+<script src="../assets/interview-prep.js?v=20261124a"></script>
 </body>
 </html>

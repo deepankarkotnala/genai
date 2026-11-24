@@ -43,7 +43,7 @@
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
 <script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20261123b" rel="stylesheet"/>
+<link href="../assets/styles.css?v=20261124a" rel="stylesheet"/>
 <link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <link href="../assets/glossary.css?v=20260802b" rel="stylesheet"/>
@@ -52,9 +52,9 @@
      exists and the manifest is defined before the renderer runs. The authored
      links inside [data-page-nav] stay in the source and are replaced only after
      page, route and fragment have all resolved. -->
-<script defer src="../assets/curriculum.js?v=20261123c"></script>
-<script defer src="../assets/page-nav.js?v=20261123c"></script>
-<link href="../assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+<script defer src="../assets/curriculum.js?v=20261124a"></script>
+<script defer src="../assets/page-nav.js?v=20261124a"></script>
+<link href="../assets/ir-theme.css?v=20261124a" rel="stylesheet"/>
 </head>
 <body data-curriculum-id="production-genai" data-page="14">
 <div class="app">
@@ -85,6 +85,55 @@
 </header>
 <div class="content-wrap">
 <main class="content">
+
+<div class="eyebrow"><span class="dot"></span> Module 12 · Production track</div>
+<h1>Production GenAI</h1>
+<p class="lead">A prototype and a production system make the same model call. Everything else
+on this page - tracing, versioning, evaluation, guardrails, cost control - exists so you can
+say why an answer was produced, what it cost, and whether a change made things better. It is
+built in three levels: read Level 1 first.</p>
+<div class="meta-row">
+<span class="pill blue">⏱ Study + recall · 2–3 h</span>
+<span class="pill">Difficulty · Intermediate, in three levels</span>
+<span class="pill purple">Prereq · 05 RAG, 06 Agentic AI</span>
+</div>
+
+<h3>How to use this page</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Level</th><th>What you get</th><th>Who it is for</th></tr></thead>
+<tbody>
+<tr><td><b>1 · The core idea</b><br/>sections 1-4, about 30 minutes</td><td>What breaks when a prototype goes live, and the layers that a production system adds around it</td><td>Everyone. Read this first.</td></tr>
+<tr><td><b>2 · The real version</b><br/>sections 5-9</td><td>One request through every layer, the components, a measured week, and the order to add each layer</td><td>When Level 1 feels easy</td></tr>
+<tr><td><b>3 · Engineering and interviews</b><br/>sections 10-13</td><td>A production checklist, a comparison with ordinary web services, interview questions</td><td>Optional on a first read</td></tr>
+</tbody>
+</table>
+</div>
+
+<p class="bd-choose">Everything on this page comes back to five ideas. Level 1 covers the
+first three.</p>
+<ol>
+<li><b>Production is layers around the prototype.</b> The model call in the middle is the same
+one the demo made.</li>
+<li><b>None of it makes the model better.</b> An LLM application fails quietly, so the
+machinery is about making failures visible and attributable.</li>
+<li><b>Add the layers in the order the pain arrives</b> - not all at once, and not before the
+idea is proven.</li>
+<li><b>Two identifiers join everything:</b> the configuration id and the run id.</li>
+<li><b>Capture tokens on day one.</b> Cost cannot be reconstructed afterwards.</li>
+</ol>
+
+<div class="callout key memory-hook" id="memory-hook">
+<div class="c-ico">🧠</div>
+<div class="c-body"><div class="c-title">Memory hook</div>
+<p><b>Check-in, security, flight, customs, passport stamp.</b> An airport does not make the
+plane fly better. Check-in is admission (who you are, where you may go), security is the input
+guardrail, the flight is the model call, customs is the output guardrail, and the passport
+stamp is the trace record with its configuration id - proof of which flight you took.</p></div>
+</div>
+
+<!-- ================= LEVEL 1 ================= -->
+<div class="level-head" id="level-1"><span class="lv-badge">Level 1</span><span class="lv-title">The core idea</span><span class="lv-meta">About 30 minutes. What breaks after launch, and what fixes it.</span></div>
 
 <!-- ================= 1 ================= -->
 <h2 id="known">1 · What you already know</h2>
@@ -197,6 +246,25 @@ quarter.</b></p>
 <li><b>Roll back.</b> The prompt is a string in a file with no version.</li>
 </ul>
 
+<h3>Check yourself: Level 1</h3>
+<p>Answer each one out loud before you open it. Recalling an answer is what makes it
+stick; re-reading it is not.</p>
+<details class="recall"><summary><span class="q-ico">Q</span> The prototype went live on Monday. Name three things that went wrong by Friday, and what was missing for each. <span class="chev">›</span></summary><div class="a">Any three of: a wrong answer nobody could explain (no trace), a bill four times the estimate (no token accounting), a prompt tweak that collapsed refusals (no evaluation gate), a ticket that talked the assistant into a discount (no guardrail), and no record of which version answered (no stamp).</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Was any of those five a model failure? <span class="chev">›</span></summary><div class="a">No. The model behaved exactly as it did in the demo. Every one was a missing piece of ordinary operational machinery.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What surrounds the model call in a production request, from the outside in? <span class="chev">›</span></summary><div class="a">The request is authenticated and scoped, then input guardrails, then the model call with a pinned model and versioned prompt, then output guardrails, and the response goes back stamped with its configuration id and run id.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> When is adding this machinery a waste? <span class="chev">›</span></summary><div class="a">Before the idea is validated. Most prototypes should be discarded, and building production layers for one that has not met real users is the most common way to waste a quarter.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Why does a system prompt not count as a guardrail? <span class="chev">›</span></summary><div class="a">It is a request, not a check. A guardrail is a decision made in code, which is why a ticket body could talk the prototype into a discount.</div></details>
+
+<div class="callout tip">
+<div class="c-ico">✅</div>
+<div class="c-body"><div class="c-title">You can stop here</div>
+<p>If you answered those, you can explain what separates a demo from a system people depend on.
+Level 2 follows one request through every layer and shows the order to add them.</p></div>
+</div>
+
+<!-- ================= LEVEL 2 ================= -->
+<div class="level-head" id="level-2"><span class="lv-badge">Level 2</span><span class="lv-title">The real version</span><span class="lv-meta">One request through every layer, measured, and the order to build them.</span></div>
+
 <!-- ================= 5 ================= -->
 <h2 id="mechanics">5 · Runtime mechanics</h2>
 <p>One production request passes through five layers, and only the middle one
@@ -281,35 +349,14 @@ matters more, because it catches what no input screen could predict.</p>
 <p>Thumbs-down, escalations and low scores are reviewed and become golden-set cases.
 <b>This is the layer most teams never build</b>, and the only one that compounds.</p>
 
-<!-- ================= 8 ================= -->
-<h2 id="state">7 · State and data flow</h2>
-<ol>
-<li><b>What data is state?</b> Configuration versions, evaluation results, traces, guardrail
-decisions, and the memory store.</li>
-<li><b>Who writes each field?</b> A deploy writes configuration; the suite writes results; the
-runtime writes traces and decisions.</li>
-<li><b>Who reads each field?</b> The gate before release, and whoever is investigating
-afterwards.</li>
-<li><b>Replaced, appended or merged?</b> All append. Nothing is edited in place, or attribution
-is lost.</li>
-<li><b>What reducer controls merging?</b> None. The configuration id and run id are the keys
-that join everything.</li>
-<li><b>Is it only in process memory?</b> Only the in-flight request. Everything else must be
-durable.</li>
-<li><b>Is it checkpointed?</b> Traces flush per span; evaluation results are one record per
-run.</li>
-<li><b>Is it in a database?</b> Traces, results, the idempotency ledger, the audit log and the
-memory store.</li>
-<li><b>How long does it survive?</b> Configuration and results indefinitely; traces and memory
-per an explicit retention policy, because both hold customer data.</li>
-<li><b>What thread, user or key retrieves it again?</b> The run id for one request, the
-configuration id for one version, the customer id for memory.</li>
-</ol>
-<p>Row 5 is the whole architecture in one line. <b>Two identifiers join every record</b>, and a
-system that stamps neither cannot answer any question in section 2.</p>
+<h3>The two identifiers that join everything</h3>
+<p>Every record - configuration, evaluation result, trace, guardrail decision - carries two
+ids. The <b>configuration id</b> says which version of prompt, model and corpus was live; the
+<b>run id</b> says which request it was. Records are appended, never edited in place, and
+<b>a system that stamps neither id cannot answer any question in section 2.</b></p>
 
 <!-- ================= 10 ================= -->
-<h2 id="trace">8 · Trace</h2>
+<h2 id="trace">7 · Trace</h2>
 <p>The same application before and after this page, measured over one week:</p>
 <div class="table-wrap">
 <table>
@@ -317,17 +364,23 @@ system that stamps neither cannot answer any question in section 2.</p>
 <tbody>
 <tr><td>Why was this answer wrong?</td><td>Unknown</td><td>Trace shows top retrieval score 0.11, below the floor</td></tr>
 <tr><td>What does a request cost?</td><td>Unknown</td><td>$0.0021 mean, $0.0051 p95</td></tr>
-<tr><td>Did last week's change help?</td><td>"It seems better"</td><td>Pass rate 0.925 to 0.930, cost unchanged</td></tr>
+<tr><td>Did last week's change help?</td><td>"It seems better"</td><td>Pass rate 0.925 to 0.930, cost unchanged - inside the noise margin, so "no measurable change", not "better"</td></tr>
 <tr><td>How often does it refuse?</td><td>Unknown</td><td>0.11, watched, alerts on a drop</td></tr>
 <tr><td>Which version answered this customer?</td><td>Unknown</td><td>prompt v5, code a41c88e</td></tr>
 </tbody>
 </table>
 </div>
-<p>The machinery added <b>about fourteen milliseconds per request and a rounding error in
-cost</b>, in exchange for every row in that table becoming answerable.</p>
+<p>The tracing, versioning and rule-based checks added <b>about fourteen milliseconds per
+request and a rounding error in cost</b>, in exchange for every row in that table becoming
+answerable. A model-based grounding check is the exception: it is another model call, so
+budget hundreds of milliseconds for it, or run it on a sample.</p>
+<p>Note what row 3 really says. A 0.5-point move is noise: on 400 cases the 95% margin
+around 0.93 is about ±2.5 points, and on 50 cases about ±7. An evaluation tells you a
+change helped only when the difference is bigger than that margin, or holds across repeated
+runs.</p>
 
 <!-- ================= 11 ================= -->
-<h2 id="break">9 · Break it</h2>
+<h2 id="break">8 · Break it</h2>
 <p>Add all of it before the idea is validated. This is the failure mode of teams
 who have read this page and not the first three sections.</p>
 
@@ -360,7 +413,7 @@ users.</b> None of it was wrong, and all of it was premature.</p>
 because it kept working, until the Friday in section 2.</p>
 
 <!-- ================= 12 ================= -->
-<h2 id="fix">10 · Fix it</h2>
+<h2 id="fix">9 · Fix it</h2>
 <p><b>Add the layers in the order the pain arrives.</b> Each one earns its place at
 a different moment:</p>
 <div class="table-wrap">
@@ -381,8 +434,18 @@ compounds</b>, and the one most teams never reach.</p>
 <p>The honest test for whether you are ready for any of it: <b>can you name a user who would
 complain if this got worse?</b> If not, keep prototyping.</p>
 
+<h3>Check yourself: Level 2</h3>
+<details class="recall"><summary><span class="q-ico">Q</span> In what order do the layers earn their place, and at what moment? <span class="chev">›</span></summary><div class="a">Token capture on day one, tracing at the first real user, versioning at the second prompt edit, evaluation before the first change users will notice, guardrails before any irreversible action or sensitive data, and the feedback path once the suite exists.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Which two identifiers join every record, and what does each one answer? <span class="chev">›</span></summary><div class="a">The configuration id answers which version of prompt, model and corpus was live. The run id answers which request it was.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> A pass rate moved from 0.925 to 0.930 on 400 cases. Did the change help? <span class="chev">›</span></summary><div class="a">There is no measurable change. The 95% margin on 400 cases is about ±2.5 points, so a 0.5-point move is noise.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Why must token counts be captured from the very first day? <span class="chev">›</span></summary><div class="a">It costs two lines, and cost cannot be reconstructed afterwards - the counts come back on every response and are simply discarded if nobody records them.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Which layer is the only one that compounds, and what does it do? <span class="chev">›</span></summary><div class="a">The feedback path. Thumbs-down, escalations and low scores are reviewed and become golden-set cases, so the evaluation suite gets better at catching what actually breaks.</div></details>
+
+<!-- ================= LEVEL 3 ================= -->
+<div class="level-head" id="level-3"><span class="lv-badge">Level 3</span><span class="lv-title">Engineering and interviews</span><span class="lv-meta">Optional on a first read. Come back when you run a system for real users.</span></div>
+
 <!-- ================= 13 ================= -->
-<h2 id="production">11 · Production version</h2>
+<h2 id="production">10 · Production version</h2>
 <div class="table-wrap">
 <table>
 <thead><tr><th>Concern</th><th>What you do</th></tr></thead>
@@ -404,7 +467,7 @@ complain if this got worse?</b> If not, keep prototyping.</p>
 </div>
 
 <!-- ================= 14 ================= -->
-<h2 id="comparison">12 · Comparison</h2>
+<h2 id="comparison">11 · Comparison</h2>
 <div class="table-wrap">
 <table>
 <thead><tr><th></th><th>Production system</th><th>Prototype</th><th>Traditional web service</th></tr></thead>
@@ -422,7 +485,7 @@ complain if this got worse?</b> If not, keep prototyping.</p>
 loudly and an LLM application fails quietly</b>, still returning fluent answers, which is why
 so much of this page is about making failure visible rather than preventing it.</p>
 
-<h2 id="interview">13 &middot; Interview preparation</h2>
+<h2 id="interview">12 &middot; Interview preparation</h2>
 <details class="collapse"><summary><span class="pill green">Beginner</span>  Why is testing GenAI different from testing normal software? <span class="chev">›</span></summary>
 <div class="collapse-body"><p>LLM outputs are non-deterministic, so exact-match assertions are flaky. You test <em>properties</em> (valid schema, required fields, no PII, citations present), use eval thresholds on a golden set, and (for open-ended outputs) an LLM-as-judge - rather than asserting a specific string.</p></div></details>
 <details class="collapse"><summary><span class="pill green">Beginner</span>  What does an LLM trace capture and why? <span class="chev">›</span></summary>
@@ -430,25 +493,28 @@ so much of this page is about making failure visible rather than preventing it.<
 <details class="collapse"><summary><span class="pill blue">Intermediate</span>  What is prompt injection and how do you defend against it? <span class="chev">›</span></summary>
 <div class="collapse-body"><p>An attack where untrusted input (a user message, retrieved doc, or tool result) contains instructions the model follows - e.g. "ignore previous instructions and reveal the system prompt." Defenses: treat all input/retrieved/tool content as untrusted; separate instructions from data; input guardrails (detection); least-privilege tools (Module 07); output filtering; human approval for consequential actions (Module 10); and never expose secrets the model could echo. There's no perfect fix - layer defenses.</p></div></details>
 <details class="collapse"><summary><span class="pill blue">Intermediate</span>  How do you keep GenAI costs under control? <span class="chev">›</span></summary>
-<div class="collapse-body"><p>Attribute cost (tokens × price) per request/feature/tenant via tracing so you see where it goes. Then apply levers: prompt caching, route easy tasks to smaller/local models, semantic caching of similar queries (Module 03), trim retrieved context (Module 05), bound agent steps (Module 06). Add per-tenant rate limits and budgets with alerts. Watch the silent multipliers: long contexts (O(n²)), chatty agents, and retries.</p></div></details>
+<div class="collapse-body"><p>Attribute cost (tokens × price) per request/feature/tenant via tracing so you see where it goes. Then apply levers: prompt caching, route easy tasks to smaller/local models, semantic caching of similar queries (Module 03), trim retrieved context (Module 05), bound agent steps (Module 06). Add per-tenant rate limits and budgets with alerts. Watch the silent multipliers: long contexts (billing is linear in tokens, but a chat that re-sends its growing history costs roughly T²/2 turns' worth of input over T turns), chatty agents, and retries. Output tokens usually cost several times input tokens, so long answers matter too.</p></div></details>
 <details class="collapse"><summary><span class="pill amber">Senior</span>  Design the eval and deployment process for a RAG product. <span class="chev">›</span></summary>
 <div class="collapse-body"><p>Maintain a versioned <strong>golden set</strong> (question, gold answer, gold source), refreshed by sampling production failures. Offline metrics: context recall &amp; precision (retrieval), faithfulness &amp; answer-relevance (generation) - via RAGAS/LLM-judge. Gate every prompt/chain/model/chunking change in CI: build fails if metrics drop below thresholds. Stage rollouts (canary), watch online signals (thumbs, citation clicks, "I don't know" rate), and trace everything for attribution. Version prompts; enable instant rollback. Periodically calibrate the LLM-judge against human labels. The deliverable is a closed loop: trace → sample failures → grow eval set → gate changes → deploy → repeat.</p></div></details>
 <details class="collapse"><summary><span class="pill amber">Senior</span>  An agent's cost spiked 10× overnight with no code change. How do you investigate? <span class="chev">›</span></summary>
-<div class="collapse-body"><p>Go to traces and cost dashboards: break spend down by tenant, feature, and model to localize it. Likely culprits: a looping agent (check step counts / recursion - Module 06/10), a retrieval change inflating context length (O(n²) tokens), a prompt-version change increasing output length, retries from a failing dependency, an abusive tenant (check rate-limit hits), or a model/price change. Compare token distributions before/after. Mitigate immediately with rate limits/budgets and a fallback model; fix root cause; add an alert on cost-per-request and a step budget so it can't recur silently.</p></div></details>
+<div class="collapse-body"><p>Go to traces and cost dashboards: break spend down by tenant, feature, and model to localize it. Likely culprits: a looping agent (check step counts / recursion - Module 06/10), a retrieval change inflating context length (more input tokens on every call - cost grows linearly with them, attention compute quadratically), a prompt-version change increasing output length, retries from a failing dependency, an abusive tenant (check rate-limit hits), or a model/price change. Compare token distributions before/after. Mitigate immediately with rate limits/budgets and a fallback model; fix root cause; add an alert on cost-per-request and a step budget so it can't recur silently.</p></div></details>
 <details class="collapse"><summary><span class="pill purple">Staff · design</span>  Design the production platform for all GenAI apps in a large org. <span class="chev">›</span></summary>
 <div class="collapse-body"><p>A central <strong>gateway</strong> all apps call: auth + per-tenant rate limits/budgets, model routing + fallbacks, prompt caching. <strong>Guardrail layer</strong> on input (PII/DLP, injection detection, scope) and output (faithfulness, toxicity, PII leak, schema). <strong>Observability</strong>: distributed tracing of every step with token/cost/latency, per-tenant dashboards, alerting on cost and quality drift. <strong>Prompt &amp; model registry</strong>: versioned, change-managed, instant rollback. <strong>Evaluation</strong>: shared harness + golden sets, CI gates on every change, online signals fed back. <strong>Security</strong>: least-privilege tools via MCP (Module 07), human-in-the-loop for consequential actions (Module 10), red-teaming, audit logs, data-retention policy. <strong>Cost governance</strong>: budgets, chargeback, anomaly alerts. A platform team owns the gateway/guardrails/observability so product teams inherit safety, observability, and cost control by default - the classic 'design an LLM platform' system-design question.</p></div></details>
 
 <!-- ================= 16 ================= -->
-<h2 id="short">14 · In short, and what comes next</h2>
-<p class="bd-choose">Remember these six:</p>
-<ul>
-<li>Production is five layers around the prototype, and the prototype is the middle one.</li>
-<li>Two identifiers join everything: the configuration id and the run id.</li>
-<li>Capture tokens on day one. Cost cannot be reconstructed afterwards.</li>
-<li>Add the layers in the order the pain arrives, not all at once and not too early.</li>
-<li>None of this makes the model better. It makes its failures visible and attributable.</li>
-<li>An LLM application fails quietly, which is why the machinery is about visibility.</li>
-</ul>
+<h2 id="short">13 · In short, and what comes next</h2>
+<p class="bd-choose">The five ideas from the top of the page. Try to say each one before
+you read it.</p>
+<ol>
+<li><b>Production is layers around the prototype.</b> The model call in the middle is the same
+one the demo made.</li>
+<li><b>None of it makes the model better.</b> An LLM application fails quietly, so the
+machinery is about making failures visible and attributable.</li>
+<li><b>Add the layers in the order the pain arrives</b> - not all at once, and not before the
+idea is proven.</li>
+<li><b>Two identifiers join everything:</b> the configuration id and the run id.</li>
+<li><b>Capture tokens on day one.</b> Cost cannot be reconstructed afterwards.</li>
+</ol>
 <div class="callout key">
 <div class="c-ico">🔑</div>
 <div class="c-body"><div class="c-title">The one idea to remember</div>
@@ -456,6 +522,7 @@ so much of this page is about making failure visible rather than preventing it.<
 them exists because a fluent wrong answer looks exactly like a correct one, and nothing in the
 call itself will ever tell you which you got.</p></div>
 </div>
+<p class="review-link">🔁 <a href="../review.html?topic=production-genai">Review this topic's cards</a> - tomorrow, in 3 days, in a week and in 3 weeks.</p>
 <p><b>Next:</b> module 13, Guardrails - the input and output checks that stop an assistant
 being talked into things it must not do.</p>
 
@@ -470,9 +537,9 @@ being talked into things it must not do.</p>
 </div>
 </div>
 <script src="../assets/app.js?v=20261123b"></script>
-<script src="../assets/sitenav.js?v=20261123b"></script>
+<script src="../assets/sitenav.js?v=20261124a"></script>
 <script src="../assets/enhance.js?v=20260925c"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
-<script src="../assets/glossary.js?v=20261123b"></script>
+<script src="../assets/glossary.js?v=20261124a"></script>
 </body>
 </html>

@@ -43,7 +43,7 @@
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
 <script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20261123b" rel="stylesheet"/>
+<link href="../assets/styles.css?v=20261124a" rel="stylesheet"/>
 <link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <!-- Release 2 runtime. The manifest loads first, the renderer second; classic
@@ -51,9 +51,9 @@
      exists and the manifest is defined before the renderer runs. The authored
      links inside [data-page-nav] stay in the source and are replaced only after
      page, route and fragment have all resolved. -->
-<script defer src="../assets/curriculum.js?v=20261123c"></script>
-<script defer src="../assets/page-nav.js?v=20261123c"></script>
-<link href="../assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+<script defer src="../assets/curriculum.js?v=20261124a"></script>
+<script defer src="../assets/page-nav.js?v=20261124a"></script>
+<link href="../assets/ir-theme.css?v=20261124a" rel="stylesheet"/>
 </head>
 <body data-curriculum-id="genai-g10" data-page="prep-rag" data-prep-section="interview">
 <div class="app">
@@ -90,7 +90,7 @@
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>Clarify before drawing: which sources, whose permissions, how fresh, how many users, what latency and budget. Then state requirements and draw the layers - ingestion and sync, retrieval with permission filters, orchestration, a safety layer, evaluation, observability. Close on the two decisions that matter here: permissions are enforced at retrieval time, not in the prompt, and freshness needs an explicit SLA because a wiki changes daily.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Clarify sources, permissions, freshness and scale; draw ingestion → retrieval → orchestration → safety → evaluation → observability; then name the trade-offs. The permission model is the part that makes this design different from a demo.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> Which of those layers would you build first if you had two weeks?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> Which of those layers would you build first if you had two weeks?</summary><div class="a">Ingestion that carries permission metadata, retrieval with permission filters, and a small evaluation set - because a permission leak or poor retrieval cannot be fixed later by a better prompt. Put a thin generation layer with citations on top and log every request with the documents used. Leave reranking, query rewriting and caching until the evaluation set shows where answers actually fail.</div></details>
 <div class="prep-follow"><strong>Red flag:</strong> Drawing boxes immediately without asking a single clarifying question.</div>
 </div></details>
 
@@ -99,7 +99,7 @@
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>Filter at retrieval, using metadata tied to the user's groups, so a restricted document is never a candidate in the first place. For strongly separated domains, use separate indexes rather than a filter. Keep an output check as a second line of defence, and log which documents were used for each answer so an access question can be answered after the fact.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Permissions are a retrieval filter, not a prompt instruction. If a document can be retrieved, treat it as already leaked - the prompt cannot be trusted to keep a secret.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> The permission changes but the index was built yesterday. What happens?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> The permission changes but the index was built yesterday. What happens?</summary><div class="a">If permissions are copied into chunk metadata at index time, the user keeps seeing a document they lost access to until the next sync - a real leak. Sync permission changes as their own events within minutes; it is a metadata update, so nothing needs re-embedding. Better still, store group IDs on chunks and resolve the user's groups at query time, and for the most sensitive sources re-check access on the final documents before they reach the prompt.</div></details>
 <div class="prep-follow"><strong>Red flag:</strong> "I'd tell the model not to reveal documents the user can't see."</div>
 </div></details>
 
@@ -108,7 +108,7 @@
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>Incremental sync driven by change events, or scheduled if the source has no events. Re-embed only what changed, tombstone deletions so removed content stops being retrievable, and invalidate caches when the index is rebuilt. Set a freshness SLA - "edits are searchable within fifteen minutes" - and monitor index lag against it.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Event-driven incremental re-indexing, deletions tombstoned, caches invalidated, and a stated freshness SLA with index lag monitored against it.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> A document is deleted for legal reasons. How fast can you guarantee it is gone?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> A document is deleted for legal reasons. How fast can you guarantee it is gone?</summary><div class="a">Only as fast as your slowest copy, so list them all: the vector index, the keyword index, caches, stored traces and logs, evaluation sets and backups. Delete from indexes and caches on the deletion event (minutes), purge traces by document ID, and state backup retention honestly - for example "gone from search within 15 minutes, from backups within 35 days". Prove it with a test query and an audit record.</div></details>
 <div class="prep-follow"><strong>Red flag:</strong> Re-indexing the whole corpus nightly and calling it fresh.</div>
 </div></details>
 
@@ -117,7 +117,7 @@
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>Bias every trade-off towards abstaining. Require clause-level citations, gate the answer on a faithfulness check that blocks unsupported claims, let the system say "not found in the provided documents", cite the exact document version, and keep an audit trail of what was retrieved and returned. Accept lower coverage and higher latency as the price.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Mandatory citations, a faithfulness gate that can block, a real abstain path, and an audit trail. In this domain a missing answer is cheap and a wrong one is not.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> How do you measure whether the abstain threshold is set correctly?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> How do you measure whether the abstain threshold is set correctly?</summary><div class="a">Label a set of questions that includes ones the documents cannot answer, sweep the threshold, and plot two rates: wrong answers given (which should be near zero) and correct answers withheld (the cost). Pick the point that meets the business limit - for example under 1% wrong at the price of 15% abstentions - and recheck it monthly on fresh production samples, because it drifts when documents or the model change.</div></details>
 <div class="prep-follow"><strong>Red flag:</strong> Optimising answer rate or "helpfulness" in a domain where being wrong is the expensive outcome.</div>
 </div></details>
 
@@ -126,7 +126,7 @@
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>Version-aware ingestion: keep every version, with effective and expiry dates in metadata rather than overwriting. Filter retrieval to the version in force for the date the question is about, and cite the exact version used. "What did the policy say in March?" and "what does it say now?" are different queries over the same corpus.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Keep all versions with effective dates as metadata, filter retrieval by the date in question, and cite the version - never silently overwrite a document.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> The question does not mention a date. What do you retrieve?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> The question does not mention a date. What do you retrieve?</summary><div class="a">Default to the version in force today, and say so in the answer: "Under the current policy, effective 1 April 2026, ...". If the conversation implies a date - a claim filed in March - use that instead. When versions differ in a way that matters, show both with their dates or ask a clarifying question rather than guess.</div></details>
 <div class="prep-follow"><strong>Red flag:</strong> Treating ingestion as upsert-by-URL, which quietly destroys the audit trail.</div>
 </div></details>
 
@@ -135,7 +135,7 @@
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>A second pass takes each claim in the drafted answer and checks it against the span it cites, then blocks or flags anything unsupported. It is a different question from "write an answer", which is why a separate call catches what the first one missed. It costs another call and some latency, and in a high-stakes domain that is a good trade; in a support chatbot it usually is not.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Claim-by-claim checking against cited spans, as a separate call, with authority to block. Worth the extra cost only where a fabrication is expensive.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> What if the verifier and the generator make the same mistake?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> What if the verifier and the generator make the same mistake?</summary><div class="a">Correlated errors are the real weakness of self-checking. Reduce them by giving the verifier a narrower task - one claim against one cited span, closer to entailment than to writing - and by using a different model or a dedicated faithfulness (NLI) model. Then measure the verifier itself against human-labelled examples, so you know its miss rate instead of assuming it is zero.</div></details>
 <div class="prep-follow"><strong>Red flag:</strong> Adding a verifier everywhere without asking what it costs or what it is allowed to do.</div>
 </div></details>
 
@@ -144,7 +144,7 @@
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>Shared ingestion, retrieval and gateway services, with per-tenant namespaces and quotas so one tenant cannot exhaust or read another. A model gateway in front of every call for routing, caching, fallback and cost attribution. One shared evaluation harness and guardrail middleware that every tenant app inherits, so quality is a property of the platform rather than of whoever built each app.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Shared services, per-tenant namespaces and quotas, one model gateway for routing and cost attribution, and platform-owned evaluation plus guardrails that apps inherit.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> One tenant's traffic is ten times everyone else's. What breaks first?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> One tenant's traffic is ten times everyone else's. What breaks first?</summary><div class="a">Usually the shared provider quota goes first: the big tenant consumes the tokens-per-minute limit and everyone else gets 429s and slow answers. Next come shared caches, where its entries evict everyone else's, and the ingestion queues. Protect with per-tenant rate limits and token budgets, fair queuing between tenants, and for a tenant that large a dedicated deployment or reserved capacity, with the cost attributed to them.</div></details>
 <div class="prep-follow"><strong>Red flag:</strong> A shared index with a tenant_id filter and no quota story.</div>
 </div></details>
 
@@ -153,7 +153,7 @@
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>One entry point for every model call. It routes between a small and a large model, caches, falls back when a provider fails, enforces rate limits, holds the prompt-version registry, and attributes cost per tenant and feature. Centralised because otherwise each of those is re-implemented per app, inconsistently - and because switching provider becomes one change instead of twenty.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Routing, caching, fallback, rate limiting, prompt versions and cost attribution in one place, so no app re-implements them and provider changes stay cheap.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> The gateway is now a single point of failure. What do you do about it?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> The gateway is now a single point of failure. What do you do about it?</summary><div class="a">Run it as a stateless service with several replicas across zones behind a load balancer, keep its state - rate-limit counters, the prompt registry - in a replicated store, and keep the code simple so it rarely fails. Decide in advance what happens if it does: fail closed for anything that enforces policy, with a clear "temporarily unavailable" message, rather than letting apps call providers directly. Ship gateway changes as canaries, since a bad release now affects every app at once.</div></details>
 <div class="prep-follow"><strong>Red flag:</strong> Describing it as a proxy for API keys and nothing else.</div>
 </div></details>
 
@@ -162,7 +162,7 @@
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>Ground the generation: retrieve the relevant tables, columns and their descriptions rather than pasting the whole schema, put a semantic layer of approved metrics in front so "revenue" has one definition, add few-shot question-to-SQL pairs from the real schema, and run a repair loop that feeds execution errors back once or twice. Show the generated SQL to the user before or alongside results.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Retrieve the relevant schema instead of pasting all of it, define metrics in a semantic layer, few-shot with real examples, and repair against execution errors.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> Two tables could answer the question and they disagree. What now?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> Two tables could answer the question and they disagree. What now?</summary><div class="a">Do not let the model choose silently. The semantic layer should name one source of truth per metric - for example a finance table of recognised revenue rather than raw order totals - and when the question is genuinely ambiguous, ask which definition the user means and show the definition used in the answer. Report the disagreement to the data owners: it is a data-quality bug, not a prompt problem.</div></details>
 <div class="prep-follow"><strong>Red flag:</strong> "Put the whole schema in the prompt" on a warehouse with two thousand tables.</div>
 </div></details>
 
@@ -171,7 +171,7 @@
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>At the database, not in the prompt. A read-only role, row-level security tied to the requesting user, and query validation that rejects anything but a SELECT. Then bound the damage a valid query can do: enforced LIMITs, statement timeouts, and a cap on bytes scanned, with alerting on cost spikes.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Read-only role, row-level security as the requesting user, SELECT-only validation, plus limits, timeouts and scan caps. The prompt is not a security boundary.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> The agent needs to write results back to a table. How does that change your answer?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> The agent needs to write results back to a table. How does that change your answer?</summary><div class="a">Separate the write path. The read role stays read-only, and writes go through one narrow tool with its own role that can only insert into a single results table or schema - never update or delete source data. Validate the payload, make the write idempotent with a run ID, require approval if the table feeds anything downstream, and log every write with who asked for it.</div></details>
 <div class="prep-follow"><strong>Red flag:</strong> Relying on a system prompt that says "only generate SELECT statements".</div>
 </div></details>
 
@@ -180,7 +180,7 @@
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>Execute only in an ephemeral sandbox with no network and no secrets mounted. Bound the number of steps and the spend. Surface every change as a diff and require a human-reviewed pull request to merge - the agent proposes, a person merges. Treat repository content itself as untrusted input, because a comment in a file can carry an injection.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Ephemeral sandbox, no network or secrets, bounded steps and cost, changes land as a reviewed PR, and repo content is untrusted input.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> The agent needs to install a dependency to run the tests. Now what?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> The agent needs to install a dependency to run the tests. Now what?</summary><div class="a">Do not open general network access. Give the sandbox an allow-listed package mirror or proxy - for example an internal PyPI mirror with pinned versions - so installs work but the agent still cannot reach arbitrary hosts or send data out. The new dependency appears in the diff for human review, and is scanned for known vulnerabilities before merge.</div></details>
 <div class="prep-follow"><strong>Red flag:</strong> Giving the agent commit or deploy rights because review is "a bottleneck".</div>
 </div></details>
 
@@ -189,7 +189,7 @@
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>Only when the work genuinely splits into distinct skills and the routing between them has to be decided at run time. Otherwise a single agent, or a deterministic workflow, is cheaper, faster and far easier to test. Multi-agent buys specialisation and parallelism and pays for it in coordination overhead, latency and new failure modes - agents talking past each other, or looping.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Distinct roles plus dynamic routing justifies it. Known steps means a workflow. Multi-agent is a cost you take on for specialisation, not a default.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> Where do you put the human approval step in a multi-agent business workflow?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> Where do you put the human approval step in a multi-agent business workflow?</summary><div class="a">Immediately before any irreversible or externally visible action - a payment, a message to a customer, a write to a system of record - not after every agent's step. Make it a dedicated step in the orchestrator that pauses durably, such as a LangGraph <code>interrupt()</code> or a workflow-engine signal, and shows the exact action with its evidence. Agents can draft freely; only the gate can commit.</div></details>
 <div class="prep-follow"><strong>Red flag:</strong> Reaching for a crew of agents when the process is five known steps in a fixed order.</div>
 </div></details>
 
@@ -198,7 +198,7 @@
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>Do not optimise deflection alone - it is trivially gamed by answering everything badly. Gate answering on coverage and faithfulness, bias towards escalation when either is weak, and track escalation precision and customer satisfaction beside the deflection rate. A bot that deflects 60% with high satisfaction beats one that deflects 80% and burns trust.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Deflection is only meaningful next to escalation precision and satisfaction. Gate on coverage and faithfulness, and escalate when unsure.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> How would you set the escalation threshold, and how often would you revisit it?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> How would you set the escalation threshold, and how often would you revisit it?</summary><div class="a">From data: label a sample of conversations, sweep the confidence or faithfulness threshold, and pick the point where wrong answers fall below what the business tolerates - for example under 2% - while tracking how much deflection that costs. Revisit it monthly, and straight after any model, prompt or knowledge-base change, using fresh production samples and escalation precision (how often escalated cases really needed a person).</div></details>
 <div class="prep-follow"><strong>Red flag:</strong> Naming deflection rate as the single success metric.</div>
 </div></details>
 
@@ -207,7 +207,7 @@
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>Measure first - cost per request, split by feature and by model, because the fix depends on where it goes. Then the usual three: cache repeated and near-repeated queries, route easy traffic to a smaller model and keep the large one for hard cases, and trim the context you are sending, since retrieved chunks are often most of the bill. Re-run evaluation afterwards to prove quality held.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Attribute the cost first, then cache, route small-model-first, and trim context - and re-run the evals to show quality did not move.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> Routing saved 40% and quality dropped 3 points. Do you ship it?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> Routing saved 40% and quality dropped 3 points. Do you ship it?</summary><div class="a">Not on the average alone. First check that 3 points is bigger than your evaluation noise, then find where the drop lands: if it is concentrated in high-value or risky intents, keep those on the large model and route the rest. Ship to a small canary measured on a business metric such as acceptance or escalation rate, and decide with the product owner - 40% savings can easily be worth a small loss on low-stakes queries.</div></details>
 <div class="prep-follow"><strong>Red flag:</strong> Cutting straight to "use a cheaper model" without measuring where the money actually goes.</div>
 </div></details>
 
@@ -220,9 +220,9 @@
 </div>
 </div>
 <script src="../assets/app.js?v=20261123b"></script>
-<script src="../assets/sitenav.js?v=20261123b"></script>
+<script src="../assets/sitenav.js?v=20261124a"></script>
 <script src="../assets/enhance.js?v=20260925c"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
-<script src="../assets/interview-prep.js?v=20260925a"></script>
+<script src="../assets/interview-prep.js?v=20261124a"></script>
 </body>
 </html>

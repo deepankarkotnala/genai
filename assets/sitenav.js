@@ -29,7 +29,7 @@
       id: "mastery",
       label: "GenAI Mastery",
       mark: "G",
-      blurb: "15 interview-focused topics",
+      blurb: "15 topics, in order",
       home: "index.html",
       pages: [
         // One focused reading path, in order. Pages that are not needed to
@@ -58,7 +58,10 @@
         { path: "modules/14_production_genai.html", title: "Production GenAI", num: "12", track: "Production", kw: "production latency cost caching rate limiting deployment testing security" },
         { path: "guardrails.html", title: "Guardrails", num: "13", track: "Production", kw: "guardrails safety scope pii prompt injection hallucination policy validation" },
         { path: "llm-evals.html", title: "LLM Evals", num: "14", track: "Production", kw: "llm evals evaluation golden dataset llm as judge faithfulness groundedness rag metrics regression" },
-        { path: "llmops.html", title: "LLMOps & Observability", num: "15", track: "Production", kw: "llmops observability tracing spans langfuse langsmith prompt versioning cost latency monitoring feedback" }
+        { path: "llmops.html", title: "LLMOps & Observability", num: "15", track: "Production", kw: "llmops observability tracing spans langfuse langsmith prompt versioning cost latency monitoring feedback" },
+        // Spaced review: flashcards generated from every topic's recall
+        // questions and memory hook by tools/make-review.py.
+        { path: "review.html", title: "Review cards", num: "↻", track: "Remember it", kw: "review flashcards spaced repetition recall memory hook revise revision cards" }
       ]
     },
     /* ===================================================================

@@ -47,7 +47,11 @@
     var open = false;
     button.addEventListener('click', function () {
       open = !open;
-      document.querySelectorAll('.prep-question:not([hidden])').forEach(function (item) { item.open = open; });
+      document.querySelectorAll('.prep-question:not([hidden])').forEach(function (item) {
+        item.open = open;
+        // Answered follow-ups open and close with their question.
+        item.querySelectorAll('details.prep-follow').forEach(function (fu) { fu.open = open; });
+      });
       button.textContent = open ? 'Close all' : 'Open all';
       button.setAttribute('aria-expanded', open ? 'true' : 'false');
     });

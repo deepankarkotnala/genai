@@ -43,7 +43,7 @@
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
 <script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20261123b" rel="stylesheet"/>
+<link href="../assets/styles.css?v=20261124a" rel="stylesheet"/>
 <link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <link href="../assets/glossary.css?v=20260802b" rel="stylesheet"/>
@@ -52,9 +52,9 @@
      nav slot exists and the manifest is defined before the renderer runs. The
      authored links inside [data-page-nav] remain in the source and are replaced
      only after page, route and fragment have all resolved. -->
-<script defer src="../assets/curriculum.js?v=20261123c"></script>
-<script defer src="../assets/page-nav.js?v=20261123c"></script>
-<link href="../assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+<script defer src="../assets/curriculum.js?v=20261124a"></script>
+<script defer src="../assets/page-nav.js?v=20261124a"></script>
+<link href="../assets/ir-theme.css?v=20261124a" rel="stylesheet"/>
 </head>
 <body data-curriculum-id="embeddings" data-page="04">
 <div class="app">
@@ -126,6 +126,14 @@ there, so real systems use both.</li>
 <li><b>Embeddings only work with the model that made them.</b> Change the model and you
 must re-embed everything.</li>
 </ol>
+
+<div class="callout key memory-hook" id="memory-hook">
+<div class="c-ico">🧠</div>
+<div class="c-body"><div class="c-title">Memory hook</div>
+<p><b>Meaning becomes coordinates; near means similar.</b> Every text gets a spot on a meaning
+map - "refund policy" and "return an item" sit side by side. To search, drop the question on
+the map, look at its neighbours, and check they are close enough to be useful.</p></div>
+</div>
 
 <!-- ================= LEVEL 1 ================= -->
 <div class="level-head" id="level-1"><span class="lv-badge">Level 1</span><span class="lv-title">The core idea</span><span class="lv-meta">About 25 minutes. No maths beyond multiplying, adding and one square root.</span></div>
@@ -329,12 +337,13 @@ wrong.</p></div>
 <ol>
 <li><b>Tokenize.</b> The text is split into tokens by the embedding model's own tokenizer,
 which is usually not the one your chat model uses.</li>
-<li><b>Cut to the input limit.</b> Anything past the model's limit - often 512 tokens - is
-<b>dropped without any warning</b>.</li>
+<li><b>Cut to the input limit.</b> Anything past the model's limit - 512 tokens on many
+classic models, 8,000 or more on newer ones - is <b>dropped without any warning</b>.</li>
 <li><b>Encode.</b> The tokens pass through a transformer, which gives one vector per
 token.</li>
-<li><b>Pool.</b> Those token vectors are combined into one vector, most often by averaging
-them (mean pooling).</li>
+<li><b>Pool.</b> Those token vectors are combined into one vector. Many sentence-transformer
+models average them (mean pooling), BGE uses the first [CLS] token, and newer LLM-based
+embedders use the last token. Use whatever the model was trained with.</li>
 <li><b>Normalise.</b> The vector is scaled to length 1, so cosine becomes a dot
 product.</li>
 <li><b>Store or compare.</b> At ingestion you store it next to its text. At question time
@@ -349,7 +358,7 @@ gets a vector that describes only its first 17% - and nothing tells you.</p>
 <table>
 <thead><tr><th>Part</th><th>What it does</th><th>What goes wrong if you ignore it</th></tr></thead>
 <tbody>
-<tr><td><b>Embedding model</b></td><td>Turns text into a vector. Usually a small transformer, often 20 to 500 million parameters</td><td>A model trained on the wrong language or domain puts unrelated texts close together</td></tr>
+<tr><td><b>Embedding model</b></td><td>Turns text into a vector. Classic models are small transformers of about 20 to 500 million parameters; the current leaders on the MTEB leaderboard (such as Qwen3-Embedding and gemini-embedding-001) are LLM-based, about 0.6 to 8 billion</td><td>A model trained on the wrong language or domain puts unrelated texts close together</td></tr>
 <tr><td><b>Input limit</b></td><td>The most tokens the model reads</td><td>Longer text is silently cut, so its vector ignores everything past the limit</td></tr>
 <tr><td><b>Chunking</b></td><td>Splits documents into passages, one vector each</td><td>A 40-page PDF as one vector is a vector of nothing in particular</td></tr>
 <tr><td><b>Pooling</b></td><td>Combines token vectors into one</td><td>Using a different pooling from the one the model was trained with quietly lowers quality</td></tr>
@@ -701,6 +710,7 @@ must re-embed everything.</li>
 closest". Turning that into "what is useful" needs a minimum score, a keyword partner, or a
 reranker - usually all three.</p></div>
 </div>
+<p class="review-link">🔁 <a href="../review.html?topic=embeddings">Review this topic's cards</a> - tomorrow, in 3 days, in a week and in 3 weeks.</p>
 <p><b>Next:</b> <a href="05_vector_databases.html">04 · Vector Databases</a>. Comparing a
 question against every vector works at 10,000 chunks. At 10 million it does not, and that
 is what a vector database fixes.</p>
@@ -716,9 +726,9 @@ is what a vector database fixes.</p>
 </div>
 </div>
 <script src="../assets/app.js?v=20261123b"></script>
-<script src="../assets/sitenav.js?v=20261123b"></script>
+<script src="../assets/sitenav.js?v=20261124a"></script>
 <script src="../assets/enhance.js?v=20260925c"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
-<script src="../assets/glossary.js?v=20261123b"></script>
+<script src="../assets/glossary.js?v=20261124a"></script>
 </body>
 </html>

@@ -43,7 +43,7 @@
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
 <script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20261123b" rel="stylesheet"/>
+<link href="../assets/styles.css?v=20261124a" rel="stylesheet"/>
 <link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <!-- Release 2 runtime. The manifest loads first, the renderer second; classic
@@ -51,9 +51,9 @@
      exists and the manifest is defined before the renderer runs. The authored
      links inside [data-page-nav] stay in the source and are replaced only after
      page, route and fragment have all resolved. -->
-<script defer src="../assets/curriculum.js?v=20261123c"></script>
-<script defer src="../assets/page-nav.js?v=20261123c"></script>
-<link href="../assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+<script defer src="../assets/curriculum.js?v=20261124a"></script>
+<script defer src="../assets/page-nav.js?v=20261124a"></script>
+<link href="../assets/ir-theme.css?v=20261124a" rel="stylesheet"/>
 </head>
 <body data-curriculum-id="genai-g5" data-page="prep-production" data-prep-section="interview">
 <div class="app">
@@ -97,70 +97,70 @@
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>I begin with task quality and risk, then compare latency, throughput, context length, structured-output reliability, tool support, privacy, region availability and cost. I create a representative eval set and test several model tiers. Often a router sends simple tasks to a smaller model and difficult or high-value tasks to a stronger one, with a safe fallback.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Choose from measured task quality under real latency, cost, privacy and reliability constraints - not from leaderboard rank alone.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> When would you host an open model instead of using an API?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> When would you host an open model instead of using an API?</summary><div class="a">Host an open model when data cannot leave your network, when steady high volume makes owned GPUs cheaper than per-token pricing, or when you need fine-tuned weights or a model version that never changes under you. A GPU running a 7-8B model with vLLM costs the same every hour whether it is busy or idle, so it only beats an API once utilisation stays high. Count the hidden costs too: on-call, upgrades, re-evaluating each new model and spare capacity for peaks.</div></details>
 </div></details>
 <details class="prep-question" data-question="how do you create a latency budget for a genai request?" data-tags="latency slo observability">
 <summary><span class="prep-q-no">02</span><span class="prep-q-title">How do you create a latency budget for a GenAI request?<span class="prep-tags"><span>latency</span><span>slo</span><span>observability</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>I split the end-to-end target across gateway, retrieval or tools, prompt assembly, model time-to-first-token, generation, validation and persistence. I measure p50 and p95 per span, run independent I/O in parallel and reserve headroom for retries. The budget is tied to user experience: an interactive chat differs from an offline document job.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Break the SLO into measurable spans and optimize the dominant stage. Protect p95, not only the average.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> What would you do if retrieval is 80 ms but the model takes 8 seconds?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> What would you do if retrieval is 80 ms but the model takes 8 seconds?</summary><div class="a">Leave retrieval alone - it is about 1% of the budget. Work on the model time: stream so the first token appears in roughly a second, cap <code>max_tokens</code>, send fewer but better chunks, route simple questions to a smaller, faster model and cache repeated answers. If most of the 8 seconds is output, ask whether the answer needs to be that long, because output tokens dominate generation time.</div></details>
 </div></details>
 <details class="prep-question" data-question="what does streaming improve, and what does it not improve?" data-tags="streaming ux safety">
 <summary><span class="prep-q-no">03</span><span class="prep-q-title">What does streaming improve, and what does it not improve?<span class="prep-tags"><span>streaming</span><span>ux</span><span>safety</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>Streaming reduces perceived latency by showing tokens after time-to-first-token, but it may not reduce total compute or cost. It complicates moderation, structured output, retries and client state because unsafe or invalid content may already be visible. I use it for conversational prose and avoid or buffer it for atomic structured actions.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Streaming improves responsiveness, not necessarily total latency. Use it where partial output is useful and safe.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> How would you stream while still enforcing safety?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> How would you stream while still enforcing safety?</summary><div class="a">Check the input before generation starts, then check the output stream in small windows - for example every sentence or every 50 tokens - with the power to stop the stream and replace what was shown. Hold back a short buffer so a check runs before text reaches the user, and never stream structured actions: generate, validate, then execute. Log the full response for a post-hoc check, because a streaming check only ever sees part of the answer.</div></details>
 </div></details>
 <details class="prep-question" data-question="what can be cached in a genai application?" data-tags="caching security performance">
 <summary><span class="prep-q-no">04</span><span class="prep-q-title">What can be cached in a GenAI application?<span class="prep-tags"><span>caching</span><span>security</span><span>performance</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>Depending on sensitivity and freshness, I can cache embeddings, parsed documents, retrieval results, tool responses, prompt prefixes and final answers for semantically identical requests. Keys must include tenant, permissions, model and data versions. I avoid cross-user leakage, set clear TTLs and invalidate when source data or authorization changes.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Cache stable expensive work, but make the key permission-aware and version-aware. Never trade data isolation for speed.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> How would you implement semantic caching safely?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> How would you implement semantic caching safely?</summary><div class="a">Embed the normalised question and reuse a past answer only above a strict similarity threshold - for example cosine 0.95, tuned on real near-duplicate pairs - with tenant, permission scope, model version and data version in the cache key. Cache only answers that do not depend on who is asking or on fast-changing data, set a TTL, and invalidate when source documents change. Measure the false-hit rate on a labelled sample: a wrong answer served quickly is worse than a slow correct one.</div></details>
 </div></details>
 <details class="prep-question" data-question="how would you handle high concurrency for an llm-backed api?" data-tags="concurrency load async">
 <summary><span class="prep-q-no">05</span><span class="prep-q-title">How would you handle high concurrency for an LLM-backed API?<span class="prep-tags"><span>concurrency</span><span>load</span><span>async</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>The API should be async for I/O, with connection pools, per-tenant rate limits, global concurrency limits and a queue for work that need not be interactive. I apply backpressure before the provider limit, cap request size and tokens, isolate heavy workloads and autoscale on queue depth or active generations rather than CPU alone.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Use async I/O, bounded concurrency, queues and admission control. LLM capacity - not web-server CPU - is often the real bottleneck.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> Why can adding more API workers make the system worse?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> Why can adding more API workers make the system worse?</summary><div class="a">The real limit is usually the provider's quota or a GPU, not your workers. More workers push more concurrent requests into the same quota, so you get more 429s, more retries and more tokens spent on requests that fail - latency rises for everyone. Put the cap at the real constraint: a global concurrency limit or token bucket sized to the provider's tokens-per-minute quota, with a queue in front.</div></details>
 </div></details>
 <details class="prep-question" data-question="when is batching useful?" data-tags="batching throughput queue">
 <summary><span class="prep-q-no">06</span><span class="prep-q-title">When is batching useful?<span class="prep-tags"><span>batching</span><span>throughput</span><span>queue</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
-<div class="prep-answer-label">Strong answer</div><p>Batching is useful for offline embeddings, classification or evaluation where a small wait can improve GPU or provider throughput. It is less useful for low-latency interactive generation with different prompt lengths. I group compatible jobs, set maximum batch delay and size, and separate batch queues from user-facing traffic.</p>
-<div class="prep-say"><strong>30-second version</strong><p>Batch throughput-oriented work; keep latency-sensitive requests on a controlled online path.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> How would you avoid one long request slowing a batch?</div>
+<div class="prep-answer-label">Strong answer</div><p>There are two kinds. <b>Request batching</b> - grouping jobs and waiting for a batch to fill - suits offline embeddings, classification or evaluation, where a small wait improves GPU or provider throughput (provider batch APIs are often about half price). For those I set a maximum batch delay and size, and keep batch queues separate from user-facing traffic. <b>Continuous batching</b> is different: self-hosted servers such as vLLM and TGI add and remove requests at every decode step, so prompts of different lengths share the GPU without waiting for each other. That is how interactive traffic is served, not something to avoid. The trade-off is per-request latency against throughput: a bigger running batch serves more users per GPU but makes each token slightly slower, so I tune the maximum concurrent sequences against the p95 latency target.</p>
+<div class="prep-say"><strong>30-second version</strong><p>Wait-and-group batching for offline work; continuous batching (vLLM, TGI) for interactive serving, tuned so throughput gains do not break the p95 latency target.</p></div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> How would you avoid one long request slowing a batch?</summary><div class="a">For self-hosted serving, continuous batching in vLLM or TGI already handles most of it: a finished request leaves the batch at token granularity and a new one joins, so a long request no longer holds everyone back. Still cap <code>max_tokens</code>, send very long prompts to a separate queue or deployment, and enable chunked prefill so one huge prompt does not stall other requests' decode steps. For offline request batching, group jobs of similar length and give each item its own timeout.</div></details>
 </div></details>
 <details class="prep-question" data-question="how do you reduce token cost without hurting quality?" data-tags="tokens cost optimization">
 <summary><span class="prep-q-no">07</span><span class="prep-q-title">How do you reduce token cost without hurting quality?<span class="prep-tags"><span>tokens</span><span>cost</span><span>optimization</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>I remove redundant instructions, retrieve fewer but better chunks, compress history, cap output length, route tasks to the smallest model that passes evaluation and avoid repeated context through caching. I track cost per successful task, not cost per request, because a cheap answer that causes retries or manual work is not efficient.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Use better context, shorter prompts, model routing and caching - then verify quality. Optimize cost per successful outcome.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> What token optimization can accidentally reduce quality?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> What token optimization can accidentally reduce quality?</summary><div class="a">Cutting top-k from 10 to 2 can drop the one chunk that held the answer; summarising history can lose a constraint the user stated early; removing few-shot examples or format instructions can break structured output; and a tight <code>max_tokens</code> truncates answers mid-sentence. Routing to a smaller model is the biggest risk of all. Every cut must pass the same evaluation set before release, judged on cost per successful task.</div></details>
 </div></details>
 <details class="prep-question" data-question="what is backpressure, and why does an ai service need it?" data-tags="backpressure reliability load">
 <summary><span class="prep-q-no">08</span><span class="prep-q-title">What is backpressure, and why does an AI service need it?<span class="prep-tags"><span>backpressure</span><span>reliability</span><span>load</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>Backpressure means the system refuses, queues or degrades work when downstream capacity is saturated instead of accepting unlimited requests. LLM APIs, vector stores and tool services have finite concurrency. I use bounded queues, deadlines, 429 or 503 responses with retry guidance, and priority classes so background jobs cannot starve interactive users.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Backpressure protects the system by limiting admitted work to downstream capacity. Without it, queues grow until latency and failures cascade.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> How do you choose between queueing and rejecting?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> How do you choose between queueing and rejecting?</summary><div class="a">Queue work that can wait and that the user will still want - document processing, reports, batch evaluation - and give them a status or a notification. Reject fast with 429 or 503 and a <code>Retry-After</code> header when the request is interactive and would time out in the queue anyway. A simple rule: if expected wait (queue depth divided by throughput) is longer than the request's deadline, reject at the door.</div></details>
 </div></details>
 <details class="prep-question" data-question="how would you deploy a production genai service?" data-tags="deployment cloud docker">
 <summary><span class="prep-q-no">09</span><span class="prep-q-title">How would you deploy a production GenAI service?<span class="prep-tags"><span>deployment</span><span>cloud</span><span>docker</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>I containerize a stateless API, keep prompts and release manifests versioned, store durable workflow state externally, and use managed secrets and private networking. Kubernetes or a serverless container platform can autoscale the API; separate workers handle long jobs. I add health checks, canary releases, tracing and an immediate rollback path.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Stateless API, external state, managed secrets, separate workers, observable canaries and rollback. Choose the platform from traffic and operational maturity.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> When is Kubernetes unnecessary?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> When is Kubernetes unnecessary?</summary><div class="a">When you run one or two stateless services that call a hosted model API. A managed container platform such as Cloud Run, AWS ECS on Fargate or Azure Container Apps gives you autoscaling, TLS and rollbacks without running a cluster. Kubernetes earns its operational cost when you have many services, self-host models on GPUs, or need fine-grained scheduling and networking.</div></details>
 </div></details>
 <details class="prep-question" data-question="which slos would you define?" data-tags="slo metrics production">
 <summary><span class="prep-q-no">10</span><span class="prep-q-title">Which SLOs would you define?<span class="prep-tags"><span>slo</span><span>metrics</span><span>production</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>I define availability, p95 time-to-first-token and total latency, successful task rate, tool and retrieval error rate, safety-event rate and cost per successful task. For agent workflows I also track completion, escalation and loop-limit rates. SLOs should be task- and tier-specific, with graceful degradation documented.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Define reliability, latency, task quality, safety and economics. An AI service is healthy only when users complete the task.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> What should the error budget include?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> What should the error budget include?</summary><div class="a">Everything that breaks the user's task, not just HTTP 5xx: timeouts, provider errors that exhausted retries, responses that failed schema validation, safety blocks on legitimate requests, and requests slower than the latency SLO. With a 99.5% successful-task SLO over 30 days, the budget is 0.5% of tasks - roughly 3.6 hours of total outage - and burning it fast freezes risky releases such as prompt or model changes. Leave out failures the client caused, such as invalid input, so the budget measures your system.</div></details>
 </div></details></section>
 
 <div class="page-nav" data-page-nav><a href="04-evaluation-llmops.html"><div class="dir">← Previous</div><div class="ttl">Evaluation, Observability &amp; LLMOps</div></a><a class="next" href="06-security-responsible-ai.html"><div class="dir">Next →</div><div class="ttl">Security, Prompt Injection &amp; Responsible AI</div></a></div>
@@ -170,9 +170,9 @@
 </div>
 </div>
 <script src="../assets/app.js?v=20261123b"></script>
-<script src="../assets/sitenav.js?v=20261123b"></script>
+<script src="../assets/sitenav.js?v=20261124a"></script>
 <script src="../assets/enhance.js?v=20260925c"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
-<script src="../assets/interview-prep.js?v=20260925a"></script>
+<script src="../assets/interview-prep.js?v=20261124a"></script>
 </body>
 </html>

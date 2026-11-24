@@ -43,7 +43,7 @@
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
 <script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20261123b" rel="stylesheet"/>
+<link href="../assets/styles.css?v=20261124a" rel="stylesheet"/>
 <link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <!-- Release 2 runtime. The manifest loads first, the renderer second; classic
@@ -51,9 +51,9 @@
      exists and the manifest is defined before the renderer runs. The authored
      links inside [data-page-nav] stay in the source and are replaced only after
      page, route and fragment have all resolved. -->
-<script defer src="../assets/curriculum.js?v=20261123c"></script>
-<script defer src="../assets/page-nav.js?v=20261123c"></script>
-<link href="../assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+<script defer src="../assets/curriculum.js?v=20261124a"></script>
+<script defer src="../assets/page-nav.js?v=20261124a"></script>
+<link href="../assets/ir-theme.css?v=20261124a" rel="stylesheet"/>
 </head>
 <body data-curriculum-id="genai-g4" data-page="prep-evals" data-prep-section="interview">
 <div class="app">
@@ -97,70 +97,70 @@
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>It is a versioned set of representative inputs with expected outputs, labels, evidence or scoring criteria. It should include common tasks, difficult slices, past incidents and adversarial cases, with provenance and reviewer agreement. I keep a stable holdout for release comparison and continuously add production failures to a separate regression set.</p>
 <div class="prep-say"><strong>30-second version</strong><p>A golden set is the repeatable test contract for model behavior. It represents real use, edge cases and known failures, and is versioned like code.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> How large should it be?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> How large should it be?</summary><div class="a">Start with roughly 100–300 cases covering the main intents in proportion to real traffic, plus known failures and adversarial cases, and grow it from production incidents. Size it for the decision you must make: at a 90% pass rate, 100 cases give a margin of about ±6 points, so spotting a 2-point change needs several hundred cases or repeated runs. Label quality matters more than raw count.</div></details>
 </div></details>
 <details class="prep-question" data-question="how do you evaluate open-ended llm output?" data-tags="evaluation rubric quality">
 <summary><span class="prep-q-no">02</span><span class="prep-q-title">How do you evaluate open-ended LLM output?<span class="prep-tags"><span>evaluation</span><span>rubric</span><span>quality</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>I decompose quality into dimensions such as correctness, groundedness, completeness, style and policy compliance. Deterministic validators handle schemas and citations; human rubrics establish trusted labels; semantic or LLM-based graders scale selected dimensions. I report slice-level results and inspect disagreements instead of hiding them in one score.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Break “quality” into measurable dimensions and use the cheapest reliable evaluator for each one. Keep human calibration.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> Why is exact match usually insufficient?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> Why is exact match usually insufficient?</summary><div class="a">Correct open-ended answers come in many wordings - "₹5,000" and "five thousand rupees" fail exact match but say the same thing. Exact match also passes an answer that contains the expected string but adds wrong claims around it. Keep it for constrained outputs such as labels, ids or JSON fields, and use rubric scoring, semantic comparison or a calibrated judge for free text.</div></details>
 </div></details>
 <details class="prep-question" data-question="what are the risks of llm-as-a-judge?" data-tags="llm-as-judge bias calibration">
 <summary><span class="prep-q-no">03</span><span class="prep-q-title">What are the risks of LLM-as-a-judge?<span class="prep-tags"><span>llm-as-judge</span><span>bias</span><span>calibration</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>A judge can prefer verbose answers, share biases with the model being tested, be sensitive to ordering or prompts, and drift when its version changes. I blind or randomize comparisons, calibrate against human labels, use multiple checks for high-stakes decisions and version the judge prompt and model.</p>
 <div class="prep-say"><strong>30-second version</strong><p>LLM judges scale evaluation but are not ground truth. Calibrate, version and monitor them against human decisions.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> How would you measure judge agreement?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> How would you measure judge agreement?</summary><div class="a">Have people label 100–200 representative answers, run the judge on the same answers, and compute Cohen's kappa, which corrects for agreement by chance - raw percentage agreement looks inflated when most answers are good. As a rough guide, kappa above about 0.6 is usable and above 0.8 is strong. Read the confusion matrix too, to see whether the judge is too lenient or too strict.</div></details>
 </div></details>
 <details class="prep-question" data-question="what should be captured in a genai trace?" data-tags="observability tracing privacy">
 <summary><span class="prep-q-no">04</span><span class="prep-q-title">What should be captured in a GenAI trace?<span class="prep-tags"><span>observability</span><span>tracing</span><span>privacy</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>At minimum: request and trace IDs, user/tenant context without unnecessary PII, model and prompt versions, retrieval queries and document IDs, tool calls, token usage, latency by span, validation outcomes, errors, safety decisions and user feedback. Sensitive content should be redacted or access-controlled with retention limits.</p>
 <div class="prep-say"><strong>30-second version</strong><p>A trace should reconstruct what the system saw, chose, called, cost and returned - without turning observability into a data leak.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> How would you debug a bad answer from a trace?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> How would you debug a bad answer from a trace?</summary><div class="a">Walk the trace in order: the input and any rewrite, the retrieved chunks and their ranks, the assembled prompt and its versions, the tool calls and results, then the output. Find the first step that went wrong - for example the right document was retrieved at rank 14 and cut off by a top-5 limit. Reproduce that one step in isolation, then add the case to the golden set so the fix stays tested.</div></details>
 </div></details>
 <details class="prep-question" data-question="how do you version a genai application?" data-tags="versioning release reproducibility">
 <summary><span class="prep-q-no">05</span><span class="prep-q-title">How do you version a GenAI application?<span class="prep-tags"><span>versioning</span><span>release</span><span>reproducibility</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>I version the model, decoding parameters, system prompt, examples, output schema, retriever configuration, embedding model, corpus snapshot, tools and policy. A release manifest ties these together so an evaluation result and production trace are reproducible. Components can then be rolled back independently.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Version the whole behavior bundle, not only the prompt. A release manifest makes evaluation and rollback meaningful.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> What happens when an embedding model changes?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> What happens when an embedding model changes?</summary><div class="a">Vectors from different embedding models are not comparable, so the whole corpus must be re-embedded and the index rebuilt - old and new vectors cannot be mixed. Build the new index alongside the old one, evaluate retrieval on the golden set, then switch traffic and keep the old index for rollback. Version the embedding model together with the index, so queries are always embedded by the same model as the documents.</div></details>
 </div></details>
 <details class="prep-question" data-question="which online metrics matter?" data-tags="metrics production slo">
 <summary><span class="prep-q-no">06</span><span class="prep-q-title">Which online metrics matter?<span class="prep-tags"><span>metrics</span><span>production</span><span>slo</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>I combine task success or resolution, user correction and escalation rates, groundedness or citation acceptance, tool success, safety events, p50/p95 latency, availability and cost per successful task. Metrics must be sliced by language, tenant, task and model route because averages can conceal failures.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Track product success, quality, safety, reliability and cost - and slice them by the users and tasks that can fail differently.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> Which metric would you put on an executive dashboard?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> Which metric would you put on an executive dashboard?</summary><div class="a">One outcome metric tied to the business goal - for example task success rate, or the share of support tickets resolved without a person - alongside cost per successful task and a count of safety incidents. Executives need trends against targets, not judge scores or recall@k; those belong on the team's dashboard. Show each against its target and the previous period.</div></details>
 </div></details>
 <details class="prep-question" data-question="how do you test a genai pipeline in ci?" data-tags="testing ci evaluation">
 <summary><span class="prep-q-no">07</span><span class="prep-q-title">How do you test a GenAI pipeline in CI?<span class="prep-tags"><span>testing</span><span>ci</span><span>evaluation</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>Unit-test prompt builders, chunkers, policies and tool adapters without a live model. Add contract tests for schemas, mocked provider failures and deterministic fixtures. Run a small stable eval set on every change and a larger gated suite before release, with thresholds and a human review path for ambiguous regressions.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Use normal software tests around the model and evaluation gates for model behavior. CI should catch both code and quality regressions.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> How do you keep CI cost and flakiness under control?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> How do you keep CI cost and flakiness under control?</summary><div class="a">Run a small, fast set of deterministic checks on every commit, and the full LLM-judged suite only on prompt, model or retrieval changes, or nightly. Cache model responses for unchanged inputs, pin model versions, and use temperature 0 where the model supports it. Gate on thresholds with a margin rather than exact scores, and re-run a failing case a few times before calling it a regression.</div></details>
 </div></details>
 <details class="prep-question" data-question="users report hallucinations after a release. what do you inspect first?" data-tags="incident debugging observability">
 <summary><span class="prep-q-no">08</span><span class="prep-q-title">Users report hallucinations after a release. What do you inspect first?<span class="prep-tags"><span>incident</span><span>debugging</span><span>observability</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>I compare release manifests and traces: model or prompt change, retrieval result changes, corpus ingestion, filters, tool errors, truncation and validation. I reproduce affected queries, determine whether the issue is retrieval or generation, roll back if the impact is material, then add the incident to regression tests.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Reproduce from traces, isolate the failing stage, mitigate quickly, then convert the incident into a permanent test.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> What if only one tenant is affected?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> What if only one tenant is affected?</summary><div class="a">Look at what is specific to that tenant: their documents and index partition (a failed or partial ingestion, a new document format), configuration or prompt overrides, permission filters returning too few chunks, or a shift in the language or domain of their queries. Compare their traces with a healthy tenant's for the same kind of question. A tenant-specific problem is usually data or configuration, not the model.</div></details>
 </div></details>
 <details class="prep-question" data-question="what should block a genai release?" data-tags="release-gate risk trade-off">
 <summary><span class="prep-q-no">09</span><span class="prep-q-title">What should block a GenAI release?<span class="prep-tags"><span>release-gate</span><span>risk</span><span>trade-off</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>A release should fail if it violates safety or privacy policies, breaks output contracts, materially regresses critical task slices, exceeds latency or cost budgets, or lacks rollback and traceability. Thresholds should reflect risk: a creative assistant can tolerate different errors than a hiring or financial workflow.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Use explicit quality, safety, operational and cost gates proportional to the product risk.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> How do you handle a quality gain with a large latency regression?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> How do you handle a quality gain with a large latency regression?</summary><div class="a">Quantify both against the SLOs: if p95 latency now breaks the agreed budget, the change cannot ship as it is, however good it looks. Look for ways to keep most of the gain - route only the hard queries to the slower path, stream the response, add caching or use a smaller reranker. If the trade-off is genuinely a product decision, put the numbers in front of the product owner rather than deciding silently.</div></details>
 </div></details>
 <details class="prep-question" data-question="what does drift mean in a genai system?" data-tags="drift monitoring data">
 <summary><span class="prep-q-no">10</span><span class="prep-q-title">What does drift mean in a GenAI system?<span class="prep-tags"><span>drift</span><span>monitoring</span><span>data</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>Drift can occur in user queries, source documents, retrieval distributions, tool behavior, model versions or product expectations. I monitor input and retrieval characteristics, task outcomes and evaluator scores by slice. When a shift appears, I sample and relabel data before deciding whether to update prompts, indexes, routing or models.</p>
 <div class="prep-say"><strong>30-second version</strong><p>GenAI drift is broader than model drift: users, knowledge, retrieval, tools and requirements can all move. Monitor outcomes and distributions together.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> How do you distinguish drift from a one-off incident?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> How do you distinguish drift from a one-off incident?</summary><div class="a">An incident is a step change tied to an event - a deploy, an outage, a bad data load - and it reverts once fixed. Drift is a gradual, sustained shift: the topics, languages or lengths of inputs slowly change and quality on those slices declines over weeks. Compare distributions over rolling windows - for example the weekly intent mix or embedding clusters against a baseline - and check whether the change lines up with a deployment.</div></details>
 </div></details></section>
 
 <div class="page-nav" data-page-nav><a href="03-agents-mcp.html"><div class="dir">← Previous</div><div class="ttl">Agents, Tool Use, LangGraph &amp; MCP</div></a><a class="next" href="05-production-performance.html"><div class="dir">Next →</div><div class="ttl">Production Architecture, Latency &amp; Cost</div></a></div>
@@ -170,9 +170,9 @@
 </div>
 </div>
 <script src="../assets/app.js?v=20261123b"></script>
-<script src="../assets/sitenav.js?v=20261123b"></script>
+<script src="../assets/sitenav.js?v=20261124a"></script>
 <script src="../assets/enhance.js?v=20260925c"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
-<script src="../assets/interview-prep.js?v=20260925a"></script>
+<script src="../assets/interview-prep.js?v=20261124a"></script>
 </body>
 </html>

@@ -43,7 +43,7 @@
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
 <script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20261123b" rel="stylesheet"/>
+<link href="../assets/styles.css?v=20261124a" rel="stylesheet"/>
 <link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <link href="../assets/glossary.css?v=20260802b" rel="stylesheet"/>
@@ -52,9 +52,9 @@
      exists and the manifest is defined before the renderer runs. The authored
      links inside [data-page-nav] stay in the source and are replaced only after
      page, route and fragment have all resolved. -->
-<script defer src="../assets/curriculum.js?v=20261123c"></script>
-<script defer src="../assets/page-nav.js?v=20261123c"></script>
-<link href="../assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+<script defer src="../assets/curriculum.js?v=20261124a"></script>
+<script defer src="../assets/page-nav.js?v=20261124a"></script>
+<link href="../assets/ir-theme.css?v=20261124a" rel="stylesheet"/>
 </head>
 <body data-curriculum-id="langgraph-module" data-page="12">
 <div class="app">
@@ -101,6 +101,46 @@ them.</p>
 <span>CampusX Agentic AI with LangGraph <span class="yt-sub"> - video playlist</span></span>
 </a>
 
+<h3>How to use this page</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Level</th><th>What you get</th><th>Who it is for</th></tr></thead>
+<tbody>
+<tr><td><b>1 · The core idea</b><br/>sections 1-4, about 30 minutes</td><td>The four things a chain cannot do, and the one idea that fixes all of them</td><td>Everyone. Read this first.</td></tr>
+<tr><td><b>2 · The real version</b><br/>sections 5-10</td><td>A graph running superstep by superstep, every component, the state, a trace, and two failures</td><td>When Level 1 feels easy</td></tr>
+<tr><td><b>3 · Engineering and interviews</b><br/>sections 11-14</td><td>Production settings, the framework comparison, interview questions</td><td>Optional on a first read</td></tr>
+</tbody>
+</table>
+</div>
+
+<p class="bd-choose">Everything on this page comes back to five ideas. Level 1 covers the
+first two.</p>
+<ol>
+<li><b>A chain does not know where it is.</b> Give the run a state, save it after every
+step, and looping, branching, pausing and resuming all become possible.</li>
+<li><b>A graph is nodes and edges over one shared state.</b> A node returns only the fields
+it changed; an edge, or a router reading the state, picks the next node.</li>
+<li><b>Reducers decide how updates merge.</b> Overwrite by default; <code>add_messages</code>
+appends. Forget it and the conversation silently resets.</li>
+<li><b>The checkpointer is the memory.</b> State is saved after every superstep under a
+<code>thread_id</code>; <code>interrupt()</code> pauses the run and
+<code>Command(resume=...)</code> continues it.</li>
+<li><b>Every loop needs three stops.</b> The normal exit, a step budget in the state, and
+the <code>recursion_limit</code> as the last line of defence.</li>
+</ol>
+
+<div class="callout key memory-hook" id="memory-hook">
+<div class="c-ico">🧠</div>
+<div class="c-body"><div class="c-title">Memory hook</div>
+<p><b>A board game with save slots.</b> The state is the board, each node is a move, the
+checkpointer is one save slot per <code>thread_id</code>, and an interrupt is a pause for the
+referee. A reducer is a whiteboard or a ledger: the default wipes the whiteboard and writes
+the new value; <code>add_messages</code> adds a line to the ledger.</p></div>
+</div>
+
+<!-- ================= LEVEL 1 ================= -->
+<div class="level-head" id="level-1"><span class="lv-badge">Level 1</span><span class="lv-title">The core idea</span><span class="lv-meta">About 30 minutes. No code needed.</span></div>
+
 <!-- ================= 1 ================= -->
 <h2 id="known">1 · What you already know</h2>
 <p>In module 09 you met chains: <code>prompt | model | parser</code>. Every component
@@ -142,7 +182,8 @@ problems disappear at once. That data is called the <b>state</b>.</p>
 
 <h4>Basic level</h4>
 <p class="bd-item"><b class="no-jargon">What it is.</b> LangGraph is an open-source
-Python framework, built on LangChain, for writing LLM applications as a graph of nodes
+Python framework from the LangChain team (it depends only on <code>langchain-core</code>,
+not on LangChain itself), for writing LLM applications as a graph of nodes
 that read and update one shared state object.</p>
 <p class="bd-item"><b class="no-jargon">Core purpose.</b> It runs workflows that loop,
 choose the next step at run time, pause for human approval, or continue after a
@@ -183,7 +224,7 @@ crash.</p>
 produces a Pregel runtime that executes in supersteps: every node scheduled for a step
 runs, then their updates are merged. A <b>reducer</b> declared per state field decides
 how the merge works - overwrite by default, or <code>add_messages</code> to append. A
-<b>checkpointer</b> (<code>MemorySaver</code>, <code>SqliteSaver</code>,
+<b>checkpointer</b> (<code>InMemorySaver</code>, <code>SqliteSaver</code>,
 <code>PostgresSaver</code>) writes the state after every superstep.</p>
 <p class="bd-item"><b class="no-jargon">State handling.</b> One shared state object
 exists for the whole run. Each node returns a partial update, which the runtime merges
@@ -192,10 +233,11 @@ through the reducers. With a checkpointer, every version is stored under a
 <p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> More setup
 than a chain: a schema, node functions, edges and a compile step before anything runs. A
 cycle with no exit condition is easy to write, so the runtime enforces a
-<code>recursion_limit</code>. Advanced features are <code>interrupt_before</code> and
-<code>interrupt_after</code> for human approval, <code>Command</code> to route and update
-state in one return, subgraphs, per-node streaming, and time travel from any
-checkpoint.</p>
+<code>recursion_limit</code>. Advanced features are <code>interrupt()</code> for human
+approval (resumed with <code>Command(resume=...)</code>; the static
+<code>interrupt_before</code> and <code>interrupt_after</code> are mainly for debugging),
+<code>Command</code> to route and update state in one return, subgraphs, per-node
+streaming, and time travel from any checkpoint.</p>
 
 <h3 class="bd-tech"><span class="bd-tag">B</span> LangChain</h3>
 
@@ -242,11 +284,13 @@ Streaming, batching and callbacks are implemented once on <code>Runnable</code>,
 chain gets them.</p>
 <p class="bd-item"><b class="no-jargon">State handling.</b> A chain is stateless. The only
 data that exists during a run is the value passed from one component to the next. Chat
-history is added with <code>RunnableWithMessageHistory</code>, which reads and writes a
-store you supply, keyed by a session id.</p>
+history used to be added with <code>RunnableWithMessageHistory</code>, keyed by a session
+id; that is now legacy, and the LangChain docs point to LangGraph checkpointers for
+conversation memory instead.</p>
 <p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> A chain is
-acyclic and runs forward once: no loops, no rejoining branches, no pause for approval, no
-recovery after a crash. Advanced features wrap any component - 
+acyclic and runs forward once: it can fan out and join again
+(<code>RunnableParallel</code>), but it cannot loop back, pause for approval or recover
+after a crash. Advanced features wrap any component - 
 <code>.with_retry()</code>, <code>.with_fallbacks()</code>,
 <code>.with_structured_output()</code>, <code>.bind_tools()</code>.</p>
 
@@ -308,6 +352,25 @@ like between steps.</li>
 </ul>
 <p><b>LangGraph is this loop, with <code>messages</code> promoted to a named object the
 framework saves after every step.</b></p>
+
+<h3>Check yourself: Level 1</h3>
+<p>Answer each one out loud before you open it. Recalling an answer is what makes it
+stick; re-reading it is not.</p>
+<details class="recall"><summary><span class="q-ico">Q</span> Name the four things a chain cannot do. <span class="chev">›</span></summary><div class="a">Go back to an earlier step, pick the next step from the last result, stop and wait for a person to approve, and continue after a crash.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What one missing thing explains all four? <span class="chev">›</span></summary><div class="a">A chain does not know where it is. Give the run a piece of data that says where it is - the state - and save it after every step, and all four become possible.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What does a node receive, and what does it return? <span class="chev">›</span></summary><div class="a">It receives the whole state and returns a dictionary with only the fields it changed. It never edits the state it was given.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> The hand-written agent loop works. What can it not do? <span class="chev">›</span></summary><div class="a">Pause for approval, resume after a crash, branch cleanly, or be inspected afterwards - because <code>messages</code> lives only in a local variable.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Retrieval, prompting and parsing always run in the same order. LangGraph or LangChain? <span class="chev">›</span></summary><div class="a">LangChain. The order is fixed, so a chain is enough; LangGraph is for loops, run-time decisions, approval and crash recovery.</div></details>
+
+<div class="callout tip">
+<div class="c-ico">✅</div>
+<div class="c-body"><div class="c-title">You can stop here</div>
+<p>If you answered those, you know what LangGraph adds and why. Level 2 runs a real graph
+superstep by superstep.</p></div>
+</div>
+
+<!-- ================= LEVEL 2 ================= -->
+<div class="level-head" id="level-2"><span class="lv-badge">Level 2</span><span class="lv-title">The real version</span><span class="lv-meta">One agent graph, its components, and what the state looks like after every step.</span></div>
 
 <!-- ================= 5 ================= -->
 <h2 id="mechanics">5 · Runtime mechanics</h2>
@@ -404,7 +467,9 @@ graph stops being a chain.</p>
 <h4>9 · Parallel branches</h4>
 <p>Two edges out of one node, with no edge between them, means both nodes run in the same
 superstep. Their updates are merged afterwards - which is exactly when you need a
-reducer.</p>
+reducer. Without one, two writes to the same key in one superstep do not silently
+overwrite: the run stops with <code>InvalidUpdateError</code> ("can receive only one value
+per step"). Plain overwrite only happens when the writes land in different steps.</p>
 
 <svg class="bd-svg" viewBox="0 0 900 180" role="img" aria-labelledby="par-t par-d">
 <title id="par-t">Parallel branches merging</title>
@@ -423,14 +488,14 @@ reducer.</p>
 <text class="lbl mono" x="380" y="145">search_docs</text>
 <text class="lbl" x="690" y="86">merge</text>
 <text class="cap" x="690" y="103">reducer combines both</text>
-<text class="cap" x="450" y="176">one superstep runs both; without a reducer on the shared field, one result overwrites the other</text>
+<text class="cap" x="450" y="176">one superstep runs both; without a reducer on the shared field, the run fails with InvalidUpdateError</text>
 </svg>
 
 <h3>Durability</h3>
 
 <h4>10 · Checkpointer</h4>
-<p>Saves the state after every superstep. <code>MemorySaver</code> keeps it in the
-process. <code>SqliteSaver</code> and <code>PostgresSaver</code> write to a database and
+<p>Saves the state after every superstep. <code>InMemorySaver</code> (older name:
+<code>MemorySaver</code>) keeps it in the process. <code>SqliteSaver</code> and <code>PostgresSaver</code> write to a database and
 survive a restart.</p>
 
 <h4>11 · Thread</h4>
@@ -441,15 +506,20 @@ previous state and continues; use a new one and it starts fresh.</p>
 the saved messages and sends them again.</p>
 
 <h4>12 · Interrupt</h4>
-<p>Stops the run before or after a named node and checkpoints the state. The graph is
-paused, not cancelled.</p>
+<p>A node calls <code>interrupt(payload)</code> - for example the proposed refund - and
+the run stops there with the state checkpointed. The graph is paused, not cancelled. The
+static <code>interrupt_before</code> / <code>interrupt_after</code> options also exist, but
+the LangGraph docs recommend them for debugging, not for human approval.</p>
 
 <h4>13 · Resume</h4>
-<p>Calling <code>invoke</code> with <code>None</code> on the same thread continues from
-the checkpoint. Nothing before the pause runs again.</p>
+<p>Invoke the graph again on the same thread with <code>Command(resume=value)</code>. The
+value - "approved", an edited argument, a rejection message - becomes the return value of
+<code>interrupt()</code> inside the node.</p>
 
-<p>To change the state before continuing - an edited argument, a rejection message - write
-to it first with <code>update_state</code>, then resume.</p>
+<p>One trap: on resume the interrupted node runs again <em>from its first line</em>, not
+from the <code>interrupt()</code> call. Anything the node did before the pause runs twice,
+so keep side effects after the interrupt, make them idempotent, or move them to an earlier
+node. Nodes that finished before the pause do not run again.</p>
 
 <h4>14 · Command</h4>
 <p>Lets a node return a state update and a routing decision together, instead of needing a
@@ -461,20 +531,14 @@ past the point where you can read it.</p>
 
 <!-- ================= 8 ================= -->
 <h2 id="state">7 · State and data flow</h2>
-<p>The same ten questions asked on every stateful page in this portal.</p>
+<p>Four questions about the state, and the answers that matter.</p>
 <div class="table-wrap">
 <table>
 <tbody>
-<tr><th>1 · What data is state?</th><td>One object matching the schema you declared, shared by every node for the whole run.</td></tr>
-<tr><th>2 · Who writes each field?</th><td>Any node that returns that key. Several nodes may write the same field.</td></tr>
-<tr><th>3 · Who reads it?</th><td>Every node receives the whole state, and the router functions read it too.</td></tr>
-<tr><th>4 · Replaced, appended or merged?</th><td>Whatever the field's reducer says. Overwrite by default.</td></tr>
-<tr><th>5 · What reducer controls merging?</th><td>The one in the <code>Annotated[...]</code> type. <code>add_messages</code> appends; a plain type overwrites.</td></tr>
-<tr><th>6 · Only in process memory?</th><td>Only with no checkpointer, or with <code>MemorySaver</code>.</td></tr>
-<tr><th>7 · Checkpointed?</th><td>Yes, after every superstep, when a checkpointer is attached.</td></tr>
-<tr><th>8 · In a database?</th><td>With <code>SqliteSaver</code> or <code>PostgresSaver</code>.</td></tr>
-<tr><th>9 · How long does it survive?</th><td>As long as the checkpoint rows exist. Deleting them is your job.</td></tr>
-<tr><th>10 · What key retrieves it again?</th><td><code>thread_id</code>, from the config dictionary.</td></tr>
+<tr><th>What is state?</th><td>One object matching the schema you declared, shared by every node for the whole run. Every node and every router reads it.</td></tr>
+<tr><th>How is an update merged?</th><td>By the field's reducer, declared in the <code>Annotated[...]</code> type. Overwrite by default; <code>add_messages</code> appends.</td></tr>
+<tr><th>Where is it saved?</th><td>After every superstep, when a checkpointer is attached: in the process with <code>InMemorySaver</code>, in a database with <code>SqliteSaver</code> or <code>PostgresSaver</code>. Deleting old rows is your job.</td></tr>
+<tr><th>What key retrieves it again?</th><td><code>thread_id</code>, from the config dictionary.</td></tr>
 </tbody>
 </table>
 </div>
@@ -534,8 +598,8 @@ same node, a longer message list, a different decision.</b></p>
 <!-- ================= 11 ================= -->
 <h2 id="break">9 · Break it</h2>
 <p>Now remove the exit condition. Route to <code>tools</code> unconditionally.</p>
-<p>The graph keeps looping until the <code>recursion_limit</code> - 25 steps by default -
-stops it with an error. Every model call on the way was paid for. Nothing in
+<p>The graph keeps looping until the <code>recursion_limit</code> - 25 steps by default in
+most versions; check yours, and always set it explicitly - stops it with an error. Every model call on the way was paid for. Nothing in
 the graph noticed the run was pointless - the router said "tools" every time and the
 runtime obeyed.</p>
 
@@ -583,22 +647,32 @@ the first one cannot be trusted.</b></p>
 back. While you are learning, also check that the message list only ever grows, because
 the failure is invisible otherwise.</p>
 
+<h3>Check yourself: Level 2</h3>
+<details class="recall"><summary><span class="q-ico">Q</span> What is a superstep, and what happens at the end of one? <span class="chev">›</span></summary><div class="a">One round of running the scheduled nodes, merging their updates through the reducers and evaluating the edges. With a checkpointer attached, the state is written to storage at the end of every superstep.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> <span>What does <code>add_messages</code> change, and what happens without it?</span> <span class="chev">›</span></summary><div class="a">It makes updates to <code>messages</code> append instead of overwrite. Without it each update replaces the list, the model loses the question, and the conversation silently resets.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Two parallel nodes write the same key, and the key has no reducer. What happens? <span class="chev">›</span></summary><div class="a">The run stops with <code>InvalidUpdateError</code>. Two values in one superstep need a reducer to combine them.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> <span>On resume after <code>interrupt()</code>, where does the node start?</span> <span class="chev">›</span></summary><div class="a">From its first line, not from the <code>interrupt()</code> call. Anything it did before the pause runs again, so keep side effects after the interrupt or make them idempotent.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Name the three stops every loop needs. <span class="chev">›</span></summary><div class="a">The router sending the run to <code>END</code> when the model asks for no tools, a step budget in the state, and the <code>recursion_limit</code> as the last line of defence.</div></details>
+
+<!-- ================= LEVEL 3 ================= -->
+<div class="level-head" id="level-3"><span class="lv-badge">Level 3</span><span class="lv-title">Engineering and interviews</span><span class="lv-meta">Optional on a first read. Come back when you build or prepare for interviews.</span></div>
+
 <!-- ================= 13 ================= -->
 <h2 id="production">11 · Production version</h2>
 <div class="table-wrap">
 <table>
 <thead><tr><th>Concern</th><th>What you add</th></tr></thead>
 <tbody>
-<tr><td>Durable state</td><td><code>PostgresSaver</code>, not <code>MemorySaver</code>. A checkpoint that dies with the process is a demo</td></tr>
+<tr><td>Durable state</td><td><code>PostgresSaver</code>, not <code>InMemorySaver</code>. A checkpoint that dies with the process is a demo</td></tr>
 <tr><td>Termination</td><td>A step counter in the state <em>and</em> a <code>recursion_limit</code>. Never only one</td></tr>
-<tr><td>Retry</td><td>Per node: <code>builder.add_node("agent", agent, retry=RetryPolicy(max_attempts=3))</code></td></tr>
+<tr><td>Retry</td><td>Per node: <code>builder.add_node("agent", agent, retry_policy=RetryPolicy(max_attempts=3))</code></td></tr>
 <tr><td>Timeout</td><td>On the model, not the graph. A hung node holds the whole superstep</td></tr>
 <tr><td>Idempotency</td><td>Tool nodes must be safe to re-run - a resumed run may repeat the last node</td></tr>
 <tr><td>Concurrency</td><td>One thread_id per conversation. Two writers on one thread corrupt the history</td></tr>
 <tr><td>Authorisation</td><td>Check permission inside the node, before the side effect. An edge is routing, not a security boundary</td></tr>
-<tr><td>Approval</td><td><code>interrupt_before</code> on every node that spends money or writes to a customer record</td></tr>
+<tr><td>Approval</td><td><code>interrupt()</code> inside every node that spends money or writes to a customer record, before the side effect; resume with <code>Command(resume=...)</code></td></tr>
 <tr><td>Audit</td><td>Checkpoints already are the audit log. Keep them, and record who resumed which thread</td></tr>
-<tr><td>Cost</td><td>Sum <code>response_metadata</code> across supersteps. A looping graph costs per pass, not per request</td></tr>
+<tr><td>Cost</td><td>Sum each message's <code>usage_metadata</code> across supersteps. A looping graph costs per pass, not per request</td></tr>
 <tr><td>Evaluation</td><td>Score the trajectory - which nodes ran, in what order - not only the final answer</td></tr>
 <tr><td>Rollback</td><td>Version the graph. A checkpoint written by an old shape may not load into a new one</td></tr>
 </tbody>
@@ -606,8 +680,9 @@ the failure is invisible otherwise.</p>
 </div>
 
 <p><b>The most expensive mistake on this page is a graph that loops in production without a
-step budget.</b> The recursion limit will stop it, but only after 25 steps of paid work
-per request.</p>
+step budget.</b> The recursion limit will stop it, but only after every step up to that
+limit - 25 by default in most versions, more if someone raised it - has been paid for, on
+every request.</p>
 
 <!-- ================= 14 ================= -->
 <h2 id="comparison">12 · Comparison</h2>
@@ -616,7 +691,7 @@ per request.</p>
 <thead><tr><th></th><th>Hand-written loop</th><th>LangChain chain</th><th>LangGraph</th></tr></thead>
 <tbody>
 <tr><th>Loops</th><td>Yes, you write it</td><td>No</td><td>Yes, as edges</td></tr>
-<tr><th>Branching</th><td><code>if</code> statements</td><td><code>RunnableBranch</code>, no rejoin</td><td>Conditional edges that rejoin</td></tr>
+<tr><th>Branching</th><td><code>if</code> statements</td><td><code>RunnableBranch</code> picks one path; <code>RunnableParallel</code> fans out and joins, but never loops back</td><td>Conditional edges that rejoin or loop</td></tr>
 <tr><th>State</th><td>A local variable</td><td>None between calls</td><td>Declared, merged, saved</td></tr>
 <tr><th>Pause and resume</th><td>No</td><td>No</td><td>Interrupt and resume by thread</td></tr>
 <tr><th>Crash recovery</th><td>No</td><td>No</td><td>Resume from the last checkpoint</td></tr>
@@ -634,17 +709,32 @@ and the models, prompts, retrievers and tools from module 09 are used unchanged.
 <details class="collapse"><summary><span class="pill green">Beginner</span>  What are nodes and edges? <span class="chev">›</span></summary>
 <div class="collapse-body"><p>A node is a function that takes the current state and returns a partial update (the unit of work - an LLM call, a tool, a retrieval). An edge connects nodes: a normal edge always goes A→B; a conditional edge runs a router function that returns the next node's name based on state. START and END are sentinels.</p></div></details>
 <details class="collapse"><summary><span class="pill blue">Intermediate</span>  What is a reducer and why does it matter? <span class="chev">›</span></summary>
-<div class="collapse-body"><p>A reducer defines how a node's returned value merges into existing state. By default keys are overwritten; for accumulating fields (like a message list) you use a reducer such as <code>add_messages</code> to append. Reducers are also essential for deterministically merging the outputs of parallel branches - without the right reducer, concurrent updates clobber each other.</p></div></details>
+<div class="collapse-body"><p>A reducer defines how a node's returned value merges into existing state. By default keys are overwritten; for accumulating fields (like a message list) you use a reducer such as <code>add_messages</code> to append. Reducers are also essential for merging the outputs of parallel branches: if two nodes in the same superstep write a key that has no reducer, LangGraph raises <code>InvalidUpdateError</code> ("can receive only one value per step"). Silent overwrite only happens when writes land in different supersteps.</p></div></details>
 <details class="collapse"><summary><span class="pill blue">Intermediate</span>  How does checkpointing enable memory and human-in-the-loop? <span class="chev">›</span></summary>
-<div class="collapse-body"><p>A checkpointer persists state after each step, keyed by thread_id. Memory: reuse a thread to continue a conversation with full prior state. Human-in-the-loop: <code>interrupt_before</code> a node pauses the graph and checkpoints state; your app shows the proposed action to a human; calling invoke with <code>None</code> on the same thread resumes from that exact checkpoint. Same mechanism enables crash-resume and time-travel debugging.</p></div></details>
+<div class="collapse-body"><p>A checkpointer persists state after each step, keyed by thread_id. Memory: reuse a thread to continue a conversation with full prior state. Human-in-the-loop: a node calls <code>interrupt(payload)</code>, which pauses the graph and checkpoints state; your app shows the payload to a human; invoking again on the same thread with <code>Command(resume=decision)</code> continues, and the decision becomes <code>interrupt()</code>'s return value. Note the interrupted node re-runs from its start on resume, so side effects before the interrupt must be idempotent. (Static <code>interrupt_before</code> exists but is recommended for debugging.) Same mechanism enables crash-resume and time-travel debugging.</p></div></details>
 <details class="collapse"><summary><span class="pill amber">Senior</span>  Design an agent that must get human approval before any write action. <span class="chev">›</span></summary>
-<div class="collapse-body"><p>Separate read tools from write tools into different nodes (or route by tool risk). Compile with a durable checkpointer and <code>interrupt_before=["write_tools"]</code>. Flow: agent proposes → conditional edge routes a write to the write node → graph pauses and checkpoints → your UI surfaces the proposed call (with diff/dry-run) → human approves/edits/rejects → resume from checkpoint to execute, or inject a rejection message and loop back to the agent. Bound the loop with recursion_limit, log every state transition for audit, and store checkpoints in Postgres so approvals can happen asynchronously (minutes/hours later) and survive restarts.</p></div></details>
+<div class="collapse-body"><p>Separate read tools from write tools into different nodes (or route by tool risk). Compile with a durable checkpointer; the write node calls <code>interrupt({"proposed_call": ...})</code> before executing anything. Flow: agent proposes → conditional edge routes a write to the write node → graph pauses and checkpoints → your UI surfaces the proposed call (with diff/dry-run) → human approves/edits/rejects → resume with <code>Command(resume={"action": "approve" | "edit" | "reject", ...})</code> to execute, or return a rejection message and loop back to the agent. Because the node re-runs from its start on resume, keep everything before <code>interrupt()</code> side-effect free. Bound the loop with recursion_limit, log every state transition for audit, and store checkpoints in Postgres so approvals can happen asynchronously (minutes/hours later) and survive restarts.</p></div></details>
 <details class="collapse"><summary><span class="pill amber">Senior</span>  How do you run retrieval from three sources concurrently and merge? <span class="chev">›</span></summary>
 <div class="collapse-body"><p>From a single "split" node, add edges to three retrieval nodes (web/docs/db); LangGraph runs nodes with no dependency between them concurrently. Each writes to a state field with an appropriate reducer (e.g. a list that accumulates results) so their outputs merge deterministically at a downstream "merge" node, which all three edge into. Wall-clock becomes the slowest branch, not the sum. Guard each branch with its own error handling so one failure doesn't sink the merge.</p></div></details>
 <details class="collapse"><summary><span class="pill purple">Staff · design</span>  Design a durable, multi-step research agent platform on LangGraph. <span class="chev">›</span></summary>
-<div class="collapse-body"><p>Model each workflow as an explicit graph: planner node → parallel retrieval/tool nodes (fan-out with reducers) → synthesis node → reflection node (conditional edge loops back if quality is low). Compile with a <strong>Postgres checkpointer</strong> for durability, resume, and audit; key runs by thread_id for memory and multi-session continuation. Add <code>interrupt_before</code> on consequential nodes for human approval; bound cycles with recursion_limit and step/token budgets (Module 06). Wrap external tools as MCP servers (Module 07) and retrievers as RAG components (Module 05). Add tracing/observability (Module 15) over the event stream, an eval suite over graph trajectories gating deploys, and per-tenant state isolation. Stream state/events to the UI for transparency. The graph is the auditable spec; durability + HITL + explicit routing are what make it production-grade.</p></div></details>
+<div class="collapse-body"><p>Model each workflow as an explicit graph: planner node → parallel retrieval/tool nodes (fan-out with reducers) → synthesis node → reflection node (conditional edge loops back if quality is low). Compile with a <strong>Postgres checkpointer</strong> for durability, resume, and audit; key runs by thread_id for memory and multi-session continuation. Add <code>interrupt()</code> inside consequential nodes for human approval; bound cycles with recursion_limit and step/token budgets (Module 06). Wrap external tools as MCP servers (Module 07) and retrievers as RAG components (Module 05). Add tracing/observability (Module 15) over the event stream, an eval suite over graph trajectories gating deploys, and per-tenant state isolation. Stream state/events to the UI for transparency. The graph is the auditable spec; durability + HITL + explicit routing are what make it production-grade.</p></div></details>
 <!-- ================= 16 ================= -->
 <h2 id="short">14 · In short, and what comes next</h2>
+<p class="bd-choose">The five ideas from the top of the page. Try to say each one before
+you read it.</p>
+<ol>
+<li><b>A chain does not know where it is.</b> Give the run a state, save it after every
+step, and looping, branching, pausing and resuming all become possible.</li>
+<li><b>A graph is nodes and edges over one shared state.</b> A node returns only the fields
+it changed; an edge, or a router reading the state, picks the next node.</li>
+<li><b>Reducers decide how updates merge.</b> Overwrite by default; <code>add_messages</code>
+appends. Forget it and the conversation silently resets.</li>
+<li><b>The checkpointer is the memory.</b> State is saved after every superstep under a
+<code>thread_id</code>; <code>interrupt()</code> pauses the run and
+<code>Command(resume=...)</code> continues it.</li>
+<li><b>Every loop needs three stops.</b> The normal exit, a step budget in the state, and
+the <code>recursion_limit</code> as the last line of defence.</li>
+</ol>
 <p class="bd-choose">Use LangGraph when:</p>
 <ul>
 <li>The workflow loops, or the next step depends on the last result.</li>
@@ -665,6 +755,7 @@ and the models, prompts, retrievers and tools from module 09 are used unchanged.
 reason a graph can loop, branch, pause and recover is that one object holds where the run
 has got to, and the checkpointer writes it down after every step.</p></div>
 </div>
+<p class="review-link">🔁 <a href="../review.html?topic=langgraph-module">Review this topic's cards</a> - tomorrow, in 3 days, in a week and in 3 weeks.</p>
 <p><b>Next:</b> module 11 (Multi-Agent Systems) turns one graph into several that hand
 work to each other, and shows when that helps and when it only doubles the failure
 modes.</p>
@@ -680,9 +771,9 @@ modes.</p>
 </div>
 </div>
 <script src="../assets/app.js?v=20261123b"></script>
-<script src="../assets/sitenav.js?v=20261123b"></script>
+<script src="../assets/sitenav.js?v=20261124a"></script>
 <script src="../assets/enhance.js?v=20260925c"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
-<script src="../assets/glossary.js?v=20261123b"></script>
+<script src="../assets/glossary.js?v=20261124a"></script>
 </body>
 </html>

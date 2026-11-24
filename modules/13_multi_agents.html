@@ -43,7 +43,7 @@
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
 <script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20261123b" rel="stylesheet"/>
+<link href="../assets/styles.css?v=20261124a" rel="stylesheet"/>
 <link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <link href="../assets/glossary.css?v=20260802b" rel="stylesheet"/>
@@ -52,9 +52,9 @@
      exists and the manifest is defined before the renderer runs. The authored
      links inside [data-page-nav] stay in the source and are replaced only after
      page, route and fragment have all resolved. -->
-<script defer src="../assets/curriculum.js?v=20261123c"></script>
-<script defer src="../assets/page-nav.js?v=20261123c"></script>
-<link href="../assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+<script defer src="../assets/curriculum.js?v=20261124a"></script>
+<script defer src="../assets/page-nav.js?v=20261124a"></script>
+<link href="../assets/ir-theme.css?v=20261124a" rel="stylesheet"/>
 </head>
 <body data-curriculum-id="multi-agent-systems" data-page="13">
 <div class="app">
@@ -85,6 +85,55 @@
 </header>
 <div class="content-wrap">
 <main class="content">
+
+<div class="eyebrow"><span class="dot"></span> Module 11 · Frameworks track</div>
+<h1>Multi-Agent Systems</h1>
+<p class="lead">One agent with a short tool list handles most requests. This page shows when
+splitting it into several agents pays, what the split costs in extra model calls, and the one
+failure a single agent can never have. It is built in three levels: read Level 1 first - it
+covers the decision you will actually make.</p>
+<div class="meta-row">
+<span class="pill blue">⏱ Study + recall · 1.5–3 h</span>
+<span class="pill">Difficulty · Intermediate, in three levels</span>
+<span class="pill purple">Prereq · 06 Agentic AI, 10 LangGraph</span>
+</div>
+
+<h3>How to use this page</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Level</th><th>What you get</th><th>Who it is for</th></tr></thead>
+<tbody>
+<tr><td><b>1 · The core idea</b><br/>sections 1-4, about 30 minutes</td><td>Why one agent struggles, what routing fixes, and the one reason to build a supervisor</td><td>Everyone. Read this first.</td></tr>
+<tr><td><b>2 · The real version</b><br/>sections 5-9</td><td>How a supervised request runs, the parts it is built from, and the handoff loop that breaks it</td><td>When Level 1 feels easy</td></tr>
+<tr><td><b>3 · Engineering and interviews</b><br/>sections 10-13</td><td>Production practice, a comparison of topologies, interview questions</td><td>Optional on a first read</td></tr>
+</tbody>
+</table>
+</div>
+
+<p class="bd-choose">Everything on this page comes back to five ideas. Level 1 covers the
+first three.</p>
+<ol>
+<li><b>Start with one agent.</b> Split only when it is measurably struggling.</li>
+<li><b>Routing gives most of the benefit.</b> One cheap classification call, then a smaller
+prompt and fewer tools - and no coordination at all.</li>
+<li><b>A supervisor earns its cost on different tools, credentials or models</b> - not on
+tidiness.</li>
+<li><b>Every hop is a model call that does no work.</b> Count the hops, bound them, and let
+exactly one agent finish the request.</li>
+<li><b>A handoff carries a brief and pointers</b>, never the whole transcript.</li>
+</ol>
+
+<div class="callout key memory-hook" id="memory-hook">
+<div class="c-ico">🧠</div>
+<div class="c-body"><div class="c-title">Memory hook</div>
+<p><b>One cook first; a kitchen brigade only when the menu demands it.</b> A café with a short
+menu runs on one cook. A head chef calling orders to separate stations pays off only when the
+stations need different equipment - and every order the head chef calls is time nobody spends
+cooking.</p></div>
+</div>
+
+<!-- ================= LEVEL 1 ================= -->
+<div class="level-head" id="level-1"><span class="lv-badge">Level 1</span><span class="lv-title">The core idea</span><span class="lv-meta">About 30 minutes. One decision: one agent, a router, or a supervisor.</span></div>
 
 <!-- ================= 1 ================= -->
 <h2 id="known">1 · What you already know</h2>
@@ -189,6 +238,30 @@ tool, the same agent behind a router, and a supervisor with workers.</p>
 answered no better.</b></p>
 <p>What routing cannot do: give the billing path a credential the docs path does not have, run
 two paths at once, or let a worker use a different model. Those are what a supervisor buys.</p>
+<p>Picture a kitchen. A small café runs on one cook: hand the cook the right recipe card for
+each order and the food comes out fine - that recipe card is routing. A <b>kitchen brigade</b>,
+with a head chef calling orders to separate stations, earns its place only when the stations
+need different equipment or must be kept apart. Every order the head chef calls is time no one
+spends cooking, which is exactly the supervisor's overhead.</p>
+
+<h3>Check yourself: Level 1</h3>
+<p>Answer each one out loud before you open it. Recalling an answer is what makes it
+stick; re-reading it is not.</p>
+<details class="recall"><summary><span class="q-ico">Q</span> One agent covers too much. Name the four things that degrade. <span class="chev">›</span></summary><div class="a">The wrong tool gets chosen, instructions for different jobs conflict, every request pays for every tool schema, and one credential set has to cover every path.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Which of those four does routing fix, and which needs real separation? <span class="chev">›</span></summary><div class="a">Routing fixes the first three: a smaller prompt and fewer tools per request. Different credentials per path is the one that needs a separate agent.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What is routing, in one sentence? <span class="chev">›</span></summary><div class="a">One cheap classification call reads the request and picks a narrow prompt and a small tool set, then a single agent runs as normal.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What did the 40-request comparison show? <span class="chev">›</span></summary><div class="a">Routing cut cost by 49% at equal accuracy. The supervisor cost three times as much and answered no better.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Name three things a supervisor can do that routing cannot. <span class="chev">›</span></summary><div class="a">Give one path a credential the others do not have, run two paths at the same time, and let a worker use a different model.</div></details>
+
+<div class="callout tip">
+<div class="c-ico">✅</div>
+<div class="c-body"><div class="c-title">You can stop here</div>
+<p>If you answered those, you can make the call most teams get wrong: one agent, a router, or a
+supervisor. Level 2 shows how a supervised request actually runs, and how it breaks.</p></div>
+</div>
+
+<!-- ================= LEVEL 2 ================= -->
+<div class="level-head" id="level-2"><span class="lv-badge">Level 2</span><span class="lv-title">The real version</span><span class="lv-meta">How a supervised request runs, the parts it is built from, and the loop that breaks it.</span></div>
 
 <!-- ================= 5 ================= -->
 <h2 id="mechanics">5 · Runtime mechanics</h2>
@@ -266,32 +339,8 @@ it answered, refused, or stopped at its step limit.</p>
 <p>A worker that returns only text cannot be distinguished from one that failed politely. <b>The
 supervisor must be able to branch on the status.</b></p>
 
-<!-- ================= 8 ================= -->
-<h2 id="state">7 · State and data flow</h2>
-<ol>
-<li><b>What data is state?</b> The shared message list, the collected results, and the
-<code>next</code> routing decision.</li>
-<li><b>Who writes each field?</b> The supervisor writes <code>next</code>; each worker appends
-its own result.</li>
-<li><b>Who reads each field?</b> Every node sees the whole state. A worker's internal loop
-state is private to it.</li>
-<li><b>Replaced, appended or merged?</b> Messages append via <code>add_messages</code>;
-<code>next</code> is replaced every hop.</li>
-<li><b>What reducer controls merging?</b> <code>add_messages</code> for the transcript, and
-<code>operator.add</code> for accumulating findings from parallel workers.</li>
-<li><b>Is it only in process memory?</b> Without a checkpointer, yes.</li>
-<li><b>Is it checkpointed?</b> With one, after every superstep - which is what lets a
-long-running worker resume.</li>
-<li><b>Is it in a database?</b> The checkpoint store, and the trace.</li>
-<li><b>How long does it survive?</b> The request, plus whatever the checkpointer retains.</li>
-<li><b>What thread, user or key retrieves it again?</b> The <code>thread_id</code>, which every
-worker must inherit - <b>and the run id, which every trace span must share.</b></li>
-</ol>
-<p>Row 10 has a practical consequence. <b>A worker that generates its own run id produces a
-trace showing unrelated runs</b>, and you cannot then answer what one request did.</p>
-
 <!-- ================= 10 ================= -->
-<h2 id="trace">8 · Trace</h2>
+<h2 id="trace">7 · Trace</h2>
 <p>The trace of one supervised request from the course project showed six model calls.
 Three of them were the supervisor's: <b>three of the six model calls did no work</b>. They
 decided who should work. That is the coordination overhead, and it is the number to quote when someone
@@ -300,7 +349,7 @@ proposes a fourth agent.</p>
 $0.0021.</p>
 
 <!-- ================= 11 ================= -->
-<h2 id="break">9 · Break it</h2>
+<h2 id="break">8 · Break it</h2>
 <p>Remove the hop bound and give the workers overlapping responsibilities.</p>
 <p>The two workers keep handing the request back to each other. The trace shows
 <b>thirty-eight hops, 76 model calls, no answer.</b> Neither agent is broken: each is doing
@@ -333,7 +382,7 @@ that a repeat check on the tool calls would not catch it: every hop makes differ
 </svg>
 
 <!-- ================= 12 ================= -->
-<h2 id="fix">10 · Fix it</h2>
+<h2 id="fix">9 · Fix it</h2>
 <p><b>1 · Bound the hops, at the supervisor.</b> This is the one that must exist. Count
 hops in the shared state and route to the finish when the count reaches a fixed
 limit.</p>
@@ -347,8 +396,18 @@ sequence, not the tool calls: if the last four hops alternate between the same t
 nobody's responsibility. Diffuse ownership is the quieter version of this bug: the request
 completes, and the output is worse than any single agent would have produced.</p>
 
+<h3>Check yourself: Level 2</h3>
+<details class="recall"><summary><span class="q-ico">Q</span> A supervisor has three workers and makes two hops each. How many model calls happen before any work is done? <span class="chev">›</span></summary><div class="a">Seven. The supervisor's routing decision is a model call every time round, and none of those calls does the work itself.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What must every worker return, and why is text alone not enough? <span class="chev">›</span></summary><div class="a">Its result plus a status: answered, refused, or stopped at its step limit. A worker that returns only text cannot be told apart from one that failed politely, so the supervisor has nothing to branch on.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What should a handoff carry? <span class="chev">›</span></summary><div class="a">A short brief: the subtask, the few facts it needs, and pointers to shared state. Never the whole transcript - summarise before handing off, because every handoff is tokens another agent must read.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What is a handoff loop, and why does a repeat check on tool calls miss it? <span class="chev">›</span></summary><div class="a">Two workers keep handing the request back to each other - thirty-eight hops, 76 model calls, no answer. Every hop makes different tool calls, so a repeat check never fires.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Name the four fixes for a handoff loop. <span class="chev">›</span></summary><div class="a">Bound the hops at the supervisor, give exactly one agent the authority to finish, detect oscillation in the worker sequence (A, B, A, B), and name a finalizer who owns the answer.</div></details>
+
+<!-- ================= LEVEL 3 ================= -->
+<div class="level-head" id="level-3"><span class="lv-badge">Level 3</span><span class="lv-title">Engineering and interviews</span><span class="lv-meta">Optional on a first read. Come back when you design one or prepare for interviews.</span></div>
+
 <!-- ================= 13 ================= -->
-<h2 id="production">11 · Production version</h2>
+<h2 id="production">10 · Production version</h2>
 <div class="table-wrap">
 <table>
 <thead><tr><th>Concern</th><th>What you do</th></tr></thead>
@@ -368,7 +427,7 @@ completes, and the output is worse than any single agent would have produced.</p
 </div>
 
 <!-- ================= 14 ================= -->
-<h2 id="comparison">12 · Comparison</h2>
+<h2 id="comparison">11 · Comparison</h2>
 <div class="table-wrap">
 <table>
 <thead><tr><th></th><th>Supervisor</th><th>Routed single agent</th><th>Pipeline</th><th>Network</th></tr></thead>
@@ -386,7 +445,7 @@ completes, and the output is worse than any single agent would have produced.</p
 that works, and it works for most requests.</b> A supervisor is what you adopt when a worker
 needs authority or tools the others must not have.</p>
 
-<h2 id="interview">13 &middot; Interview preparation</h2>
+<h2 id="interview">12 &middot; Interview preparation</h2>
 <details class="collapse"><summary><span class="pill green">Beginner</span>  What is a multi-agent system and why use one? <span class="chev">›</span></summary>
 <div class="collapse-body"><p>Several specialized agents, each with its own role, prompt, and tools, coordinated to solve a complex task. Benefits: specialization (focused agents make better decisions than one bloated agent), modularity (test/iterate per agent), and parallelism. Costs: coordination overhead, latency, more LLM calls, and new failure modes - so use it only when one agent genuinely can't cope.</p></div></details>
 <details class="collapse"><summary><span class="pill green">Beginner</span>  What is the supervisor pattern? <span class="chev">›</span></summary>
@@ -403,16 +462,19 @@ needs authority or tools the others must not have.</p>
 <div class="collapse-body"><p>Topology: a <strong>supervisor/triage</strong> agent routes to specialists (billing, technical, account) - bounded star, not a mesh. Build on LangGraph for explicit routing, durable checkpoints, and per-agent attribution. Each specialist gets <strong>least-privilege tools</strong> via MCP (Module 07) and RAG over its domain docs (Module 05). <strong>Handoffs</strong> carry a structured brief + shared-state pointers, capped by recursion_limit with the supervisor able to escalate to a human. <strong>Safety</strong>: human-in-the-loop (Module 10) before refunds/account changes; guardrails on inputs/outputs (Module 13). <strong>Observability</strong>: trace every transition, attribute success/failure per agent, track handoff correctness and tokens/task. <strong>Eval</strong>: golden conversations gating deploys; compare against a single-agent baseline to justify the architecture. A designated finalizer owns the user-facing response. The deliverables that matter: bounded coordination, least privilege, human gates on consequential actions, and per-agent traceability.</p></div></details>
 
 <!-- ================= 16 ================= -->
-<h2 id="short">14 · In short, and what comes next</h2>
-<p class="bd-choose">Remember these six:</p>
-<ul>
-<li>Start with one agent. Split only when it is measurably struggling.</li>
-<li>Routing gives most of the benefit for one cheap call and no coordination.</li>
-<li>A supervisor earns its cost on different tools, credentials or models - not on tidiness.</li>
-<li>Every hop is a model call that does no work. Count them before adding an agent.</li>
-<li>Bound the hops, and let exactly one agent finish the request.</li>
-<li>A handoff carries a brief and pointers, never the whole transcript.</li>
-</ul>
+<h2 id="short">13 · In short, and what comes next</h2>
+<p class="bd-choose">The five ideas from the top of the page. Try to say each one before
+you read it.</p>
+<ol>
+<li><b>Start with one agent.</b> Split only when it is measurably struggling.</li>
+<li><b>Routing gives most of the benefit.</b> One cheap classification call, then a smaller
+prompt and fewer tools - and no coordination at all.</li>
+<li><b>A supervisor earns its cost on different tools, credentials or models</b> - not on
+tidiness.</li>
+<li><b>Every hop is a model call that does no work.</b> Count the hops, bound them, and let
+exactly one agent finish the request.</li>
+<li><b>A handoff carries a brief and pointers</b>, never the whole transcript.</li>
+</ol>
 <div class="callout key">
 <div class="c-ico">🔑</div>
 <div class="c-body"><div class="c-title">The one idea to remember</div>
@@ -420,6 +482,7 @@ needs authority or tools the others must not have.</p>
 is the argument: routing cut cost by half at equal accuracy, and the supervisor tripled it for
 nothing. Only pay when a worker needs authority the others must not have.</p></div>
 </div>
+<p class="review-link">🔁 <a href="../review.html?topic=multi-agent-systems">Review this topic's cards</a> - tomorrow, in 3 days, in a week and in 3 weeks.</p>
 <p><b>Next:</b> module 12, Production GenAI - latency, cost, caching and deployment for
 everything you have built so far.</p>
 
@@ -434,9 +497,9 @@ everything you have built so far.</p>
 </div>
 </div>
 <script src="../assets/app.js?v=20261123b"></script>
-<script src="../assets/sitenav.js?v=20261123b"></script>
+<script src="../assets/sitenav.js?v=20261124a"></script>
 <script src="../assets/enhance.js?v=20260925c"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
-<script src="../assets/glossary.js?v=20261123b"></script>
+<script src="../assets/glossary.js?v=20261124a"></script>
 </body>
 </html>

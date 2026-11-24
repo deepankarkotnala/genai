@@ -43,7 +43,7 @@
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
 <script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20261123b" rel="stylesheet"/>
+<link href="../assets/styles.css?v=20261124a" rel="stylesheet"/>
 <link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <link href="../assets/glossary.css?v=20260802b" rel="stylesheet"/>
@@ -52,9 +52,9 @@
      exists and the manifest is defined before the renderer runs. The authored
      links inside [data-page-nav] stay in the source and are replaced only after
      page, route and fragment have all resolved. -->
-<script defer src="../assets/curriculum.js?v=20261123c"></script>
-<script defer src="../assets/page-nav.js?v=20261123c"></script>
-<link href="../assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+<script defer src="../assets/curriculum.js?v=20261124a"></script>
+<script defer src="../assets/page-nav.js?v=20261124a"></script>
+<link href="../assets/ir-theme.css?v=20261124a" rel="stylesheet"/>
 </head>
 <body data-curriculum-id="langchain" data-page="10">
 <div class="app">
@@ -100,6 +100,45 @@ rewriting the others.</p>
 <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path fill="#ff0000" d="M23.5 6.2a3.02 3.02 0 0 0-2.12-2.14C19.5 3.55 12 3.55 12 3.55s-7.5 0-9.38.51A3.02 3.02 0 0 0 .5 6.2 31.6 31.6 0 0 0 0 12a31.6 31.6 0 0 0 .5 5.8 3.02 3.02 0 0 0 2.12 2.14c1.88.51 9.38.51 9.38.51s7.5 0 9.38-.51a3.02 3.02 0 0 0 2.12-2.14A31.6 31.6 0 0 0 24 12a31.6 31.6 0 0 0-.5-5.8z"></path><path fill="#fff" d="M9.6 15.6V8.4l6.2 3.6-6.2 3.6z"></path></svg>
 <span>CampusX LangChain <span class="yt-sub"> - video playlist</span></span>
 </a>
+
+<h3>How to use this page</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Level</th><th>What you get</th><th>Who it is for</th></tr></thead>
+<tbody>
+<tr><td><b>1 · The core idea</b><br/>sections 1-4, about 30 minutes</td><td>The problem LangChain solves, and how it differs from LangGraph</td><td>Everyone. Read this first.</td></tr>
+<tr><td><b>2 · The real version</b><br/>sections 5-10</td><td>A chain running step by step, every component in it, a trace, and the one failure that raises nothing</td><td>When Level 1 feels easy</td></tr>
+<tr><td><b>3 · Engineering and interviews</b><br/>sections 11-14</td><td>Production settings, the framework comparison, interview questions</td><td>Optional on a first read</td></tr>
+</tbody>
+</table>
+</div>
+
+<p class="bd-choose">Everything on this page comes back to five ideas. Level 1 covers the
+first two.</p>
+<ol>
+<li><b>One shared interface.</b> Every component is a Runnable with <code>invoke</code>,
+<code>batch</code> and <code>stream</code>, so you can swap any piece without rewriting the
+rest.</li>
+<li><b>A chain runs forward once.</b> It can split and join again, but it cannot loop back,
+pause for approval or resume after a crash. That is LangGraph's job.</li>
+<li><b>Components first, chain last.</b> Model, prompt, parser, retriever, tool - once you
+know each one, the chain contains nothing new.</li>
+<li><b>A chain holds no data between calls.</b> LangChain does not store your conversation;
+it calls the store you supply.</li>
+<li><b>An empty retrieval raises nothing.</b> Add the check yourself, or the model answers
+fluently from irrelevant text.</li>
+</ol>
+
+<div class="callout key memory-hook" id="memory-hook">
+<div class="c-ico">🧠</div>
+<div class="c-body"><div class="c-title">Memory hook</div>
+<p><b>A conveyor belt.</b> Work rides forward through fixed stations - prompt, model,
+parser. The belt can split into two lanes and merge again, but it never runs backwards. When
+the work must loop back or wait for a person, you need LangGraph.</p></div>
+</div>
+
+<!-- ================= LEVEL 1 ================= -->
+<div class="level-head" id="level-1"><span class="lv-badge">Level 1</span><span class="lv-title">The core idea</span><span class="lv-meta">About 30 minutes. No code needed.</span></div>
 
 <!-- ================= 1 ================= -->
 <h2 id="known">1 · What you already know</h2>
@@ -177,11 +216,12 @@ dictionary. Streaming, batching and callbacks are implemented once on
 <code>Runnable</code>, so every chain gets them.</p>
 <p class="bd-item"><b class="no-jargon">State handling.</b> A chain is stateless. The only data that
 exists during a run is the value passed from one component to the next. Chat history
-is added with <code>RunnableWithMessageHistory</code>, which reads and writes a store
-you supply, keyed by a session id.</p>
+used to be added with <code>RunnableWithMessageHistory</code>, keyed by a session id;
+that is now legacy, and the LangChain docs point to LangGraph checkpointers for
+conversation memory instead.</p>
 <p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> A chain is acyclic and
-runs forward once: no loops, no rejoining branches, no pause for approval, no
-recovery after a crash. Advanced features wrap any component - 
+runs forward once: it can fan out and join again (<code>RunnableParallel</code>), but it
+cannot loop back, pause for approval or recover after a crash. Advanced features wrap any component - 
 <code>.with_retry()</code>, <code>.with_fallbacks()</code>,
 <code>.with_structured_output()</code>, <code>.bind_tools()</code>.</p>
 
@@ -189,7 +229,8 @@ recovery after a crash. Advanced features wrap any component -
 
 <h4>Basic level</h4>
 <p class="bd-item"><b class="no-jargon">What it is.</b> LangGraph is an open-source Python framework,
-built on LangChain, for writing LLM applications as a graph of nodes that read and
+from the LangChain team (it depends only on <code>langchain-core</code>, not on LangChain
+itself), for writing LLM applications as a graph of nodes that read and
 update one shared state object.</p>
 <p class="bd-item"><b class="no-jargon">Core purpose.</b> It runs workflows that loop, choose the next
 step at run time, pause for human approval, or continue after a crash.</p>
@@ -229,7 +270,7 @@ the state schema, the nodes and the edges. Compiling it produces a Pregel runtim
 that executes in supersteps: every node scheduled for a step runs, then their updates
 are merged. A <b>reducer</b> declared per state field decides how the merge works - 
 overwrite by default, or <code>add_messages</code> to append. A <b>checkpointer</b>
-(<code>MemorySaver</code>, <code>SqliteSaver</code>, <code>PostgresSaver</code>)
+(<code>InMemorySaver</code>, <code>SqliteSaver</code>, <code>PostgresSaver</code>)
 writes the state after every superstep.</p>
 <p class="bd-item"><b class="no-jargon">State handling.</b> One shared state object exists for the whole
 run. Each node returns a partial update, which the runtime merges through the
@@ -238,10 +279,11 @@ reducers. With a checkpointer, every version is stored under a
 <p class="bd-item"><b class="no-jargon">Limitations and advanced features.</b> More setup than a chain:
 a schema, node functions, edges and a compile step before anything runs. A cycle with
 no exit condition is easy to write, so the runtime enforces a
-<code>recursion_limit</code>. Advanced features are <code>interrupt_before</code> and
-<code>interrupt_after</code> for human approval, <code>Command</code> to route and
-update state in one return, subgraphs, per-node streaming, and time travel from any
-checkpoint.</p>
+<code>recursion_limit</code>. Advanced features are <code>interrupt()</code> for human
+approval (resumed with <code>Command(resume=...)</code>; the static
+<code>interrupt_before</code> and <code>interrupt_after</code> are mainly for debugging),
+<code>Command</code> to route and update state in one return, subgraphs, per-node
+streaming, and time travel from any checkpoint.</p>
 
 <h3 class="bd-diff">The core differences</h3>
 <div class="table-wrap">
@@ -291,6 +333,25 @@ builds the prompt string, sends it to the provider's API, reads one field out of
 reply, cleans it up and returns it.</p>
 <p>What it cannot do: stream, batch, retry, or survive a provider change. Each of those
 means editing that function, and every other function shaped like it.</p>
+
+<h3>Check yourself: Level 1</h3>
+<p>Answer each one out loud before you open it. Recalling an answer is what makes it
+stick; re-reading it is not.</p>
+<details class="recall"><summary><span class="q-ico">Q</span> Swapping providers, batching, streaming, retries and logging are all hard in hand-written steps. What single problem do they share? <span class="chev">›</span></summary><div class="a">The steps have no common shape, so nothing can be done to all of them at once. LangChain gives every component the same interface.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What is LangChain, in one sentence? <span class="chev">›</span></summary><div class="a">An open-source framework that puts models, prompts, retrievers, tools and parsers behind one shared interface, so you can compose them and swap any one without rewriting the others.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> A workflow calls the model, runs a tool and calls the model again until it is done. LangChain or LangGraph? <span class="chev">›</span></summary><div class="a">LangGraph. A chain runs forward once and cannot loop back; in LangGraph an edge reads the state and picks the next node while the run is going.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> <span>What does <code>.with_retry()</code> do in a chain, and what can it not do?</span> <span class="chev">›</span></summary><div class="a">It re-runs one component from its own beginning. Nothing is saved, so a crash still loses the whole run; resuming from the last completed step needs LangGraph's checkpointer.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> When should you use neither LangChain nor LangGraph? <span class="chev">›</span></summary><div class="a">When the task is one prompt and one answer - call the model directly - or when you have not yet built the same thing by hand once.</div></details>
+
+<div class="callout tip">
+<div class="c-ico">✅</div>
+<div class="c-body"><div class="c-title">You can stop here</div>
+<p>If you answered those, you know what LangChain is for and when to reach for LangGraph
+instead. Level 2 runs a real chain and opens every component in it.</p></div>
+</div>
+
+<!-- ================= LEVEL 2 ================= -->
+<div class="level-head" id="level-2"><span class="lv-badge">Level 2</span><span class="lv-title">The real version</span><span class="lv-meta">One retrieval chain, run step by step, and the parts it is built from.</span></div>
 
 <!-- ================= 5 ================= -->
 <h2 id="mechanics">5 · Runtime mechanics</h2>
@@ -352,8 +413,9 @@ yet.</p>
 <p>Chat models take a list of messages. Each message has a role.</p>
 
 <h4>4 · Output</h4>
-<p><code>.content</code> holds the text. <code>.response_metadata</code> holds the
-token counts and the finish reason.</p>
+<p><code>.content</code> holds the text. <code>.usage_metadata</code> holds the token
+counts in the same shape for every provider; <code>.response_metadata</code> holds the
+finish reason and other provider-specific fields.</p>
 
 <h4>5 · Structured output</h4>
 <p>Describe the shape and you get an object back instead of text. A reply that does
@@ -384,6 +446,9 @@ methods.</b></p>
 <h4>8 · RunnableSequence</h4>
 <p><code>|</code> runs components in order. The output of one is the input of the
 next. The sequence is itself a Runnable, so it also has all four methods.</p>
+<p>Picture a conveyor belt. Each station takes whatever arrives, does one job and passes
+the result to the next. The belt can split into lanes and merge again - that is the next
+component - but nothing ever travels backwards.</p>
 
 <h4>9 · RunnableParallel</h4>
 <p>Runs components at the same time and returns a dictionary with one key per
@@ -479,24 +544,10 @@ order.</p>
 chain contains nothing new.</b></p>
 
 <!-- ================= 8 ================= -->
-<h2 id="state">7 · State and data flow</h2>
-<p>Ten questions, answered on every page in this portal that has state.</p>
-<div class="table-wrap">
-<table>
-<tbody>
-<tr><th>1 · What data is state?</th><td>One value, handed from each component to the next.</td></tr>
-<tr><th>2 · Who writes each field?</th><td>Only the component that produced it. Values are returned, never edited in place.</td></tr>
-<tr><th>3 · Who reads it?</th><td>The next component in the sequence, and nothing else.</td></tr>
-<tr><th>4 · Replaced, appended or merged?</th><td>Replaced. <code>RunnableParallel</code> is the one exception: it merges its results into one dictionary.</td></tr>
-<tr><th>5 · What reducer controls merging?</th><td>None. LangChain has no reducers - that is a LangGraph idea.</td></tr>
-<tr><th>6 · Only in process memory?</th><td>Yes.</td></tr>
-<tr><th>7 · Checkpointed?</th><td>No.</td></tr>
-<tr><th>8 · In a database?</th><td>Only chat history, and only if the store you supply is one.</td></tr>
-<tr><th>9 · How long does it survive?</th><td>Until <code>invoke</code> returns.</td></tr>
-<tr><th>10 · What key retrieves it again?</th><td>Nothing. There is no key, because nothing was stored.</td></tr>
-</tbody>
-</table>
-</div>
+<h2 id="state">7 · What a chain remembers</h2>
+<p>Almost nothing. One value is handed from each component to the next, and each step
+replaces it - <code>RunnableParallel</code> is the one exception, merging its results into
+one dictionary. The value lives in process memory until <code>invoke</code> returns.</p>
 
 <p>Here is the value as it moves, for
 <code>chain.invoke({"topic": "HNSW"})</code>:</p>
@@ -605,6 +656,16 @@ context does not contain the answer.</p>
 <code>NOT_IN_CONTEXT</code> your code can test for. <b>You cannot fix what you cannot
 see, and this failure was invisible by default.</b></p>
 
+<h3>Check yourself: Level 2</h3>
+<details class="recall"><summary><span class="q-ico">Q</span> In the retrieval chain, which steps run at the same time, and which wait? <span class="chev">›</span></summary><div class="a">The retriever and the passthrough run together inside <code>RunnableParallel</code>. The merge waits for the slower one, then the prompt, the model and the parser run in order.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What methods does every Runnable have, and why does that matter? <span class="chev">›</span></summary><div class="a"><code>invoke</code>, <code>batch</code>, <code>stream</code> and their async versions. Because every component has them, any chain you build gets batching, streaming and async without extra code.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> <span>After <code>bind_tools</code>, does the model run the tool?</span> <span class="chev">›</span></summary><div class="a">No. It returns a request naming the tool and its arguments. Your code decides whether to run it.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Where does a chain keep the conversation history? <span class="chev">›</span></summary><div class="a">Nowhere by itself. A chain holds no data between calls; LangChain calls the store you supply. A Python list dies on restart; Redis or Postgres does not.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> The retriever finds nothing relevant. What happens, and how do you make it visible? <span class="chev">›</span></summary><div class="a">Nothing raises - the model answers fluently from irrelevant chunks. Raise an error when the retriever returns nothing, and tell the model to reply exactly <code>NOT_IN_CONTEXT</code> when the context lacks the answer.</div></details>
+
+<!-- ================= LEVEL 3 ================= -->
+<div class="level-head" id="level-3"><span class="lv-badge">Level 3</span><span class="lv-title">Engineering and interviews</span><span class="lv-meta">Optional on a first read. Come back when you build or prepare for interviews.</span></div>
+
 <!-- ================= 13 ================= -->
 <h2 id="production">11 · Production version</h2>
 <div class="table-wrap">
@@ -619,7 +680,7 @@ see, and this failure was invisible by default.</b></p>
 <tr><td>Authorisation</td><td>Filter the retriever by user before it searches: <code>search_kwargs={"filter": {"team": user.team}}</code>. Never filter after retrieval</td></tr>
 <tr><td>Audit</td><td>Log the question, the retrieved document ids, the prompt version and the answer. The document ids are what let you explain an answer later</td></tr>
 <tr><td>Rate limits</td><td>One shared limiter per provider key, not per process</td></tr>
-<tr><td>Cost</td><td>Read <code>response_metadata["token_usage"]</code> on every call and record it per request</td></tr>
+<tr><td>Cost</td><td>Read <code>usage_metadata</code> on every call and record it per request. <code>response_metadata["token_usage"]</code> is OpenAI-only and breaks when you swap provider</td></tr>
 <tr><td>Evaluation</td><td>A fixed question set with expected answers, run in CI before any prompt change ships</td></tr>
 <tr><td>Rollback</td><td>Version the prompt string. A bad prompt must be revertible without a redeploy</td></tr>
 </tbody>
@@ -644,8 +705,14 @@ whole chain re-runs retrieval, re-fills the prompt and pays for everything again
 </table>
 </div>
 <p>LlamaIndex and LangChain overlap on retrieval and are usually an either/or choice.
-LangGraph does not compete with LangChain - it is built on it, and a LangGraph node
-is very often a LangChain chain.</p>
+LangGraph does not compete with LangChain - both sit on <code>langchain-core</code>, and a
+LangGraph node is very often a LangChain chain.</p>
+<p><b>Version note.</b> LangChain 1.0 (October 2025) slimmed the package down.
+<code>create_agent</code> replaces LangGraph's <code>create_react_agent</code> as the
+standard agent, middleware (for example human-in-the-loop approval or summarising long
+histories) is how you customise it, and legacy classes such as <code>LLMChain</code> and
+<code>ConversationChain</code> moved to the separate <code>langchain-classic</code>
+package. Older tutorials, and many existing codebases, still use them.</p>
 
 <!-- ================= 15 ================= -->
 <h2 id="interview">13 · Interview preparation</h2>
@@ -660,12 +727,27 @@ is very often a LangChain chain.</p>
 <details class="collapse"><summary><span class="pill amber">Senior</span>  When would you NOT use LangChain, or drop to raw SDK? <span class="chev">›</span></summary>
 <div class="collapse-body"><p>For a single, simple completion the abstraction adds dependency weight and indirection with no benefit - call the provider SDK. Drop to raw calls in hot paths where you need precise control over requests/streaming, or when debugging an issue the abstraction obscures. Use LangChain where composition, swappability, integrations, or tracing genuinely pay off; for cyclic/stateful agent flows, use LangGraph instead of bending LCEL. Match the tool to the complexity.</p></div></details>
 <details class="collapse"><summary><span class="pill amber">Senior</span>  How do you make a LangChain app production-ready? <span class="chev">›</span></summary>
-<div class="collapse-body"><p>Pin exact package versions; enable LangSmith tracing for observability and prompt/version management; add <code>.with_retry()</code>/<code>.with_fallbacks()</code> for resilience and a fallback model; use structured output for machine-consumable results; keep prompts in a versioned registry; build an eval set (Module 14, LLM Evals) gating prompt/chain changes; wrap chains behind your own service boundary (FastAPI/LangServe) so you can swap the framework if needed; and set temperature/timeouts/token budgets explicitly. Treat the chain as one component in your system, not the whole architecture.</p></div></details>
+<div class="collapse-body"><p>Pin exact package versions; enable LangSmith tracing for observability and prompt/version management; add <code>.with_retry()</code>/<code>.with_fallbacks()</code> for resilience and a fallback model; use structured output for machine-consumable results; keep prompts in a versioned registry; build an eval set (Module 14, LLM Evals) gating prompt/chain changes; wrap chains behind your own service boundary (usually FastAPI - LangServe is in maintenance mode) so you can swap the framework if needed; and set temperature/timeouts/token budgets explicitly. Treat the chain as one component in your system, not the whole architecture.</p></div></details>
 <details class="collapse"><summary><span class="pill purple">Staff · design</span>  Design a provider-agnostic LLM layer for an org using LangChain. <span class="chev">›</span></summary>
-<div class="collapse-body"><p>A thin internal library exposing chains built from <code>langchain-core</code> Runnables, with the model created by a factory driven by config (so local Ollama, OpenAI, or a gateway are interchangeable). Centralize: a versioned <strong>prompt registry</strong>; <strong>retry/fallback</strong> policies (primary → cheaper/local fallback); <strong>structured-output</strong> schemas; <strong>LangSmith tracing</strong> for per-team cost/latency and eval; and <strong>guardrails</strong> wrapping inputs/outputs (Module 13). Expose chains via a service boundary (LangServe/FastAPI) so consumers don't import LangChain directly - that keeps you free to swap or drop the framework. Gate every prompt/chain change on an eval set in CI. The goal: teams get composable, observable, swappable LLM components without lock-in to any single provider or even to LangChain itself.</p></div></details>
+<div class="collapse-body"><p>A thin internal library exposing chains built from <code>langchain-core</code> Runnables, with the model created by a factory driven by config (so local Ollama, OpenAI, or a gateway are interchangeable). Centralize: a versioned <strong>prompt registry</strong>; <strong>retry/fallback</strong> policies (primary → cheaper/local fallback); <strong>structured-output</strong> schemas; <strong>LangSmith tracing</strong> for per-team cost/latency and eval; and <strong>guardrails</strong> wrapping inputs/outputs (Module 13). Expose chains via a service boundary (FastAPI, or LangSmith Deployment for LangGraph apps; LangServe is in maintenance mode) so consumers don't import LangChain directly - that keeps you free to swap or drop the framework. Gate every prompt/chain change on an eval set in CI. The goal: teams get composable, observable, swappable LLM components without lock-in to any single provider or even to LangChain itself.</p></div></details>
 
 <!-- ================= 16 ================= -->
 <h2 id="short">14 · In short, and what comes next</h2>
+<p class="bd-choose">The five ideas from the top of the page. Try to say each one before
+you read it.</p>
+<ol>
+<li><b>One shared interface.</b> Every component is a Runnable with <code>invoke</code>,
+<code>batch</code> and <code>stream</code>, so you can swap any piece without rewriting the
+rest.</li>
+<li><b>A chain runs forward once.</b> It can split and join again, but it cannot loop back,
+pause for approval or resume after a crash. That is LangGraph's job.</li>
+<li><b>Components first, chain last.</b> Model, prompt, parser, retriever, tool - once you
+know each one, the chain contains nothing new.</li>
+<li><b>A chain holds no data between calls.</b> LangChain does not store your conversation;
+it calls the store you supply.</li>
+<li><b>An empty retrieval raises nothing.</b> Add the check yourself, or the model answers
+fluently from irrelevant text.</li>
+</ol>
 <p class="bd-choose">Use LangChain when:</p>
 <ul>
 <li>Three or more steps always run in the same order.</li>
@@ -676,7 +758,7 @@ is very often a LangChain chain.</p>
 <ul>
 <li>One prompt, one answer. Call the provider SDK.</li>
 <li>You have not built the same thing by hand once.</li>
-<li>The flow needs to loop, branch and rejoin, pause, or survive a crash.</li>
+<li>The flow needs to loop back, pause for approval, or survive a crash.</li>
 </ul>
 <div class="callout key">
 <div class="c-ico">🔑</div>
@@ -686,6 +768,7 @@ is.</b> It cannot loop back, it cannot stop and wait, and a crash loses everythi
 because nothing was written down. LangGraph gives the run a state object and saves it
 after every step. That is the whole difference.</p></div>
 </div>
+<p class="review-link">🔁 <a href="../review.html?topic=langchain">Review this topic's cards</a> - tomorrow, in 3 days, in a week and in 3 weeks.</p>
 <p><b>Next:</b> module 10, LangGraph - the same components, plus a state object that
 lets a run loop, pause for approval and survive a crash.</p>
 
@@ -700,9 +783,9 @@ lets a run loop, pause for approval and survive a crash.</p>
 </div>
 </div>
 <script src="../assets/app.js?v=20261123b"></script>
-<script src="../assets/sitenav.js?v=20261123b"></script>
+<script src="../assets/sitenav.js?v=20261124a"></script>
 <script src="../assets/enhance.js?v=20260925c"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
-<script src="../assets/glossary.js?v=20261123b"></script>
+<script src="../assets/glossary.js?v=20261124a"></script>
 </body>
 </html>

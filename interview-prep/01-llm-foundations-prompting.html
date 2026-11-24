@@ -43,7 +43,7 @@
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
 <script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20261123b" rel="stylesheet"/>
+<link href="../assets/styles.css?v=20261124a" rel="stylesheet"/>
 <link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <!-- Release 2 runtime. The manifest loads first, the renderer second; classic
@@ -51,9 +51,9 @@
      exists and the manifest is defined before the renderer runs. The authored
      links inside [data-page-nav] stay in the source and are replaced only after
      page, route and fragment have all resolved. -->
-<script defer src="../assets/curriculum.js?v=20261123c"></script>
-<script defer src="../assets/page-nav.js?v=20261123c"></script>
-<link href="../assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+<script defer src="../assets/curriculum.js?v=20261124a"></script>
+<script defer src="../assets/page-nav.js?v=20261124a"></script>
+<link href="../assets/ir-theme.css?v=20261124a" rel="stylesheet"/>
 </head>
 <body data-curriculum-id="genai-g1" data-page="prep-foundations" data-prep-section="interview">
 <div class="app">
@@ -96,70 +96,70 @@
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>Traditional predictive ML usually maps a fixed feature vector to a bounded label or number. Generative models learn a probability distribution over sequences and produce new text, code, images or audio token by token. In production, that means outputs are open-ended and probabilistic, so we need grounding, validation, evaluation and fallbacks rather than only a threshold.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Predictive ML selects from a predefined output space; GenAI creates a sequence. The flexibility is valuable, but it adds non-determinism and requires stronger controls.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> When would you still prefer a classical ML model over an LLM?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> When would you still prefer a classical ML model over an LLM?</summary><div class="a">When the task is prediction on tabular, labelled data - churn, fraud, credit risk, demand forecasting - gradient-boosted trees such as XGBoost are usually more accurate, far cheaper and easier to explain. Also when you need millisecond latency across millions of predictions a day, calibrated probabilities, or an explanation a regulator accepts. A good rule: if the input is a row of numbers and categories, start classical; if it is free text or open-ended generation, consider an LLM.</div></details>
 </div></details>
 <details class="prep-question" data-question="explain a transformer to a non-specialist." data-tags="transformer attention">
 <summary><span class="prep-q-no">02</span><span class="prep-q-title">Explain a transformer to a non-specialist.<span class="prep-tags"><span>transformer</span><span>attention</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>A transformer reads a sequence by letting every token decide which other tokens matter for its current representation. Self-attention creates those relationships in parallel, while feed-forward layers transform each position. Repeating these blocks gives the model a contextual representation that supports next-token prediction.</p>
 <div class="prep-say"><strong>30-second version</strong><p>A transformer repeatedly asks: “Which earlier words matter to understanding this word?” Attention builds those links, then the model predicts what should come next.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> Why did transformers replace recurrent networks for large language models?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> Why did transformers replace recurrent networks for large language models?</summary><div class="a">RNNs read tokens one at a time, so training cannot be parallelised across the sequence, and information from distant tokens fades through hundreds of updates. Self-attention lets every token look at every earlier token in one step and processes the whole sequence as matrix multiplications, which GPUs do extremely well. That parallelism is what made training on trillions of tokens practical.</div></details>
 </div></details>
 <details class="prep-question" data-question="what are tokens, and why do they matter in system design?" data-tags="tokens cost latency">
 <summary><span class="prep-q-no">03</span><span class="prep-q-title">What are tokens, and why do they matter in system design?<span class="prep-tags"><span>tokens</span><span>cost</span><span>latency</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>Tokens are the units the model reads and generates; they may be words, word pieces or punctuation. They determine context-window usage, latency and cost. Tokenization also affects multilingual performance and whether long documents need chunking, summarization or retrieval.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Tokens are the model’s units of work. More input or output tokens usually means more latency and cost, and the context limit determines how much evidence can be supplied at once.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> How would you estimate token cost before launch?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> How would you estimate token cost before launch?</summary><div class="a">Multiply expected requests by average input and output tokens, then by the price per million tokens - priced separately, because output usually costs several times more than input. For example, 100,000 requests a day × (1,500 input + 300 output tokens) at $2.50 and $10 per million is $375 + $300 = $675 a day, roughly $20,000 a month. Measure real token counts on a sample of realistic prompts with the provider's tokenizer, and add a margin for retries, system prompts and conversation history.</div></details>
 </div></details>
 <details class="prep-question" data-question="what is a context window? does a larger one remove the need for rag?" data-tags="context rag trade-off">
 <summary><span class="prep-q-no">04</span><span class="prep-q-title">What is a context window? Does a larger one remove the need for RAG?<span class="prep-tags"><span>context</span><span>rag</span><span>trade-off</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>The context window is the maximum number of input and output tokens handled in one request. A larger window helps with long conversations and documents, but it does not guarantee that the model will find the right evidence, respect access controls or stay cost-efficient. RAG still provides targeted retrieval, freshness, citations and measurable retrieval quality.</p>
 <div class="prep-say"><strong>30-second version</strong><p>A large context window is capacity, not guaranteed attention. RAG remains useful for fresh, permissioned and precisely retrieved evidence.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> When would you choose long-context prompting instead of RAG?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> When would you choose long-context prompting instead of RAG?</summary><div class="a">When the material is small and bounded - one contract, a 50-page report, a single code module - fits comfortably in the window, and the question needs reasoning across the whole document rather than one passage. It removes chunking and retrieval errors entirely, and prefix caching makes repeated questions over the same document cheaper. RAG still wins when the corpus is large, changes often or has per-user permissions.</div></details>
 </div></details>
 <details class="prep-question" data-question="what do temperature and top-p control?" data-tags="decoding temperature">
 <summary><span class="prep-q-no">05</span><span class="prep-q-title">What do temperature and top-p control?<span class="prep-tags"><span>decoding</span><span>temperature</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>They shape sampling from the model’s next-token probability distribution. Lower temperature makes high-probability choices dominate; top-p restricts sampling to the smallest token set whose cumulative probability reaches p. For extraction and tool calls I use low variability, while creative tasks can tolerate more diversity.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Both control randomness. Use conservative decoding for structured, factual or repeatable tasks and more diversity only when creativity is the goal.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> Why can the same prompt still produce different answers at temperature zero?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> Why can the same prompt still produce different answers at temperature zero?</summary><div class="a">Temperature zero means greedy decoding, but the logits themselves can differ slightly between runs: GPU floating-point arithmetic is not associative, and results depend on batch composition and kernel choice. When two tokens are nearly tied, a tiny difference flips the choice and the rest of the output diverges. Providers may also update the model behind an unpinned alias, and some reasoning models do not accept temperature 0 at all.</div></details>
 </div></details>
 <details class="prep-question" data-question="why do llms hallucinate?" data-tags="hallucination grounding debugging">
 <summary><span class="prep-q-no">06</span><span class="prep-q-title">Why do LLMs hallucinate?<span class="prep-tags"><span>hallucination</span><span>grounding</span><span>debugging</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>The training objective rewards plausible continuation, not fact verification. Hallucinations increase when the prompt lacks evidence, the question is outside the model’s knowledge, retrieval fails, or instructions push the model to answer anyway. I reduce them with grounding, abstention, citations, constrained outputs and task-specific evaluation - not by claiming they can be eliminated.</p>
 <div class="prep-say"><strong>30-second version</strong><p>The model is optimized to continue text plausibly, not to check truth. Ground it, validate it and allow “I do not know.”</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> How would you debug a sudden increase in hallucinations?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> How would you debug a sudden increase in hallucinations?</summary><div class="a">Find what changed first - model version, prompt, retriever, index or traffic mix - because a sudden change almost always has a deployment or data cause. Then sample the bad answers and check whether the right evidence was retrieved: if not, it is a retrieval or ingestion problem; if it was, it is a prompt or model problem. Run the golden set on the old and new configurations to confirm before rolling back.</div></details>
 </div></details>
 <details class="prep-question" data-question="what makes a production prompt different from an ad-hoc prompt?" data-tags="prompting production versioning">
 <summary><span class="prep-q-no">07</span><span class="prep-q-title">What makes a production prompt different from an ad-hoc prompt?<span class="prep-tags"><span>prompting</span><span>production</span><span>versioning</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>A production prompt is a versioned interface. It defines the role, task, trusted context, boundaries, output schema, examples and failure behavior. It is paired with tests, telemetry and a rollback path, and it never relies on the prompt itself as the authorization or security layer.</p><ul><li>Separate instructions from untrusted data.</li><li>Specify what to do when evidence is missing.</li><li>Keep output shape machine-validated.</li></ul>
 <div class="prep-say"><strong>30-second version</strong><p>Treat the prompt like code: clear contract, version control, tests, observability and rollback.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> What would you include in a prompt regression suite?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> What would you include in a prompt regression suite?</summary><div class="a">A versioned set of, say, 100–300 inputs covering common cases, past failures and adversarial inputs such as prompt-injection attempts, each with an expected output or scoring rule. Deterministic checks come first - JSON schema validity, required fields, forbidden content, length - then rubric or LLM-judge scores for open-ended answers. Run it on every prompt or model change and block the release if the pass rate drops beyond an agreed threshold.</div></details>
 </div></details>
 <details class="prep-question" data-question="when would you use zero-shot, few-shot or explicit reasoning guidance?" data-tags="prompting few-shot reasoning">
 <summary><span class="prep-q-no">08</span><span class="prep-q-title">When would you use zero-shot, few-shot or explicit reasoning guidance?<span class="prep-tags"><span>prompting</span><span>few-shot</span><span>reasoning</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>Zero-shot is simplest when the task and output contract are clear. Few-shot examples help when labels, tone or edge cases are hard to describe. For complex reasoning, I ask for structured intermediate artifacts or a plan that can be validated, but I do not depend on exposing private chain-of-thought; I evaluate the final decisions and evidence.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Start zero-shot, add examples for ambiguous behavior, and use verifiable intermediate structures for complex tasks.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> How do examples create bias or prompt overfitting?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> How do examples create bias or prompt overfitting?</summary><div class="a">The model copies surface features of the examples: if all three are positive reviews, or every answer is two sentences long, outputs drift towards that label or length. Order matters too - the last example often pulls hardest. Use varied, balanced examples that include edge cases, and check on a held-out set that the examples improve accuracy rather than just style.</div></details>
 </div></details>
 <details class="prep-question" data-question="how do structured outputs and function calling improve reliability?" data-tags="structured-output tools validation">
 <summary><span class="prep-q-no">09</span><span class="prep-q-title">How do structured outputs and function calling improve reliability?<span class="prep-tags"><span>structured-output</span><span>tools</span><span>validation</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>They constrain the model to a schema or named tool contract instead of free-form prose. The server still validates types, ranges and business rules, rejects unknown fields and controls whether a tool may run. Structured output improves parseability, but it does not make the content correct or safe by itself.</p>
 <div class="prep-say"><strong>30-second version</strong><p>A schema makes output machine-readable; server-side validation makes it usable. Tool execution remains an application decision.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> What should happen when schema validation fails?</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> What should happen when schema validation fails?</summary><div class="a">Never pass invalid output downstream. Retry once or twice with the validation error in the prompt - for example "field amount must be a number" - which fixes most failures. If it still fails, fall back to a safe default, a human queue or a clear error, and log the case. Where the provider supports strict structured output or constrained decoding, use it: most schema failures become impossible rather than retried.</div></details>
 </div></details>
 <details class="prep-question" data-question="how do you choose between prompting, rag and fine-tuning?" data-tags="rag fine-tuning decision">
 <summary><span class="prep-q-no">10</span><span class="prep-q-title">How do you choose between prompting, RAG and fine-tuning?<span class="prep-tags"><span>rag</span><span>fine-tuning</span><span>decision</span></span></span><span aria-hidden="true" class="prep-chevron">＋</span></summary>
 <div class="prep-answer">
 <div class="prep-answer-label">Strong answer</div><p>I use prompting to define behavior, RAG to supply private or frequently changing knowledge, and fine-tuning to change consistent behavior, style or task performance at scale. They can be combined. I first fix data quality and evaluation, because fine-tuning cannot repair missing or unauthorized knowledge and RAG cannot fix every behavioral weakness.</p>
 <div class="prep-say"><strong>30-second version</strong><p>Prompt for instructions, retrieve for knowledge, fine-tune for repeatable behavior. Choose from the failure you are trying to solve.</p></div>
-<div class="prep-follow"><strong>Likely follow-up:</strong> Give an example where fine-tuning is the wrong answer.</div>
+<details class="prep-follow"><summary><strong>Likely follow-up:</strong> Give an example where fine-tuning is the wrong answer.</summary><div class="a">A support assistant answering from a product catalogue that changes every week. Fine-tuning would bake in last week's prices, need a training run for every update, and could not cite its source. Retrieval over the live catalogue gives fresh, citable answers with no training at all. Fine-tuning is also the wrong first move whenever a better prompt with a few examples has not been tried.</div></details>
 </div></details></section>
 
 <div class="page-nav" data-page-nav><a href="00-neural-networks.html"><div class="dir">← Previous</div><div class="ttl">Neural Networks for AI Engineers</div></a><a class="next" href="02-embeddings-rag.html"><div class="dir">Next →</div><div class="ttl">Embeddings, Vector Search &amp; RAG</div></a></div>
@@ -169,9 +169,9 @@
 </div>
 </div>
 <script src="../assets/app.js?v=20261123b"></script>
-<script src="../assets/sitenav.js?v=20261123b"></script>
+<script src="../assets/sitenav.js?v=20261124a"></script>
 <script src="../assets/enhance.js?v=20260925c"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
-<script src="../assets/interview-prep.js?v=20260925a"></script>
+<script src="../assets/interview-prep.js?v=20261124a"></script>
 </body>
 </html>

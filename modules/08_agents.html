@@ -43,7 +43,7 @@
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
 <script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20261123b" rel="stylesheet"/>
+<link href="../assets/styles.css?v=20261124a" rel="stylesheet"/>
 <link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <link href="../assets/glossary.css?v=20260802b" rel="stylesheet"/>
@@ -52,9 +52,9 @@
      exists and the manifest is defined before the renderer runs. The authored
      links inside [data-page-nav] stay in the source and are replaced only after
      page, route and fragment have all resolved. -->
-<script defer src="../assets/curriculum.js?v=20261123c"></script>
-<script defer src="../assets/page-nav.js?v=20261123c"></script>
-<link href="../assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+<script defer src="../assets/curriculum.js?v=20261124a"></script>
+<script defer src="../assets/page-nav.js?v=20261124a"></script>
+<link href="../assets/ir-theme.css?v=20261124a" rel="stylesheet"/>
 </head>
 <body data-curriculum-id="agentic-ai" data-page="08">
 <div class="app">
@@ -125,6 +125,14 @@ anything that moves money, sends messages or deletes data behind approval.</li>
 <li><b>Use the least autonomy that works.</b> If the steps are the same every time, build a
 fixed workflow, not an agent.</li>
 </ol>
+
+<div class="callout key memory-hook" id="memory-hook">
+<div class="c-ico">🧠</div>
+<div class="c-body"><div class="c-title">Memory hook</div>
+<p><b>The 4 S brakes: Stop, Steps, Spend, Same.</b> An agent drives itself, so it needs four
+brakes: a natural stop (it answers without asking for a tool), a step cap, a spend cap on
+tokens or money, and a same-call detector that stops it repeating itself.</p></div>
+</div>
 
 <!-- ================= LEVEL 1 ================= -->
 <div class="level-head" id="level-1"><span class="lv-badge">Level 1</span><span class="lv-title">The core idea</span><span class="lv-meta">About 25 minutes. No code, one worked example.</span></div>
@@ -659,8 +667,8 @@ agent. <b>And wherever the risk is, move one column to the left.</b></p>
 <div class="collapse-body"><p>Reason + Act: a pattern where the agent interleaves Thought (reason about the next step), Action (call a tool), and Observation (the tool's result), looping until it can give a final answer. The interleaving lets it adapt each step to what tools return.</p></div></details>
 <details class="collapse"><summary><span class="pill blue">Intermediate</span>  How does tool/function calling actually work? <span class="chev">›</span></summary>
 <div class="collapse-body"><p>You pass the model tool schemas (name, description, JSON parameter spec). The model, trained for this, returns a structured request naming a tool and its arguments instead of plain text. Your runtime executes the tool and returns the result as a new message. The model never runs anything itself - it requests; your code executes. Description/schema quality drives correct tool selection.</p></div></details>
-<details class="collapse"><summary><span class="pill blue">Intermediate</span>  Explain the three layers of agent memory. <span class="chev">›</span></summary>
-<div class="collapse-body"><p><strong>Working memory</strong>: the current context window - the live scratchpad for this task. <strong>Short-term memory</strong>: the conversation/episode history, summarized as it grows to fit the window. <strong>Long-term memory</strong>: persistent facts stored in a vector DB and retrieved when relevant - essentially RAG over the agent's own past, enabling cross-session recall.</p></div></details>
+<details class="collapse"><summary><span class="pill blue">Intermediate</span>  Explain the kinds of agent memory. <span class="chev">›</span></summary>
+<div class="collapse-body"><p><strong>Short-term (working) memory</strong>: this conversation and the current task - the message list resent in the prompt every turn, trimmed or summarised as it nears the context window, and lost when the session ends. <strong>Long-term memory</strong>: facts that outlive the session, stored outside the model in database rows or a vector store, keyed by user and tenant, and retrieved into the prompt when relevant. Interviewers split long-term memory into <strong>episodic</strong> (what happened before), <strong>semantic</strong> (facts about the user or the world) and <strong>procedural</strong> (how to do the task - in practice the system prompt and tool definitions).</p></div></details>
 <details class="collapse"><summary><span class="pill amber">Senior</span>  An agent keeps looping on the same failed action. How do you diagnose and fix it? <span class="chev">›</span></summary>
 <div class="collapse-body"><p>Inspect the trace: it's usually a tool returning an error the model can't act on, a missing capability, or an ambiguous goal. Fixes: enforce a max-step budget with graceful stop; add loop detection (repeated identical actions → break/re-plan); feed tool errors back clearly so the model can self-correct; improve the failing tool's description or add the missing tool; add a reflection/re-plan step; escalate to a human after N failures. Long-term, add this case to the agent eval set.</p></div></details>
 <details class="collapse"><summary><span class="pill amber">Senior</span>  How do you evaluate an agent given non-determinism? <span class="chev">›</span></summary>
@@ -692,6 +700,7 @@ fixed workflow, not an agent.</li>
 returned.</b> An agent buys you flexibility and charges you predictability, cost control and
 debuggability - and risk always pulls you back toward the guarded version.</p></div>
 </div>
+<p class="review-link">🔁 <a href="../review.html?topic=agentic-ai">Review this topic's cards</a> - tomorrow, in 3 days, in a week and in 3 weeks.</p>
 <p><b>Next:</b> <a href="09_mcp.html">07 · Model Context Protocol</a> - a standard way to
 plug in tools that live outside your app, written once and usable by any compatible
 agent.</p>
@@ -707,9 +716,9 @@ agent.</p>
 </div>
 </div>
 <script src="../assets/app.js?v=20261123b"></script>
-<script src="../assets/sitenav.js?v=20261123b"></script>
+<script src="../assets/sitenav.js?v=20261124a"></script>
 <script src="../assets/enhance.js?v=20260925c"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
-<script src="../assets/glossary.js?v=20261123b"></script>
+<script src="../assets/glossary.js?v=20261124a"></script>
 </body>
 </html>

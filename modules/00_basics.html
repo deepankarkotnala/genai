@@ -43,7 +43,7 @@
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
 <script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20261123b" rel="stylesheet"/>
+<link href="../assets/styles.css?v=20261124a" rel="stylesheet"/>
 <link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <!-- Release 2 Stage 2c pilot: the manifest loads first, the renderer second.
@@ -51,9 +51,9 @@
      nav slot exists and the manifest is defined before the renderer runs. The
      authored links inside [data-page-nav] remain in the source and are replaced
      only after page, route and fragment have all resolved. -->
-<script defer src="../assets/curriculum.js?v=20261123c"></script>
-<script defer src="../assets/page-nav.js?v=20261123c"></script>
-<link href="../assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+<script defer src="../assets/curriculum.js?v=20261124a"></script>
+<script defer src="../assets/page-nav.js?v=20261124a"></script>
+<link href="../assets/ir-theme.css?v=20261124a" rel="stylesheet"/>
 </head>
 <!-- curriculum item: beginner-basics -->
 <body data-curriculum-id="beginner-basics" data-page="00p">
@@ -92,6 +92,14 @@
 <span class="pill blue">⏱ Read · 25–35 min</span>
 <span class="pill">Difficulty · Absolute beginner</span>
 <span class="pill">Prereq · none</span>
+</div>
+
+<div class="callout key memory-hook" id="memory-hook">
+<div class="c-ico">🧠</div>
+<div class="c-body"><div class="c-title">Memory hook</div>
+<p><b>A very well-read autocomplete with no memory and no internet.</b> It has read more text
+than any person ever could, it guesses one piece at a time, it forgets you the moment it
+finishes, and it cannot look anything up unless your software hands it the page.</p></div>
 </div>
 
 <!-- ============ 1. START HERE ============ -->
@@ -175,7 +183,7 @@
 <div class="card"><h4>Answers arrive word by word</h4><p>The text streams onto your screen because it is genuinely being produced one token at a time. A 500-token answer means roughly 500 trips through the box, which is why long answers are slow and cost more.</p></div>
 <div class="card"><h4>The same question gives different answers</h4><p>Step 4 does not always take the highest-scoring token. How adventurous that choice is, is a setting called <strong>temperature</strong>: low means predictable and repetitive, high means varied and more likely to go off the rails.</p></div>
 </div>
-<p>Two more terms and you are done. The model can only look at a limited amount of text at once - your prompt plus its answer so far - and that budget is the <strong>context window</strong>. And because re-reading the whole text on every one of those 500 trips would be wasteful, the system keeps the intermediate work it already did for earlier tokens; that saved work is the <strong>KV cache</strong>. When Module 01 says <em>prefill</em>, it means the first trip that processes your whole prompt; <em>decode</em> is each cheap one-token trip after it.</p>
+<p>Two more terms and you are done. The model can only look at a limited amount of text at once - your prompt plus its answer so far - and that budget is the <strong>context window</strong>. And because re-reading the whole text on every one of those 500 trips would be wasteful, the system keeps the intermediate work it already did for earlier tokens; that saved work is the <strong>KV cache</strong>. When Module 01 says <em>prefill</em>, it means the first trip that processes your whole prompt; <em>decode</em> is each one-token trip after it. Each decode trip is small, but they must run one after another, so decode is where most of the waiting happens - and output tokens are usually priced several times higher than input tokens.</p>
 
 <!-- ============ 7. HALLUCINATION ============ -->
 <h2 id="hallucination">7 · Why something so fluent can still be wrong</h2>
@@ -184,9 +192,9 @@
 <div class="table-wrap"><table>
 <thead><tr><th>Problem this creates</th><th>What fixes it</th><th>Where</th></tr></thead>
 <tbody>
-<tr><td>It invents facts it was never taught.</td><td>Retrieve the real documents and put them in the prompt.</td><td>RAG - Modules 04–06</td></tr>
-<tr><td>It cannot look anything up or take action.</td><td>Give it tools it can call.</td><td>Agents - Modules 08–09</td></tr>
-<tr><td>It knows nothing after its training cutoff.</td><td>Feed it current data at question time.</td><td>Modules 04–06</td></tr>
+<tr><td>It invents facts it was never taught.</td><td>Retrieve the real documents and put them in the prompt.</td><td>RAG - Modules 03–05</td></tr>
+<tr><td>It cannot look anything up or take action.</td><td>Give it tools it can call.</td><td>Agents - Modules 06–07</td></tr>
+<tr><td>It knows nothing after its training cutoff.</td><td>Feed it current data at question time.</td><td>Modules 03–05</td></tr>
 <tr><td>Confident nonsense reaches your users.</td><td>Evaluation and guardrails around the model.</td><td>Modules 13–14</td></tr>
 </tbody>
 </table></div>
@@ -210,9 +218,9 @@
 <tr><td><strong>Temperature</strong></td><td>How adventurous that pick is. Low is predictable, high is varied.</td><td>Module 01</td></tr>
 <tr><td><strong>Autoregressive</strong></td><td>The loop: pick a token, append it, guess again.</td><td>Module 01</td></tr>
 <tr><td><strong>Context window</strong></td><td>How much text the model can have in front of it at once.</td><td>Module 01</td></tr>
-<tr><td><strong>Prefill / decode</strong></td><td>The first pass over your whole prompt, then one cheap pass per new token.</td><td>Module 01</td></tr>
+<tr><td><strong>Prefill / decode</strong></td><td>The first pass over your whole prompt, then one pass per new token. Each decode pass is small, but they run one after another, so decode is where most of the waiting happens.</td><td>Module 01</td></tr>
 <tr><td><strong>KV cache</strong></td><td>The saved intermediate work that makes those later passes cheap.</td><td>Modules 01–02</td></tr>
-<tr><td><strong>Hallucination</strong></td><td>A fluent answer that is plausible but false.</td><td>Modules 01, 06</td></tr>
+<tr><td><strong>Hallucination</strong></td><td>A fluent answer that is plausible but false.</td><td>Modules 01, 05</td></tr>
 <tr><td><strong>In-context learning</strong></td><td>Teaching the model a task purely with examples in the prompt.</td><td>Module 01</td></tr>
 <tr><td><strong>Embedding</strong></td><td>A list of numbers that captures a piece of text's meaning, so similar meanings sit near each other.</td><td>Module 03</td></tr>
 <tr><td><strong>RAG</strong></td><td>Look up relevant documents, put them in the prompt, then ask.</td><td>Module 05</td></tr>
@@ -249,6 +257,7 @@
 <details class="recall"><summary><span class="q-ico">Q</span> The model produces one answer of 300 words. Roughly how many times did it run? <span class="chev">›</span></summary><div class="a">Around 400 times - one pass per token, and 300 words is roughly 400 tokens. That is why long answers are slow and cost more than short ones.</div></details>
 <details class="recall"><summary><span class="q-ico">Q</span> Why can a confident answer still be false? <span class="chev">›</span></summary><div class="a">The loop optimises for a plausible next token, not a true one, and there is no lookup step and no fact-checking stage anywhere in it. Fixing that is what RAG, tools and guardrails are for.</div></details>
 <div class="callout key"><div class="c-ico">✅</div><div class="c-body"><div class="c-title">You are ready</div><p>Module 01 opens with "an LLM is a next-token predictor wrapped around a transformer". You now know every word in that sentence, so it should read as a summary rather than a wall. Go.</p></div></div>
+<p class="review-link">🔁 <a href="../review.html?topic=beginner-basics">Review this topic's cards</a> - tomorrow, in 3 days, in a week and in 3 weeks.</p>
 
 <div class="page-nav" data-page-nav>
 <a href="../index.html"><div class="dir">← Back</div><div class="ttl">Overview</div></a>
@@ -260,7 +269,7 @@
 </div>
 </div>
 <script src="../assets/app.js?v=20261123b"></script>
-<script src="../assets/sitenav.js?v=20261123b"></script>
+<script src="../assets/sitenav.js?v=20261124a"></script>
 <script src="../assets/enhance.js?v=20260925c"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
 </body>

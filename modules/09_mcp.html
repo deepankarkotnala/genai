@@ -43,7 +43,7 @@
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
 <script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20261123b" rel="stylesheet"/>
+<link href="../assets/styles.css?v=20261124a" rel="stylesheet"/>
 <link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <link href="../assets/glossary.css?v=20260802b" rel="stylesheet"/>
@@ -52,9 +52,9 @@
      exists and the manifest is defined before the renderer runs. The authored
      links inside [data-page-nav] stay in the source and are replaced only after
      page, route and fragment have all resolved. -->
-<script defer src="../assets/curriculum.js?v=20261123c"></script>
-<script defer src="../assets/page-nav.js?v=20261123c"></script>
-<link href="../assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+<script defer src="../assets/curriculum.js?v=20261124a"></script>
+<script defer src="../assets/page-nav.js?v=20261124a"></script>
+<link href="../assets/ir-theme.css?v=20261124a" rel="stylesheet"/>
 </head>
 <body data-curriculum-id="mcp-module" data-page="09">
 <div class="app">
@@ -124,6 +124,14 @@ still belong to the host.</li>
 <li><b>Tool descriptions are untrusted text in your prompt.</b> Allowlist, pin and namespace
 what you connect.</li>
 </ol>
+
+<div class="callout key memory-hook" id="memory-hook">
+<div class="c-ico">🧠</div>
+<div class="c-body"><div class="c-title">Memory hook</div>
+<p><b>Verbs, nouns, recipes.</b> Tools are verbs the model picks, resources are nouns the app
+attaches, prompts are recipes the user picks. And like USB-C, MCP is one plug shape: it tells
+you how to connect, not whether the thing you plug in is safe.</p></div>
+</div>
 
 <!-- ================= LEVEL 1 ================= -->
 <div class="level-head" id="level-1"><span class="lv-badge">Level 1</span><span class="lv-title">The core idea</span><span class="lv-meta">About 20 minutes. No code, one request traced end to end.</span></div>
@@ -514,8 +522,8 @@ or prompts. Long tasks report progress by streaming updates or by push notificat
 <tr><th>Connects</th><td>An agent to a tool or data source</td><td>An agent to another agent</td></tr>
 <tr><th>The other end is</th><td>A capability you invoke</td><td>A peer that plans, asks back and may refuse</td></tr>
 <tr><th>Discovery</th><td><code>tools/list</code></td><td>Agent Card</td></tr>
-<tr><th>Unit of work</th><td>One tool call, one result</td><td>A task with a lifecycle, possibly long-running</td></tr>
-<tr><th>Introduced by</th><td>Anthropic, November 2024</td><td>Google, April 2025</td></tr>
+<tr><th>Unit of work</th><td>One tool call, one result. Long-running work uses the optional Tasks extension, experimental since the 2025-11-25 spec</td><td>A task with a lifecycle, possibly long-running</td></tr>
+<tr><th>Introduced by</th><td>Anthropic, November 2024. Donated to the Linux Foundation's Agentic AI Foundation in December 2025</td><td>Google, April 2025. Now a Linux Foundation project</td></tr>
 </tbody>
 </table>
 </div>
@@ -747,8 +755,8 @@ saying who the user is.</li>
 <p>A JWT alone is not an authentication system. It is one message in one. It does not
 issue, rotate, revoke or scope itself, and a token that cannot be revoked is a valid
 token until it expires.</p>
-<p>Validating a JWT properly takes six checks: signature, algorithm, issuer, audience,
-expiry and subject. Skipping any one of them makes the whole check decorative. <b>Pinning
+<p>Validating a JWT properly takes seven checks: signature, algorithm, issuer, audience,
+expiry, not-before (<code>nbf</code>) and subject. Skipping any one of them makes the whole check decorative. <b>Pinning
 the algorithm is not optional</b> - accepting the token's own <code>alg</code> lets a caller
 present <code>alg: none</code>, or hand you an HMAC token signed with your public key.</p>
 
@@ -775,13 +783,15 @@ token can replay it against anything that accepts it.</li>
 <tr><th>The other end is</th><td>A capability you invoke</td><td>A peer that plans and may refuse</td></tr>
 <tr><th>Discovery</th><td><code>tools/list</code></td><td>Agent card</td></tr>
 <tr><th>Result</th><td>A return value</td><td>A negotiated task, possibly long-running</td></tr>
-<tr><th>Trust</th><td>You trust the server's text</td><td>Both sides authenticate; neither is in charge</td></tr>
+<tr><th>Trust</th><td>The client authenticates to a remote server with OAuth 2.1; the host still treats the server's output as untrusted text</td><td>The caller authenticates with a scheme the Agent Card declares; neither side is in charge</td></tr>
 </tbody>
 </table>
 </div>
 <p><b>The distinction is whether the far side has its own goals.</b> A tool does not. Another
-agent does, which is why A2A needs task state and mutual authentication where MCP needs
-neither.</p>
+agent does, which is why a task lifecycle is central to A2A, while MCP's core unit is one
+call and one result - long-running MCP work goes through the optional Tasks extension. Both
+authenticate the caller: a remote MCP server uses OAuth 2.1, and an A2A Agent Card declares
+which schemes it accepts.</p>
 
 <h3>Multi-tenant isolation</h3>
 <p>One platform, many customers, and no cross-tenant leak. State the tenant at every layer
@@ -792,7 +802,7 @@ rather than assuming it:</p>
 applied in the query, not after it.</li>
 <li><b>Checkpointer</b> - the tenant id is part of the thread key, so a resumed run cannot
 attach to another tenant's state.</li>
-<li><b>Cache</b> - tenant in the cache key. A shared prompt cache is a cross-tenant read.</li>
+<li><b>Cache</b> - tenant in the cache key. An application response cache keyed without the tenant is a cross-tenant read.</li>
 <li><b>Budget</b> - metered per tenant, so one tenant cannot spend another's capacity.</li>
 </ul>
 
@@ -816,7 +826,7 @@ scope, tenancy and budget are yours to enforce, on every tool call, for the whol
 <li>RFC 6749 - OAuth 2.0; RFC 9700 - OAuth 2.0 Security Best Current Practice.</li>
 <li>OpenID Connect Core 1.0 - ID tokens and the <code>aud</code> claim.</li>
 <li>Model Context Protocol specification - authorization and transport security.</li>
-<li>A2A protocol specification - agent cards, task lifecycle, mutual authentication.</li>
+<li>A2A protocol specification - agent cards, task lifecycle, declared authentication schemes.</li>
 </ul>
 <div class="callout key">
 <div class="c-ico">📘</div>
@@ -832,7 +842,7 @@ scope, tenancy and budget are yours to enforce, on every tool call, for the whol
 <details class="collapse"><summary><span class="pill green">Beginner</span>  Name MCP's three primitives. <span class="chev">›</span></summary>
 <div class="collapse-body"><p><strong>Tools</strong> - actions the model can invoke (model-controlled). <strong>Resources</strong> - read-only data loaded into context (app-controlled). <strong>Prompts</strong> - reusable parameterized templates surfaced to the user (user-controlled).</p></div></details>
 <details class="collapse"><summary><span class="pill blue">Intermediate</span>  Walk through host, client, and server roles. <span class="chev">›</span></summary>
-<div class="collapse-body"><p>The <strong>host</strong> is the AI app (Claude Desktop, IDE, your agent) - it runs the LLM and conversation. It spawns one <strong>client</strong> per server. Each <strong>server</strong> wraps a specific system (DB, files, ES) and exposes tools/resources/prompts. Flow: client initializes (capability negotiation) → lists tools → LLM picks one → client calls <code>tools/call</code> → server executes against the real system → result returns. The server is the security boundary.</p></div></details>
+<div class="collapse-body"><p>The <strong>host</strong> is the AI app (Claude Desktop, IDE, your agent) - it runs the LLM and conversation. It spawns one <strong>client</strong> per server. Each <strong>server</strong> wraps a specific system (DB, files, ES) and exposes tools/resources/prompts. Flow: client initializes (capability negotiation) → lists tools → LLM picks one → client calls <code>tools/call</code> → server executes against the real system → result returns. There are two security boundaries: the host decides which calls happen (user consent, allow-lists, approval), and the server enforces access on its own backend with least-privilege credentials.</p></div></details>
 <details class="collapse"><summary><span class="pill blue">Intermediate</span>  Tool vs resource - when to use which? <span class="chev">›</span></summary>
 <div class="collapse-body"><p>Use a <strong>tool</strong> for actions/computation that the model decides to invoke (side effects: write a record, run a query). Use a <strong>resource</strong> for read-only data the host attaches to context (a file, a config, a row), addressed by URI with no side effects. The split keeps "what the model can do" separate from "what it can read," which clarifies permissions.</p></div></details>
 <details class="collapse"><summary><span class="pill amber">Senior</span>  How do you secure an MCP server exposing ElasticSearch? <span class="chev">›</span></summary>
@@ -868,6 +878,7 @@ what you connect.</li>
 safe.</b> Every check from page 06 still applies, and one new one appears: the tool's own
 description is now text you did not write, sitting inside your prompt.</p></div>
 </div>
+<p class="review-link">🔁 <a href="../review.html?topic=mcp-module">Review this topic's cards</a> - tomorrow, in 3 days, in a week and in 3 weeks.</p>
 <p><b>Next:</b> <a href="../memory.html">08 · Memory</a> - how an agent remembers things
 beyond one conversation, and what that costs.</p>
 
@@ -882,9 +893,9 @@ beyond one conversation, and what that costs.</p>
 </div>
 </div>
 <script src="../assets/app.js?v=20261123b"></script>
-<script src="../assets/sitenav.js?v=20261123b"></script>
+<script src="../assets/sitenav.js?v=20261124a"></script>
 <script src="../assets/enhance.js?v=20260925c"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
-<script src="../assets/glossary.js?v=20261123b"></script>
+<script src="../assets/glossary.js?v=20261124a"></script>
 </body>
 </html>

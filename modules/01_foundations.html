@@ -43,7 +43,7 @@
      disagree with what the scripts apply a moment later. Inline and blocking on
      purpose: an external file would cost a round trip before first paint. -->
 <script>(function(){try{var d=document.documentElement;var t=localStorage.getItem("gp.theme")||"dark";d.setAttribute("data-theme",t);var m=document.querySelector('meta[name="theme-color"]');if(m)m.content=t==="dark"?"#1b1b1b":"#f4f6fb";/* Reading size and width, same reason as the theme: applying them after first paint reflows the whole lesson. Contract shared with enhance.js: key "gp.reading", {"size","width","focusWidth","align"}; unknown size -> "m" on phones and "s" above 860px, unknown width -> "wide" ("default" in focus mode), unknown align -> "justify". */var r={};try{r=JSON.parse(localStorage.getItem("gp.reading"))||{};}catch(e2){}var sz=["xs","s","m","l","xl"].indexOf(r.size)>=0?r.size:(matchMedia("(max-width:860px)").matches?"m":"s");var isF=localStorage.getItem("genai-focus-mode")==="1";var wp=isF?r.focusWidth:r.width;var wd=["default","wide","full"].indexOf(wp)>=0?wp:(isF?"default":"wide");if(!isF&&wd==="full")wd="wide";var al=r.align==="left"?"left":"justify";d.setAttribute("data-reading-size",sz);d.setAttribute("data-reading-width",wd);d.setAttribute("data-reading-align",al);/* Page transitions. `PageRevealEvent` is the only honest test for a CROSS-document view transition - CSS @supports(view-transition-name) answers yes on browsers that only do the same-document kind, which is what silently disabled the fallback and left them with a hard cut. Pre-paint for the same reason as the theme: gating this from a body script lets the arrival animation start and then cancels it, which is the flash it removes. */if("PageRevealEvent" in window){d.classList.add("xvt");window.addEventListener("pagereveal",function(ev){if(!ev.viewTransition)return;d.classList.add("vt-in");var off=function(){d.classList.remove("vt-in")};ev.viewTransition.finished.then(off,off);});}}catch(e){}})();</script>
-<link href="../assets/styles.css?v=20261123b" rel="stylesheet"/>
+<link href="../assets/styles.css?v=20261124a" rel="stylesheet"/>
 <link href="../assets/office-theme.css?v=20260925c" rel="stylesheet"/>
 <link href="../assets/genai-motion.css?v=20260804c" rel="stylesheet"/>
 <link href="../assets/glossary.css?v=20260802b" rel="stylesheet"/>
@@ -52,9 +52,9 @@
      exists and the manifest is defined before the renderer runs. The authored
      links inside [data-page-nav] stay in the source and are replaced only after
      page, route and fragment have all resolved. -->
-<script defer src="../assets/curriculum.js?v=20261123c"></script>
-<script defer src="../assets/page-nav.js?v=20261123c"></script>
-<link href="../assets/ir-theme.css?v=20261123c" rel="stylesheet"/>
+<script defer src="../assets/curriculum.js?v=20261124a"></script>
+<script defer src="../assets/page-nav.js?v=20261124a"></script>
+<link href="../assets/ir-theme.css?v=20261124a" rel="stylesheet"/>
 </head>
 <body data-curriculum-id="llm-foundations" data-page="01">
 <div class="app">
@@ -95,6 +95,43 @@ calling, agents - is that one operation, run in a loop, with the output fed back
 <span class="pill">Difficulty · Beginner</span>
 <span class="pill purple">Prereq · basic Python</span>
 </div>
+
+<h3>How to use this page</h3>
+<div class="table-wrap">
+<table>
+<thead><tr><th>Level</th><th>What you get</th><th>Who it is for</th></tr></thead>
+<tbody>
+<tr><td><b>1 · The core idea</b><br/>sections 1-4, about 30 minutes</td><td>What a model computes, where base and fine-tuned models come from, and what the neural model replaced</td><td>Everyone. Read this first.</td></tr>
+<tr><td><b>2 · The real version</b><br/>sections 5-10</td><td>The nine-step loop, every component in it, a real trace, and the context-window failure</td><td>When Level 1 feels easy</td></tr>
+<tr><td><b>3 · Engineering and interviews</b><br/>sections 11-14</td><td>Production practice, the four ways to steer a model, interview questions</td><td>Optional on a first read</td></tr>
+</tbody>
+</table>
+</div>
+
+<p class="bd-choose">Everything on this page comes back to five ideas. Level 1 covers the
+first two.</p>
+<ol>
+<li><b>The model outputs a probability for every token in its vocabulary, every step.</b>
+Something then picks one token from that distribution.</li>
+<li><b>Fine-tuning changes behaviour. Retrieval adds knowledge.</b> They are not
+alternatives.</li>
+<li><b>Sampling is the only source of randomness.</b> <code>temperature=0</code> switches
+it off.</li>
+<li><b>The context window counts tokens, not words, and includes the answer.</b></li>
+<li><b>The weights are frozen at inference.</b> The model remembers nothing between
+requests.</li>
+</ol>
+
+<div class="callout key memory-hook" id="memory-hook">
+<div class="c-ico">🧠</div>
+<div class="c-body"><div class="c-title">Memory hook</div>
+<p><b>Predict, pick, append, repeat.</b> It is your phone keyboard's next-word suggestion,
+run in a loop: score every possible next word, pick one, add it to the text, and ask
+again.</p></div>
+</div>
+
+<!-- ================= LEVEL 1 ================= -->
+<div class="level-head" id="level-1"><span class="lv-badge">Level 1</span><span class="lv-title">The core idea</span><span class="lv-meta">About 30 minutes. No maths.</span></div>
 
 <!-- ================= 1 ================= -->
 <h2 id="known">1 · What you already know</h2>
@@ -281,6 +318,25 @@ returns nothing, and it cannot tell that "the cat sat" and "a cat sat" are nearl
 context. <b>A neural model replaces the lookup table with a function that maps similar
 contexts to similar predictions.</b> That is the whole upgrade.</p>
 
+<h3>Check yourself: Level 1</h3>
+<p>Answer each one out loud before you open it. Recalling an answer is what makes it
+stick; re-reading it is not.</p>
+<details class="recall"><summary><span class="q-ico">Q</span> What does a language model compute at every step? <span class="chev">›</span></summary><div class="a">A probability for every token in its vocabulary. Something then picks one token from that distribution, and that one sentence explains randomness, limits, cost and confident mistakes.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What does pre-training produce, and why is it rarely used directly? <span class="chev">›</span></summary><div class="a">A base model that has learned the statistical structure of language and a lot of world knowledge. It completes text rather than following instructions, so it is fine-tuned before it becomes a chat model.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Does fine-tuning change a model's behaviour or its knowledge? <span class="chev">›</span></summary><div class="a">Behaviour, format or tone. It is a poor way to add facts: the model may copy the new data's style and still get details wrong.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Your documents change every week and the model must know them. Fine-tune or not? <span class="chev">›</span></summary><div class="a">Not. Retraining cannot keep up with weekly changes; retrieval can. Put the documents in the prompt at request time (module 05).</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What did a neural model fix about the n-gram counting model? <span class="chev">›</span></summary><div class="a">An n-gram table returns nothing for a word pair it never saw and cannot tell that "the cat sat" and "a cat sat" are nearly the same. A neural model replaces the lookup table with a function that maps similar contexts to similar predictions.</div></details>
+
+<div class="callout tip">
+<div class="c-ico">✅</div>
+<div class="c-body"><div class="c-title">You can stop here</div>
+<p>If you answered those, you know what a language model is and where it comes from.
+Level 2 follows one prompt through the model, step by step.</p></div>
+</div>
+
+<!-- ================= LEVEL 2 ================= -->
+<div class="level-head" id="level-2"><span class="lv-badge">Level 2</span><span class="lv-title">The real version</span><span class="lv-meta">The loop that runs every time you send a prompt, part by part.</span></div>
+
 <!-- ================= 5 ================= -->
 <h2 id="mechanics">5 · Runtime mechanics</h2>
 <p>What happens when you send a prompt. Nine steps.</p>
@@ -416,16 +472,10 @@ resembling memory is text your application re-sent.</p>
 <div class="table-wrap">
 <table>
 <tbody>
-<tr><th>1 · What data is state?</th><td>The token sequence so far. Nothing else survives between steps.</td></tr>
-<tr><th>2 · Who writes it?</th><td>You write the prompt; the sampler appends one token per step.</td></tr>
-<tr><th>3 · Who reads it?</th><td>Every layer, on every step, reads the whole sequence.</td></tr>
-<tr><th>4 · Replaced, appended or merged?</th><td>Appended. Tokens are never edited or removed once generated.</td></tr>
-<tr><th>5 · What controls merging?</th><td>Nothing - it is a list that only grows.</td></tr>
-<tr><th>6 · Only in memory?</th><td>Yes, in the serving process, for the length of one request.</td></tr>
-<tr><th>7 · Cached?</th><td>The KV cache stores each layer's intermediate values so earlier tokens are not recomputed. It is an optimisation, not memory.</td></tr>
-<tr><th>8 · In a database?</th><td>Never, unless your application puts it there.</td></tr>
-<tr><th>9 · How long does it survive?</th><td>Until the response finishes.</td></tr>
-<tr><th>10 · What key retrieves it again?</th><td>None. The next request starts empty.</td></tr>
+<tr><th>What is state?</th><td>The token sequence so far. Nothing else survives between steps.</td></tr>
+<tr><th>How does it change?</th><td>Appended. You write the prompt; the sampler adds one token per step. Tokens are never edited or removed.</td></tr>
+<tr><th>Is anything cached?</th><td>The KV cache stores each layer's intermediate values so earlier tokens are not recomputed. It is an optimisation, not memory.</td></tr>
+<tr><th>How long does it survive?</th><td>Until the response finishes. The next request starts empty, unless your application re-sends text.</td></tr>
 </tbody>
 </table>
 </div>
@@ -513,6 +563,16 @@ candidates for removal. Conversation history is dropped oldest-first. And if the
 still does not fit, your code raises an error instead of silently truncating. <b>Deciding
 what to drop is your job, and it is the subject of module 05.</b></p>
 
+<h3>Check yourself: Level 2</h3>
+<details class="recall"><summary><span class="q-ico">Q</span> In the nine-step loop, where does randomness enter? <span class="chev">›</span></summary><div class="a">Only at the sampling step. Tokenizing, the embedding lookup, the layers and softmax are deterministic: the same input gives the same probabilities every time.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> What does temperature do to the distribution? <span class="chev">›</span></summary><div class="a">The logits are divided by it before softmax. Below 1 sharpens the distribution, above 1 flattens it, and <code>temperature=0</code> means always take the highest.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> Roughly how much memory do the weights of a 7B model need at 16-bit precision? <span class="chev">›</span></summary><div class="a">About 14 GB: seven billion parameters at two bytes each, just to hold the weights.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> In the trace, why did the model run three times, not once? <span class="chev">›</span></summary><div class="a">Each run produces one token. That token is appended and the whole sequence goes back in. The weights were identical every time - only the sequence grew.</div></details>
+<details class="recall"><summary><span class="q-ico">Q</span> A serving layer silently drops the oldest tokens to fit the window. Why is that dangerous, and what is the fix? <span class="chev">›</span></summary><div class="a">The instructions at the start of the prompt are deleted, so the request succeeds and the answer is confidently wrong. Count tokens first, never drop the system prompt or the question, drop history oldest-first, and raise an error if it still does not fit.</div></details>
+
+<!-- ================= LEVEL 3 ================= -->
+<div class="level-head" id="level-3"><span class="lv-badge">Level 3</span><span class="lv-title">Engineering and interviews</span><span class="lv-meta">Optional on a first read. Come back when you build or prepare for interviews.</span></div>
+
 <!-- ================= 13 ================= -->
 <h2 id="production">11 · Production version</h2>
 <div class="table-wrap">
@@ -569,19 +629,25 @@ solved two columns to the left, for a fraction of the effort.</p>
 <div class="collapse-body"><p>Single entry point that all teams call. Responsibilities: <strong>auth &amp; tenancy</strong> (API keys per team, quotas), <strong>routing</strong> (model selection by task/cost, fallback chains), <strong>safety</strong> (PII redaction, input/output guardrails), <strong>observability</strong> (per-tenant token/cost metrics, tracing, prompt logging with retention policy), <strong>resilience</strong> (retries, circuit breakers, caching of identical/cacheable prompts), and <strong>cost control</strong> (budgets, alerts). Keep it stateless and horizontally scalable; push prompt templates to a versioned registry. The same design comes up again in <a href="../interview-prep/10-system-design.html">GenAI system design</a>.</p></div></details>
 <!-- ================= 16 ================= -->
 <h2 id="short">14 · In short, and what comes next</h2>
-<p class="bd-choose">Remember these five:</p>
-<ul>
-<li>The model outputs a probability for every token in its vocabulary, every step.</li>
-<li>Sampling is the only source of randomness. <code>temperature=0</code> removes it.</li>
-<li>The context window counts tokens, not words, and includes the answer.</li>
-<li>The weights are frozen at inference. The model remembers nothing between requests.</li>
-<li>Fine-tuning changes behaviour. Retrieval adds knowledge. They are not alternatives.</li>
-</ul>
+<p class="bd-choose">The five ideas from the top of the page. Try to say each one before
+you read it.</p>
+<ol>
+<li><b>The model outputs a probability for every token in its vocabulary, every step.</b>
+Something then picks one token from that distribution.</li>
+<li><b>Fine-tuning changes behaviour. Retrieval adds knowledge.</b> They are not
+alternatives.</li>
+<li><b>Sampling is the only source of randomness.</b> <code>temperature=0</code> switches
+it off.</li>
+<li><b>The context window counts tokens, not words, and includes the answer.</b></li>
+<li><b>The weights are frozen at inference.</b> The model remembers nothing between
+requests.</li>
+</ol>
 <div class="callout key">
 <div class="c-ico">🔑</div>
 <div class="c-body"><div class="c-title">The one idea to remember</div>
 <p><b>Next-token prediction, in a loop, with the output fed back in.</b> Chat, summarising, tool calling and agents are all that one operation wrapped in application code.</p></div>
 </div>
+<p class="review-link">🔁 <a href="../review.html?topic=llm-foundations">Review this topic's cards</a> - tomorrow, in 3 days, in a week and in 3 weeks.</p>
 <p><b>Next:</b> module 02 opens the transformer layer this page treated as a single box - attention, masking and positional encoding. Its Level 1 takes about 30 minutes.</p>
 
 <div class="page-nav" data-page-nav>
@@ -595,9 +661,9 @@ solved two columns to the left, for a fraction of the effort.</p>
 </div>
 </div>
 <script src="../assets/app.js?v=20261123b"></script>
-<script src="../assets/sitenav.js?v=20261123b"></script>
+<script src="../assets/sitenav.js?v=20261124a"></script>
 <script src="../assets/enhance.js?v=20260925c"></script>
 <script src="../assets/genai-motion.js?v=20260728a"></script>
-<script src="../assets/glossary.js?v=20261123b"></script>
+<script src="../assets/glossary.js?v=20261124a"></script>
 </body>
 </html>
